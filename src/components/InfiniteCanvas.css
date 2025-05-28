@@ -6,6 +6,15 @@
   background-color: #f8fafc; /* 更柔和的背景色 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+
+  /* 使用CSS变量存储关键值，便于JS访问和修改 */
+  --canvas-scale: 1;
+  --canvas-offset-x: 0px;
+  --canvas-offset-y: 0px;
+  --small-grid-size: 10px;
+  --large-grid-size: 50px;
+  --small-grid-color: rgba(226, 232, 240, 0.5);
+  --large-grid-color: rgba(203, 213, 225, 0.5);
 }
 
 .canvas-toolbar {
