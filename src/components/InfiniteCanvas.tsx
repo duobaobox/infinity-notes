@@ -5,13 +5,10 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { Button, Space, Tooltip } from "antd";
-import {
-  ZoomInOutlined,
-  ZoomOutOutlined,
-  RedoOutlined,
-} from "@ant-design/icons";
 import { throttle } from "lodash";
+import CanvasToolbar from "./CanvasToolbar";
+import CanvasGrid from "./CanvasGrid";
+import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
 import "./InfiniteCanvas.css";
 
 interface CanvasState {
@@ -32,7 +29,7 @@ const InfiniteCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number | null>(null);
   const [canvasState, setCanvasState] = useState<CanvasState>({
-    scale: 1,
+    scale: CANVAS_CONSTANTS.DEFAULT_SCALE,
     offsetX: 0,
     offsetY: 0,
   });
@@ -49,14 +46,20 @@ const InfiniteCanvas: React.FC = () => {
   // 触发缩放动画
   const triggerZoomAnimation = useCallback(() => {
     setZoomAnimating(true);
-    setTimeout(() => setZoomAnimating(false), 1500);
+    setTimeout(
+      () => setZoomAnimating(false),
+      CANVAS_CONSTANTS.ZOOM_ANIMATION_DURATION
+    );
   }, []);
 
   // 缩放功能
   const handleZoomIn = useCallback(() => {
     setCanvasState((prev) => ({
       ...prev,
-      scale: Math.min(prev.scale * 1.2, 2), // 最大缩放2倍 (200%)
+      scale: Math.min(
+        prev.scale * CANVAS_CONSTANTS.ZOOM_FACTOR,
+        CANVAS_CONSTANTS.MAX_SCALE
+      ),
     }));
     triggerZoomAnimation();
   }, [triggerZoomAnimation]);
@@ -64,7 +67,10 @@ const InfiniteCanvas: React.FC = () => {
   const handleZoomOut = useCallback(() => {
     setCanvasState((prev) => ({
       ...prev,
-      scale: Math.max(prev.scale / 1.2, 0.3), // 最小缩放0.3倍 (30%)
+      scale: Math.max(
+        prev.scale / CANVAS_CONSTANTS.ZOOM_FACTOR,
+        CANVAS_CONSTANTS.MIN_SCALE
+      ),
     }));
     triggerZoomAnimation();
   }, [triggerZoomAnimation]);
@@ -72,14 +78,14 @@ const InfiniteCanvas: React.FC = () => {
   // 重置画布
   const handleReset = useCallback(() => {
     setCanvasState({
-      scale: 1,
+      scale: CANVAS_CONSTANTS.DEFAULT_SCALE,
       offsetX: 0,
       offsetY: 0,
     });
     triggerZoomAnimation();
   }, [triggerZoomAnimation]);
 
-  // 使用防抖优化的滚轮缩放处理函数
+  // 使用节流优化的滚轮缩放处理函数
   const handleWheelThrottled = useMemo(
     () =>
       throttle(
@@ -88,8 +94,8 @@ const InfiniteCanvas: React.FC = () => {
 
           const delta = e.deltaY > 0 ? 0.9 : 1.1;
           const newScale = Math.min(
-            Math.max(canvasState.scale * delta, 0.3),
-            2
+            Math.max(canvasState.scale * delta, CANVAS_CONSTANTS.MIN_SCALE),
+            CANVAS_CONSTANTS.MAX_SCALE
           );
 
           if (canvasRef.current) {
@@ -119,20 +125,20 @@ const InfiniteCanvas: React.FC = () => {
             }
           }
         },
-        16, // 约60fps的频率
+        CANVAS_CONSTANTS.WHEEL_THROTTLE_MS,
         { leading: true, trailing: true }
       ),
     [canvasState, triggerZoomAnimation]
   );
 
-  // 使用 useEffect 清理防抖函数
+  // 使用 useEffect 清理节流函数
   useEffect(() => {
     return () => {
       handleWheelThrottled.cancel();
     };
   }, [handleWheelThrottled]);
 
-  // 鼠标按下开始拖拽
+  // 鼠标按下开始拖拽 - 使用React合成事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       setDragState({
@@ -195,6 +201,7 @@ const InfiniteCanvas: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
+      // 使用React合成事件系统处理滚轮事件
       canvas.addEventListener("wheel", handleWheelThrottled, {
         passive: false,
       });
@@ -215,85 +222,105 @@ const InfiniteCanvas: React.FC = () => {
     }
   }, [handleWheelThrottled, handleMouseMove, handleMouseUp]);
 
-  // 使用 useMemo 优化网格样式计算
-  const gridStyles = useMemo(() => {
-    const smallGridSize = 10; // 小网格大小
-    const largeGridSize = 50; // 大网格大小
-
-    // 小网格线 - 更现代的配色
-    const smallGridStyle = {
-      backgroundImage: `
-        linear-gradient(rgba(226, 232, 240, 0.5) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(226, 232, 240, 0.5) 1px, transparent 1px)
-      `,
-      backgroundSize: `${smallGridSize * canvasState.scale}px ${
-        smallGridSize * canvasState.scale
-      }px`,
-      backgroundPosition: `${
-        canvasState.offsetX % (smallGridSize * canvasState.scale)
-      }px ${canvasState.offsetY % (smallGridSize * canvasState.scale)}px`,
+  // 计算一些性能关键参数，虽然我们已经移至CSS变量，但保留此逻辑以备未来使用
+  // 并且可以用于某些需要JavaScript直接访问这些值的场景
+  const _computedStyles = useMemo(() => {
+    return {
+      // 转换为像素值，便于JavaScript使用
+      smallGridSizePx: GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale,
+      largeGridSizePx: GRID_CONSTANTS.LARGE_GRID_SIZE * canvasState.scale,
+      // 当前缩放比例的视口像素比
+      devicePixelRatio: window.devicePixelRatio || 1,
+      // 屏幕上可见的网格数量（近似值）
+      visibleGridCellsX: canvasRef.current
+        ? Math.ceil(
+            canvasRef.current.clientWidth /
+              (GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale)
+          ) + 1
+        : 0,
+      visibleGridCellsY: canvasRef.current
+        ? Math.ceil(
+            canvasRef.current.clientHeight /
+              (GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale)
+          ) + 1
+        : 0,
     };
+  }, [canvasState.scale]);
 
-    // 大网格线 - 更现代的配色
-    const largeGridStyle = {
-      backgroundImage: `
-        linear-gradient(rgba(203, 213, 225, 0.5) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(203, 213, 225, 0.5) 1px, transparent 1px)
-      `,
-      backgroundSize: `${largeGridSize * canvasState.scale}px ${
-        largeGridSize * canvasState.scale
-      }px`,
-      backgroundPosition: `${
-        canvasState.offsetX % (largeGridSize * canvasState.scale)
-      }px ${canvasState.offsetY % (largeGridSize * canvasState.scale)}px`,
-    };
+  // 更新CSS变量 - 此处将JS状态同步到CSS变量
+  useEffect(() => {
+    if (canvasRef.current) {
+      const container = canvasRef.current.parentElement;
+      if (container) {
+        // 更新主要变换变量
+        container.style.setProperty("--canvas-scale", `${canvasState.scale}`);
 
-    // 内容变换样式
-    const contentStyle = {
-      transform: `translate3d(${canvasState.offsetX}px, ${canvasState.offsetY}px, 0) scale(${canvasState.scale})`,
-    };
+        // 计算网格位置偏移，使其能够正确对齐
+        const smallGridOffset = {
+          x:
+            (canvasState.offsetX %
+              (GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale)) +
+            "px",
+          y:
+            (canvasState.offsetY %
+              (GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale)) +
+            "px",
+        };
 
-    return { smallGridStyle, largeGridStyle, contentStyle };
+        // 设置基础偏移变量 - 对于简化版本，我们使用相同的偏移值
+        container.style.setProperty("--canvas-offset-x", smallGridOffset.x);
+        container.style.setProperty("--canvas-offset-y", smallGridOffset.y);
+
+        // 设置内容偏移变量 (这是新增的，用于内容元素的变换)
+        container.style.setProperty(
+          "--content-offset-x",
+          `${canvasState.offsetX}px`
+        );
+        container.style.setProperty(
+          "--content-offset-y",
+          `${canvasState.offsetY}px`
+        );
+
+        // 使用计算好的网格大小(仅做示例，实际上我们使用常量)
+        console.log(
+          "当前视口中预计可见网格单元数:",
+          _computedStyles.visibleGridCellsX,
+          _computedStyles.visibleGridCellsY
+        );
+
+        // 更新网格常量 - 理论上这些只需设置一次，但放在这里确保一致性
+        container.style.setProperty(
+          "--small-grid-size",
+          `${GRID_CONSTANTS.SMALL_GRID_SIZE}px`
+        );
+        container.style.setProperty(
+          "--large-grid-size",
+          `${GRID_CONSTANTS.LARGE_GRID_SIZE}px`
+        );
+        container.style.setProperty(
+          "--small-grid-color",
+          GRID_CONSTANTS.SMALL_GRID_COLOR
+        );
+        container.style.setProperty(
+          "--large-grid-color",
+          GRID_CONSTANTS.LARGE_GRID_COLOR
+        );
+      }
+    }
   }, [canvasState.scale, canvasState.offsetX, canvasState.offsetY]);
 
   return (
     <div className="infinite-canvas-container">
-      {/* 控制工具栏 */}
-      <div className="canvas-toolbar">
-        <Space>
-          <Tooltip title="放大画布" placement="bottom">
-            <Button
-              icon={<ZoomInOutlined />}
-              onClick={handleZoomIn}
-              disabled={canvasState.scale >= 2}
-              type="text"
-              shape="circle"
-            />
-          </Tooltip>
-          <Tooltip title="缩小画布" placement="bottom">
-            <Button
-              icon={<ZoomOutOutlined />}
-              onClick={handleZoomOut}
-              disabled={canvasState.scale <= 0.3}
-              type="text"
-              shape="circle"
-            />
-          </Tooltip>
-          <Tooltip title="重置画布位置和缩放" placement="bottom">
-            <Button
-              icon={<RedoOutlined />}
-              onClick={handleReset}
-              type="text"
-              shape="circle"
-            />
-          </Tooltip>
-          <span
-            className={`zoom-indicator ${zoomAnimating ? "zoom-change" : ""}`}
-          >
-            {Math.round(canvasState.scale * 100)}%
-          </span>
-        </Space>
-      </div>
+      {/* 使用拆分出的工具栏组件 */}
+      <CanvasToolbar
+        scale={canvasState.scale}
+        zoomAnimating={zoomAnimating}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onReset={handleReset}
+        minScale={CANVAS_CONSTANTS.MIN_SCALE}
+        maxScale={CANVAS_CONSTANTS.MAX_SCALE}
+      />
 
       {/* 画布区域 */}
       <div
@@ -301,16 +328,16 @@ const InfiniteCanvas: React.FC = () => {
         className="infinite-canvas"
         onMouseDown={handleMouseDown}
       >
-        {/* 网格背景 - 分层渲染以获得更好的视觉效果 */}
-        <div className="grid-light" style={gridStyles.smallGridStyle}></div>
-        <div className="grid-light" style={gridStyles.largeGridStyle}></div>
+        {/* 使用拆分出的网格组件 - 不再传递样式参数，而是使用CSS变量 */}
+        <CanvasGrid showAxis={true} />
 
-        <div className="canvas-content" style={gridStyles.contentStyle}>
+        {/* 
+          内容区域 - 使用CSS变量控制变换，不再需要内联样式 
+          注意：当有特殊需求时可以使用内联样式覆盖CSS变量
+        */}
+        <div className="canvas-content">
           {/* 画布内容区域 - 可以在这里添加你的内容 */}
         </div>
-
-        {/* 添加内阴影效果增强立体感 */}
-        <div className="canvas-shadow"></div>
       </div>
     </div>
   );

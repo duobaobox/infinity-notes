@@ -15,6 +15,11 @@
   --large-grid-size: 50px;
   --small-grid-color: rgba(226, 232, 240, 0.5);
   --large-grid-color: rgba(203, 213, 225, 0.5);
+
+  /* 性能优化 - 避免重绘和重排 */
+  will-change: transform;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .canvas-toolbar {
@@ -30,6 +35,10 @@
   backdrop-filter: blur(5px);
   display: flex; /* 用于内部元素对齐 */
   align-items: center; /* 垂直对齐内部元素 */
+
+  /* 性能优化 */
+  will-change: transform;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .zoom-indicator {
@@ -49,6 +58,11 @@
   position: relative;
   background-color: #fafcff;
   transition: background-color 0.3s ease;
+
+  /* 性能优化 */
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .infinite-canvas:active {
@@ -61,6 +75,14 @@
   transform-origin: 0 0;
   position: relative;
   will-change: transform; /* 优化性能 */
+
+  /* 注意：我们现在需要额外添加位置变量来控制内容偏移，因为网格偏移变量已重新用途 */
+  transform: translate3d(
+      var(--content-offset-x, 0px),
+      var(--content-offset-y, 0px),
+      0
+    )
+    scale(var(--canvas-scale, 1));
 }
 
 /* 网格自定义样式 */
@@ -71,6 +93,31 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  will-change: background;
+}
+
+/* 使用CSS变量的小网格 */
+.grid-light.small-grid {
+  background-image: linear-gradient(
+      var(--small-grid-color) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, var(--small-grid-color) 1px, transparent 1px);
+  background-size: calc(var(--small-grid-size) * var(--canvas-scale))
+    calc(var(--small-grid-size) * var(--canvas-scale));
+  background-position: var(--canvas-offset-x) var(--canvas-offset-y);
+}
+
+/* 使用CSS变量的大网格 */
+.grid-light.large-grid {
+  background-image: linear-gradient(
+      var(--large-grid-color) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, var(--large-grid-color) 1px, transparent 1px);
+  background-size: calc(var(--large-grid-size) * var(--canvas-scale))
+    calc(var(--large-grid-size) * var(--canvas-scale));
+  background-position: var(--canvas-offset-x) var(--canvas-offset-y);
 }
 
 /* 添加轴线，显示中心点 */
