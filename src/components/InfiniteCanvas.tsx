@@ -28,6 +28,7 @@ const InfiniteCanvas: React.FC = () => {
     offsetX: 0,
     offsetY: 0,
   });
+  const [zoomAnimating, setZoomAnimating] = useState(false);
 
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
@@ -37,20 +38,28 @@ const InfiniteCanvas: React.FC = () => {
     startOffsetY: 0,
   });
 
+  // 触发缩放动画
+  const triggerZoomAnimation = useCallback(() => {
+    setZoomAnimating(true);
+    setTimeout(() => setZoomAnimating(false), 1500);
+  }, []);
+
   // 缩放功能
   const handleZoomIn = useCallback(() => {
     setCanvasState((prev) => ({
       ...prev,
-      scale: Math.min(prev.scale * 1.2, 3), // 最大缩放3倍
+      scale: Math.min(prev.scale * 1.2, 2), // 最大缩放2倍 (200%)
     }));
-  }, []);
+    triggerZoomAnimation();
+  }, [triggerZoomAnimation]);
 
   const handleZoomOut = useCallback(() => {
     setCanvasState((prev) => ({
       ...prev,
-      scale: Math.max(prev.scale / 1.2, 0.2), // 最小缩放0.2倍
+      scale: Math.max(prev.scale / 1.2, 0.3), // 最小缩放0.3倍 (30%)
     }));
-  }, []);
+    triggerZoomAnimation();
+  }, [triggerZoomAnimation]);
 
   // 重置画布
   const handleReset = useCallback(() => {
@@ -59,7 +68,8 @@ const InfiniteCanvas: React.FC = () => {
       offsetX: 0,
       offsetY: 0,
     });
-  }, []);
+    triggerZoomAnimation();
+  }, [triggerZoomAnimation]);
 
   // 鼠标滚轮缩放
   const handleWheel = useCallback(
@@ -67,7 +77,7 @@ const InfiniteCanvas: React.FC = () => {
       e.preventDefault();
 
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newScale = Math.min(Math.max(canvasState.scale * delta, 0.2), 3);
+      const newScale = Math.min(Math.max(canvasState.scale * delta, 0.3), 2);
 
       if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
@@ -90,9 +100,13 @@ const InfiniteCanvas: React.FC = () => {
           offsetX: newOffsetX,
           offsetY: newOffsetY,
         });
+
+        if (Math.abs(newScale - canvasState.scale) > 0.05) {
+          triggerZoomAnimation();
+        }
       }
     },
-    [canvasState]
+    [canvasState, triggerZoomAnimation]
   );
 
   // 鼠标按下开始拖拽
@@ -145,21 +159,41 @@ const InfiniteCanvas: React.FC = () => {
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [handleWheel, handleMouseMove, handleMouseUp]);
+  }, [handleWheel, handleMouseMove, handleMouseUp]); // 创建网格背景 - 优化后的版本
+  const smallGridSize = 10; // 小网格大小
+  const largeGridSize = 50; // 大网格大小
 
-  // 创建网格背景
-  const gridSize = 50;
-  const gridStyle = {
+  // 小网格线 - 更现代的配色
+  const smallGridStyle = {
     backgroundImage: `
-      linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px)
+      linear-gradient(rgba(226, 232, 240, 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(226, 232, 240, 0.5) 1px, transparent 1px)
     `,
-    backgroundSize: `${gridSize * canvasState.scale}px ${
-      gridSize * canvasState.scale
+    backgroundSize: `${smallGridSize * canvasState.scale}px ${
+      smallGridSize * canvasState.scale
     }px`,
     backgroundPosition: `${
-      canvasState.offsetX % (gridSize * canvasState.scale)
-    }px ${canvasState.offsetY % (gridSize * canvasState.scale)}px`,
+      canvasState.offsetX % (smallGridSize * canvasState.scale)
+    }px ${canvasState.offsetY % (smallGridSize * canvasState.scale)}px`,
+  };
+
+  // 大网格线 - 更现代的配色
+  const largeGridStyle = {
+    backgroundImage: `
+      linear-gradient(rgba(203, 213, 225, 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(203, 213, 225, 0.5) 1px, transparent 1px)
+    `,
+    backgroundSize: `${largeGridSize * canvasState.scale}px ${
+      largeGridSize * canvasState.scale
+    }px`,
+    backgroundPosition: `${
+      canvasState.offsetX % (largeGridSize * canvasState.scale)
+    }px ${canvasState.offsetY % (largeGridSize * canvasState.scale)}px`,
+  };
+
+  // 将性能优化添加到transform样式中
+  const contentStyle = {
+    transform: `translate3d(${canvasState.offsetX}px, ${canvasState.offsetY}px, 0) scale(${canvasState.scale})`,
   };
 
   return (
@@ -167,30 +201,35 @@ const InfiniteCanvas: React.FC = () => {
       {/* 控制工具栏 */}
       <div className="canvas-toolbar">
         <Space>
-          <Tooltip title="放大画布">
+          <Tooltip title="放大画布" placement="bottom">
             <Button
               icon={<ZoomInOutlined />}
               onClick={handleZoomIn}
-              disabled={canvasState.scale >= 3}
-            >
-              放大
-            </Button>
+              disabled={canvasState.scale >= 2}
+              type="text"
+              shape="circle"
+            />
           </Tooltip>
-          <Tooltip title="缩小画布">
+          <Tooltip title="缩小画布" placement="bottom">
             <Button
               icon={<ZoomOutOutlined />}
               onClick={handleZoomOut}
-              disabled={canvasState.scale <= 0.2}
-            >
-              缩小
-            </Button>
+              disabled={canvasState.scale <= 0.3}
+              type="text"
+              shape="circle"
+            />
           </Tooltip>
-          <Tooltip title="重置画布位置和缩放">
-            <Button icon={<RedoOutlined />} onClick={handleReset}>
-              重置
-            </Button>
+          <Tooltip title="重置画布位置和缩放" placement="bottom">
+            <Button
+              icon={<RedoOutlined />}
+              onClick={handleReset}
+              type="text"
+              shape="circle"
+            />
           </Tooltip>
-          <span className="zoom-indicator">
+          <span
+            className={`zoom-indicator ${zoomAnimating ? "zoom-change" : ""}`}
+          >
             {Math.round(canvasState.scale * 100)}%
           </span>
         </Space>
@@ -200,17 +239,18 @@ const InfiniteCanvas: React.FC = () => {
       <div
         ref={canvasRef}
         className="infinite-canvas"
-        style={gridStyle}
         onMouseDown={handleMouseDown}
       >
-        <div
-          className="canvas-content"
-          style={{
-            transform: `translate(${canvasState.offsetX}px, ${canvasState.offsetY}px) scale(${canvasState.scale})`,
-          }}
-        >
+        {/* 网格背景 - 分层渲染以获得更好的视觉效果 */}
+        <div className="grid-light" style={smallGridStyle}></div>
+        <div className="grid-light" style={largeGridStyle}></div>
+
+        <div className="canvas-content" style={contentStyle}>
           {/* 画布内容区域 - 可以在这里添加你的内容 */}
         </div>
+
+        {/* 添加内阴影效果增强立体感 */}
+        <div className="canvas-shadow"></div>
       </div>
     </div>
   );

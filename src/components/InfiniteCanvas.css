@@ -3,25 +3,34 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background-color: #f8fafc; /* 更柔和的背景色 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 .canvas-toolbar {
-  position: absolute;
-  top: 20px;
-  left: 20px;
+  position: fixed; /* 相对于视口定位 */
+  top: 20px; /* 距离顶部一段距离 */
+  left: 50%; /* 水平居中 */
+  transform: translateX(-50%); /* 精确水平居中 */
   z-index: 100;
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 24px; /* 调整内边距以适应药丸形状 */
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50px; /* 创建药丸形状 */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
+  display: flex; /* 用于内部元素对齐 */
+  align-items: center; /* 垂直对齐内部元素 */
 }
 
 .zoom-indicator {
   font-size: 14px;
-  color: #666;
-  font-weight: 500;
-  margin-left: 8px;
+  color: #333;
+  font-weight: 600;
+  margin-left: 12px;
+  padding: 3px 8px;
+  background-color: #f3f4f6;
+  border-radius: 6px;
 }
 
 .infinite-canvas {
@@ -29,7 +38,8 @@
   height: 100%;
   cursor: grab;
   position: relative;
-  background-color: white;
+  background-color: #fafcff;
+  transition: background-color 0.3s ease;
 }
 
 .infinite-canvas:active {
@@ -41,6 +51,69 @@
   height: 100%;
   transform-origin: 0 0;
   position: relative;
+  will-change: transform; /* 优化性能 */
+}
+
+/* 网格自定义样式 */
+.grid-light {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* 添加轴线，显示中心点 */
+.canvas-axis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.canvas-axis::before,
+.canvas-axis::after {
+  content: "";
+  position: absolute;
+  background-color: rgba(99, 102, 241, 0.1);
+  z-index: 2;
+}
+
+.canvas-axis::before {
+  width: 2px;
+  height: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.canvas-axis::after {
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 添加画布阴影效果 */
+.canvas-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow: inset 0 0 40px rgba(51, 65, 85, 0.04);
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 2px;
+}
+
+/* 添加过渡效果，但注意避免对频繁变化的属性使用 */
+.canvas-toolbar button {
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 /* 禁用文本选择 */
@@ -59,4 +132,44 @@
 .infinite-canvas {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* 工具栏按钮美化 */
+.canvas-toolbar .ant-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-toolbar .ant-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1677ff;
+}
+
+.canvas-toolbar .ant-btn:active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.canvas-toolbar .ant-btn[disabled] {
+  color: rgba(0, 0, 0, 0.25);
+  background-color: transparent;
+}
+
+/* 缩放指示器呼吸效果 */
+@keyframes subtle-pulse {
+  0% {
+    background-color: #f3f4f6;
+  }
+  50% {
+    background-color: #eef1f5;
+  }
+  100% {
+    background-color: #f3f4f6;
+  }
+}
+
+.zoom-change .zoom-indicator {
+  animation: subtle-pulse 1.5s ease;
 }
