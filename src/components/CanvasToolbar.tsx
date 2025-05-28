@@ -29,7 +29,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     return (
       <div className="canvas-toolbar">
         <Space>
-          <Tooltip title="放大画布" placement="bottom">
+          <Tooltip title="放大画布 (Ctrl/⌘ +)" placement="bottom">
             <Button
               icon={<ZoomInOutlined />}
               onClick={onZoomIn}
@@ -38,7 +38,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
-          <Tooltip title="缩小画布" placement="bottom">
+          <Tooltip title="缩小画布 (Ctrl/⌘ -)" placement="bottom">
             <Button
               icon={<ZoomOutOutlined />}
               onClick={onZoomOut}
@@ -47,7 +47,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
-          <Tooltip title="重置画布位置和缩放" placement="bottom">
+          <Tooltip title="重置画布位置和缩放 (Ctrl/⌘ 0)" placement="bottom">
             <Button
               icon={<RedoOutlined />}
               onClick={onReset}
@@ -61,6 +61,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
             {Math.round(scale * 100)}%
           </span>
         </Space>
+        {/* <div className="canvas-tooltip-help">拖拽移动 • 滚轮缩放</div> */}
       </div>
     );
   }

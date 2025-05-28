@@ -92,11 +92,16 @@ const InfiniteCanvas: React.FC = () => {
         (e: WheelEvent) => {
           e.preventDefault();
 
+          // 优化：使用变量缓存频繁访问的值
+          const currentScale = canvasState.scale;
           const delta = e.deltaY > 0 ? 0.9 : 1.1;
           const newScale = Math.min(
-            Math.max(canvasState.scale * delta, CANVAS_CONSTANTS.MIN_SCALE),
+            Math.max(currentScale * delta, CANVAS_CONSTANTS.MIN_SCALE),
             CANVAS_CONSTANTS.MAX_SCALE
           );
+
+          // 如果缩放比例没有变化，直接返回
+          if (newScale === currentScale) return;
 
           if (canvasRef.current) {
             const rect = canvasRef.current.getBoundingClientRect();
@@ -170,7 +175,14 @@ const InfiniteCanvas: React.FC = () => {
         );
       }
     },
-    [dragState]
+    // 仅当拖拽状态相关值变化时才更新函数
+    [
+      dragState.isDragging,
+      dragState.startX,
+      dragState.startY,
+      dragState.startOffsetX,
+      dragState.startOffsetY,
+    ]
   );
 
   // 优化后的鼠标移动处理函数
@@ -208,10 +220,47 @@ const InfiniteCanvas: React.FC = () => {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
 
+      // 添加键盘快捷键支持
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // 仅当没有输入框获得焦点时才处理快捷键
+        if (
+          !(
+            e.target instanceof HTMLInputElement ||
+            e.target instanceof HTMLTextAreaElement
+          )
+        ) {
+          switch (e.key) {
+            case "+":
+            case "=": // 通常 = 和 + 在同一个键位
+              if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                handleZoomIn();
+              }
+              break;
+            case "-":
+              if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                handleZoomOut();
+              }
+              break;
+            case "0":
+              if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                handleReset();
+              }
+              break;
+            // 可以添加更多快捷键
+          }
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+
       return () => {
         canvas.removeEventListener("wheel", handleWheelThrottled);
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("keydown", handleKeyDown);
 
         // 清理动画帧
         if (requestRef.current) {
@@ -220,7 +269,14 @@ const InfiniteCanvas: React.FC = () => {
         }
       };
     }
-  }, [handleWheelThrottled, handleMouseMove, handleMouseUp]);
+  }, [
+    handleWheelThrottled,
+    handleMouseMove,
+    handleMouseUp,
+    handleZoomIn,
+    handleZoomOut,
+    handleReset,
+  ]);
 
   // 计算一些性能关键参数，虽然我们已经移至CSS变量，但保留此逻辑以备未来使用
   // 并且可以用于某些需要JavaScript直接访问这些值的场景
@@ -245,41 +301,30 @@ const InfiniteCanvas: React.FC = () => {
           ) + 1
         : 0,
     };
-  }, [canvasState.scale]);
-
-  // 更新CSS变量 - 此处将JS状态同步到CSS变量
+  }, [canvasState.scale]); // 更新CSS变量 - 此处将JS状态同步到CSS变量
   useEffect(() => {
     if (canvasRef.current) {
       const container = canvasRef.current.parentElement;
       if (container) {
+        // 优化：批量更新样式属性，减少重排
+        const style = container.style;
+        const { scale, offsetX, offsetY } = canvasState;
+
         // 更新主要变换变量
-        container.style.setProperty("--canvas-scale", `${canvasState.scale}`);
+        style.setProperty("--canvas-scale", `${scale}`);
 
         // 计算网格位置偏移，使其能够正确对齐
-        const smallGridOffset = {
-          x:
-            (canvasState.offsetX %
-              (GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale)) +
-            "px",
-          y:
-            (canvasState.offsetY %
-              (GRID_CONSTANTS.SMALL_GRID_SIZE * canvasState.scale)) +
-            "px",
-        };
+        const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE * scale;
+        const smallGridOffsetX = (offsetX % smallGridSize) + "px";
+        const smallGridOffsetY = (offsetY % smallGridSize) + "px";
 
         // 设置基础偏移变量 - 对于简化版本，我们使用相同的偏移值
-        container.style.setProperty("--canvas-offset-x", smallGridOffset.x);
-        container.style.setProperty("--canvas-offset-y", smallGridOffset.y);
+        style.setProperty("--canvas-offset-x", smallGridOffsetX);
+        style.setProperty("--canvas-offset-y", smallGridOffsetY);
 
         // 设置内容偏移变量 (这是新增的，用于内容元素的变换)
-        container.style.setProperty(
-          "--content-offset-x",
-          `${canvasState.offsetX}px`
-        );
-        container.style.setProperty(
-          "--content-offset-y",
-          `${canvasState.offsetY}px`
-        );
+        style.setProperty("--content-offset-x", `${offsetX}px`);
+        style.setProperty("--content-offset-y", `${offsetY}px`);
 
         // 使用计算好的网格大小(仅做示例，实际上我们使用常量)
         console.log(
@@ -327,6 +372,7 @@ const InfiniteCanvas: React.FC = () => {
         ref={canvasRef}
         className="infinite-canvas"
         onMouseDown={handleMouseDown}
+        onDoubleClick={handleReset} // 添加双击重置功能
       >
         {/* 使用拆分出的网格组件 - 不再传递样式参数，而是使用CSS变量 */}
         <CanvasGrid showAxis={false} />

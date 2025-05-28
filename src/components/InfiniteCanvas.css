@@ -35,10 +35,19 @@
   backdrop-filter: blur(5px);
   display: flex; /* 用于内部元素对齐 */
   align-items: center; /* 垂直对齐内部元素 */
+  flex-direction: column; /* 新增：允许提示文本在下方 */
 
   /* 性能优化 */
   will-change: transform;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 新增：小提示文本样式 */
+.canvas-tooltip-help {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 6px;
+  white-space: nowrap;
 }
 
 .zoom-indicator {
@@ -63,6 +72,10 @@
   will-change: transform;
   backface-visibility: hidden;
   transform-style: preserve-3d;
+  /* 添加 GPU 加速 */
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  -webkit-backface-visibility: hidden;
 }
 
 .infinite-canvas:active {
