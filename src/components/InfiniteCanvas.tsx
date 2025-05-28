@@ -329,7 +329,7 @@ const InfiniteCanvas: React.FC = () => {
         onMouseDown={handleMouseDown}
       >
         {/* 使用拆分出的网格组件 - 不再传递样式参数，而是使用CSS变量 */}
-        <CanvasGrid showAxis={true} />
+        <CanvasGrid showAxis={false} />
 
         {/* 
           内容区域 - 使用CSS变量控制变换，不再需要内联样式 
