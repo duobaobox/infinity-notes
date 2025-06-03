@@ -6,7 +6,9 @@ export interface StickyNote {
   width: number;
   height: number;
   content: string;
+  title: string; // 新增：便签标题
   isEditing: boolean;
+  isTitleEditing: boolean; // 新增：标题编辑状态
   color: "yellow" | "blue" | "green" | "pink" | "purple";
   isNew: boolean;
   zIndex: number; // 新增：Z 索引用于层级管理

@@ -24,22 +24,41 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     height: 0,
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
 
-  // 开始编辑
+  // 开始编辑内容
   const startEditing = useCallback(() => {
     onUpdate(note.id, { isEditing: true });
   }, [note.id, onUpdate]);
 
-  // 停止编辑
+  // 停止编辑内容
   const stopEditing = useCallback(() => {
     onUpdate(note.id, { isEditing: false, updatedAt: new Date() });
+  }, [note.id, onUpdate]);
+
+  // 开始编辑标题
+  const startTitleEditing = useCallback(() => {
+    onUpdate(note.id, { isTitleEditing: true });
+  }, [note.id, onUpdate]);
+
+  // 停止编辑标题
+  const stopTitleEditing = useCallback(() => {
+    onUpdate(note.id, { isTitleEditing: false, updatedAt: new Date() });
   }, [note.id, onUpdate]);
 
   // 内容变化处理
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onUpdate(note.id, { content: e.target.value });
+    },
+    [note.id, onUpdate]
+  );
+
+  // 标题变化处理
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onUpdate(note.id, { title: e.target.value });
     },
     [note.id, onUpdate]
   );
@@ -56,7 +75,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 鼠标按下开始拖拽
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (note.isEditing) return;
+      if (note.isEditing || note.isTitleEditing) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -77,6 +96,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     },
     [
       note.isEditing,
+      note.isTitleEditing,
       note.id,
       note.x,
       note.y,
@@ -159,8 +179,19 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [note.isEditing, note.content]);
 
-  // 处理键盘事件
-  const handleKeyDown = useCallback(
+  // 自动聚焦到标题输入框
+  useEffect(() => {
+    if (note.isTitleEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.setSelectionRange(
+        note.title.length,
+        note.title.length
+      );
+    }
+  }, [note.isTitleEditing, note.title]);
+
+  // 处理内容编辑键盘事件
+  const handleContentKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
         stopEditing();
@@ -173,13 +204,51 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [stopEditing]
   );
 
+  // 处理标题编辑键盘事件
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        stopTitleEditing();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        stopTitleEditing();
+      }
+    },
+    [stopTitleEditing]
+  );
+
   // 防止文本框失焦时意外保存空内容
-  const handleBlur = useCallback(() => {
+  const handleContentBlur = useCallback(() => {
     // 延迟一点时间，让用户有机会点击其他按钮
     setTimeout(() => {
       stopEditing();
     }, 150);
   }, [stopEditing]);
+
+  // 标题失焦时停止编辑
+  const handleTitleBlur = useCallback(() => {
+    setTimeout(() => {
+      stopTitleEditing();
+    }, 150);
+  }, [stopTitleEditing]);
+
+  // 计算背景色透明度 - 根据文本长度
+  const getContentBackgroundOpacity = () => {
+    // 返回透明度0，即完全透明
+    return 0;
+  };
+
+  // 计算标题背景宽度 - 根据标题文本长度动态调整
+  const getTitleBackgroundWidth = () => {
+    const titleText = note.title || "便签";
+    // 每个字符平均宽度约为10px（根据字体大小和字符类型调整）
+    // 中文字符和英文字符宽度不同，这里取一个估计值
+    const avgCharWidth = 10;
+    // 添加一些额外的padding
+    const padding = 10;
+    // 返回估计宽度，但限制最小宽度为60px
+    return Math.max(60, titleText.length * avgCharWidth + padding) + "px";
+  };
 
   return (
     <div
@@ -197,21 +266,48 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       onMouseDown={handleMouseDown}
     >
       <div className="sticky-note-header">
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
+          {note.isTitleEditing ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={note.title}
+              onChange={handleTitleChange}
+              onKeyDown={handleTitleKeyDown}
+              onBlur={handleTitleBlur}
+              className="sticky-note-title-input"
+              placeholder="便签标题"
+            />
+          ) : (
+            <h3
+              className="sticky-note-title"
+              onDoubleClick={startTitleEditing}
+              title="双击编辑标题"
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
+                width: getTitleBackgroundWidth(),
+                display: "inline-block",
+              }}
+            >
+              {note.title || "便签"}
+            </h3>
+          )}
+        </div>
         <div className="sticky-note-controls">
           {/* 编辑按钮已移除 */}
-          {note.isEditing && (
-            <button className="save-btn" onClick={stopEditing} title="保存">
-              ✅
-            </button>
-          )}
           <Button
             icon={<DeleteOutlined />}
             onClick={handleDelete}
             title="删除"
             type="text"
-            danger
+            danger={false} // 移除危险按钮样式
             size="small"
-            style={{ color: "#ff4d4f" }} // 确保图标颜色为红色
+            style={{
+              color: "#666", // 默认灰色图标
+              backgroundColor: "rgba(0, 0, 0, 0.06)", // 与标题背景色一致
+              borderRadius: "4px",
+            }}
+            className="delete-button" // 添加自定义类名以便添加悬浮样式
           />
         </div>
       </div>
@@ -222,19 +318,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             ref={textareaRef}
             value={note.content}
             onChange={handleContentChange}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑&#10;• Ctrl/⌘ + Enter 保存"
+            onKeyDown={handleContentKeyDown}
+            onBlur={handleContentBlur}
+            placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑（会自动保存）&#10;• Ctrl/⌘ + Enter 保存"
             className="sticky-note-textarea"
           />
         ) : (
-          <div className="sticky-note-preview" onDoubleClick={startEditing}>
+          <div
+            className="sticky-note-preview"
+            onDoubleClick={startEditing}
+            style={{
+              backgroundColor: `rgba(255, 255, 255, ${getContentBackgroundOpacity()})`,
+            }}
+          >
             {note.content.trim() ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {note.content}
               </ReactMarkdown>
             ) : (
-              <div className="empty-note">双击编辑便签</div>
+              <div className="empty-note">双击开始编辑内容</div>
             )}
           </div>
         )}

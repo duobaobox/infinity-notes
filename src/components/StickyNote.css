@@ -1,8 +1,8 @@
 .sticky-note {
   position: absolute;
-  border: 1px solid;
+  border: none; /* 去掉边线 */
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 20px rgba(0, 0, 0, 0.06); /* 更柔和的双层阴影 */
   user-select: none;
   transform-origin: top left;
   min-width: 200px;
@@ -11,48 +11,52 @@
   flex-direction: column;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   font-size: 14px; /* 基础字体大小 */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
+    sans-serif; /* 跨平台优质字体栈 */
+
+  /* 字体渲染优化 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 /* 便签颜色变体 */
 .sticky-note.color-yellow {
   background: #fef3c7;
-  border-color: #f59e0b;
 }
 
 .sticky-note.color-blue {
   background: #dbeafe;
-  border-color: #3b82f6;
 }
 
 .sticky-note.color-green {
   background: #d1fae5;
-  border-color: #10b981;
 }
 
 .sticky-note.color-pink {
   background: #fce7f3;
-  border-color: #ec4899;
 }
 
 .sticky-note.color-purple {
   background: #e9d5ff;
-  border-color: #8b5cf6;
 }
 
 .sticky-note:hover {
-  box-shadow: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08); /* 悬停时增强阴影 */
 }
 
 .sticky-note.dragging {
   cursor: grabbing;
   z-index: 1000;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2), 0 16px 40px rgba(0, 0, 0, 0.15); /* 拖拽时更强烈的阴影 */
   /* transform: rotate(2deg); */ /* 拖拽时轻微旋转效果 */
 }
 
 .sticky-note.editing {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15),
+    0 8px 32px rgba(59, 130, 246, 0.1), 0 0 0 2px rgba(59, 130, 246, 0.2); /* 编辑时蓝色阴影+焦点环 */
   /* transform: scale(1.02); */ /* 编辑时轻微放大 */
 }
 
@@ -77,27 +81,54 @@
 
 .sticky-note-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.03);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  /* 移除独立背景色 */
+  /* background: rgba(0, 0, 0, 0.02); */
+  /* 移除分割线 */
+  /* border-bottom: 1px solid rgba(0, 0, 0, 0.08); */
   border-radius: 8px 8px 0 0;
+  /* 更新flex布局 */
+  flex-wrap: nowrap;
 }
+
+.sticky-note-title {
+  margin: 0;
+  font-size: 16px; /* 增大字号 */
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  /* 不再使用flex: 1 */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* 移除文本居中 */
+}
+
+/* 移除悬停效果，因为背景色现在是永久显示的 */
+/* .sticky-note-title:hover {
+  background: rgba(0, 0, 0, 0.05);
+} */
 
 .sticky-note-controls {
   display: flex;
   gap: 4px;
-  opacity: 0;
+  opacity: 0; /* 恢复透明度控制，默认隐藏 */
   transition: opacity 0.2s ease;
 }
 
+/* 恢复鼠标悬浮才显示控件的规则 */
 .sticky-note:hover .sticky-note-controls {
   opacity: 1;
 }
 
 .sticky-note-controls button {
-  background: none;
+  background: rgba(0, 0, 0, 0.06); /* 与标题背景色一致 */
   border: none;
   cursor: pointer;
   font-size: 14px;
@@ -107,12 +138,17 @@
 }
 
 .sticky-note-controls button:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.1); /* 悬浮时稍微深一点 */
+}
+
+.sticky-note-controls button.delete-button:hover {
+  color: #ff4d4f !important; /* 悬浮时图标变为红色 */
+  background: rgba(255, 77, 79, 0.1); /* 悬浮时背景带有淡红色 */
 }
 
 .sticky-note-content {
   flex: 1;
-  padding: 12px 0 12px 12px;
+  padding: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -125,7 +161,9 @@
   background: transparent;
   resize: none;
   outline: none;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
+    sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: #374151;
@@ -139,7 +177,9 @@
   flex: 1;
   overflow: auto;
   cursor: text;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
+    sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: #374151;
@@ -151,13 +191,12 @@
 }
 
 .empty-note {
-  color: #9ca3af;
-  font-style: italic;
+  color: #374151;
+  font-style: normal;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
   height: 100%;
-  padding: 8px;
 }
 
 .resize-handle {
@@ -239,7 +278,8 @@
   background: rgba(0, 0, 0, 0.1);
   padding: 2px 4px;
   border-radius: 3px;
-  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-family: "SF Mono", "Monaco", "Menlo", "Roboto Mono", "Consolas",
+    "Liberation Mono", "Courier New", monospace;
   font-size: 12px;
 }
 
@@ -328,4 +368,25 @@
   scrollbar-width: thin;
   /* 让滚动条颜色更淡，背景透明 */
   scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+.sticky-note-title-input {
+  margin: 0;
+  font-size: 16px; /* 增大字号，与标题一致 */
+  font-weight: 600;
+  color: #374151;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  outline: none;
+  font-family: inherit;
+  /* 移除文本居中 */
+  width: auto;
+  min-width: 100px;
+}
+
+.sticky-note-title-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
 }

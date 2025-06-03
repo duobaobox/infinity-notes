@@ -48,6 +48,8 @@ const InfiniteCanvas: React.FC = () => {
         const notes = JSON.parse(savedNotes).map(
           (note: any, index: number) => ({
             ...note,
+            title: note.title || "便签", // 兼容没有title的旧数据
+            isTitleEditing: note.isTitleEditing || false, // 兼容没有isTitleEditing的旧数据
             isNew: false, // 从存储加载的便签不是新的
             zIndex: note.zIndex || index, // 兼容旧数据
             createdAt: new Date(note.createdAt),
@@ -75,18 +77,21 @@ const InfiniteCanvas: React.FC = () => {
 - 可拖拽移动位置
 - 可调整大小
 - 双击编辑内容
+- 双击标题编辑标题
 - 自动保存到本地
 
 ### 快捷操作：
-- 双击空白处创建新便签
+- 点击工具栏按钮创建新便签
 - \`Esc\` 退出编辑
 - \`Ctrl/⌘ + Enter\` 保存
 
 > 💡 试试编辑这个便签或创建新的便签吧！`,
+        title: "欢迎便签",
         color: "yellow",
         isNew: false,
         zIndex: 1,
         isEditing: false,
+        isTitleEditing: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -160,10 +165,12 @@ const InfiniteCanvas: React.FC = () => {
           width: 250,
           height: 200,
           content: "",
+          title: "新便签",
           color: randomColor,
           isNew: true,
           zIndex: maxZ + 1,
           isEditing: true,
+          isTitleEditing: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
