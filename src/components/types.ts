@@ -21,4 +21,5 @@ export interface StickyNoteProps {
   onDelete: (id: string) => void;
   onBringToFront: (id: string) => void; // 新增：置顶功能
   canvasScale: number;
+  canvasOffset: { x: number; y: number }; // 新增：画布偏移量
 }

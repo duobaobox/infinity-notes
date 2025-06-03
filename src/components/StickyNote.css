@@ -40,7 +40,7 @@
 }
 
 .sticky-note:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 .sticky-note.dragging {
@@ -112,7 +112,7 @@
 
 .sticky-note-content {
   flex: 1;
-  padding: 12px;
+  padding: 12px 0 12px 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -146,7 +146,7 @@
 }
 
 .sticky-note-preview:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: none;
   border-radius: 4px;
 }
 
@@ -154,9 +154,10 @@
   color: #9ca3af;
   font-style: italic;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   height: 100%;
+  padding: 8px;
 }
 
 .resize-handle {
@@ -318,4 +319,13 @@
   .sticky-note-preview h3 {
     font-size: 13px;
   }
+}
+
+/* 简化的滚动条样式 - 基于系统默认 */
+.sticky-note-preview,
+.sticky-note-textarea {
+  /* 使用系统默认滚动条，但设置为细窄样式 */
+  scrollbar-width: thin;
+  /* 让滚动条颜色更淡，背景透明 */
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }

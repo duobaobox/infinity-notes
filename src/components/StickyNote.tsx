@@ -3,6 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { StickyNoteProps } from "./types";
 import "./StickyNote.css";
+import { Button } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -10,6 +12,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onDelete,
   onBringToFront,
   canvasScale,
+  canvasOffset, // 新增：画布偏移量
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -61,16 +64,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 将便签置顶
       onBringToFront(note.id);
 
-      const rect = noteRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-        setIsDragging(true);
-      }
+      // 计算鼠标在画布坐标系中的位置
+      const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
+      const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
+
+      // 计算鼠标相对于便签的偏移量
+      setDragOffset({
+        x: canvasX - note.x,
+        y: canvasY - note.y,
+      });
+      setIsDragging(true);
     },
-    [note.isEditing, note.id, onBringToFront]
+    [
+      note.isEditing,
+      note.id,
+      note.x,
+      note.y,
+      onBringToFront,
+      canvasScale,
+      canvasOffset,
+    ]
   );
 
   // 开始调整大小
@@ -94,8 +107,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        const newX = (e.clientX - dragOffset.x) / canvasScale;
-        const newY = (e.clientY - dragOffset.y) / canvasScale;
+        // 将屏幕坐标转换为画布逻辑坐标
+        const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
+        const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
+        const newX = canvasX - dragOffset.x;
+        const newY = canvasY - dragOffset.y;
         onUpdate(note.id, { x: newX, y: newY });
       } else if (isResizing) {
         const deltaX = e.clientX / canvasScale - resizeStart.x;
@@ -128,6 +144,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     note.id,
     onUpdate,
     canvasScale,
+    canvasOffset.x,
+    canvasOffset.y,
   ]);
 
   // 自动聚焦到文本框
@@ -174,24 +192,27 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         top: note.y,
         width: note.width,
         height: note.height,
+        zIndex: note.zIndex,
       }}
       onMouseDown={handleMouseDown}
     >
       <div className="sticky-note-header">
         <div className="sticky-note-controls">
-          {!note.isEditing && (
-            <button className="edit-btn" onClick={startEditing} title="编辑">
-              ✏️
-            </button>
-          )}
+          {/* 编辑按钮已移除 */}
           {note.isEditing && (
             <button className="save-btn" onClick={stopEditing} title="保存">
               ✅
             </button>
           )}
-          <button className="delete-btn" onClick={handleDelete} title="删除">
-            🗑️
-          </button>
+          <Button
+            icon={<DeleteOutlined />}
+            onClick={handleDelete}
+            title="删除"
+            type="text"
+            danger
+            size="small"
+            style={{ color: "#ff4d4f" }} // 确保图标颜色为红色
+          />
         </div>
       </div>
 

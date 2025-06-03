@@ -154,8 +154,9 @@ const InfiniteCanvas: React.FC = () => {
           prev.length > 0 ? Math.max(...prev.map((note) => note.zIndex)) : 0;
         const newNote: StickyNoteType = {
           id: `note-${Date.now()}-${Math.random()}`,
-          x: (x - canvasState.offsetX) / canvasState.scale,
-          y: (y - canvasState.offsetY) / canvasState.scale,
+          // 直接使用传入的逻辑坐标，不需要再次转换
+          x: x,
+          y: y,
           width: 250,
           height: 200,
           content: "",
@@ -175,12 +176,7 @@ const InfiniteCanvas: React.FC = () => {
         return [...prev, newNote];
       });
     },
-    [
-      canvasState.offsetX,
-      canvasState.offsetY,
-      canvasState.scale,
-      updateStickyNote,
-    ]
+    [updateStickyNote]
   );
 
   // 创建新便签 - 在画布中心位置
@@ -328,15 +324,23 @@ const InfiniteCanvas: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      // 计算在画布坐标系中的位置
+      // 计算在画布逻辑坐标系中的位置
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
-        const x = (e.clientX - rect.left) / canvasState.scale;
-        const y = (e.clientY - rect.top) / canvasState.scale;
+        // 转换屏幕坐标为画布逻辑坐标
+        const x =
+          (e.clientX - rect.left - canvasState.offsetX) / canvasState.scale;
+        const y =
+          (e.clientY - rect.top - canvasState.offsetY) / canvasState.scale;
         createStickyNote(x, y);
       }
     },
-    [canvasState.scale, createStickyNote]
+    [
+      canvasState.offsetX,
+      canvasState.offsetY,
+      canvasState.scale,
+      createStickyNote,
+    ]
   );
 
   // 使用 requestAnimationFrame 优化拖拽
@@ -570,20 +574,28 @@ const InfiniteCanvas: React.FC = () => {
           注意：当有特殊需求时可以使用内联样式覆盖CSS变量
         */}
         <div className="canvas-content">
-          {/* 便签组件 */}
-          {stickyNotes
-            .sort((a, b) => a.zIndex - b.zIndex) // 按 Z 索引排序
-            .map((note) => (
-              <StickyNote
-                key={note.id}
-                note={note}
-                onUpdate={updateStickyNote}
-                onDelete={deleteStickyNote}
-                onBringToFront={bringNoteToFront}
-                canvasScale={canvasState.scale}
-              />
-            ))}
+          {/* 便签组件 - 将便签放在独立的容器中，不受canvas-content变换影响 */}
         </div>
+      </div>
+
+      {/* 便签容器 - 独立于画布变换 */}
+      <div className="sticky-notes-container">
+        {stickyNotes
+          .sort((a, b) => a.zIndex - b.zIndex) // 按 Z 索引排序
+          .map((note) => (
+            <StickyNote
+              key={note.id}
+              note={note}
+              onUpdate={updateStickyNote}
+              onDelete={deleteStickyNote}
+              onBringToFront={bringNoteToFront}
+              canvasScale={canvasState.scale}
+              canvasOffset={{
+                x: canvasState.offsetX,
+                y: canvasState.offsetY,
+              }}
+            />
+          ))}
       </div>
     </div>
   );
