@@ -4,6 +4,7 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
   RedoOutlined,
+  FileAddOutlined,
 } from "@ant-design/icons";
 
 interface CanvasToolbarProps {
@@ -12,6 +13,7 @@ interface CanvasToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
+  onCreateNote: () => void; // 新增：创建便签功能
   minScale: number;
   maxScale: number;
 }
@@ -23,12 +25,21 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     onZoomIn,
     onZoomOut,
     onReset,
+    onCreateNote,
     minScale,
     maxScale,
   }) => {
     return (
       <div className="canvas-toolbar">
         <Space>
+          <Tooltip title="创建新便签" placement="bottom">
+            <Button
+              icon={<FileAddOutlined />}
+              onClick={onCreateNote}
+              type="primary"
+              shape="circle"
+            />
+          </Tooltip>
           <Tooltip title="放大画布 (Ctrl/⌘ +)" placement="bottom">
             <Button
               icon={<ZoomInOutlined />}
@@ -61,7 +72,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
             {Math.round(scale * 100)}%
           </span>
         </Space>
-        {/* <div className="canvas-tooltip-help">拖拽移动 • 滚轮缩放</div> */}
+        <div className="canvas-tooltip-help">拖拽移动 • 滚轮缩放</div>
       </div>
     );
   }

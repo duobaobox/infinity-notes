@@ -8,7 +8,9 @@ import React, {
 import { throttle } from "lodash";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasGrid from "./CanvasGrid";
+import StickyNote from "./StickyNote";
 import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
+import type { StickyNote as StickyNoteType } from "./types";
 import "./InfiniteCanvas.css";
 
 interface CanvasState {
@@ -35,6 +37,73 @@ const InfiniteCanvas: React.FC = () => {
   });
   const [zoomAnimating, setZoomAnimating] = useState(false);
 
+  // 便签状态管理
+  const [stickyNotes, setStickyNotes] = useState<StickyNoteType[]>([]);
+
+  // 从本地存储加载便签
+  useEffect(() => {
+    const savedNotes = localStorage.getItem("infiniteCanvas_stickyNotes");
+    if (savedNotes) {
+      try {
+        const notes = JSON.parse(savedNotes).map(
+          (note: any, index: number) => ({
+            ...note,
+            isNew: false, // 从存储加载的便签不是新的
+            zIndex: note.zIndex || index, // 兼容旧数据
+            createdAt: new Date(note.createdAt),
+            updatedAt: new Date(note.updatedAt),
+          })
+        );
+        setStickyNotes(notes);
+      } catch (error) {
+        console.error("Failed to load sticky notes from localStorage:", error);
+      }
+    } else {
+      // 如果没有保存的便签，创建一个示例便签
+      const exampleNote: StickyNoteType = {
+        id: "example-note",
+        x: 100,
+        y: 100,
+        width: 300,
+        height: 250,
+        content: `# 欢迎使用便签功能！ 📝
+
+这是一个支持 **Markdown** 的便签。
+
+## 功能特性：
+- 支持 Markdown 语法
+- 可拖拽移动位置
+- 可调整大小
+- 双击编辑内容
+- 自动保存到本地
+
+### 快捷操作：
+- 双击空白处创建新便签
+- \`Esc\` 退出编辑
+- \`Ctrl/⌘ + Enter\` 保存
+
+> 💡 试试编辑这个便签或创建新的便签吧！`,
+        color: "yellow",
+        isNew: false,
+        zIndex: 1,
+        isEditing: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      setStickyNotes([exampleNote]);
+    }
+  }, []);
+
+  // 保存便签到本地存储
+  useEffect(() => {
+    if (stickyNotes.length > 0) {
+      localStorage.setItem(
+        "infiniteCanvas_stickyNotes",
+        JSON.stringify(stickyNotes)
+      );
+    }
+  }, [stickyNotes]);
+
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     startX: 0,
@@ -42,6 +111,89 @@ const InfiniteCanvas: React.FC = () => {
     startOffsetX: 0,
     startOffsetY: 0,
   });
+
+  // 便签置顶功能
+  const bringNoteToFront = useCallback((id: string) => {
+    setStickyNotes((prev) => {
+      const maxZ = Math.max(...prev.map((note) => note.zIndex));
+      return prev.map((note) =>
+        note.id === id ? { ...note, zIndex: maxZ + 1 } : note
+      );
+    });
+  }, []);
+
+  // 更新便签
+  const updateStickyNote = useCallback(
+    (id: string, updates: Partial<StickyNoteType>) => {
+      setStickyNotes((prev) =>
+        prev.map((note) => (note.id === id ? { ...note, ...updates } : note))
+      );
+    },
+    []
+  );
+
+  // 删除便签
+  const deleteStickyNote = useCallback((id: string) => {
+    setStickyNotes((prev) => prev.filter((note) => note.id !== id));
+  }, []);
+
+  // 创建新便签 - 原有的双击功能
+  const createStickyNote = useCallback(
+    (x: number, y: number) => {
+      const colors: Array<StickyNoteType["color"]> = [
+        "yellow",
+        "blue",
+        "green",
+        "pink",
+        "purple",
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+      setStickyNotes((prev) => {
+        const maxZ =
+          prev.length > 0 ? Math.max(...prev.map((note) => note.zIndex)) : 0;
+        const newNote: StickyNoteType = {
+          id: `note-${Date.now()}-${Math.random()}`,
+          x: (x - canvasState.offsetX) / canvasState.scale,
+          y: (y - canvasState.offsetY) / canvasState.scale,
+          width: 250,
+          height: 200,
+          content: "",
+          color: randomColor,
+          isNew: true,
+          zIndex: maxZ + 1,
+          isEditing: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // 500ms 后移除新建标记
+        setTimeout(() => {
+          updateStickyNote(newNote.id, { isNew: false });
+        }, 500);
+
+        return [...prev, newNote];
+      });
+    },
+    [
+      canvasState.offsetX,
+      canvasState.offsetY,
+      canvasState.scale,
+      updateStickyNote,
+    ]
+  );
+
+  // 创建新便签 - 在画布中心位置
+  const createStickyNoteAtCenter = useCallback(() => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      // 在画布中心创建便签
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      createStickyNote(centerX, centerY);
+    }
+  }, [createStickyNote]);
 
   // 触发缩放动画
   const triggerZoomAnimation = useCallback(() => {
@@ -146,6 +298,12 @@ const InfiniteCanvas: React.FC = () => {
   // 鼠标按下开始拖拽 - 使用React合成事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      // 检查是否点击在便签上，如果是则不处理画布拖拽
+      const target = e.target as HTMLElement;
+      if (target.closest(".sticky-note")) {
+        return;
+      }
+
       setDragState({
         isDragging: true,
         startX: e.clientX,
@@ -155,6 +313,30 @@ const InfiniteCanvas: React.FC = () => {
       });
     },
     [canvasState.offsetX, canvasState.offsetY]
+  );
+
+  // 处理双击创建便签
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      // 检查是否双击在便签上，如果是则不创建新便签
+      const target = e.target as HTMLElement;
+      if (target.closest(".sticky-note")) {
+        return;
+      }
+
+      // 阻止默认的画布重置行为
+      e.preventDefault();
+      e.stopPropagation();
+
+      // 计算在画布坐标系中的位置
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = (e.clientX - rect.left) / canvasState.scale;
+        const y = (e.clientY - rect.top) / canvasState.scale;
+        createStickyNote(x, y);
+      }
+    },
+    [canvasState.scale, createStickyNote]
   );
 
   // 使用 requestAnimationFrame 优化拖拽
@@ -248,6 +430,11 @@ const InfiniteCanvas: React.FC = () => {
                 e.preventDefault();
                 handleReset();
               }
+              break;
+            case "Delete":
+            case "Backspace":
+              // 删除选中的便签（这里需要实现选中状态）
+              // TODO: 实现便签选中状态
               break;
             // 可以添加更多快捷键
           }
@@ -363,6 +550,7 @@ const InfiniteCanvas: React.FC = () => {
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onReset={handleReset}
+        onCreateNote={createStickyNoteAtCenter}
         minScale={CANVAS_CONSTANTS.MIN_SCALE}
         maxScale={CANVAS_CONSTANTS.MAX_SCALE}
       />
@@ -372,7 +560,7 @@ const InfiniteCanvas: React.FC = () => {
         ref={canvasRef}
         className="infinite-canvas"
         onMouseDown={handleMouseDown}
-        onDoubleClick={handleReset} // 添加双击重置功能
+        onDoubleClick={handleDoubleClick}
       >
         {/* 使用拆分出的网格组件 - 不再传递样式参数，而是使用CSS变量 */}
         <CanvasGrid showAxis={false} />
@@ -382,7 +570,19 @@ const InfiniteCanvas: React.FC = () => {
           注意：当有特殊需求时可以使用内联样式覆盖CSS变量
         */}
         <div className="canvas-content">
-          {/* 画布内容区域 - 可以在这里添加你的内容 */}
+          {/* 便签组件 */}
+          {stickyNotes
+            .sort((a, b) => a.zIndex - b.zIndex) // 按 Z 索引排序
+            .map((note) => (
+              <StickyNote
+                key={note.id}
+                note={note}
+                onUpdate={updateStickyNote}
+                onDelete={deleteStickyNote}
+                onBringToFront={bringNoteToFront}
+                canvasScale={canvasState.scale}
+              />
+            ))}
         </div>
       </div>
     </div>

@@ -1,0 +1,357 @@
+.sticky-note {
+  position: absolute;
+  border: 1px solid;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  user-select: none;
+  transform-origin: top left;
+  min-width: 200px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  font-size: 14px; /* 基础字体大小 */
+}
+
+/* 便签颜色变体 */
+.sticky-note.color-yellow {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.sticky-note.color-blue {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.sticky-note.color-green {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.sticky-note.color-pink {
+  background: #fce7f3;
+  border-color: #ec4899;
+}
+
+.sticky-note.color-purple {
+  background: #e9d5ff;
+  border-color: #8b5cf6;
+}
+
+.sticky-note:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.sticky-note.dragging {
+  cursor: grabbing;
+  z-index: 1000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  transform: rotate(2deg); /* 拖拽时轻微旋转效果 */
+}
+
+.sticky-note.editing {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  transform: scale(1.02); /* 编辑时轻微放大 */
+}
+
+.sticky-note.new {
+  animation: slideInBounce 0.5s ease-out;
+}
+
+@keyframes slideInBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(10deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.sticky-note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px 8px 0 0;
+}
+
+.color-selector {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sticky-note:hover .color-selector {
+  opacity: 1;
+}
+
+.color-btn {
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.color-btn:hover {
+  transform: scale(1.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.color-btn.active {
+  border-color: rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.sticky-note-controls {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sticky-note:hover .sticky-note-controls {
+  opacity: 1;
+}
+
+.sticky-note-controls button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.sticky-note-controls button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sticky-note-content {
+  flex: 1;
+  padding: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sticky-note-textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.sticky-note-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.sticky-note-preview {
+  flex: 1;
+  overflow: auto;
+  cursor: text;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.sticky-note-preview:hover {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+}
+
+.empty-note {
+  color: #9ca3af;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nw-resize;
+  background: linear-gradient(
+    -45deg,
+    transparent 0%,
+    transparent 40%,
+    #9ca3af 40%,
+    #9ca3af 60%,
+    transparent 60%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sticky-note:hover .resize-handle {
+  opacity: 0.6;
+}
+
+.resize-handle:hover {
+  opacity: 1;
+}
+
+/* Markdown 样式 */
+.sticky-note-preview h1,
+.sticky-note-preview h2,
+.sticky-note-preview h3,
+.sticky-note-preview h4,
+.sticky-note-preview h5,
+.sticky-note-preview h6 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.sticky-note-preview h1 {
+  font-size: 18px;
+}
+.sticky-note-preview h2 {
+  font-size: 16px;
+}
+.sticky-note-preview h3 {
+  font-size: 15px;
+}
+.sticky-note-preview h4 {
+  font-size: 14px;
+}
+.sticky-note-preview h5 {
+  font-size: 13px;
+}
+.sticky-note-preview h6 {
+  font-size: 12px;
+}
+
+.sticky-note-preview p {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.sticky-note-preview ul,
+.sticky-note-preview ol {
+  margin-top: 0;
+  margin-bottom: 8px;
+  padding-left: 20px;
+}
+
+.sticky-note-preview li {
+  margin-bottom: 2px;
+}
+
+.sticky-note-preview code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 12px;
+}
+
+.sticky-note-preview pre {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.sticky-note-preview pre code {
+  background: none;
+  padding: 0;
+}
+
+.sticky-note-preview blockquote {
+  border-left: 3px solid currentColor;
+  margin: 8px 0;
+  padding-left: 12px;
+  color: #6b7280;
+  opacity: 0.8;
+}
+
+.sticky-note-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+.sticky-note-preview th,
+.sticky-note-preview td {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.sticky-note-preview th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+.sticky-note-preview a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.sticky-note-preview a:hover {
+  text-decoration: underline;
+}
+
+.sticky-note-preview strong {
+  font-weight: 600;
+}
+
+.sticky-note-preview em {
+  font-style: italic;
+}
+
+.sticky-note-preview del {
+  text-decoration: line-through;
+}
+
+/* 响应式设计 - 在小缩放级别下调整字体 */
+@media (max-width: 768px) {
+  .sticky-note {
+    font-size: 12px;
+  }
+
+  .sticky-note-preview h1 {
+    font-size: 16px;
+  }
+  .sticky-note-preview h2 {
+    font-size: 14px;
+  }
+  .sticky-note-preview h3 {
+    font-size: 13px;
+  }
+}
