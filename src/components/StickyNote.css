@@ -47,13 +47,13 @@
   cursor: grabbing;
   z-index: 1000;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  transform: rotate(2deg); /* 拖拽时轻微旋转效果 */
+  /* transform: rotate(2deg); */ /* 拖拽时轻微旋转效果 */
 }
 
 .sticky-note.editing {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-  transform: scale(1.02); /* 编辑时轻微放大 */
+  /* transform: scale(1.02); */ /* 编辑时轻微放大 */
 }
 
 .sticky-note.new {
@@ -77,48 +77,12 @@
 
 .sticky-note-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 8px;
   background: rgba(0, 0, 0, 0.03);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px 8px 0 0;
-}
-
-.color-selector {
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.sticky-note:hover .color-selector {
-  opacity: 1;
-}
-
-.color-btn {
-  background: none;
-  border: 1px solid transparent;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 2px;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.color-btn:hover {
-  transform: scale(1.1);
-  border-color: rgba(0, 0, 0, 0.2);
-}
-
-.color-btn.active {
-  border-color: rgba(0, 0, 0, 0.4);
-  transform: scale(1.1);
 }
 
 .sticky-note-controls {

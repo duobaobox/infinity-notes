@@ -72,7 +72,6 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
             {Math.round(scale * 100)}%
           </span>
         </Space>
-        <div className="canvas-tooltip-help">拖拽移动 • 滚轮缩放</div>
       </div>
     );
   }

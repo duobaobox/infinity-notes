@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { StickyNoteProps, StickyNote as StickyNoteType } from "./types";
+import type { StickyNoteProps } from "./types";
 import "./StickyNote.css";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
@@ -163,22 +163,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }, 150);
   }, [stopEditing]);
 
-  // 更改便签颜色
-  const changeColor = useCallback(
-    (color: StickyNoteType["color"]) => {
-      onUpdate(note.id, { color });
-    },
-    [note.id, onUpdate]
-  );
-
-  const colors: Array<{ name: StickyNoteType["color"]; emoji: string }> = [
-    { name: "yellow", emoji: "🟡" },
-    { name: "blue", emoji: "🔵" },
-    { name: "green", emoji: "🟢" },
-    { name: "pink", emoji: "🩷" },
-    { name: "purple", emoji: "🟣" },
-  ];
-
   return (
     <div
       ref={noteRef}
@@ -194,20 +178,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       onMouseDown={handleMouseDown}
     >
       <div className="sticky-note-header">
-        <div className="color-selector">
-          {colors.map((colorOption) => (
-            <button
-              key={colorOption.name}
-              className={`color-btn ${
-                note.color === colorOption.name ? "active" : ""
-              }`}
-              onClick={() => changeColor(colorOption.name)}
-              title={`切换到${colorOption.name}色`}
-            >
-              {colorOption.emoji}
-            </button>
-          ))}
-        </div>
         <div className="sticky-note-controls">
           {!note.isEditing && (
             <button className="edit-btn" onClick={startEditing} title="编辑">
