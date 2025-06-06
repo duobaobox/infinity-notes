@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   Layout,
   Typography,
@@ -8,6 +8,7 @@ import {
   Button,
   Tooltip,
   Space,
+  Splitter, // 导入 Splitter
 } from "antd";
 import {
   SearchOutlined,
@@ -99,56 +100,15 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = () => {
-  const [splitPosition, setSplitPosition] = useState(50); // 默认上下区域各占50%
-  const [isDragging, setIsDragging] = useState(false);
   const siderRef = useRef<HTMLDivElement>(null);
   const [selectedCanvas, setSelectedCanvas] = useState<string>("1");
   const [canvasSearchValue, setCanvasSearchValue] = useState<string>("");
   const [noteSearchValue, setNoteSearchValue] = useState<string>("");
 
-  // 处理拖动事件
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault(); // 防止文本选择
-    setIsDragging(true);
-  };
-
   // 处理画布选择
   const handleCanvasSelect = (canvasId: string) => {
     setSelectedCanvas(canvasId);
   };
-
-  // 使用useEffect处理全局事件监听
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !siderRef.current) return;
-
-      const siderRect = siderRef.current.getBoundingClientRect();
-
-      // 计算鼠标在Sider中的相对位置（百分比）
-      const relativePosition =
-        ((e.clientY - siderRect.top) / siderRect.height) * 100;
-
-      // 限制拖动范围在20%到80%之间
-      const newPosition = Math.min(Math.max(relativePosition, 20), 80);
-      setSplitPosition(newPosition);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    // 只有在拖动时才添加事件监听器
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    }
-
-    // 清理函数
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging]); // 依赖于isDragging状态
 
   return (
     <Sider
@@ -157,103 +117,121 @@ const Sidebar: React.FC<SidebarProps> = () => {
       style={{
         height: "100vh",
         borderRight: "1px solid #f0f0f0",
-        position: "relative",
+        // position: "relative", // Splitter 会处理布局
       }}
       ref={siderRef as React.RefObject<HTMLDivElement>}
     >
-      {/* 上部区域：画布列表 */}
-      <div
-        style={{
-          height: `${splitPosition}%`,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
+      <Splitter
+        layout="vertical"
+        style={{ height: "100%", boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)" }}
       >
-        <div
-          style={{
-            padding: "16px 16px 8px 16px",
-            borderBottom: "1px solid #f0f0f0",
-          }}
-        >
-          <Title level={5} style={{ margin: "0 0 12px 0" }}>
-            我的画布
-          </Title>
-          <Input
-            placeholder="搜索画布..."
-            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-            value={canvasSearchValue}
-            onChange={(e) => setCanvasSearchValue(e.target.value)}
-            style={{ marginBottom: "8px" }}
-          />
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            style={{ width: "100%", marginTop: "8px" }}
+        <Splitter.Panel>
+          {/* 上部区域：画布列表 */}
+          <div
+            style={{
+              // height: `${splitPosition}%`, // 由 Splitter 控制
+              height: "100%", // Splitter.Panel 需要明确高度
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
           >
-            新建画布
-          </Button>
-        </div>
-
-        <div style={{ flex: 1, overflow: "auto", padding: "0 0 8px 0" }}>
-          <List
-            itemLayout="horizontal"
-            dataSource={mockCanvasList}
-            renderItem={(canvas) => (
-              <List.Item
-                style={{
-                  padding: "8px 16px",
-                  cursor: "pointer",
-                  backgroundColor:
-                    selectedCanvas === canvas.id ? "#e6f7ff" : "transparent",
-                  borderLeft:
-                    selectedCanvas === canvas.id
-                      ? "3px solid #1890ff"
-                      : "3px solid transparent",
-                }}
-                onClick={() => handleCanvasSelect(canvas.id)}
+            <div
+              style={{
+                padding: "16px 16px 8px 16px",
+                borderBottom: "1px solid #f0f0f0",
+              }}
+            >
+              <Title level={5} style={{ margin: "0 0 12px 0" }}>
+                我的画布
+              </Title>
+              <Input
+                placeholder="搜索画布..."
+                prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+                value={canvasSearchValue}
+                onChange={(e) => setCanvasSearchValue(e.target.value)}
+                style={{ marginBottom: "8px" }}
+              />
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                style={{ width: "100%", marginTop: "8px" }}
               >
-                <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      icon={<FolderOutlined />}
-                      style={{
-                        backgroundColor:
-                          selectedCanvas === canvas.id ? "#1890ff" : "#d9d9d9",
-                      }}
-                    />
-                  }
-                  title={
-                    <Space>
-                      <Text ellipsis style={{ maxWidth: 150 }}>
-                        {canvas.name}
-                      </Text>
-                      {canvas.isStarred && (
-                        <StarFilled style={{ color: "#faad14" }} />
-                      )}
-                    </Space>
-                  }
-                  description={
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      {canvas.notesCount} 便签 · {canvas.lastEdited}
-                    </Text>
-                  }
-                />
-                <Tooltip title="更多操作">
-                  <Button
-                    type="text"
-                    icon={<EllipsisOutlined />}
-                    size="small"
-                  />
-                </Tooltip>
-              </List.Item>
-            )}
-          />
-        </div>
-      </div>
+                新建画布
+              </Button>
+            </div>
 
-      {/* 可拖动的分隔线 */}
-      <div
+            <div
+              style={{
+                flex: 1,
+                overflow: "auto",
+                padding: "0 0 8px 0",
+                scrollbarWidth: "thin",
+                scrollbarColor: "#a0a0a0 transparent", // 滚动条滑块颜色为 #a0a0a0，轨道透明
+              }}
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={mockCanvasList}
+                renderItem={(canvas) => (
+                  <List.Item
+                    style={{
+                      padding: "8px 16px",
+                      cursor: "pointer",
+                      backgroundColor:
+                        selectedCanvas === canvas.id
+                          ? "#e6f7ff"
+                          : "transparent",
+                      borderLeft:
+                        selectedCanvas === canvas.id
+                          ? "3px solid #1890ff"
+                          : "3px solid transparent",
+                    }}
+                    onClick={() => handleCanvasSelect(canvas.id)}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
+                          icon={<FolderOutlined />}
+                          style={{
+                            backgroundColor:
+                              selectedCanvas === canvas.id
+                                ? "#1890ff"
+                                : "#d9d9d9",
+                          }}
+                        />
+                      }
+                      title={
+                        <Space>
+                          <Text ellipsis style={{ maxWidth: 150 }}>
+                            {canvas.name}
+                          </Text>
+                          {canvas.isStarred && (
+                            <StarFilled style={{ color: "#faad14" }} />
+                          )}
+                        </Space>
+                      }
+                      description={
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {canvas.notesCount} 便签 · {canvas.lastEdited}
+                        </Text>
+                      }
+                    />
+                    <Tooltip title="更多操作">
+                      <Button
+                        type="text"
+                        icon={<EllipsisOutlined />}
+                        size="small"
+                      />
+                    </Tooltip>
+                  </List.Item>
+                )}
+              />
+            </div>
+          </div>
+        </Splitter.Panel>
+        {/* 可拖动的分隔线 - 由 Splitter 组件提供，无需手动实现 */}
+        {/* <div
         style={{
           position: "absolute",
           left: 0,
@@ -269,64 +247,76 @@ const Sidebar: React.FC<SidebarProps> = () => {
           userSelect: "none", // 防止文本选择
         }}
         onMouseDown={handleMouseDown}
-      />
+      /> */}
+        <Splitter.Panel>
+          {/* 下部区域：便签列表 */}
+          <div
+            style={{
+              // height: `${100 - splitPosition}%`, // 由 Splitter 控制
+              height: "100%", // Splitter.Panel 需要明确高度
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 16px 8px 16px",
+                borderBottom: "1px solid #f0f0f0",
+              }}
+            >
+              <Title level={5} style={{ margin: "0 0 12px 0" }}>
+                {mockCanvasList.find((c) => c.id === selectedCanvas)?.name ||
+                  ""}
+                中的便签
+              </Title>
+              <Input
+                placeholder="搜索便签..."
+                prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+                value={noteSearchValue}
+                onChange={(e) => setNoteSearchValue(e.target.value)}
+              />
+            </div>
 
-      {/* 下部区域：便签列表 */}
-      <div
-        style={{
-          height: `${100 - splitPosition}%`,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "16px 16px 8px 16px",
-            borderBottom: "1px solid #f0f0f0",
-          }}
-        >
-          <Title level={5} style={{ margin: "0 0 12px 0" }}>
-            {mockCanvasList.find((c) => c.id === selectedCanvas)?.name || ""}
-            中的便签
-          </Title>
-          <Input
-            placeholder="搜索便签..."
-            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-            value={noteSearchValue}
-            onChange={(e) => setNoteSearchValue(e.target.value)}
-          />
-        </div>
-
-        <div style={{ flex: 1, overflow: "auto", padding: "0 0 8px 0" }}>
-          <List
-            itemLayout="horizontal"
-            dataSource={mockNotesList}
-            renderItem={(note) => (
-              <List.Item style={{ padding: "8px 16px" }}>
-                <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      icon={<FileTextOutlined />}
-                      style={{ backgroundColor: note.color }}
+            <div
+              style={{
+                flex: 1,
+                overflow: "auto",
+                padding: "0 0 8px 0",
+                scrollbarWidth: "thin",
+                scrollbarColor: "#a0a0a0 transparent", // 滚动条滑块颜色为 #a0a0a0，轨道透明
+              }}
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={mockNotesList}
+                renderItem={(note) => (
+                  <List.Item style={{ padding: "8px 16px" }}>
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
+                          icon={<FileTextOutlined />}
+                          style={{ backgroundColor: note.color }}
+                        />
+                      }
+                      title={
+                        <Text ellipsis style={{ maxWidth: 180 }}>
+                          {note.title}
+                        </Text>
+                      }
+                      description={
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {note.lastEdited}
+                        </Text>
+                      }
                     />
-                  }
-                  title={
-                    <Text ellipsis style={{ maxWidth: 180 }}>
-                      {note.title}
-                    </Text>
-                  }
-                  description={
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      {note.lastEdited}
-                    </Text>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </div>
-      </div>
+                  </List.Item>
+                )}
+              />
+            </div>
+          </div>
+        </Splitter.Panel>
+      </Splitter>
     </Sider>
   );
 };
