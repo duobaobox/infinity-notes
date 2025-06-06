@@ -206,26 +206,22 @@
   width: 16px;
   height: 16px;
   cursor: nw-resize;
-  background: linear-gradient(
-    -45deg,
-    transparent 0%,
-    transparent 40%,
-    #9ca3af 40%,
-    #9ca3af 60%,
-    transparent 60%,
-    transparent 100%
-  );
+  /* 移除背景使其透明 */
+  background: transparent;
+  /* 始终保持透明 */
   opacity: 0;
-  transition: opacity 0.2s ease;
+  /* 移除过渡效果，因为它不再可见 */
+  /* transition: opacity 0.2s ease; */
 }
 
-.sticky-note:hover .resize-handle {
+/* 移除悬停效果，因为手柄现在是不可见的 */
+/* .sticky-note:hover .resize-handle {
   opacity: 0.6;
-}
+} */
 
-.resize-handle:hover {
+/* .resize-handle:hover {
   opacity: 1;
-}
+} */
 
 /* Markdown 样式 */
 .sticky-note-preview h1,
@@ -364,10 +360,38 @@
 /* 简化的滚动条样式 - 基于系统默认 */
 .sticky-note-preview,
 .sticky-note-textarea {
-  /* 使用系统默认滚动条，但设置为细窄样式 */
-  scrollbar-width: thin;
-  /* 让滚动条颜色更淡，背景透明 */
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  /* 默认隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+}
+
+.sticky-note-preview::-webkit-scrollbar,
+.sticky-note-textarea::-webkit-scrollbar {
+  display: none; /* WebKit (Chrome, Safari, Edge) */
+}
+
+/* 鼠标悬浮在 .sticky-note 上时显示滚动条 */
+.sticky-note:hover .sticky-note-preview,
+.sticky-note:hover .sticky-note-textarea {
+  scrollbar-width: thin; /* Firefox: 显示细滚动条 */
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* Firefox: 设置滚动条颜色 */
+}
+
+.sticky-note:hover .sticky-note-preview::-webkit-scrollbar,
+.sticky-note:hover .sticky-note-textarea::-webkit-scrollbar {
+  display: block; /* WebKit: 显示滚动条 */
+  width: 8px; /* WebKit: 滚动条宽度 */
+  height: 8px; /* WebKit: 滚动条高度 (用于水平滚动条) */
+}
+
+.sticky-note:hover .sticky-note-preview::-webkit-scrollbar-thumb,
+.sticky-note:hover .sticky-note-textarea::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3); /* WebKit: 滑块颜色 */
+  border-radius: 4px; /* WebKit: 滑块圆角 */
+}
+
+.sticky-note:hover .sticky-note-preview::-webkit-scrollbar-track,
+.sticky-note:hover .sticky-note-textarea::-webkit-scrollbar-track {
+  background: transparent; /* WebKit: 轨道背景 */
 }
 
 .sticky-note-title-input {
