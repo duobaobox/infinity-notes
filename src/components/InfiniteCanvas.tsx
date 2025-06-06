@@ -154,14 +154,23 @@ const InfiniteCanvas: React.FC = () => {
       ];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
+      // 添加随机偏移，防止便签完全堆叠
+      const offsetRange = 50; // 随机偏移范围（像素）
+      const randomOffsetX = Math.random() * offsetRange * 2 - offsetRange; // -50 到 50 之间的随机值
+      const randomOffsetY = Math.random() * offsetRange * 2 - offsetRange; // -50 到 50 之间的随机值
+
+      // 应用随机偏移到位置坐标
+      const positionX = x + randomOffsetX;
+      const positionY = y + randomOffsetY;
+
       setStickyNotes((prev) => {
         const maxZ =
           prev.length > 0 ? Math.max(...prev.map((note) => note.zIndex)) : 0;
         const newNote: StickyNoteType = {
           id: `note-${Date.now()}-${Math.random()}`,
-          // 直接使用传入的逻辑坐标，不需要再次转换
-          x: x,
-          y: y,
+          // 使用添加了随机偏移的坐标
+          x: positionX,
+          y: positionY,
           width: 250,
           height: 200,
           content: "",
@@ -194,9 +203,29 @@ const InfiniteCanvas: React.FC = () => {
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      createStickyNote(centerX, centerY);
+      // 增加中心区域随机分布
+      const centerRandomRange = 100; // 中心区域分布范围
+      const distributedScreenX =
+        centerX + (Math.random() * centerRandomRange - centerRandomRange / 2);
+      const distributedScreenY =
+        centerY + (Math.random() * centerRandomRange - centerRandomRange / 2);
+
+      // 重要：将屏幕坐标转换为画布逻辑坐标，考虑当前画布偏移和缩放
+      // 这样即使画布被移动，便签也会出现在当前可见区域的中心位置
+      const logicalX =
+        (distributedScreenX - canvasState.offsetX) / canvasState.scale;
+      const logicalY =
+        (distributedScreenY - canvasState.offsetY) / canvasState.scale;
+
+      // 使用转换后的逻辑坐标创建便签，createStickyNote函数会再添加小的随机偏移
+      createStickyNote(logicalX, logicalY);
     }
-  }, [createStickyNote]);
+  }, [
+    createStickyNote,
+    canvasState.offsetX,
+    canvasState.offsetY,
+    canvasState.scale,
+  ]);
 
   // 触发缩放动画
   const triggerZoomAnimation = useCallback(() => {
