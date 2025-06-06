@@ -68,19 +68,21 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+      e.preventDefault(); // 添加阻止默认行为
 
-      // 如果当前处于编辑状态，先将编辑状态设为false，但不保存内容
+      // 立即删除便签，不管当前状态如何
+      // 确保删除操作优先于任何其他状态更新
+      setTimeout(() => {
+        onDelete(note.id);
+      }, 0);
+
+      // 如果当前处于编辑状态，将编辑状态设为false，但不保存内容
       if (note.isEditing || note.isTitleEditing) {
-        // 清除可能存在的setTimeout，防止handleContentBlur/handleTitleBlur中的定时器触发保存
-        // 直接将编辑状态设置为false，但不更新updatedAt时间戳（不保存）
         onUpdate(note.id, {
           isEditing: false,
           isTitleEditing: false,
         });
       }
-
-      // 然后删除便签
-      onDelete(note.id);
     },
     [note.id, note.isEditing, note.isTitleEditing, onDelete, onUpdate]
   );
@@ -239,13 +241,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       const isClickedDeleteButton =
         activeElement &&
         (activeElement.classList.contains("delete-button") ||
-          activeElement.closest(".delete-button"));
+          activeElement.closest(".delete-button") ||
+          activeElement.closest("[class*='delete-button']")); // 增强检测，匹配任何包含delete-button的类名
 
       // 如果不是点击删除按钮，才进行保存
       if (!isClickedDeleteButton) {
         stopEditing();
       }
-    }, 150);
+    }, 100); // 减少延迟时间，让删除操作有更大机会先执行
   }, [stopEditing]);
 
   // 标题失焦时停止编辑
@@ -256,13 +259,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       const isClickedDeleteButton =
         activeElement &&
         (activeElement.classList.contains("delete-button") ||
-          activeElement.closest(".delete-button"));
+          activeElement.closest(".delete-button") ||
+          activeElement.closest("[class*='delete-button']")); // 增强检测，匹配任何包含delete-button的类名
 
       // 如果不是点击删除按钮，才停止标题编辑
       if (!isClickedDeleteButton) {
         stopTitleEditing();
       }
-    }, 150);
+    }, 100); // 减少延迟时间，让删除操作有更大机会先执行
   }, [stopTitleEditing]);
 
   // 计算背景色透明度 - 根据文本长度
@@ -340,7 +344,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               backgroundColor: "rgba(0, 0, 0, 0.06)", // 与标题背景色一致
               borderRadius: "4px",
             }}
-            className="delete-button" // 添加自定义类名以便添加悬浮样式
+            className="delete-button sticky-note-delete-button" // 添加多个类名以增强识别
           />
         </div>
       </div>
