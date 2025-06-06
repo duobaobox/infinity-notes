@@ -418,7 +418,7 @@
 .sticky-note:hover .sticky-note-preview,
 .sticky-note:hover .sticky-note-textarea {
   /* Firefox specific if 'thin' is desired over 'auto' when hovered */
-  /* scrollbar-width: thin; */
+  scrollbar-width: thin; /* 启用细滚动条样式 */
 }
 
 .sticky-note-title-input {

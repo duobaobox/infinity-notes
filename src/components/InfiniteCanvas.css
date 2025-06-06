@@ -109,13 +109,12 @@
   transform-origin: 0 0;
   will-change: transform;
 
-  /* 便签容器跟随画布变换 */
+  /* 便签容器跟随画布平移，但不缩放 */
   transform: translate3d(
-      var(--content-offset-x, 0px),
-      var(--content-offset-y, 0px),
-      0
-    )
-    scale(var(--canvas-scale, 1));
+    var(--content-offset-x, 0px),
+    var(--content-offset-y, 0px),
+    0
+  );
 }
 
 /* 便签本身恢复点击能力 */

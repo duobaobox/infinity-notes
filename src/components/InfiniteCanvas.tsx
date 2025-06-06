@@ -618,20 +618,29 @@ const InfiniteCanvas: React.FC = () => {
       <div className="sticky-notes-container">
         {stickyNotes
           .sort((a, b) => a.zIndex - b.zIndex) // 按 Z 索引排序
-          .map((note) => (
-            <StickyNote
-              key={note.id}
-              note={note}
-              onUpdate={updateStickyNote}
-              onDelete={deleteStickyNote}
-              onBringToFront={bringNoteToFront}
-              canvasScale={canvasState.scale}
-              canvasOffset={{
-                x: canvasState.offsetX,
-                y: canvasState.offsetY,
-              }}
-            />
-          ))}
+          .map((note) => {
+            const screenNote = {
+              ...note,
+              x: note.x * canvasState.scale,
+              y: note.y * canvasState.scale,
+              width: note.width * canvasState.scale,
+              height: note.height * canvasState.scale,
+            };
+            return (
+              <StickyNote
+                key={note.id}
+                note={screenNote}
+                onUpdate={updateStickyNote}
+                onDelete={deleteStickyNote}
+                onBringToFront={bringNoteToFront}
+                canvasScale={canvasState.scale} // StickyNote still needs the raw scale for its internal logic
+                canvasOffset={{
+                  x: canvasState.offsetX, // This is the offset of the sticky-notes-container
+                  y: canvasState.offsetY, // This is the offset of the sticky-notes-container
+                }}
+              />
+            );
+          })}
       </div>
     </div>
   );
