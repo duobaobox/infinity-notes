@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import type { StickyNoteProps } from "./types";
 import "./StickyNote.css";
 import { Button } from "antd";
@@ -67,9 +68,21 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+
+      // 如果当前处于编辑状态，先将编辑状态设为false，但不保存内容
+      if (note.isEditing || note.isTitleEditing) {
+        // 清除可能存在的setTimeout，防止handleContentBlur/handleTitleBlur中的定时器触发保存
+        // 直接将编辑状态设置为false，但不更新updatedAt时间戳（不保存）
+        onUpdate(note.id, {
+          isEditing: false,
+          isTitleEditing: false,
+        });
+      }
+
+      // 然后删除便签
       onDelete(note.id);
     },
-    [note.id, onDelete]
+    [note.id, note.isEditing, note.isTitleEditing, onDelete, onUpdate]
   );
 
   // 鼠标按下开始拖拽
@@ -168,7 +181,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     canvasOffset.y,
   ]);
 
-  // 自动聚焦到文本框
+  // 自动聚焦到文本框 - 仅在进入编辑模式时设置光标到末尾
   useEffect(() => {
     if (note.isEditing && textareaRef.current) {
       textareaRef.current.focus();
@@ -177,9 +190,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         note.content.length
       );
     }
-  }, [note.isEditing, note.content]);
+  }, [note.isEditing]); // 只依赖编辑状态，不依赖内容变化
 
-  // 自动聚焦到标题输入框
+  // 自动聚焦到标题输入框 - 仅在进入标题编辑模式时设置光标到末尾
   useEffect(() => {
     if (note.isTitleEditing && titleInputRef.current) {
       titleInputRef.current.focus();
@@ -188,7 +201,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         note.title.length
       );
     }
-  }, [note.isTitleEditing, note.title]);
+  }, [note.isTitleEditing]); // 只依赖标题编辑状态，不依赖标题内容变化
 
   // 处理内容编辑键盘事件
   const handleContentKeyDown = useCallback(
@@ -221,14 +234,34 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleContentBlur = useCallback(() => {
     // 延迟一点时间，让用户有机会点击其他按钮
     setTimeout(() => {
-      stopEditing();
+      // 检查当前点击的元素是否是删除按钮或其父元素
+      const activeElement = document.activeElement;
+      const isClickedDeleteButton =
+        activeElement &&
+        (activeElement.classList.contains("delete-button") ||
+          activeElement.closest(".delete-button"));
+
+      // 如果不是点击删除按钮，才进行保存
+      if (!isClickedDeleteButton) {
+        stopEditing();
+      }
     }, 150);
   }, [stopEditing]);
 
   // 标题失焦时停止编辑
   const handleTitleBlur = useCallback(() => {
     setTimeout(() => {
-      stopTitleEditing();
+      // 检查当前点击的元素是否是删除按钮或其父元素
+      const activeElement = document.activeElement;
+      const isClickedDeleteButton =
+        activeElement &&
+        (activeElement.classList.contains("delete-button") ||
+          activeElement.closest(".delete-button"));
+
+      // 如果不是点击删除按钮，才停止标题编辑
+      if (!isClickedDeleteButton) {
+        stopTitleEditing();
+      }
     }, 150);
   }, [stopTitleEditing]);
 
@@ -332,7 +365,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }}
           >
             {note.content.trim() ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                 {note.content}
               </ReactMarkdown>
             ) : (

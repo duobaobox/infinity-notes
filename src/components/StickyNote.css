@@ -127,6 +127,11 @@
   opacity: 1;
 }
 
+/* 编辑状态下始终显示控件 */
+.sticky-note.editing .sticky-note-controls {
+  opacity: 1;
+}
+
 .sticky-note-controls button {
   background: rgba(0, 0, 0, 0.06); /* 与标题背景色一致 */
   border: none;
