@@ -117,6 +117,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
         height: "100vh",
         borderRight: "1px solid #f0f0f0",
         background: "#fcfcfc",
+        boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.1)", // 添加阴影
       }}
       ref={siderRef as React.RefObject<HTMLDivElement>}
       collapsible
@@ -134,6 +135,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
+                background: "#fcfcfc", // 添加背景色
               }}
             >
               <div
@@ -301,6 +303,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
+                background: "#fcfcfc", // 添加背景色
               }}
             >
               <div
