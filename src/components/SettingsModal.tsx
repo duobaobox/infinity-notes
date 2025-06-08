@@ -37,9 +37,14 @@ const { Option } = Select;
 interface SettingsModalProps {
   open: boolean;
   onCancel: () => void;
+  defaultActiveTab?: string; // 新增：默认激活的标签页
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({
+  open,
+  onCancel,
+  defaultActiveTab = "general",
+}) => {
   const [form] = Form.useForm();
   const [aiForm] = Form.useForm();
   const [appearanceForm] = Form.useForm();
@@ -56,34 +61,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
     hasValidConfig,
   } = useAISettings();
 
-  // 当模态框打开时，更新表单的值
+  // 当aiConfig变化时，更新表单的值（只在模态框打开时）
   React.useEffect(() => {
-    if (open) {
-      // 重置并设置AI表单的值
-      if (aiConfig) {
-        // 确保表单实例已创建后再设置值
-        setTimeout(() => {
-          aiForm.resetFields();
+    console.log("🎛️ SettingsModal: AI配置变化", { open, aiConfig });
+
+    if (open && aiConfig) {
+      // 只有当配置不是默认空配置时才更新表单值
+      const hasValidData =
+        aiConfig.apiKey ||
+        aiConfig.enableAI ||
+        aiConfig.aiModel !== "deepseek-chat" ||
+        aiConfig.apiUrl !== "https://api.deepseek.com/v1";
+
+      if (hasValidData) {
+        console.log("🎛️ SettingsModal: 更新AI表单值", aiConfig);
+        try {
           aiForm.setFieldsValue(aiConfig);
-        }, 0);
+          console.log("🎛️ SettingsModal: AI表单值已更新");
+        } catch (error) {
+          console.warn("🎛️ SettingsModal: 更新表单值失败", error);
+        }
       }
-    } else {
-      // 模态框关闭时重置表单
-      aiForm.resetFields();
-      form.resetFields();
-      appearanceForm.resetFields();
-      dataForm.resetFields();
-      notificationForm.resetFields();
     }
-  }, [
-    open,
-    aiConfig,
-    aiForm,
-    form,
-    appearanceForm,
-    dataForm,
-    notificationForm,
-  ]);
+  }, [aiConfig, open, aiForm]);
 
   // 测试AI连接
   const handleTestConnection = async () => {
@@ -107,14 +107,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
 
   // 保存AI配置
   const handleSaveAIConfig = async () => {
+    console.log("🎛️ SettingsModal: 用户点击保存AI配置");
+
     try {
       const values = await aiForm.validateFields();
-      const success = await saveAIConfig({ ...aiConfig, ...values });
+      console.log("🎛️ SettingsModal: 表单验证通过，获取的值", values);
+
+      const configToSave = { ...aiConfig, ...values };
+      console.log("🎛️ SettingsModal: 准备保存的完整配置", configToSave);
+
+      const success = await saveAIConfig(configToSave);
 
       if (success) {
+        console.log("🎛️ SettingsModal: AI配置保存成功");
         message.success("AI配置保存成功！");
+      } else {
+        console.error("🎛️ SettingsModal: AI配置保存失败");
       }
     } catch (error) {
+      console.error("🎛️ SettingsModal: 表单验证失败或保存异常", error);
       message.error("请检查配置信息");
     }
   };
@@ -402,12 +413,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
                 style={{ marginBottom: 16 }}
               />
             )}
+            {!aiError && !hasValidConfig && (
+              <Alert
+                message="AI 配置不完整"
+                description="请检查并完善API密钥、API地址等AI配置项以启用全部AI功能。"
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
             <Form
-              key="ai-form"
               form={aiForm}
               layout="vertical"
               onFinish={handleSaveAIConfig}
-              preserve={false}
+              preserve={true}
+              initialValues={
+                aiConfig || {
+                  enableAI: false,
+                  aiModel: "deepseek-chat",
+                  apiKey: "",
+                  apiUrl: "https://api.deepseek.com/v1",
+                  temperature: 0.7,
+                  maxTokens: 1000,
+                }
+              }
             >
               <Card size="small" style={{ marginBottom: 16 }}>
                 <Title level={5} style={{ margin: "0 0 16px 0" }}>
@@ -485,65 +514,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
                     max={1}
                     step={0.1}
                     marks={{
-                      0: "0",
-                      0.3: "0.3",
-                      0.5: "0.5",
-                      0.7: "0.7",
-                      1: "1",
+                      0: "精确",
+                      0.5: "平衡",
+                      1: "创意",
                     }}
+                    tooltip={{ formatter: (value) => `${value}` }}
                   />
                 </Form.Item>
 
                 <Form.Item
-                  label="最大Token数"
+                  label="最大生成令牌数"
                   name="maxTokens"
-                  extra="单次生成的最大字符数限制"
-                  rules={[
-                    {
-                      type: "number",
-                      min: 100,
-                      max: 4000,
-                      message: "范围：100-4000",
-                    },
-                  ]}
+                  extra="控制生成内容的最大长度"
                 >
-                  <InputNumber
-                    min={100}
+                  <Slider
+                    min={50}
                     max={4000}
-                    step={100}
-                    style={{ width: "100%" }}
+                    step={50}
+                    marks={{
+                      50: "简短",
+                      1000: "适中",
+                      4000: "详细",
+                    }}
+                    tooltip={{ formatter: (value) => `${value}` }}
                   />
                 </Form.Item>
               </Card>
 
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  操作
-                </Title>
-                <Space direction="vertical" style={{ width: "100%" }}>
+              <div className="form-actions">
+                <Space>
                   <Button
                     type="primary"
-                    ghost
-                    style={{ width: "100%" }}
                     onClick={handleTestConnection}
                     loading={testingConnection}
-                    disabled={!hasValidConfig}
+                    disabled={aiLoading}
                   >
-                    {testingConnection ? "测试中..." : "测试连接"}
+                    测试连接
                   </Button>
                   <Button
                     type="primary"
-                    style={{ width: "100%" }}
-                    htmlType="submit"
-                    loading={aiLoading}
+                    onClick={handleSaveAIConfig}
+                    disabled={aiLoading}
                   >
                     保存配置
                   </Button>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    💡 提示：请确保API密钥有效且网络连接正常
-                  </Text>
                 </Space>
-              </Card>
+              </div>
             </Form>
           </Spin>
         </div>
@@ -564,48 +580,73 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
             layout="vertical"
             initialValues={{
               enableNotifications: true,
+              notifyOnSync: true,
+              notifyOnBackup: true,
+              notifyOnShare: true,
               soundEnabled: true,
-              reminderEnabled: true,
-              reminderTime: "09:00",
+              notificationSound: "default",
             }}
           >
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                通知偏好
+                通知选项
               </Title>
               <Form.Item
                 label="启用通知"
                 name="enableNotifications"
                 valuePropName="checked"
-                extra="接收应用通知"
+                extra="允许应用发送系统通知"
               >
                 <Switch />
               </Form.Item>
 
               <Form.Item
-                label="声音提示"
+                label="同步通知"
+                name="notifyOnSync"
+                valuePropName="checked"
+                extra="数据同步完成时通知"
+              >
+                <Switch />
+              </Form.Item>
+
+              <Form.Item
+                label="备份通知"
+                name="notifyOnBackup"
+                valuePropName="checked"
+                extra="自动备份完成时通知"
+              >
+                <Switch />
+              </Form.Item>
+
+              <Form.Item
+                label="分享通知"
+                name="notifyOnShare"
+                valuePropName="checked"
+                extra="内容被分享时通知"
+              >
+                <Switch />
+              </Form.Item>
+            </Card>
+
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                声音设置
+              </Title>
+              <Form.Item
+                label="启用提示音"
                 name="soundEnabled"
                 valuePropName="checked"
+                extra="操作时播放提示音"
               >
                 <Switch />
               </Form.Item>
 
-              <Form.Item
-                label="每日提醒"
-                name="reminderEnabled"
-                valuePropName="checked"
-                extra="每日定时提醒您查看便签"
-              >
-                <Switch />
-              </Form.Item>
-
-              <Form.Item label="提醒时间" name="reminderTime">
+              <Form.Item label="提示音选择" name="notificationSound">
                 <Select>
-                  <Option value="08:00">08:00</Option>
-                  <Option value="09:00">09:00</Option>
-                  <Option value="10:00">10:00</Option>
-                  <Option value="18:00">18:00</Option>
-                  <Option value="20:00">20:00</Option>
+                  <Option value="default">默认提示音</Option>
+                  <Option value="chime">清脆提示音</Option>
+                  <Option value="bell">铃声提示音</Option>
+                  <Option value="none">静音</Option>
                 </Select>
               </Form.Item>
             </Card>
@@ -623,35 +664,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
       ),
       children: (
         <div className="settings-modal-content">
-          <Card size="small">
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <Title level={3} style={{ marginBottom: 8 }}>
-                便签应用
-              </Title>
-              <Text type="secondary" style={{ fontSize: 16 }}>
-                版本 1.0.0
-              </Text>
-              <Divider />
-              <Space direction="vertical" size={8}>
-                <Text>一个简洁、高效的便签管理工具</Text>
-                <Text type="secondary">支持多画布管理、实时保存、云端同步</Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  © 2024 便签应用. 保留所有权利.
-                </Text>
-              </Space>
-              <Divider />
-              <Space>
-                <Button type="link" size="small">
-                  帮助文档
-                </Button>
-                <Button type="link" size="small">
-                  反馈问题
-                </Button>
-                <Button type="link" size="small">
-                  检查更新
-                </Button>
-              </Space>
-            </div>
+          <Card size="small" style={{ marginBottom: 16 }}>
+            <Title level={5} style={{ margin: "0 0 16px 0" }}>
+              应用信息
+            </Title>
+            <p>
+              <strong>便签画布</strong>{" "}
+              是一款创新的无限画布便签应用，让您自由组织思路和灵感。
+            </p>
+            <p>版本: 1.0.0</p>
+            <Divider />
+            <p>
+              <strong>开发者:</strong> 便签画布团队
+            </p>
+            <p>
+              <strong>联系我们:</strong> support@notes-canvas-app.example.com
+            </p>
+            <Divider />
+            <p>© 2023 便签画布. 保留所有权利.</p>
           </Card>
         </div>
       ),
@@ -660,40 +690,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
 
   return (
     <Modal
-      title={
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <SettingOutlined style={{ marginRight: 8 }} />
-          设置
-        </div>
-      }
+      title="设置"
       open={open}
       onCancel={onCancel}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
-          取消
-        </Button>,
-        <Button key="save" type="primary" onClick={onCancel}>
-          保存设置
-        </Button>,
-      ]}
-      width={850}
-      height={650}
+      width={720}
       centered
+      styles={{ body: { height: "60vh", overflowY: "hidden" } }}
+      footer={null}
       destroyOnHidden
       className="settings-modal"
-      styles={{
-        body: {
-          height: 550,
-          padding: 0,
-          overflow: "hidden",
-        },
-      }}
     >
       <Tabs
-        defaultActiveKey="general"
+        defaultActiveKey={defaultActiveTab}
         items={tabItems}
-        style={{ height: "100%" }}
         tabPosition="left"
+        className="settings-tabs"
+        style={{ height: "100%" }}
       />
     </Modal>
   );

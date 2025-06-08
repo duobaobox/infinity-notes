@@ -14,6 +14,7 @@ import CanvasGrid from "./CanvasGrid";
 import CanvasConsole from "./CanvasConsole";
 import StickyNote from "./StickyNote";
 import SearchModal from "./SearchModal";
+import SettingsModal from "./SettingsModal"; // 导入 SettingsModal 组件
 import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "./types";
 import { useDatabase } from "../database";
@@ -58,6 +59,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   });
   const [zoomAnimating, setZoomAnimating] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false); // 添加 AI 设置模态框状态
   const [isAIGenerating, setIsAIGenerating] = useState(false); // 添加AI生成状态控制
 
   // AI设置Hook
@@ -212,6 +214,19 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 防止并发请求
       if (isAIGenerating) {
         console.warn("AI正在生成中，忽略重复请求");
+        return;
+      }
+
+      // 检查AI配置是否有效
+      if (
+        !aiConfig.enableAI ||
+        !aiConfig.apiKey ||
+        !aiConfig.apiUrl ||
+        !aiConfig.aiModel
+      ) {
+        message.info("请先配置AI服务以使用此功能");
+        // 打开AI设置页面
+        setSettingsModalOpen(true);
         return;
       }
 
@@ -631,6 +646,15 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     setSearchModalOpen(false);
   }, []);
 
+  // 设置模态框相关方法
+  const openSettingsModal = useCallback(() => {
+    setSettingsModalOpen(true);
+  }, []);
+
+  const closeSettingsModal = useCallback(() => {
+    setSettingsModalOpen(false);
+  }, []);
+
   // 选择便签并导航到它
   const selectNote = useCallback(
     (note: StickyNoteType) => {
@@ -896,6 +920,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         }}
         onCreateNote={createStickyNoteAtCenter}
         onGenerateWithAI={generateStickyNotesWithAI}
+        onOpenAISettings={openSettingsModal}
       />
 
       {/* 搜索模态框 */}
@@ -904,6 +929,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         onClose={closeSearchModal}
         notes={stickyNotes}
         onSelectNote={selectNote}
+      />
+
+      {/* 设置模态框 */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onCancel={closeSettingsModal}
+        defaultActiveTab="ai"
       />
     </div>
   );

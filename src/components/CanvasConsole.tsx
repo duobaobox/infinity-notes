@@ -20,6 +20,7 @@ interface CanvasConsoleProps {
   onSendMessage?: (message: string) => void;
   onCreateNote?: () => void;
   onGenerateWithAI?: (prompt: string) => Promise<void>;
+  onOpenAISettings?: () => void; // 新增：打开 AI 设置页面的回调
   placeholder?: string;
   disabled?: boolean;
 }
@@ -40,6 +41,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       onSendMessage,
       onCreateNote,
       onGenerateWithAI,
+      onOpenAISettings,
       placeholder = "输入提示或直接添加便签...",
       disabled = false,
     },
@@ -66,6 +68,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       []
     );
 
+    // 修改 handleSend 函数，在 AI 配置不存在时打开设置
     const handleSend = async () => {
       if (!inputValue.trim()) return;
 
@@ -117,6 +120,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         } finally {
           setIsGenerating(false);
         }
+      } else if (aiConfig.enableAI && !hasValidConfig && onOpenAISettings) {
+        // 如果AI功能启用但没有有效配置，打开设置页面
+        message.info("请先完成AI配置以使用此功能");
+        onOpenAISettings();
+        setInputValue("");
       } else if (onSendMessage) {
         // 普通消息发送
         onSendMessage(inputValue);
@@ -131,7 +139,13 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       }
 
       if (!aiConfig.enableAI || !hasValidConfig) {
-        message.warning("请先在设置中配置AI服务");
+        // 如果未配置 AI，调用 onOpenAISettings 打开 AI 设置页面
+        if (onOpenAISettings) {
+          message.info("请先配置 AI 服务以使用此功能");
+          onOpenAISettings();
+        } else {
+          message.warning("请先在设置中配置AI服务");
+        }
         return;
       }
 
@@ -241,7 +255,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         <div className={`console-container ${isFocused ? "focused" : ""}`}>
           {/* 左侧AI按钮 */}
           <Tooltip
-            title={hasValidConfig ? "使用AI生成便签" : "请先配置AI服务"}
+            title={hasValidConfig ? "使用AI生成便签" : "点击配置AI服务"}
             placement="top"
           >
             <Button
@@ -249,8 +263,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
               type={aiConfig.enableAI && hasValidConfig ? "primary" : "text"}
               size="large"
               shape="circle"
-              onClick={handleAIGenerate}
-              disabled={!inputValue.trim() || isGenerating || disabled}
+              onClick={hasValidConfig ? handleAIGenerate : onOpenAISettings}
+              disabled={
+                hasValidConfig &&
+                (!inputValue.trim() || isGenerating || disabled)
+              }
               className={`console-button ai-button ${
                 aiConfig.enableAI && hasValidConfig ? "ai-enabled" : ""
               }`}

@@ -9,7 +9,7 @@ export class IndexedDBService {
   private static instance: IndexedDBService;
   private initialized = false;
   private readonly dbName = "StickyNotesDB";
-  private readonly dbVersion = 1;
+  private readonly dbVersion = 2; // 增加版本号，确保新表被创建
 
   private constructor() {
     // 私有构造函数，确保单例模式
@@ -79,6 +79,17 @@ export class IndexedDBService {
       canvasStore.createIndex("user_id", "user_id", { unique: false });
       canvasStore.createIndex("is_default", "is_default", { unique: false });
       canvasStore.createIndex("updated_at", "updated_at", { unique: false });
+    }
+
+    // AI设置表
+    if (!db.objectStoreNames.contains("ai_settings")) {
+      const aiSettingsStore = db.createObjectStore("ai_settings", {
+        keyPath: "id",
+      });
+      aiSettingsStore.createIndex("user_id", "user_id", { unique: false });
+      aiSettingsStore.createIndex("updated_at", "updated_at", {
+        unique: false,
+      });
     }
 
     // 便签表
@@ -244,6 +255,58 @@ export class IndexedDBService {
       return true;
     } catch (error) {
       console.error("删除画布失败:", error);
+      return false;
+    }
+  }
+
+  // ===== 通用 CRUD 方法 =====
+
+  // 获取指定存储区域中的项目
+  async getItem<T>(storeName: string, id: string): Promise<T | null> {
+    console.log(`🗄️ IndexedDBService: 从 ${storeName} 获取数据，ID=${id}`);
+
+    try {
+      const result = await this.performTransaction(
+        storeName,
+        "readonly",
+        (store) => store.get(id)
+      );
+
+      console.log(`🗄️ IndexedDBService: 从 ${storeName} 获取的结果`, result);
+      return result || null;
+    } catch (error) {
+      console.error(
+        `🗄️ IndexedDBService: 获取${storeName}中的项目失败:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  // 向指定存储区域添加或更新项目
+  async putItem<T extends { id: string }>(
+    storeName: string,
+    item: T
+  ): Promise<T> {
+    console.log(`🗄️ IndexedDBService: 向 ${storeName} 存储数据`, item);
+
+    await this.performTransaction(storeName, "readwrite", (store) =>
+      store.put(item)
+    );
+
+    console.log(`🗄️ IndexedDBService: 数据成功存储到 ${storeName}`);
+    return item;
+  }
+
+  // 从指定存储区域删除项目
+  async deleteItem(storeName: string, id: string): Promise<boolean> {
+    try {
+      await this.performTransaction(storeName, "readwrite", (store) =>
+        store.delete(id)
+      );
+      return true;
+    } catch (error) {
+      console.error(`删除${storeName}中的项目失败:`, error);
       return false;
     }
   }

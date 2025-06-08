@@ -192,7 +192,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
       footer={null}
       width={700}
       className="search-modal"
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="search-modal-content">
         {/* 搜索输入框 */}
