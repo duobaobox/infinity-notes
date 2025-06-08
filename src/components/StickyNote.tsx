@@ -18,7 +18,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isSyncingPosition, setIsSyncingPosition] = useState(false); // 新增状态
+  const [isSyncingPosition, setIsSyncingPosition] = useState(false); // 位置同步状态
+  const [isSyncingSize, setIsSyncingSize] = useState(false); // 新增：尺寸同步状态
   const [resizeStart, setResizeStart] = useState({
     x: 0,
     y: 0,
@@ -32,28 +33,37 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     width: note.width,
     height: note.height,
   });
+
+  // 本地编辑状态管理 - 不通过数据库同步
+  const [isEditing, setIsEditing] = useState(note.isEditing);
+  const [isTitleEditing, setIsTitleEditing] = useState(note.isTitleEditing);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
 
   // 开始编辑内容
   const startEditing = useCallback(() => {
-    onUpdate(note.id, { isEditing: true });
-  }, [note.id, onUpdate]);
+    setIsEditing(true);
+  }, []);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
-    onUpdate(note.id, { isEditing: false, updatedAt: new Date() });
+    setIsEditing(false);
+    // 只保存实际内容，不保存编辑状态
+    onUpdate(note.id, { updatedAt: new Date() });
   }, [note.id, onUpdate]);
 
   // 开始编辑标题
   const startTitleEditing = useCallback(() => {
-    onUpdate(note.id, { isTitleEditing: true });
-  }, [note.id, onUpdate]);
+    setIsTitleEditing(true);
+  }, []);
 
   // 停止编辑标题
   const stopTitleEditing = useCallback(() => {
-    onUpdate(note.id, { isTitleEditing: false, updatedAt: new Date() });
+    setIsTitleEditing(false);
+    // 只保存实际内容，不保存编辑状态
+    onUpdate(note.id, { updatedAt: new Date() });
   }, [note.id, onUpdate]);
 
   // 内容变化处理
@@ -85,23 +95,21 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }, 0);
 
       // 如果当前处于编辑状态，将编辑状态设为false，但不保存内容
-      if (note.isEditing || note.isTitleEditing) {
-        onUpdate(note.id, {
-          isEditing: false,
-          isTitleEditing: false,
-        });
+      if (isEditing || isTitleEditing) {
+        setIsEditing(false);
+        setIsTitleEditing(false);
       }
     },
-    [note.id, note.isEditing, note.isTitleEditing, onDelete, onUpdate]
+    [note.id, isEditing, isTitleEditing, onDelete]
   );
 
   // 鼠标按下开始拖拽
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (note.isEditing || note.isTitleEditing) return;
+      if (isEditing || isTitleEditing) return;
 
       e.preventDefault();
-      e.stopPropagation(); // 恢复此行
+      e.stopPropagation();
 
       // 将便签置顶
       onBringToFront(note.id);
@@ -121,8 +129,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       setIsDragging(true);
     },
     [
-      note.isEditing,
-      note.isTitleEditing,
+      isEditing,
+      isTitleEditing,
       note.id,
       note.x,
       note.y,
@@ -194,10 +202,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           height: tempSize.height,
           updatedAt: new Date(),
         });
+        setIsResizing(false); // 首先设置 resizing 为 false
+        setIsSyncingSize(true); // 然后设置 syncing 为 true
       }
-
-      // setIsDragging(false); // 已在上面处理
-      setIsResizing(false);
     };
 
     if (isDragging || isResizing) {
@@ -237,6 +244,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [note.x, note.y, tempPosition.x, tempPosition.y, isSyncingPosition]);
 
+  // 处理尺寸同步的 Effect
+  useEffect(() => {
+    if (
+      isSyncingSize &&
+      note.width === tempSize.width &&
+      note.height === tempSize.height
+    ) {
+      setIsSyncingSize(false);
+    }
+  }, [note.width, note.height, tempSize.width, tempSize.height, isSyncingSize]);
+
   // 当 note 的位置从 props 更新时，同步 tempPosition (非拖动或同步状态下)
   useEffect(() => {
     if (!isDragging && !isSyncingPosition) {
@@ -244,27 +262,44 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [note.x, note.y, isDragging, isSyncingPosition]);
 
+  // 当 note 的尺寸从 props 更新时，同步 tempSize (非调整大小或同步状态下)
+  useEffect(() => {
+    if (!isResizing && !isSyncingSize) {
+      setTempSize({ width: note.width, height: note.height });
+    }
+  }, [note.width, note.height, isResizing, isSyncingSize]);
+
+  // 同步数据库中的编辑状态到本地状态（只在组件初始化时）
+  useEffect(() => {
+    if (note.isEditing !== isEditing) {
+      setIsEditing(note.isEditing);
+    }
+    if (note.isTitleEditing !== isTitleEditing) {
+      setIsTitleEditing(note.isTitleEditing);
+    }
+  }, [note.isEditing, note.isTitleEditing]); // 只在数据库状态变化时同步
+
   // 自动聚焦到文本框 - 仅在进入编辑模式时设置光标到末尾
   useEffect(() => {
-    if (note.isEditing && textareaRef.current) {
+    if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
       textareaRef.current.setSelectionRange(
         note.content.length,
         note.content.length
       );
     }
-  }, [note.isEditing]); // 只依赖编辑状态，不依赖内容变化
+  }, [isEditing, note.content.length]); // 依赖本地编辑状态
 
   // 自动聚焦到标题输入框 - 仅在进入标题编辑模式时设置光标到末尾
   useEffect(() => {
-    if (note.isTitleEditing && titleInputRef.current) {
+    if (isTitleEditing && titleInputRef.current) {
       titleInputRef.current.focus();
       titleInputRef.current.setSelectionRange(
         note.title.length,
         note.title.length
       );
     }
-  }, [note.isTitleEditing]); // 只依赖标题编辑状态，不依赖标题内容变化
+  }, [isTitleEditing, note.title.length]); // 依赖本地编辑状态
 
   // 处理内容编辑键盘事件
   const handleContentKeyDown = useCallback(
@@ -294,41 +329,66 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   );
 
   // 防止文本框失焦时意外保存空内容
-  const handleContentBlur = useCallback(() => {
-    // 延迟一点时间，让用户有机会点击其他按钮
-    setTimeout(() => {
-      // 检查当前点击的元素是否是删除按钮或其父元素
-      const activeElement = document.activeElement;
-      const isClickedDeleteButton =
-        activeElement &&
-        (activeElement.classList.contains("delete-button") ||
-          activeElement.closest(".delete-button") ||
-          activeElement.closest("[class*='delete-button']")); // 增强检测，匹配任何包含delete-button的类名
+  const handleContentBlur = useCallback(
+    (e: React.FocusEvent) => {
+      // 检查新的焦点目标
+      const relatedTarget = e.relatedTarget as HTMLElement;
 
-      // 如果不是点击删除按钮，才进行保存
-      if (!isClickedDeleteButton) {
-        stopEditing();
+      // 如果焦点转移到删除按钮，不退出编辑模式
+      if (
+        relatedTarget &&
+        (relatedTarget.classList.contains("delete-button") ||
+          relatedTarget.closest(".delete-button") ||
+          relatedTarget.closest("[class*='delete-button']"))
+      ) {
+        return;
       }
-    }, 100); // 减少延迟时间，让删除操作有更大机会先执行
-  }, [stopEditing]);
+
+      // 如果焦点转移到当前便签内的其他元素，不退出编辑模式
+      if (
+        relatedTarget &&
+        noteRef.current &&
+        noteRef.current.contains(relatedTarget)
+      ) {
+        return;
+      }
+
+      // 否则退出编辑模式
+      stopEditing();
+    },
+    [stopEditing]
+  );
 
   // 标题失焦时停止编辑
-  const handleTitleBlur = useCallback(() => {
-    setTimeout(() => {
-      // 检查当前点击的元素是否是删除按钮或其父元素
-      const activeElement = document.activeElement;
-      const isClickedDeleteButton =
-        activeElement &&
-        (activeElement.classList.contains("delete-button") ||
-          activeElement.closest(".delete-button") ||
-          activeElement.closest("[class*='delete-button']")); // 增强检测，匹配任何包含delete-button的类名
+  const handleTitleBlur = useCallback(
+    (e: React.FocusEvent) => {
+      // 检查新的焦点目标
+      const relatedTarget = e.relatedTarget as HTMLElement;
 
-      // 如果不是点击删除按钮，才停止标题编辑
-      if (!isClickedDeleteButton) {
-        stopTitleEditing();
+      // 如果焦点转移到删除按钮，不退出编辑模式
+      if (
+        relatedTarget &&
+        (relatedTarget.classList.contains("delete-button") ||
+          relatedTarget.closest(".delete-button") ||
+          relatedTarget.closest("[class*='delete-button']"))
+      ) {
+        return;
       }
-    }, 100); // 减少延迟时间，让删除操作有更大机会先执行
-  }, [stopTitleEditing]);
+
+      // 如果焦点转移到当前便签内的其他元素，不退出编辑模式
+      if (
+        relatedTarget &&
+        noteRef.current &&
+        noteRef.current.contains(relatedTarget)
+      ) {
+        return;
+      }
+
+      // 否则退出编辑模式
+      stopTitleEditing();
+    },
+    [stopTitleEditing]
+  );
 
   // 计算背景色透明度 - 根据文本长度
   const getContentBackgroundOpacity = () => {
@@ -351,14 +411,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 计算实际使用的位置和尺寸（拖动时用临时值，否则用数据库值）
   const actualX = isDragging || isSyncingPosition ? tempPosition.x : note.x;
   const actualY = isDragging || isSyncingPosition ? tempPosition.y : note.y;
-  const actualWidth = isResizing ? tempSize.width : note.width;
-  const actualHeight = isResizing ? tempSize.height : note.height;
+  const actualWidth = isResizing || isSyncingSize ? tempSize.width : note.width;
+  const actualHeight =
+    isResizing || isSyncingSize ? tempSize.height : note.height;
 
   return (
     <div
       ref={noteRef}
       className={`sticky-note color-${note.color} ${
-        note.isEditing ? "editing" : ""
+        isEditing ? "editing" : ""
       } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""}`}
       style={{
         left: actualX,
@@ -367,35 +428,59 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         height: actualHeight,
         zIndex: note.zIndex,
       }}
-      onMouseDown={handleMouseDown}
     >
       <div className="sticky-note-header">
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
-          {note.isTitleEditing ? (
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={note.title}
-              onChange={handleTitleChange}
-              onKeyDown={handleTitleKeyDown}
-              onBlur={handleTitleBlur}
-              className="sticky-note-title-input"
-              placeholder="便签标题"
-            />
-          ) : (
-            <h3
-              className="sticky-note-title"
-              onDoubleClick={startTitleEditing}
-              title="双击编辑标题"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
-                width: getTitleBackgroundWidth(),
-                display: "inline-block",
-              }}
-            >
-              {note.title || "便签"}
-            </h3>
-          )}
+        {/* 专门的拖拽区域 */}
+        <div
+          className="drag-handle"
+          onMouseDown={handleMouseDown}
+          style={{
+            flexGrow: 1,
+            cursor: isDragging ? "grabbing" : "grab",
+            minHeight: "20px",
+            display: "flex",
+            alignItems: "center",
+          }}
+          title="拖拽移动便签"
+        >
+          <div
+            style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}
+          >
+            {isTitleEditing ? (
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={note.title}
+                onChange={handleTitleChange}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={handleTitleBlur}
+                className="sticky-note-title-input"
+                placeholder="便签标题"
+              />
+            ) : (
+              <h3
+                className="sticky-note-title"
+                onMouseDown={(e) => {
+                  // 阻止父元素的拖拽事件
+                  e.stopPropagation();
+                }}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startTitleEditing();
+                }}
+                title="双击编辑标题"
+                style={{
+                  backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
+                  width: getTitleBackgroundWidth(),
+                  display: "inline-block",
+                  cursor: "text",
+                }}
+              >
+                {note.title || "便签"}
+              </h3>
+            )}
+          </div>
         </div>
         <div className="sticky-note-controls">
           {/* 编辑按钮已移除 */}
@@ -417,7 +502,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       </div>
 
       <div className="sticky-note-content">
-        {note.isEditing ? (
+        {isEditing ? (
           <textarea
             ref={textareaRef}
             value={note.content}
@@ -430,7 +515,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         ) : (
           <div
             className="sticky-note-preview"
-            onDoubleClick={startEditing}
+            onMouseDown={(e) => {
+              // 阻止父元素的拖拽事件
+              e.stopPropagation();
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startEditing();
+            }}
             style={{
               backgroundColor: `rgba(255, 255, 255, ${getContentBackgroundOpacity()})`,
             }}
@@ -446,7 +539,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         )}
       </div>
 
-      {!note.isEditing && (
+      {!isEditing && (
         <div
           className="resize-handle"
           onMouseDown={handleResizeMouseDown}

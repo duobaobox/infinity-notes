@@ -8,6 +8,7 @@ import React, {
 import { throttle } from "lodash";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasGrid from "./CanvasGrid";
+import CanvasConsole from "./CanvasConsole";
 import StickyNote from "./StickyNote";
 import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "./types";
@@ -635,6 +636,21 @@ const InfiniteCanvas: React.FC = () => {
               );
             })}
       </div>
+
+      {/* 控制台组件 */}
+      <CanvasConsole
+        onSendMessage={(message) => {
+          // TODO: 实现AI消息处理逻辑
+          console.log("💬 收到AI消息:", message);
+          // 这里可以集成AI API调用
+        }}
+        onCreateNote={createStickyNoteAtCenter}
+        onToggleAI={() => {
+          // TODO: 实现AI助手切换逻辑
+          console.log("🤖 切换AI助手状态");
+          // 这里可以切换AI模式或显示AI设置
+        }}
+      />
     </div>
   );
 };

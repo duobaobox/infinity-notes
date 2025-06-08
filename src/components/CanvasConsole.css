@@ -1,0 +1,199 @@
+/* 控制台样式 */
+.canvas-console {
+  position: fixed; /* 相对于视口定位 */
+  bottom: 24px; /* 距离底部一段距离 */
+  left: 50%; /* 水平居中 */
+  transform: translateX(-50%); /* 精确水平居中 */
+  z-index: 99; /* 稍低于工具栏，避免冲突 */
+  max-width: 600px; /* 最大宽度 */
+  width: 85%; /* 响应式宽度 */
+  min-width: 400px; /* 最小宽度 */
+
+  /* 确保不被侧边栏遮挡 */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.console-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 28px; /* 更圆润的药丸形状 */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.console-container:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12), 0 3px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.console-container.focused {
+  box-shadow: 0 8px 25px rgba(22, 119, 255, 0.15),
+    0 3px 12px rgba(22, 119, 255, 0.08);
+  background: rgba(255, 255, 255, 0.99);
+  border-color: rgba(22, 119, 255, 0.2);
+}
+
+/* 输入框容器 */
+.console-input-container {
+  flex: 1;
+  margin: 0 4px;
+}
+
+/* 输入框样式 */
+.console-input {
+  border-radius: 20px !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: rgba(248, 250, 252, 0.8) !important;
+  transition: all 0.2s ease !important;
+  font-size: 14px !important;
+  padding: 10px 16px !important;
+  box-shadow: none !important;
+}
+
+.console-input::placeholder {
+  color: rgba(0, 0, 0, 0.45) !important;
+  font-weight: 400 !important;
+}
+
+.console-input:hover {
+  border-color: rgba(22, 119, 255, 0.2) !important;
+  background: rgba(248, 250, 252, 0.9) !important;
+}
+
+.console-input:focus,
+.console-input.ant-input-focused {
+  border-color: #1677ff !important;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 1) !important;
+}
+
+/* AI按钮样式 */
+.console-button {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  background: rgba(114, 46, 209, 0.08) !important;
+}
+
+.console-button:hover {
+  background: rgba(114, 46, 209, 0.15) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(114, 46, 209, 0.2) !important;
+}
+
+.console-button:active {
+  transform: translateY(0) !important;
+}
+
+/* AI按钮特殊样式 */
+.ai-button {
+  color: #722ed1 !important;
+}
+
+.ai-button:hover {
+  color: #531dab !important;
+}
+
+/* 内联按钮样式 */
+.send-button,
+.add-button-inline {
+  color: #52c41a !important;
+  transition: all 0.2s ease !important;
+  border-radius: 50% !important;
+  margin-right: 2px !important;
+  background: transparent !important;
+}
+
+.send-button:hover,
+.add-button-inline:hover {
+  color: #389e0d !important;
+  background: rgba(82, 196, 26, 0.1) !important;
+}
+
+.add-button-inline {
+  color: #1677ff !important;
+}
+
+.add-button-inline:hover {
+  color: #0958d9 !important;
+  background: rgba(22, 119, 255, 0.1) !important;
+}
+
+.send-button:disabled {
+  color: rgba(0, 0, 0, 0.25) !important;
+  background: transparent !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .canvas-console {
+    width: 92%;
+    min-width: 320px;
+    bottom: 16px;
+  }
+
+  .console-container {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .console-button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .console-input-container {
+    margin: 0 4px;
+  }
+
+  .console-input {
+    font-size: 13px !important;
+    padding: 8px 14px !important;
+  }
+}
+
+/* 加载动画效果 */
+@keyframes console-appear {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.canvas-console {
+  animation: console-appear 0.3s ease-out;
+}
+
+/* AI按钮呼吸效果 */
+@keyframes ai-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(114, 46, 209, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(114, 46, 209, 0.1);
+  }
+}
+
+.ai-button {
+  animation: ai-pulse 2s infinite ease-in-out;
+}
+
+.ai-button:hover {
+  animation: none;
+}
