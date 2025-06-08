@@ -1,39 +1,66 @@
 // 数据库模块入口文件
 // 提供便签应用的完整数据库解决方案
-// 当前使用 SQLite 版本（浏览器兼容）
+// 当前使用 IndexedDB 版本（浏览器原生高性能存储）
 
-// SQLite 适配器和钩子 (确保这些文件存在并已正确实现)
-export { BrowserDatabaseAdapter } from "./BrowserDatabaseAdapter.js";
-// export { useDatabaseSQLite as useDatabase } from "./useDatabaseSQLite.js"; // 假设 useDatabaseSQLite.ts 提供了 useDatabase 功能
-// export { useCanvasSQLite as useCanvas } from "./useCanvasSQLite.js"; // 假设 useCanvasSQLite.ts 提供了 useCanvas 功能
+// IndexedDB 适配器和钩子 - 新的高性能数据库解决方案
+export { IndexedDBAdapter } from "./IndexedDBAdapter.js";
+export {
+  useDatabase,
+  useCanvas,
+  getDatabaseService,
+  getDatabaseAdapter,
+  resetDatabase,
+} from "./useIndexedDB.js";
+
+// IndexedDB 服务层（用于高级功能）
+export { IndexedDBService } from "./IndexedDBService.js";
 
 // 类型导出
 export type { StickyNote } from "../components/types.js";
-export type {
-  User,
-  Canvas,
-  StickyNote as DbStickyNote,
-  Tag,
-} from "./BrowserDatabaseService.js";
 
-// 原始 LocalStorage 版本（注释掉或移除）
-// export { LocalStorageAdapter } from "./LocalStorageAdapter";
-// export { useDatabase } from "./useDatabaseLocalStorage";
-// export { useCanvas } from "./useCanvasLocalStorage";
+// 定义必要的数据库类型
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  display_name?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-// 原始 SQLite 版本（注释掉，供将来 Node.js 环境使用）
-// export { DatabaseService } from './DatabaseService';
-// export { DatabaseAdapter } from './DatabaseAdapter';
-// export { DatabaseInitializer, initializeDatabase, resetDatabase } from './DatabaseInitializer';
-// export { useDatabase, useCanvas, getDatabaseService, getDatabaseAdapter } from './useDatabase';
-// export type {
-//   User,
-//   Canvas,
-//   StickyNote as DbStickyNote,
-//   Tag,
-//   NoteTag,
-//   CanvasSetting,
-//   NoteHistory,
-//   CanvasCollaborator
-// } from './DatabaseService';
-// export * from './utils';
+export interface Canvas {
+  id: string;
+  name: string;
+  description?: string;
+  user_id: string;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  last_accessed?: string;
+}
+
+export interface DbStickyNote {
+  id: string;
+  canvas_id: string;
+  position_x: number;
+  position_y: number;
+  width: number;
+  height: number;
+  content: string;
+  title: string;
+  color: string;
+  font_size?: number;
+  z_index?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color?: string;
+  description?: string;
+  user_id: string;
+  created_at?: string;
+  updated_at?: string;
+}

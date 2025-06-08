@@ -11,6 +11,7 @@ import CanvasGrid from "./CanvasGrid";
 import StickyNote from "./StickyNote";
 import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "./types";
+import { useDatabase } from "../database";
 import "./InfiniteCanvas.css";
 
 interface CanvasState {
@@ -37,77 +38,16 @@ const InfiniteCanvas: React.FC = () => {
   });
   const [zoomAnimating, setZoomAnimating] = useState(false);
 
-  // 便签状态管理
-  const [stickyNotes, setStickyNotes] = useState<StickyNoteType[]>([]);
-
-  // 从本地存储加载便签
-  useEffect(() => {
-    const savedNotes = localStorage.getItem("infiniteCanvas_stickyNotes");
-    if (savedNotes) {
-      try {
-        const notes = JSON.parse(savedNotes).map(
-          (note: any, index: number) => ({
-            ...note,
-            title: note.title || "便签", // 兼容没有title的旧数据
-            isTitleEditing: note.isTitleEditing || false, // 兼容没有isTitleEditing的旧数据
-            isNew: false, // 从存储加载的便签不是新的
-            zIndex: note.zIndex || index, // 兼容旧数据
-            createdAt: new Date(note.createdAt),
-            updatedAt: new Date(note.updatedAt),
-          })
-        );
-        setStickyNotes(notes);
-      } catch (error) {
-        console.error("Failed to load sticky notes from localStorage:", error);
-      }
-    } else {
-      // 如果没有保存的便签，创建一个示例便签
-      const exampleNote: StickyNoteType = {
-        id: "example-note",
-        x: 100,
-        y: 100,
-        width: 300,
-        height: 250,
-        content: `# 欢迎使用便签功能！ 📝
-
-这是一个支持 **Markdown** 的便签。
-
-## 功能特性：
-- 支持 Markdown 语法
-- 可拖拽移动位置
-- 可调整大小
-- 双击编辑内容
-- 双击标题编辑标题
-- 自动保存到本地
-
-### 快捷操作：
-- 点击工具栏按钮创建新便签
-- \`Esc\` 退出编辑
-- \`Ctrl/⌘ + Enter\` 保存
-
-> 💡 试试编辑这个便签或创建新的便签吧！`,
-        title: "欢迎便签",
-        color: "yellow",
-        isNew: false,
-        zIndex: 1,
-        isEditing: false,
-        isTitleEditing: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setStickyNotes([exampleNote]);
-    }
-  }, []);
-
-  // 保存便签到本地存储
-  useEffect(() => {
-    if (stickyNotes.length > 0) {
-      localStorage.setItem(
-        "infiniteCanvas_stickyNotes",
-        JSON.stringify(stickyNotes)
-      );
-    }
-  }, [stickyNotes]);
+  // 使用数据库Hook管理便签
+  const {
+    notes: stickyNotes,
+    loading: notesLoading,
+    error: notesError,
+    addNote,
+    updateNote,
+    deleteNote,
+    clearDatabase,
+  } = useDatabase();
 
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
@@ -118,33 +58,41 @@ const InfiniteCanvas: React.FC = () => {
   });
 
   // 便签置顶功能
-  const bringNoteToFront = useCallback((id: string) => {
-    setStickyNotes((prev) => {
-      const maxZ = Math.max(...prev.map((note) => note.zIndex));
-      return prev.map((note) =>
-        note.id === id ? { ...note, zIndex: maxZ + 1 } : note
-      );
-    });
-  }, []);
+  const bringNoteToFront = useCallback(
+    async (id: string) => {
+      const note = stickyNotes.find((note) => note.id === id);
+      if (note) {
+        const maxZ = Math.max(...stickyNotes.map((note) => note.zIndex));
+        const updatedNote = { ...note, zIndex: maxZ + 1 };
+        await updateNote(updatedNote);
+      }
+    },
+    [stickyNotes, updateNote]
+  );
 
   // 更新便签
   const updateStickyNote = useCallback(
-    (id: string, updates: Partial<StickyNoteType>) => {
-      setStickyNotes((prev) =>
-        prev.map((note) => (note.id === id ? { ...note, ...updates } : note))
-      );
+    async (id: string, updates: Partial<StickyNoteType>) => {
+      const note = stickyNotes.find((note) => note.id === id);
+      if (note) {
+        const updatedNote = { ...note, ...updates };
+        await updateNote(updatedNote);
+      }
     },
-    []
+    [stickyNotes, updateNote]
   );
 
   // 删除便签
-  const deleteStickyNote = useCallback((id: string) => {
-    setStickyNotes((prev) => prev.filter((note) => note.id !== id));
-  }, []);
+  const deleteStickyNote = useCallback(
+    async (id: string) => {
+      await deleteNote(id);
+    },
+    [deleteNote]
+  );
 
   // 创建新便签 - 原有的双击功能
   const createStickyNote = useCallback(
-    (x: number, y: number) => {
+    async (x: number, y: number) => {
       const colors: Array<StickyNoteType["color"]> = [
         "yellow",
         "blue",
@@ -163,36 +111,37 @@ const InfiniteCanvas: React.FC = () => {
       const positionX = x + randomOffsetX;
       const positionY = y + randomOffsetY;
 
-      setStickyNotes((prev) => {
-        const maxZ =
-          prev.length > 0 ? Math.max(...prev.map((note) => note.zIndex)) : 0;
-        const newNote: StickyNoteType = {
-          id: `note-${Date.now()}-${Math.random()}`,
-          // 使用添加了随机偏移的坐标
-          x: positionX,
-          y: positionY,
-          width: 250,
-          height: 200,
-          content: "",
-          title: "新便签",
-          color: randomColor,
-          isNew: true,
-          zIndex: maxZ + 1,
-          isEditing: true,
-          isTitleEditing: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+      const maxZ =
+        stickyNotes.length > 0
+          ? Math.max(...stickyNotes.map((note) => note.zIndex))
+          : 0;
+      const newNote: StickyNoteType = {
+        id: `note-${Date.now()}-${Math.random()}`,
+        // 使用添加了随机偏移的坐标
+        x: positionX,
+        y: positionY,
+        width: 250,
+        height: 200,
+        content: "",
+        title: "新便签",
+        color: randomColor,
+        isNew: true,
+        zIndex: maxZ + 1,
+        isEditing: true,
+        isTitleEditing: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-        // 500ms 后移除新建标记
-        setTimeout(() => {
-          updateStickyNote(newNote.id, { isNew: false });
-        }, 500);
+      // 添加到数据库
+      await addNote(newNote);
 
-        return [...prev, newNote];
-      });
+      // 500ms 后移除新建标记
+      setTimeout(() => {
+        updateStickyNote(newNote.id, { isNew: false });
+      }, 500);
     },
-    [updateStickyNote]
+    [stickyNotes, addNote, updateStickyNote]
   );
 
   // 创建新便签 - 在画布中心位置
@@ -591,6 +540,7 @@ const InfiniteCanvas: React.FC = () => {
         onZoomOut={handleZoomOut}
         onReset={handleReset}
         onCreateNote={createStickyNoteAtCenter}
+        onClearDatabase={clearDatabase}
         minScale={CANVAS_CONSTANTS.MIN_SCALE}
         maxScale={CANVAS_CONSTANTS.MAX_SCALE}
       />
@@ -616,31 +566,74 @@ const InfiniteCanvas: React.FC = () => {
 
       {/* 便签容器 - 独立于画布变换 */}
       <div className="sticky-notes-container">
-        {stickyNotes
-          .sort((a, b) => a.zIndex - b.zIndex) // 按 Z 索引排序
-          .map((note) => {
-            const screenNote = {
-              ...note,
-              x: note.x * canvasState.scale,
-              y: note.y * canvasState.scale,
-              width: note.width * canvasState.scale,
-              height: note.height * canvasState.scale,
-            };
-            return (
-              <StickyNote
-                key={note.id}
-                note={screenNote}
-                onUpdate={updateStickyNote}
-                onDelete={deleteStickyNote}
-                onBringToFront={bringNoteToFront}
-                canvasScale={canvasState.scale} // StickyNote still needs the raw scale for its internal logic
-                canvasOffset={{
-                  x: canvasState.offsetX, // This is the offset of the sticky-notes-container
-                  y: canvasState.offsetY, // This is the offset of the sticky-notes-container
-                }}
-              />
-            );
-          })}
+        {/* 加载状态 */}
+        {notesLoading && (
+          <div
+            className="loading-indicator"
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              background: "rgba(0, 0, 0, 0.7)",
+              color: "white",
+              padding: "8px 12px",
+              borderRadius: "4px",
+              fontSize: "14px",
+              zIndex: 10000,
+            }}
+          >
+            加载便签中...
+          </div>
+        )}
+
+        {/* 错误状态 */}
+        {notesError && (
+          <div
+            className="error-indicator"
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              background: "rgba(220, 53, 69, 0.9)",
+              color: "white",
+              padding: "8px 12px",
+              borderRadius: "4px",
+              fontSize: "14px",
+              zIndex: 10000,
+            }}
+          >
+            加载便签失败: {notesError}
+          </div>
+        )}
+
+        {/* 便签列表 */}
+        {!notesLoading &&
+          !notesError &&
+          stickyNotes
+            .sort((a, b) => a.zIndex - b.zIndex) // 按 Z 索引排序
+            .map((note) => {
+              const screenNote = {
+                ...note,
+                x: note.x * canvasState.scale,
+                y: note.y * canvasState.scale,
+                width: note.width * canvasState.scale,
+                height: note.height * canvasState.scale,
+              };
+              return (
+                <StickyNote
+                  key={note.id}
+                  note={screenNote}
+                  onUpdate={updateStickyNote}
+                  onDelete={deleteStickyNote}
+                  onBringToFront={bringNoteToFront}
+                  canvasScale={canvasState.scale} // StickyNote still needs the raw scale for its internal logic
+                  canvasOffset={{
+                    x: canvasState.offsetX, // This is the offset of the sticky-notes-container
+                    y: canvasState.offsetY, // This is the offset of the sticky-notes-container
+                  }}
+                />
+              );
+            })}
       </div>
     </div>
   );

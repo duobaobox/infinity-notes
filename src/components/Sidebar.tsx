@@ -16,80 +16,47 @@ import {
   StarFilled,
   ClockCircleOutlined,
 } from "@ant-design/icons";
+import { useDatabase } from "../database"; // 添加数据库Hook导入
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;
 
-// 模拟数据 - 画布列表
+// 模拟数据 - 画布列表（更新便签数量为真实数据）
 const mockCanvasList = [
   {
     id: "1",
     name: "工作计划",
-    notesCount: 5,
+    notesCount: 0, // 将通过计算更新
     isStarred: true,
     lastEdited: "2025-06-05",
   },
   {
     id: "2",
     name: "项目管理",
-    notesCount: 8,
+    notesCount: 0, // 将通过计算更新
     isStarred: false,
     lastEdited: "2025-06-06",
   },
   {
     id: "3",
     name: "学习笔记",
-    notesCount: 12,
+    notesCount: 0, // 将通过计算更新
     isStarred: true,
     lastEdited: "2025-06-07",
   },
   {
     id: "4",
     name: "会议纪要",
-    notesCount: 3,
+    notesCount: 0, // 将通过计算更新
     isStarred: false,
     lastEdited: "2025-06-04",
   },
   {
     id: "5",
     name: "创意收集",
-    notesCount: 7,
+    notesCount: 0, // 将通过计算更新
     isStarred: false,
     lastEdited: "2025-06-02",
-  },
-];
-
-// 模拟数据 - 便签列表
-const mockNotesList = [
-  {
-    id: "101",
-    title: "周一工作安排",
-    color: "#ffccc7",
-    lastEdited: "2025-06-07 10:30",
-  },
-  {
-    id: "102",
-    title: "项目进度跟踪",
-    color: "#d9f7be",
-    lastEdited: "2025-06-07 09:15",
-  },
-  {
-    id: "103",
-    title: "团队会议要点",
-    color: "#91caff",
-    lastEdited: "2025-06-06 16:45",
-  },
-  {
-    id: "104",
-    title: "客户反馈汇总",
-    color: "#d3adf7",
-    lastEdited: "2025-06-06 14:20",
-  },
-  {
-    id: "105",
-    title: "下周工作计划",
-    color: "#ffe58f",
-    lastEdited: "2025-06-05 17:30",
   },
 ];
 
@@ -103,6 +70,63 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const [canvasSearchValue, setCanvasSearchValue] = useState<string>("");
   const [noteSearchValue, setNoteSearchValue] = useState<string>("");
   const [collapsed, setCollapsed] = useState(false);
+
+  // 使用数据库Hook获取真实数据
+  const {
+    notes: stickyNotes,
+    loading: notesLoading,
+    error: notesError,
+  } = useDatabase();
+
+  // 计算当前画布的便签数量
+  const currentCanvasNotesCount = stickyNotes.length;
+
+  // 过滤便签数据（根据搜索关键词）
+  const filteredNotes = stickyNotes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(noteSearchValue.toLowerCase()) ||
+      note.content.toLowerCase().includes(noteSearchValue.toLowerCase())
+  );
+
+  // 将便签转换为显示格式
+  const displayNotes = filteredNotes.map((note) => ({
+    id: note.id,
+    title: note.title || "无标题便签",
+    color: getColorHex(note.color),
+    lastEdited: formatDate(note.updatedAt),
+  }));
+
+  // 颜色映射函数
+  function getColorHex(color: string): string {
+    const colorMap: Record<string, string> = {
+      yellow: "#fef3c7",
+      blue: "#dbeafe",
+      green: "#d1fae5",
+      pink: "#fce7f3",
+      purple: "#e9d5ff",
+    };
+    return colorMap[color] || "#fef3c7";
+  }
+
+  // 日期格式化函数
+  function formatDate(date: Date): string {
+    const now = new Date();
+    const diffTime = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return date.toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else if (diffDays === 1) {
+      return "昨天";
+    } else if (diffDays < 7) {
+      return `${diffDays}天前`;
+    } else {
+      return date.toLocaleDateString("zh-CN");
+    }
+  }
 
   // 处理画布选择
   const handleCanvasSelect = (canvasId: string) => {
@@ -198,7 +222,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
               >
                 <List
                   itemLayout="horizontal"
-                  dataSource={mockCanvasList}
+                  dataSource={mockCanvasList.map((canvas) => ({
+                    ...canvas,
+                    notesCount: canvas.id === "1" ? currentCanvasNotesCount : 0,
+                  }))}
                   renderItem={(canvas) => {
                     const isSelected = selectedCanvas === canvas.id;
 
@@ -355,7 +382,15 @@ const Sidebar: React.FC<SidebarProps> = () => {
               >
                 <List
                   itemLayout="horizontal"
-                  dataSource={mockNotesList}
+                  dataSource={displayNotes}
+                  loading={notesLoading}
+                  locale={{
+                    emptyText: notesError
+                      ? `加载失败: ${notesError}`
+                      : noteSearchValue
+                      ? "未找到匹配的便签"
+                      : "暂无便签",
+                  }}
                   renderItem={(note) => (
                     <List.Item
                       style={{

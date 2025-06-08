@@ -1,30 +1,30 @@
 import { useState, useEffect, useCallback } from "react";
-import { BrowserDatabaseService } from "./BrowserDatabaseService";
-import { BrowserDatabaseAdapter } from "./BrowserDatabaseAdapter";
+import { IndexedDBService } from "./IndexedDBService";
+import { IndexedDBAdapter } from "./IndexedDBAdapter";
 import type { StickyNote } from "../components/types";
 
 // 全局服务实例
-let globalDbService: BrowserDatabaseService | null = null;
-let globalDbAdapter: BrowserDatabaseAdapter | null = null;
+let globalDbService: IndexedDBService | null = null;
+let globalDbAdapter: IndexedDBAdapter | null = null;
 
 /**
- * 获取数据库服务实例
+ * 获取 IndexedDB 服务实例
  */
-export function getDatabaseService(): BrowserDatabaseService {
+export function getDatabaseService(): IndexedDBService {
   if (!globalDbService) {
-    globalDbService = BrowserDatabaseService.getInstance();
+    globalDbService = IndexedDBService.getInstance();
   }
   return globalDbService;
 }
 
 /**
- * 获取数据库适配器实例
+ * 获取 IndexedDB 适配器实例
  */
-export function getDatabaseAdapter(): BrowserDatabaseAdapter {
+export function getDatabaseAdapter(): IndexedDBAdapter {
   if (!globalDbAdapter) {
     const dbService = getDatabaseService();
     const userId = "default_user"; // 在实际应用中，这应该来自用户认证
-    globalDbAdapter = new BrowserDatabaseAdapter(dbService, userId);
+    globalDbAdapter = new IndexedDBAdapter(dbService, userId);
   }
   return globalDbAdapter;
 }
@@ -37,9 +37,9 @@ async function initializeDatabase(): Promise<void> {
   await dbService.initialize();
 
   // 确保有默认用户
-  const defaultUser = dbService.getUserById("default_user");
+  const defaultUser = await dbService.getUserById("default_user");
   if (!defaultUser) {
-    dbService.createUser({
+    await dbService.createUser({
       id: "default_user",
       username: "user",
       email: "user@example.com",
@@ -49,7 +49,7 @@ async function initializeDatabase(): Promise<void> {
 
   // 执行数据迁移
   const adapter = getDatabaseAdapter();
-  await adapter.migrateFromLocalStorage();
+  await adapter.migrateFromSQLjs();
 }
 
 /**
@@ -58,6 +58,12 @@ async function initializeDatabase(): Promise<void> {
 export async function resetDatabase(): Promise<void> {
   const dbService = getDatabaseService();
   await dbService.reset();
+
+  // 重置全局实例
+  globalDbService = null;
+  globalDbAdapter = null;
+
+  // 重新初始化
   await initializeDatabase();
 }
 
@@ -85,7 +91,7 @@ export function useDatabase() {
         // 获取当前画布ID
         setCurrentCanvasId(adapter.getCurrentCanvasId());
       } catch (err) {
-        console.error("数据库初始化失败:", err);
+        console.error("IndexedDB 初始化失败:", err);
         setError(err instanceof Error ? err.message : "数据库初始化失败");
       } finally {
         setLoading(false);
@@ -204,6 +210,111 @@ export function useDatabase() {
     }
   }, []);
 
+  // 导出数据
+  const exportData = useCallback(async () => {
+    try {
+      const adapter = getDatabaseAdapter();
+      const data = await adapter.exportAllData();
+
+      // 创建下载链接
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `sticky-notes-backup-${
+        new Date().toISOString().split("T")[0]
+      }.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      return data;
+    } catch (err) {
+      console.error("导出数据失败:", err);
+      setError(err instanceof Error ? err.message : "导出数据失败");
+      throw err;
+    }
+  }, []);
+
+  // 导入数据
+  const importData = useCallback(
+    async (file: File): Promise<void> => {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        const adapter = getDatabaseAdapter();
+        await adapter.importAllData(data);
+
+        // 刷新数据
+        await refreshNotes();
+      } catch (err) {
+        console.error("导入数据失败:", err);
+        setError(err instanceof Error ? err.message : "导入数据失败");
+        throw err;
+      }
+    },
+    [refreshNotes]
+  );
+
+  // 获取存储信息
+  const getStorageInfo = useCallback(async () => {
+    try {
+      const adapter = getDatabaseAdapter();
+      return await adapter.getStorageInfo();
+    } catch (err) {
+      console.error("获取存储信息失败:", err);
+      return { used: 0, total: 0 };
+    }
+  }, []);
+
+  // 清空数据库
+  const clearDatabase = useCallback(async (): Promise<void> => {
+    try {
+      const adapter = getDatabaseAdapter();
+      await adapter.clearDatabase();
+
+      // 重置状态
+      setNotes([]);
+      setCurrentCanvasId(null);
+      setLoading(false);
+      setError(null);
+
+      // 重新初始化
+      const init = async () => {
+        try {
+          setLoading(true);
+          await initializeDatabase();
+          const adapter = getDatabaseAdapter();
+          await adapter.ensureDefaultCanvas();
+          const currentId = adapter.getCurrentCanvasId();
+          if (currentId) {
+            setCurrentCanvasId(currentId);
+            const dbNotes = await adapter.getAllNotes();
+            setNotes(dbNotes);
+          }
+          setLoading(false);
+        } catch (err) {
+          console.error("数据库初始化失败:", err);
+          setError(err instanceof Error ? err.message : "数据库初始化失败");
+          setLoading(false);
+        }
+      };
+
+      // 执行初始化
+      await init();
+
+      console.log("数据库已清空并重新初始化");
+    } catch (err) {
+      console.error("清空数据库失败:", err);
+      setError(err instanceof Error ? err.message : "清空数据库失败");
+      throw err;
+    }
+  }, []);
+
   return {
     // 新接口
     notes,
@@ -216,6 +327,10 @@ export function useDatabase() {
     searchNotes,
     getStats,
     refreshNotes,
+    exportData,
+    importData,
+    getStorageInfo,
+    clearDatabase, // 新增清空数据库接口
 
     // 兼容旧接口
     stickyNotes: notes,

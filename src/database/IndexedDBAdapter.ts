@@ -1,20 +1,18 @@
-import { BrowserDatabaseService } from "./BrowserDatabaseService.js";
-import type {
-  StickyNote as DbStickyNote,
-  Canvas as DbCanvas,
-} from "./BrowserDatabaseService.js";
+import { IndexedDBService } from "./IndexedDBService";
+import type { DbStickyNote, Canvas as DbCanvas } from "./index";
 import type { StickyNote as ComponentStickyNote } from "../components/types";
 
 /**
- * 浏览器数据库适配器
- * 负责在浏览器数据库接口和组件接口之间进行转换
+ * IndexedDB 数据库适配器
+ * 负责在 IndexedDB 数据库接口和组件接口之间进行转换
+ * 保持与 BrowserDatabaseAdapter 相同的 API
  */
-export class BrowserDatabaseAdapter {
-  private dbService: BrowserDatabaseService;
+export class IndexedDBAdapter {
+  private dbService: IndexedDBService;
   private currentUserId: string;
   private currentCanvasId: string | null = null;
 
-  constructor(dbService: BrowserDatabaseService, userId: string) {
+  constructor(dbService: IndexedDBService, userId: string) {
     this.dbService = dbService;
     this.currentUserId = userId;
   }
@@ -105,7 +103,7 @@ export class BrowserDatabaseAdapter {
       user_id: this.currentUserId,
       name: "默认画布",
       description: "我的便签画布",
-      is_default: 1,
+      is_default: true,
     });
 
     this.currentCanvasId = canvasId;
@@ -181,7 +179,7 @@ export class BrowserDatabaseAdapter {
       user_id: this.currentUserId,
       name,
       description: description || "",
-      is_default: 0,
+      is_default: false,
     });
     return canvasId;
   }
@@ -249,42 +247,124 @@ export class BrowserDatabaseAdapter {
   }
 
   /**
-   * 从LocalStorage迁移数据
+   * 从 SQL.js/localStorage 迁移数据
    */
-  async migrateFromLocalStorage(): Promise<void> {
+  async migrateFromSQLjs(): Promise<void> {
     try {
-      const localStorageNotes = localStorage.getItem("stickyNotes");
-      if (!localStorageNotes) {
-        return;
-      }
-
-      const notes: ComponentStickyNote[] = JSON.parse(localStorageNotes);
-      if (!Array.isArray(notes) || notes.length === 0) {
-        return;
-      }
-
-      console.log(
-        `开始迁移 ${notes.length} 个便签从 LocalStorage 到 SQLite...`
+      // 检查是否有旧的 SQL.js 数据
+      const sqliteData = localStorage.getItem("sticky_notes_db");
+      const localStorageData = localStorage.getItem(
+        "infiniteCanvas_stickyNotes"
       );
 
-      // 确保有默认画布
-      await this.ensureDefaultCanvas();
+      if (!sqliteData && !localStorageData) {
+        console.log("没有发现需要迁移的数据");
+        return;
+      }
 
-      // 批量添加便签
-      for (const note of notes) {
+      console.log("开始从 SQL.js/localStorage 迁移数据到 IndexedDB...");
+
+      // 如果有 localStorage 便签数据，先迁移这些
+      if (localStorageData) {
         try {
-          await this.addNote(note);
+          const notes: ComponentStickyNote[] = JSON.parse(localStorageData);
+          if (Array.isArray(notes) && notes.length > 0) {
+            console.log(
+              `发现 ${notes.length} 个 localStorage 便签，开始迁移...`
+            );
+
+            await this.ensureDefaultCanvas();
+
+            for (const note of notes) {
+              try {
+                await this.addNote(note);
+              } catch (error) {
+                console.warn(`迁移便签 ${note.id} 失败:`, error);
+              }
+            }
+
+            console.log("localStorage 便签迁移完成");
+          }
         } catch (error) {
-          console.warn(`迁移便签 ${note.id} 失败:`, error);
+          console.warn("解析 localStorage 便签数据失败:", error);
         }
       }
 
-      console.log("LocalStorage 数据迁移完成");
+      // TODO: 如果需要从 SQL.js 数据迁移，可以在这里添加逻辑
+      // 由于 SQL.js 的数据格式比较复杂，暂时跳过
 
-      // 可选：迁移完成后清除LocalStorage数据
-      // localStorage.removeItem('stickyNotes');
+      console.log("数据迁移完成");
+
+      // 迁移完成后，可以选择清理旧数据
+      // localStorage.removeItem("infiniteCanvas_stickyNotes");
+      // localStorage.removeItem("sticky_notes_db");
     } catch (error) {
-      console.error("从 LocalStorage 迁移数据时出错:", error);
+      console.error("数据迁移失败:", error);
     }
+  }
+
+  /**
+   * 导出数据
+   */
+  async exportAllData(): Promise<{
+    users: any[];
+    canvases: DbCanvas[];
+    notes: ComponentStickyNote[];
+    tags: any[];
+    exportDate: string;
+  }> {
+    const allData = await this.dbService.exportData();
+    const notes = allData.notes.map((note) => this.dbNoteToComponentNote(note));
+
+    return {
+      users: allData.users,
+      canvases: allData.canvases,
+      notes,
+      tags: allData.tags,
+      exportDate: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * 导入数据
+   */
+  async importAllData(data: {
+    users?: any[];
+    canvases?: DbCanvas[];
+    notes?: ComponentStickyNote[];
+    tags?: any[];
+  }): Promise<void> {
+    // 转换便签格式
+    let dbNotes: DbStickyNote[] | undefined;
+    if (data.notes) {
+      dbNotes = data.notes.map((note) => ({
+        ...this.componentNoteToDbNote(note),
+        created_at: note.createdAt.toISOString(),
+        updated_at: note.updatedAt.toISOString(),
+      }));
+    }
+
+    await this.dbService.importData({
+      users: data.users,
+      canvases: data.canvases,
+      notes: dbNotes,
+      tags: data.tags,
+    });
+  }
+
+  /**
+   * 获取存储信息
+   */
+  async getStorageInfo(): Promise<{ used: number; total: number }> {
+    return await this.dbService.getStorageInfo();
+  }
+
+  /**
+   * 清空数据库
+   * 警告：此操作会删除所有数据
+   */
+  async clearDatabase(): Promise<void> {
+    await this.dbService.clearDatabase();
+    this.currentCanvasId = null; // 重置当前画布ID
   }
 }
