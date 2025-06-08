@@ -167,13 +167,14 @@ const Sidebar: React.FC = () => {
 
   return (
     <Sider
-      width={260}
+      width={220}
       theme="light"
       style={{
         height: "100vh",
         borderRight: "1px solid #f0f0f0",
-        background: "#fcfcfc",
-        boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.1)",
+        background:
+          "linear-gradient(180deg,rgb(255, 255, 255) 0%,rgb(255, 255, 255) 100%)", // Gradient background
+        boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.05)", // Softer shadow
       }}
       ref={siderRef as React.RefObject<HTMLDivElement>}
       collapsible
@@ -191,13 +192,45 @@ const Sidebar: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "#fcfcfc",
+                background: "transparent", // Make panel background transparent to show Sider gradient
               }}
             >
+              {/* 用户信息区域 */}
               <div
                 style={{
-                  padding: "20px 16px 16px",
-                  borderBottom: "1px solid #f5f5f5",
+                  padding: "20px 16px",
+                  borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <Avatar
+                  size={40}
+                  style={{ marginRight: "12px", backgroundColor: "#1890ff" }}
+                >
+                  U
+                </Avatar>
+                <div>
+                  <Text
+                    style={{
+                      display: "block",
+                      fontWeight: 500,
+                      color: "#1f1f1f",
+                    }}
+                  >
+                    用户名称
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                    user@example.com
+                  </Text>
+                </div>
+              </div>
+
+              {/* 画布操作区域 */}
+              <div
+                style={{
+                  padding: "16px 16px 16px", // 调整了上边距
+                  borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
                 }}
               >
                 <div
@@ -213,7 +246,7 @@ const Sidebar: React.FC = () => {
                       margin: 0,
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "#262626",
+                      color: "#1f1f1f",
                     }}
                   >
                     我的画布
@@ -229,6 +262,8 @@ const Sidebar: React.FC = () => {
                       width: "100%",
                       borderRadius: "6px",
                       height: "36px",
+                      borderColor: "#adc6ff",
+                      color: "#3b82f6",
                     }}
                   >
                     新建画布
@@ -260,9 +295,9 @@ const Sidebar: React.FC = () => {
                           padding: "10px 12px",
                           cursor: "pointer",
                           backgroundColor: isSelected
-                            ? "#f0f7ff"
+                            ? "rgba(22, 119, 255, 0.1)" // Lighter blue selection
                             : "transparent",
-                          borderRadius: "6px",
+                          borderRadius: "8px", // Slightly more rounded
                           marginBottom: "4px",
                           border: "none",
                           transition: "all 0.2s ease",
@@ -281,7 +316,7 @@ const Sidebar: React.FC = () => {
                             style={{
                               backgroundColor: isSelected
                                 ? "#1677ff"
-                                : "#f5f5f5",
+                                : "rgba(0,0,0,0.04)", // Lighter grey
                               color: isSelected ? "#fff" : "#595959",
                               marginRight: "12px",
                             }}
@@ -322,11 +357,11 @@ const Sidebar: React.FC = () => {
                                 marginTop: "2px",
                                 display: "flex",
                                 alignItems: "center",
+                                color: isSelected ? "#1677ff" : "#8c8c8c", // Consistent color logic
                               }}
                             >
                               <span
                                 style={{
-                                  color: isSelected ? "#1677ff" : "#8c8c8c",
                                   fontWeight: isSelected ? 500 : 400,
                                   marginRight: "12px",
                                 }}
@@ -356,13 +391,13 @@ const Sidebar: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "#fcfcfc",
+                background: "transparent", // Make panel background transparent
               }}
             >
               <div
                 style={{
                   padding: "16px 16px 12px",
-                  borderBottom: "1px solid #f5f5f5",
+                  borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
                 }}
               >
                 <div
@@ -379,7 +414,7 @@ const Sidebar: React.FC = () => {
                       margin: 0,
                       fontSize: "15px",
                       fontWeight: 500,
-                      color: "#262626",
+                      color: "#1f1f1f",
                     }}
                   >
                     {currentCanvas?.name || ""}中的便签
@@ -392,6 +427,8 @@ const Sidebar: React.FC = () => {
                   onChange={(e) => setNoteSearchValue(e.target.value)}
                   style={{
                     borderRadius: "6px",
+                    background: "rgba(255,255,255,0.8)", // Slightly transparent input
+                    borderColor: "rgba(0,0,0,0.1)",
                   }}
                   size="middle"
                 />
@@ -418,12 +455,13 @@ const Sidebar: React.FC = () => {
                   renderItem={(note) => (
                     <List.Item
                       style={{
-                        padding: "10px 12px",
+                        padding: "6px 12px",
                         cursor: "pointer",
-                        backgroundColor: "#fff",
+                        backgroundColor: "rgba(255, 255, 255, 0.9)", // Slightly transparent items
                         marginBottom: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #f0f0f0",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(0, 0, 0, 0.08)",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.03)", // Subtle shadow for notes
                         transition: "all 0.2s ease",
                       }}
                     >
@@ -439,7 +477,7 @@ const Sidebar: React.FC = () => {
                             width: "4px",
                             alignSelf: "stretch",
                             backgroundColor: note.color,
-                            borderRadius: "2px",
+                            borderRadius: "2px 0 0 2px", // Rounded only on one side
                             marginRight: "10px",
                           }}
                         />
