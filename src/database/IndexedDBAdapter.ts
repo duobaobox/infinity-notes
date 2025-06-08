@@ -247,63 +247,6 @@ export class IndexedDBAdapter {
   }
 
   /**
-   * 从 SQL.js/localStorage 迁移数据
-   */
-  async migrateFromSQLjs(): Promise<void> {
-    try {
-      // 检查是否有旧的 SQL.js 数据
-      const sqliteData = localStorage.getItem("sticky_notes_db");
-      const localStorageData = localStorage.getItem(
-        "infiniteCanvas_stickyNotes"
-      );
-
-      if (!sqliteData && !localStorageData) {
-        console.log("没有发现需要迁移的数据");
-        return;
-      }
-
-      console.log("开始从 SQL.js/localStorage 迁移数据到 IndexedDB...");
-
-      // 如果有 localStorage 便签数据，先迁移这些
-      if (localStorageData) {
-        try {
-          const notes: ComponentStickyNote[] = JSON.parse(localStorageData);
-          if (Array.isArray(notes) && notes.length > 0) {
-            console.log(
-              `发现 ${notes.length} 个 localStorage 便签，开始迁移...`
-            );
-
-            await this.ensureDefaultCanvas();
-
-            for (const note of notes) {
-              try {
-                await this.addNote(note);
-              } catch (error) {
-                console.warn(`迁移便签 ${note.id} 失败:`, error);
-              }
-            }
-
-            console.log("localStorage 便签迁移完成");
-          }
-        } catch (error) {
-          console.warn("解析 localStorage 便签数据失败:", error);
-        }
-      }
-
-      // TODO: 如果需要从 SQL.js 数据迁移，可以在这里添加逻辑
-      // 由于 SQL.js 的数据格式比较复杂，暂时跳过
-
-      console.log("数据迁移完成");
-
-      // 迁移完成后，可以选择清理旧数据
-      // localStorage.removeItem("infiniteCanvas_stickyNotes");
-      // localStorage.removeItem("sticky_notes_db");
-    } catch (error) {
-      console.error("数据迁移失败:", error);
-    }
-  }
-
-  /**
    * 导出数据
    */
   async exportAllData(): Promise<{

@@ -6,7 +6,6 @@
 export { IndexedDBAdapter } from "./IndexedDBAdapter.js";
 export {
   useDatabase,
-  useCanvas,
   getDatabaseService,
   getDatabaseAdapter,
   resetDatabase,

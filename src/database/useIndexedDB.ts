@@ -47,9 +47,9 @@ async function initializeDatabase(): Promise<void> {
     });
   }
 
-  // 执行数据迁移
+  // 确保默认画布
   const adapter = getDatabaseAdapter();
-  await adapter.migrateFromSQLjs();
+  await adapter.ensureDefaultCanvas();
 }
 
 /**
@@ -361,110 +361,4 @@ export function useDatabase() {
   };
 }
 
-/**
- * 画布管理Hook
- */
-export function useCanvas() {
-  const [canvases, setCanvases] = useState<any[]>([]);
-  const [currentCanvasId, setCurrentCanvasId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // 加载画布列表
-  useEffect(() => {
-    async function loadCanvases() {
-      try {
-        setLoading(true);
-        await initializeDatabase();
-        const adapter = getDatabaseAdapter();
-        const userCanvases = await adapter.getUserCanvases();
-        setCanvases(userCanvases);
-
-        // 设置当前画布
-        if (userCanvases.length > 0 && !currentCanvasId) {
-          const defaultCanvas =
-            userCanvases.find((c) => c.is_default) || userCanvases[0];
-          setCurrentCanvasId(defaultCanvas.id);
-          adapter.setCurrentCanvas(defaultCanvas.id);
-        }
-      } catch (err) {
-        console.error("加载画布失败:", err);
-        setError(err instanceof Error ? err.message : "加载画布失败");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadCanvases();
-  }, [currentCanvasId]);
-
-  // 切换画布
-  const switchCanvas = useCallback(async (canvasId: string): Promise<void> => {
-    try {
-      const adapter = getDatabaseAdapter();
-      adapter.setCurrentCanvas(canvasId);
-      setCurrentCanvasId(canvasId);
-    } catch (err) {
-      console.error("切换画布失败:", err);
-      setError(err instanceof Error ? err.message : "切换画布失败");
-    }
-  }, []);
-
-  // 创建画布
-  const createCanvas = useCallback(
-    async (name: string, description?: string): Promise<string> => {
-      try {
-        const adapter = getDatabaseAdapter();
-        const canvasId = await adapter.createCanvas(name, description);
-
-        // 刷新画布列表
-        const userCanvases = await adapter.getUserCanvases();
-        setCanvases(userCanvases);
-
-        return canvasId;
-      } catch (err) {
-        console.error("创建画布失败:", err);
-        setError(err instanceof Error ? err.message : "创建画布失败");
-        throw err;
-      }
-    },
-    []
-  );
-
-  // 删除画布
-  const deleteCanvas = useCallback(
-    async (canvasId: string): Promise<void> => {
-      try {
-        const adapter = getDatabaseAdapter();
-        await adapter.deleteCanvas(canvasId);
-
-        // 刷新画布列表
-        const userCanvases = await adapter.getUserCanvases();
-        setCanvases(userCanvases);
-
-        // 如果删除的是当前画布，切换到其他画布
-        if (currentCanvasId === canvasId && userCanvases.length > 0) {
-          await switchCanvas(userCanvases[0].id);
-        }
-      } catch (err) {
-        console.error("删除画布失败:", err);
-        setError(err instanceof Error ? err.message : "删除画布失败");
-        throw err;
-      }
-    },
-    [currentCanvasId, switchCanvas]
-  );
-
-  return {
-    canvases,
-    currentCanvasId,
-    loading,
-    error,
-    switchCanvas,
-    createCanvas,
-    deleteCanvas,
-
-    // 兼容旧接口
-    isLoading: loading,
-  };
-}
+// 文件结束
