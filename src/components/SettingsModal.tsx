@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Tabs,
@@ -14,6 +14,10 @@ import {
   Radio,
   InputNumber,
   Button,
+  Input,
+  message,
+  Spin,
+  Alert,
 } from "antd";
 import {
   UserOutlined,
@@ -22,7 +26,9 @@ import {
   SafetyOutlined,
   BellOutlined,
   InfoCircleOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
+import { useAISettings } from "../hooks/useAISettings";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
@@ -35,6 +41,83 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
   const [form] = Form.useForm();
+  const [aiForm] = Form.useForm();
+  const [appearanceForm] = Form.useForm();
+  const [dataForm] = Form.useForm();
+  const [notificationForm] = Form.useForm();
+  const [testingConnection, setTestingConnection] = useState(false);
+
+  const {
+    config: aiConfig,
+    loading: aiLoading,
+    error: aiError,
+    saveConfig: saveAIConfig,
+    testConnection,
+    hasValidConfig,
+  } = useAISettings();
+
+  // 当模态框打开时，更新表单的值
+  React.useEffect(() => {
+    if (open) {
+      // 重置并设置AI表单的值
+      if (aiConfig) {
+        // 确保表单实例已创建后再设置值
+        setTimeout(() => {
+          aiForm.resetFields();
+          aiForm.setFieldsValue(aiConfig);
+        }, 0);
+      }
+    } else {
+      // 模态框关闭时重置表单
+      aiForm.resetFields();
+      form.resetFields();
+      appearanceForm.resetFields();
+      dataForm.resetFields();
+      notificationForm.resetFields();
+    }
+  }, [
+    open,
+    aiConfig,
+    aiForm,
+    form,
+    appearanceForm,
+    dataForm,
+    notificationForm,
+  ]);
+
+  // 测试AI连接
+  const handleTestConnection = async () => {
+    try {
+      setTestingConnection(true);
+      await aiForm.validateFields();
+
+      const result = await testConnection();
+
+      if (result.success) {
+        message.success("连接测试成功！");
+      } else {
+        message.error(`连接测试失败: ${result.error}`);
+      }
+    } catch (error) {
+      message.error("请先完善配置信息");
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  // 保存AI配置
+  const handleSaveAIConfig = async () => {
+    try {
+      const values = await aiForm.validateFields();
+      const success = await saveAIConfig({ ...aiConfig, ...values });
+
+      if (success) {
+        message.success("AI配置保存成功！");
+      }
+    } catch (error) {
+      message.error("请检查配置信息");
+    }
+  };
 
   const tabItems = [
     {
@@ -48,6 +131,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
       children: (
         <div className="settings-modal-content">
           <Form
+            key="general-form"
             form={form}
             layout="vertical"
             initialValues={{
@@ -142,6 +226,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
       children: (
         <div className="settings-modal-content">
           <Form
+            form={appearanceForm}
             layout="vertical"
             initialValues={{
               canvasBackground: "#ffffff",
@@ -237,6 +322,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
       children: (
         <div className="settings-modal-content">
           <Form
+            form={dataForm}
             layout="vertical"
             initialValues={{
               autoBackup: true,
@@ -297,6 +383,173 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
       ),
     },
     {
+      key: "ai",
+      label: (
+        <span>
+          <RobotOutlined />
+          AI设置
+        </span>
+      ),
+      children: (
+        <div className="settings-modal-content">
+          <Spin spinning={aiLoading}>
+            {aiError && (
+              <Alert
+                message="配置错误"
+                description={aiError}
+                type="error"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            <Form
+              key="ai-form"
+              form={aiForm}
+              layout="vertical"
+              onFinish={handleSaveAIConfig}
+              preserve={false}
+            >
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  <RobotOutlined style={{ marginRight: 8 }} />
+                  AI模型配置
+                </Title>
+                <Form.Item
+                  label="启用AI功能"
+                  name="enableAI"
+                  valuePropName="checked"
+                  extra="开启后可使用AI生成便签功能"
+                >
+                  <Switch />
+                </Form.Item>
+
+                <Form.Item
+                  label="AI模型"
+                  name="aiModel"
+                  extra="选择要使用的AI模型"
+                  rules={[{ required: true, message: "请选择AI模型" }]}
+                >
+                  <Select style={{ width: "100%" }}>
+                    <Option value="deepseek-chat">DeepSeek Chat</Option>
+                    <Option value="deepseek-coder">DeepSeek Coder</Option>
+                    <Option value="gpt-3.5-turbo">GPT-3.5 Turbo</Option>
+                    <Option value="gpt-4">GPT-4</Option>
+                    <Option value="claude-3-haiku">Claude 3 Haiku</Option>
+                    <Option value="claude-3-sonnet">Claude 3 Sonnet</Option>
+                  </Select>
+                </Form.Item>
+
+                <Form.Item
+                  label="API密钥"
+                  name="apiKey"
+                  extra="请输入您的AI服务API密钥"
+                  rules={[
+                    { required: true, message: "请输入API密钥" },
+                    { min: 10, message: "API密钥长度不能少于10个字符" },
+                  ]}
+                >
+                  <Input.Password
+                    placeholder="sk-..."
+                    style={{ width: "100%" }}
+                    visibilityToggle={false}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="API地址"
+                  name="apiUrl"
+                  extra="API服务的基础URL地址"
+                  rules={[
+                    { required: true, message: "请输入API地址" },
+                    { type: "url", message: "请输入有效的URL地址" },
+                  ]}
+                >
+                  <Input
+                    placeholder="https://api.deepseek.com/v1"
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </Card>
+
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  模型参数
+                </Title>
+                <Form.Item
+                  label="温度值"
+                  name="temperature"
+                  extra="控制生成内容的随机性，0-1之间，值越高越随机"
+                >
+                  <Slider
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    marks={{
+                      0: "0",
+                      0.3: "0.3",
+                      0.5: "0.5",
+                      0.7: "0.7",
+                      1: "1",
+                    }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="最大Token数"
+                  name="maxTokens"
+                  extra="单次生成的最大字符数限制"
+                  rules={[
+                    {
+                      type: "number",
+                      min: 100,
+                      max: 4000,
+                      message: "范围：100-4000",
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    min={100}
+                    max={4000}
+                    step={100}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </Card>
+
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  操作
+                </Title>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Button
+                    type="primary"
+                    ghost
+                    style={{ width: "100%" }}
+                    onClick={handleTestConnection}
+                    loading={testingConnection}
+                    disabled={!hasValidConfig}
+                  >
+                    {testingConnection ? "测试中..." : "测试连接"}
+                  </Button>
+                  <Button
+                    type="primary"
+                    style={{ width: "100%" }}
+                    htmlType="submit"
+                    loading={aiLoading}
+                  >
+                    保存配置
+                  </Button>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    💡 提示：请确保API密钥有效且网络连接正常
+                  </Text>
+                </Space>
+              </Card>
+            </Form>
+          </Spin>
+        </div>
+      ),
+    },
+    {
       key: "notifications",
       label: (
         <span>
@@ -307,6 +560,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onCancel }) => {
       children: (
         <div className="settings-modal-content">
           <Form
+            form={notificationForm}
             layout="vertical"
             initialValues={{
               enableNotifications: true,

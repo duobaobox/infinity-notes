@@ -6,6 +6,7 @@ import {
   RedoOutlined,
   FileAddOutlined,
   DeleteOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 
 interface CanvasToolbarProps {
@@ -16,6 +17,7 @@ interface CanvasToolbarProps {
   onReset: () => void;
   onCreateNote: () => void; // 创建便签功能
   onClearDatabase?: () => Promise<void>; // 清空数据库功能（可选）
+  onSearch?: () => void; // 搜索功能
   minScale: number;
   maxScale: number;
 }
@@ -29,6 +31,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     onReset,
     onCreateNote,
     onClearDatabase,
+    onSearch,
     minScale,
     maxScale,
   }) => {
@@ -65,6 +68,16 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
+
+          <Tooltip title="搜索便签 (Ctrl/⌘ + F)" placement="bottom">
+            <Button
+              icon={<SearchOutlined />}
+              onClick={onSearch}
+              type="text"
+              shape="circle"
+            />
+          </Tooltip>
+
           <Tooltip title="放大画布 (Ctrl/⌘ +)" placement="bottom">
             <Button
               icon={<ZoomInOutlined />}

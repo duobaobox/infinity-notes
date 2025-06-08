@@ -4,15 +4,21 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useImperativeHandle,
+  forwardRef,
 } from "react";
 import { throttle } from "lodash";
+import { message } from "antd";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasGrid from "./CanvasGrid";
 import CanvasConsole from "./CanvasConsole";
 import StickyNote from "./StickyNote";
+import SearchModal from "./SearchModal";
 import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "./types";
 import { useDatabase } from "../database";
+import { useAISettings } from "../hooks/useAISettings";
+import { AIService } from "../services/aiService";
 import "./InfiniteCanvas.css";
 
 interface CanvasState {
@@ -29,8 +35,21 @@ interface DragState {
   startOffsetY: number;
 }
 
-const InfiniteCanvas: React.FC = () => {
+interface InfiniteCanvasRef {
+  createNote: () => void;
+  focusConsole: () => void;
+  saveAllNotes: () => void;
+  undo: () => void;
+  redo: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+  openSearch: () => void;
+}
+
+const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const consoleRef = useRef<any>(null);
   const requestRef = useRef<number | null>(null);
   const [canvasState, setCanvasState] = useState<CanvasState>({
     scale: CANVAS_CONSTANTS.DEFAULT_SCALE,
@@ -38,6 +57,16 @@ const InfiniteCanvas: React.FC = () => {
     offsetY: 0,
   });
   const [zoomAnimating, setZoomAnimating] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [isAIGenerating, setIsAIGenerating] = useState(false); // 添加AI生成状态控制
+
+  // AI设置Hook
+  const { config: aiConfig } = useAISettings();
+
+  // AI服务实例
+  const aiService = useMemo(() => {
+    return new AIService(aiConfig);
+  }, [aiConfig]);
 
   // 使用数据库Hook管理便签
   const {
@@ -176,6 +205,144 @@ const InfiniteCanvas: React.FC = () => {
     canvasState.offsetY,
     canvasState.scale,
   ]);
+
+  // AI生成便签
+  const generateStickyNotesWithAI = useCallback(
+    async (prompt: string) => {
+      // 防止并发请求
+      if (isAIGenerating) {
+        console.warn("AI正在生成中，忽略重复请求");
+        return;
+      }
+
+      try {
+        setIsAIGenerating(true);
+
+        // 更新AI服务配置
+        aiService.updateConfig(aiConfig);
+
+        // 调用AI服务生成便签数据
+        const result = await aiService.generateStickyNotes(prompt);
+
+        if (!result.success) {
+          message.error(result.error || "AI生成失败");
+          return;
+        }
+
+        if (!result.notes || result.notes.length === 0) {
+          message.warning("AI未生成任何便签内容");
+          return;
+        }
+
+        // 获取画布中心位置用于放置便签
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        // 转换为画布逻辑坐标
+        const logicalCenterX =
+          (centerX - canvasState.offsetX) / canvasState.scale;
+        const logicalCenterY =
+          (centerY - canvasState.offsetY) / canvasState.scale;
+
+        // 创建便签
+        const maxZ =
+          stickyNotes.length > 0
+            ? Math.max(...stickyNotes.map((note) => note.zIndex))
+            : 0;
+
+        // 如果生成多个便签，采用网格布局
+        const notesPerRow = Math.ceil(Math.sqrt(result.notes.length));
+        const spacing = 280; // 便签间距
+        const startX = logicalCenterX - ((notesPerRow - 1) * spacing) / 2;
+        const startY =
+          logicalCenterY -
+          ((Math.ceil(result.notes.length / notesPerRow) - 1) * spacing) / 2;
+
+        // 批量创建便签，避免在循环中频繁更新状态
+        const newNotes: StickyNoteType[] = [];
+
+        for (let i = 0; i < result.notes.length; i++) {
+          const noteData = result.notes[i];
+          const row = Math.floor(i / notesPerRow);
+          const col = i % notesPerRow;
+
+          // 计算便签位置
+          const x = startX + col * spacing;
+          const y = startY + row * spacing;
+
+          // 添加小范围随机偏移
+          const randomOffset = 30;
+          const offsetX = (Math.random() - 0.5) * randomOffset;
+          const offsetY = (Math.random() - 0.5) * randomOffset;
+
+          // 映射颜色
+          const colorMap: Record<string, StickyNoteType["color"]> = {
+            "#fef3c7": "yellow",
+            "#dbeafe": "blue",
+            "#d1fae5": "green",
+            "#fce7f3": "pink",
+            "#e9d5ff": "purple",
+          };
+
+          const defaultColor: StickyNoteType["color"] = "yellow";
+          const noteColor =
+            noteData.color && colorMap[noteData.color]
+              ? colorMap[noteData.color]
+              : defaultColor;
+
+          const newNote: StickyNoteType = {
+            id: `ai-note-${Date.now()}-${i}`,
+            x: x + offsetX,
+            y: y + offsetY,
+            width: 250,
+            height: 200,
+            content: noteData.content,
+            title: noteData.title,
+            color: noteColor,
+            isNew: true,
+            zIndex: maxZ + i + 1,
+            isEditing: false,
+            isTitleEditing: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          newNotes.push(newNote);
+        }
+
+        // 批量添加便签到数据库
+        for (const note of newNotes) {
+          await addNote(note);
+        }
+
+        // 批量移除新建标记
+        setTimeout(() => {
+          newNotes.forEach((note) => {
+            updateStickyNote(note.id, { isNew: false });
+          });
+        }, 500);
+
+        message.success(`AI成功生成了 ${result.notes.length} 个便签`);
+      } catch (error) {
+        console.error("AI生成便签失败:", error);
+        message.error("AI生成便签失败，请检查网络连接和配置");
+      } finally {
+        setIsAIGenerating(false);
+      }
+    },
+    [
+      aiService,
+      aiConfig,
+      canvasState,
+      stickyNotes,
+      addNote,
+      updateStickyNote,
+      isAIGenerating,
+    ]
+  );
 
   // 触发缩放动画
   const triggerZoomAnimation = useCallback(() => {
@@ -455,6 +622,87 @@ const InfiniteCanvas: React.FC = () => {
     handleReset,
   ]);
 
+  // 搜索相关方法
+  const openSearchModal = useCallback(() => {
+    setSearchModalOpen(true);
+  }, []);
+
+  const closeSearchModal = useCallback(() => {
+    setSearchModalOpen(false);
+  }, []);
+
+  // 选择便签并导航到它
+  const selectNote = useCallback(
+    (note: StickyNoteType) => {
+      // 关闭搜索窗口
+      setSearchModalOpen(false);
+
+      // 计算需要移动的距离，让便签居中显示
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      if (canvasRect) {
+        const centerX = canvasRect.width / 2;
+        const centerY = canvasRect.height / 2;
+
+        // 计算便签在当前缩放下的位置
+        const noteScreenX = note.x * canvasState.scale;
+        const noteScreenY = note.y * canvasState.scale;
+
+        // 计算需要的偏移来让便签居中
+        const newOffsetX =
+          centerX - noteScreenX - (note.width * canvasState.scale) / 2;
+        const newOffsetY =
+          centerY - noteScreenY - (note.height * canvasState.scale) / 2;
+
+        setCanvasState((prev) => ({
+          ...prev,
+          offsetX: newOffsetX,
+          offsetY: newOffsetY,
+        }));
+
+        // 将便签置于最前
+        bringNoteToFront(note.id);
+
+        // 显示成功消息
+        message.success(`已导航到便签: ${note.title || "无标题"}`);
+      }
+    },
+    [canvasState.scale, bringNoteToFront]
+  );
+
+  // 暴露方法给父组件
+  useImperativeHandle(
+    ref,
+    () => ({
+      createNote: createStickyNoteAtCenter,
+      focusConsole: () => {
+        consoleRef.current?.focus?.();
+      },
+      saveAllNotes: () => {
+        // 显示保存成功消息，因为便签是自动保存的
+        message.success(`已保存 ${stickyNotes.length} 个便签`);
+      },
+      undo: () => {
+        // TODO: 实现撤销
+        console.log("撤销");
+      },
+      redo: () => {
+        // TODO: 实现重做
+        console.log("重做");
+      },
+      zoomIn: handleZoomIn,
+      zoomOut: handleZoomOut,
+      resetZoom: handleReset,
+      openSearch: openSearchModal,
+    }),
+    [
+      createStickyNoteAtCenter,
+      handleZoomIn,
+      handleZoomOut,
+      handleReset,
+      openSearchModal,
+    ]
+  );
+
   // 计算一些性能关键参数，虽然我们已经移至CSS变量，但保留此逻辑以备未来使用
   // 并且可以用于某些需要JavaScript直接访问这些值的场景
   const _computedStyles = useMemo(() => {
@@ -542,6 +790,7 @@ const InfiniteCanvas: React.FC = () => {
         onReset={handleReset}
         onCreateNote={createStickyNoteAtCenter}
         onClearDatabase={clearDatabase}
+        onSearch={openSearchModal}
         minScale={CANVAS_CONSTANTS.MIN_SCALE}
         maxScale={CANVAS_CONSTANTS.MAX_SCALE}
       />
@@ -639,20 +888,27 @@ const InfiniteCanvas: React.FC = () => {
 
       {/* 控制台组件 */}
       <CanvasConsole
+        ref={consoleRef}
         onSendMessage={(message) => {
           // TODO: 实现AI消息处理逻辑
           console.log("💬 收到AI消息:", message);
           // 这里可以集成AI API调用
         }}
         onCreateNote={createStickyNoteAtCenter}
-        onToggleAI={() => {
-          // TODO: 实现AI助手切换逻辑
-          console.log("🤖 切换AI助手状态");
-          // 这里可以切换AI模式或显示AI设置
-        }}
+        onGenerateWithAI={generateStickyNotesWithAI}
+      />
+
+      {/* 搜索模态框 */}
+      <SearchModal
+        open={searchModalOpen}
+        onClose={closeSearchModal}
+        notes={stickyNotes}
+        onSelectNote={selectNote}
       />
     </div>
   );
-};
+});
+
+InfiniteCanvas.displayName = "InfiniteCanvas";
 
 export default InfiniteCanvas;

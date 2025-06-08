@@ -1,13 +1,51 @@
 import { Layout, Spin } from "antd";
+import { useRef } from "react";
 import "./App.css";
 import InfiniteCanvas from "./components/InfiniteCanvas";
 import Sidebar from "./components/Sidebar";
 import { useDatabase } from "./database/useIndexedDB";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 const { Content } = Layout;
 
 function App() {
   const { loading, error } = useDatabase();
+  const canvasRef = useRef<any>(null);
+
+  // 设置键盘快捷键
+  useKeyboardShortcuts({
+    onCreateNote: () => {
+      canvasRef.current?.createNote?.();
+    },
+    onOpenSettings: () => {
+      // TODO: 打开设置模态框
+      console.log("打开设置");
+    },
+    onFocusConsole: () => {
+      canvasRef.current?.focusConsole?.();
+    },
+    onSave: () => {
+      canvasRef.current?.saveAllNotes?.();
+    },
+    onUndo: () => {
+      canvasRef.current?.undo?.();
+    },
+    onRedo: () => {
+      canvasRef.current?.redo?.();
+    },
+    onSearch: () => {
+      canvasRef.current?.openSearch?.();
+    },
+    onZoomIn: () => {
+      canvasRef.current?.zoomIn?.();
+    },
+    onZoomOut: () => {
+      canvasRef.current?.zoomOut?.();
+    },
+    onResetZoom: () => {
+      canvasRef.current?.resetZoom?.();
+    },
+  });
 
   if (loading) {
     return (
@@ -50,7 +88,7 @@ function App() {
       <Sidebar />
       <Layout>
         <Content style={{ margin: "0", overflow: "hidden" }}>
-          <InfiniteCanvas />
+          <InfiniteCanvas ref={canvasRef} />
         </Content>
       </Layout>
     </Layout>
