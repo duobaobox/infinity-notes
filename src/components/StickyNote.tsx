@@ -18,6 +18,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isSyncingPosition, setIsSyncingPosition] = useState(false); // 新增状态
   const [resizeStart, setResizeStart] = useState({
     x: 0,
     y: 0,
@@ -100,7 +101,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       if (note.isEditing || note.isTitleEditing) return;
 
       e.preventDefault();
-      e.stopPropagation();
+      e.stopPropagation(); // 恢复此行
 
       // 将便签置顶
       onBringToFront(note.id);
@@ -182,6 +183,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           y: tempPosition.y,
           updatedAt: new Date(),
         });
+        setIsDragging(false); // 首先设置 dragging 为 false
+        setIsSyncingPosition(true); // 然后设置 syncing 为 true
       }
 
       if (isResizing) {
@@ -193,7 +196,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         });
       }
 
-      setIsDragging(false);
+      // setIsDragging(false); // 已在上面处理
       setIsResizing(false);
     };
 
@@ -220,7 +223,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempPosition.y,
     tempSize.width,
     tempSize.height,
+    // isSyncingPosition, // 不需要作为依赖，因为它在 effect 内部被设置
   ]);
+
+  // 处理位置同步的 Effect
+  useEffect(() => {
+    if (
+      isSyncingPosition &&
+      note.x === tempPosition.x &&
+      note.y === tempPosition.y
+    ) {
+      setIsSyncingPosition(false);
+    }
+  }, [note.x, note.y, tempPosition.x, tempPosition.y, isSyncingPosition]);
+
+  // 当 note 的位置从 props 更新时，同步 tempPosition (非拖动或同步状态下)
+  useEffect(() => {
+    if (!isDragging && !isSyncingPosition) {
+      setTempPosition({ x: note.x, y: note.y });
+    }
+  }, [note.x, note.y, isDragging, isSyncingPosition]);
 
   // 自动聚焦到文本框 - 仅在进入编辑模式时设置光标到末尾
   useEffect(() => {
@@ -327,8 +349,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   };
 
   // 计算实际使用的位置和尺寸（拖动时用临时值，否则用数据库值）
-  const actualX = isDragging ? tempPosition.x : note.x;
-  const actualY = isDragging ? tempPosition.y : note.y;
+  const actualX = isDragging || isSyncingPosition ? tempPosition.x : note.x;
+  const actualY = isDragging || isSyncingPosition ? tempPosition.y : note.y;
   const actualWidth = isResizing ? tempSize.width : note.width;
   const actualHeight = isResizing ? tempSize.height : note.height;
 
