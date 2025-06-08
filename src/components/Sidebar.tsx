@@ -16,9 +16,11 @@ import {
   FolderOutlined,
   StarFilled,
   ClockCircleOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { useDatabase, useCanvas, databaseEvents } from "../database";
 import type { Canvas } from "../database";
+import SettingsModal from "./SettingsModal";
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;
@@ -29,6 +31,7 @@ const Sidebar: React.FC = () => {
   const [noteSearchValue, setNoteSearchValue] = useState<string>("");
   const [collapsed, setCollapsed] = useState(false);
   const [canvasList, setCanvasList] = useState<Canvas[]>([]);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // 使用数据库Hook获取便签数据
   const {
@@ -198,32 +201,66 @@ const Sidebar: React.FC = () => {
               {/* 用户信息区域 */}
               <div
                 style={{
-                  padding: "20px 16px",
+                  padding: "16px 16px 12px",
                   borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
-                  display: "flex",
-                  alignItems: "center",
                 }}
               >
-                <Avatar
-                  size={40}
-                  style={{ marginRight: "12px", backgroundColor: "#1890ff" }}
+                {/* 用户头像和信息 */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "12px",
+                  }}
                 >
-                  U
-                </Avatar>
-                <div>
-                  <Text
+                  <Avatar
+                    size={40}
                     style={{
-                      display: "block",
-                      fontWeight: 500,
-                      color: "#1f1f1f",
+                      marginRight: "12px",
+                      backgroundColor: "#1890ff",
+                      boxShadow: "0 2px 4px rgba(24, 144, 255, 0.2)",
                     }}
                   >
-                    用户名称
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: "12px" }}>
-                    user@example.com
-                  </Text>
+                    U
+                  </Avatar>
+                  <div>
+                    <Text
+                      style={{
+                        display: "block",
+                        fontWeight: 500,
+                        color: "#1f1f1f",
+                        fontSize: "14px",
+                      }}
+                    >
+                      用户名称
+                    </Text>
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: "12px", lineHeight: "1.2" }}
+                    >
+                      user@example.com
+                    </Text>
+                  </div>
                 </div>
+
+                {/* 设置按钮单独一行 */}
+                <Button
+                  type="text"
+                  icon={<SettingOutlined />}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    height: "32px",
+                    borderRadius: "6px",
+                    color: "#595959",
+                    backgroundColor: "rgba(0, 0, 0, 0.02)",
+                  }}
+                  onClick={() => {
+                    setSettingsModalOpen(true);
+                  }}
+                >
+                  <span style={{ marginLeft: "8px" }}>设置</span>
+                </Button>
               </div>
 
               {/* 画布操作区域 */}
@@ -517,6 +554,12 @@ const Sidebar: React.FC = () => {
           </Splitter.Panel>
         </Splitter>
       )}
+
+      {/* 设置弹窗 */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onCancel={() => setSettingsModalOpen(false)}
+      />
     </Sider>
   );
 };
