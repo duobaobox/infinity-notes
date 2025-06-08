@@ -3,6 +3,40 @@ import { IndexedDBService } from "./IndexedDBService";
 import { IndexedDBAdapter } from "./IndexedDBAdapter";
 import type { StickyNote } from "../components/types";
 
+// 创建事件系统来同步数据
+class DatabaseEventEmitter {
+  private listeners: { [key: string]: Function[] } = {};
+
+  on(event: string, callback: Function) {
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
+    }
+    this.listeners[event].push(callback);
+  }
+
+  off(event: string, callback: Function) {
+    if (this.listeners[event]) {
+      this.listeners[event] = this.listeners[event].filter(
+        (cb) => cb !== callback
+      );
+    }
+  }
+
+  emit(event: string, ...args: any[]) {
+    if (this.listeners[event]) {
+      this.listeners[event].forEach((callback) => callback(...args));
+    }
+  }
+}
+
+// 创建全局事件实例
+const databaseEvents = new DatabaseEventEmitter();
+
+/**
+ * 导出数据库事件系统供其他组件使用
+ */
+export { databaseEvents };
+
 // 全局服务实例
 let globalDbService: IndexedDBService | null = null;
 let globalDbAdapter: IndexedDBAdapter | null = null;
@@ -27,6 +61,14 @@ export function getDatabaseAdapter(): IndexedDBAdapter {
     globalDbAdapter = new IndexedDBAdapter(dbService, userId);
   }
   return globalDbAdapter;
+}
+
+/**
+ * 检查数据库是否已初始化
+ */
+export function isDatabaseInitialized(): boolean {
+  const dbService = getDatabaseService();
+  return dbService.isInitialized();
 }
 
 /**
@@ -107,6 +149,9 @@ export function useDatabase() {
       const adapter = getDatabaseAdapter();
       await adapter.addNote(note);
       setNotes((prev) => [...prev, note]);
+
+      // 触发数据变化事件，通知其他组件
+      databaseEvents.emit("notesChanged");
     } catch (err) {
       console.error("添加便签失败:", err);
       setError(err instanceof Error ? err.message : "添加便签失败");
@@ -123,6 +168,9 @@ export function useDatabase() {
         setNotes((prev) =>
           prev.map((note) => (note.id === updatedNote.id ? updatedNote : note))
         );
+
+        // 触发数据变化事件，通知其他组件
+        databaseEvents.emit("notesChanged");
       } catch (err) {
         console.error("更新便签失败:", err);
         setError(err instanceof Error ? err.message : "更新便签失败");
@@ -138,6 +186,9 @@ export function useDatabase() {
       const adapter = getDatabaseAdapter();
       await adapter.deleteNote(noteId);
       setNotes((prev) => prev.filter((note) => note.id !== noteId));
+
+      // 触发数据变化事件，通知其他组件
+      databaseEvents.emit("notesChanged");
     } catch (err) {
       console.error("删除便签失败:", err);
       setError(err instanceof Error ? err.message : "删除便签失败");
@@ -283,6 +334,13 @@ export function useDatabase() {
       setLoading(false);
       setError(null);
 
+      // 重置全局实例，避免状态冲突
+      globalDbService = null;
+      globalDbAdapter = null;
+
+      // 触发数据变化事件
+      databaseEvents.emit("notesChanged");
+
       // 重新初始化
       const init = async () => {
         try {
@@ -313,6 +371,27 @@ export function useDatabase() {
       setError(err instanceof Error ? err.message : "清空数据库失败");
       throw err;
     }
+  }, []);
+
+  // 监听数据变化事件来刷新数据
+  useEffect(() => {
+    const handleNotesChange = async () => {
+      try {
+        const adapter = getDatabaseAdapter();
+        const updatedNotes = await adapter.getAllNotes();
+        setNotes(updatedNotes);
+      } catch (err) {
+        console.error("刷新便签数据失败:", err);
+      }
+    };
+
+    // 监听数据变化事件
+    databaseEvents.on("notesChanged", handleNotesChange);
+
+    // 清理函数
+    return () => {
+      databaseEvents.off("notesChanged", handleNotesChange);
+    };
   }, []);
 
   return {
@@ -356,8 +435,95 @@ export function useDatabase() {
       adapter.setCurrentCanvas(canvasId);
       setCurrentCanvasId(canvasId);
       await refreshNotes();
+
+      // 触发数据变化事件，通知其他组件
+      databaseEvents.emit("notesChanged");
     },
     isLoading: loading,
+  };
+}
+
+/**
+ * Canvas 管理 Hook - 提供画布的 CRUD 操作
+ */
+export function useCanvas() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 获取用户的所有画布
+  const getUserCanvases = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 检查数据库是否已初始化
+      if (!isDatabaseInitialized()) {
+        throw new Error("数据库未初始化");
+      }
+
+      const adapter = getDatabaseAdapter();
+      const canvases = await adapter.getUserCanvases();
+      return canvases;
+    } catch (err) {
+      console.error("获取画布列表失败:", err);
+      setError(err instanceof Error ? err.message : "获取画布列表失败");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 创建新画布
+  const createCanvas = useCallback(
+    async (name: string, description?: string) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 检查数据库是否已初始化
+        if (!isDatabaseInitialized()) {
+          throw new Error("数据库未初始化");
+        }
+
+        const adapter = getDatabaseAdapter();
+        const canvasId = await adapter.createCanvas(name, description);
+        return canvasId;
+      } catch (err) {
+        console.error("创建画布失败:", err);
+        setError(err instanceof Error ? err.message : "创建画布失败");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // 切换画布
+  const switchCanvas = useCallback(async (canvasId: string) => {
+    try {
+      setError(null);
+
+      // 检查数据库是否已初始化
+      if (!isDatabaseInitialized()) {
+        throw new Error("数据库未初始化");
+      }
+
+      const adapter = getDatabaseAdapter();
+      adapter.setCurrentCanvas(canvasId);
+    } catch (err) {
+      console.error("切换画布失败:", err);
+      setError(err instanceof Error ? err.message : "切换画布失败");
+      throw err;
+    }
+  }, []);
+
+  return {
+    loading,
+    error,
+    getUserCanvases,
+    createCanvas,
+    switchCanvas,
   };
 }
 

@@ -24,6 +24,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     width: 0,
     height: 0,
   });
+
+  // 拖动期间的临时位置和尺寸
+  const [tempPosition, setTempPosition] = useState({ x: note.x, y: note.y });
+  const [tempSize, setTempSize] = useState({
+    width: note.width,
+    height: note.height,
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
@@ -107,6 +114,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         x: canvasX - note.x,
         y: canvasY - note.y,
       });
+
+      // 初始化临时位置为当前位置
+      setTempPosition({ x: note.x, y: note.y });
       setIsDragging(true);
     },
     [
@@ -133,6 +143,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         width: note.width,
         height: note.height,
       });
+
+      // 初始化临时尺寸为当前尺寸
+      setTempSize({ width: note.width, height: note.height });
       setIsResizing(true);
     },
     [note.width, note.height, canvasScale]
@@ -147,17 +160,39 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
         const newX = canvasX - dragOffset.x;
         const newY = canvasY - dragOffset.y;
-        onUpdate(note.id, { x: newX, y: newY });
+
+        // 使用临时状态来更新位置，避免频繁的数据库操作
+        setTempPosition({ x: newX, y: newY });
       } else if (isResizing) {
         const deltaX = e.clientX / canvasScale - resizeStart.x;
         const deltaY = e.clientY / canvasScale - resizeStart.y;
         const newWidth = Math.max(200, resizeStart.width + deltaX);
         const newHeight = Math.max(150, resizeStart.height + deltaY);
-        onUpdate(note.id, { width: newWidth, height: newHeight });
+
+        // 使用临时状态来更新尺寸，避免频繁的数据库操作
+        setTempSize({ width: newWidth, height: newHeight });
       }
     };
 
     const handleMouseUp = () => {
+      if (isDragging) {
+        // 拖动结束时，将临时位置同步到数据库
+        onUpdate(note.id, {
+          x: tempPosition.x,
+          y: tempPosition.y,
+          updatedAt: new Date(),
+        });
+      }
+
+      if (isResizing) {
+        // 调整大小结束时，将临时尺寸同步到数据库
+        onUpdate(note.id, {
+          width: tempSize.width,
+          height: tempSize.height,
+          updatedAt: new Date(),
+        });
+      }
+
       setIsDragging(false);
       setIsResizing(false);
     };
@@ -181,6 +216,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     canvasScale,
     canvasOffset.x,
     canvasOffset.y,
+    tempPosition.x,
+    tempPosition.y,
+    tempSize.width,
+    tempSize.height,
   ]);
 
   // 自动聚焦到文本框 - 仅在进入编辑模式时设置光标到末尾
@@ -287,6 +326,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     return Math.max(60, titleText.length * avgCharWidth + padding) + "px";
   };
 
+  // 计算实际使用的位置和尺寸（拖动时用临时值，否则用数据库值）
+  const actualX = isDragging ? tempPosition.x : note.x;
+  const actualY = isDragging ? tempPosition.y : note.y;
+  const actualWidth = isResizing ? tempSize.width : note.width;
+  const actualHeight = isResizing ? tempSize.height : note.height;
+
   return (
     <div
       ref={noteRef}
@@ -294,10 +339,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         note.isEditing ? "editing" : ""
       } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""}`}
       style={{
-        left: note.x,
-        top: note.y,
-        width: note.width,
-        height: note.height,
+        left: actualX,
+        top: actualY,
+        width: actualWidth,
+        height: actualHeight,
         zIndex: note.zIndex,
       }}
       onMouseDown={handleMouseDown}

@@ -26,6 +26,13 @@ export class IndexedDBService {
   }
 
   /**
+   * 检查数据库是否已初始化
+   */
+  public isInitialized(): boolean {
+    return this.initialized && this.db !== null;
+  }
+
+  /**
    * 初始化数据库
    */
   public async initialize(): Promise<void> {

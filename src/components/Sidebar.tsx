@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Layout,
   Typography,
@@ -8,6 +8,7 @@ import {
   Button,
   Space,
   Splitter,
+  message,
 } from "antd";
 import {
   SearchOutlined,
@@ -16,70 +17,98 @@ import {
   StarFilled,
   ClockCircleOutlined,
 } from "@ant-design/icons";
-import { useDatabase } from "../database"; // 添加数据库Hook导入
+import { useDatabase, useCanvas, databaseEvents } from "../database";
+import type { Canvas } from "../database";
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;
 
-// 模拟数据 - 画布列表（更新便签数量为真实数据）
-const mockCanvasList = [
-  {
-    id: "1",
-    name: "工作计划",
-    notesCount: 0, // 将通过计算更新
-    isStarred: true,
-    lastEdited: "2025-06-05",
-  },
-  {
-    id: "2",
-    name: "项目管理",
-    notesCount: 0, // 将通过计算更新
-    isStarred: false,
-    lastEdited: "2025-06-06",
-  },
-  {
-    id: "3",
-    name: "学习笔记",
-    notesCount: 0, // 将通过计算更新
-    isStarred: true,
-    lastEdited: "2025-06-07",
-  },
-  {
-    id: "4",
-    name: "会议纪要",
-    notesCount: 0, // 将通过计算更新
-    isStarred: false,
-    lastEdited: "2025-06-04",
-  },
-  {
-    id: "5",
-    name: "创意收集",
-    notesCount: 0, // 将通过计算更新
-    isStarred: false,
-    lastEdited: "2025-06-02",
-  },
-];
-
-interface SidebarProps {
-  canvasName?: string; // 设为可选
-}
-
-const Sidebar: React.FC<SidebarProps> = () => {
+const Sidebar: React.FC = () => {
   const siderRef = useRef<HTMLDivElement>(null);
-  const [selectedCanvas, setSelectedCanvas] = useState<string>("1");
-  const [canvasSearchValue, setCanvasSearchValue] = useState<string>("");
+  const [selectedCanvas, setSelectedCanvas] = useState<string>("");
   const [noteSearchValue, setNoteSearchValue] = useState<string>("");
   const [collapsed, setCollapsed] = useState(false);
+  const [canvasList, setCanvasList] = useState<Canvas[]>([]);
 
-  // 使用数据库Hook获取真实数据
+  // 使用数据库Hook获取便签数据
   const {
     notes: stickyNotes,
     loading: notesLoading,
     error: notesError,
   } = useDatabase();
 
-  // 计算当前画布的便签数量
-  const currentCanvasNotesCount = stickyNotes.length;
+  // 使用Canvas Hook管理画布
+  const {
+    loading: canvasLoading,
+    getUserCanvases,
+    createCanvas: createCanvasAPI,
+    switchCanvas,
+  } = useCanvas();
+
+  // 加载画布列表
+  const loadCanvases = useCallback(async () => {
+    try {
+      const canvases = await getUserCanvases();
+      setCanvasList(canvases);
+
+      // 如果有画布且当前没有选中的画布，选中第一个
+      if (canvases.length > 0 && !selectedCanvas) {
+        const defaultCanvas =
+          canvases.find((c: Canvas) => c.is_default) || canvases[0];
+        setSelectedCanvas(defaultCanvas.id);
+        await switchCanvas(defaultCanvas.id);
+      }
+    } catch (error) {
+      console.error("加载画布失败:", error);
+      message.error("加载画布失败");
+    }
+  }, [selectedCanvas, getUserCanvases, switchCanvas]);
+
+  // 创建新画布
+  const createCanvas = useCallback(async () => {
+    try {
+      const canvasId = await createCanvasAPI(`画布 ${canvasList.length + 1}`);
+      await loadCanvases(); // 重新加载画布列表
+      setSelectedCanvas(canvasId);
+      await switchCanvas(canvasId);
+      message.success("画布创建成功");
+    } catch (error) {
+      console.error("创建画布失败:", error);
+      message.error("创建画布失败");
+    }
+  }, [canvasList.length, createCanvasAPI, loadCanvases, switchCanvas]);
+
+  // 处理画布选择
+  const handleCanvasSelect = useCallback(
+    async (canvasId: string) => {
+      if (canvasId !== selectedCanvas) {
+        setSelectedCanvas(canvasId);
+        await switchCanvas(canvasId);
+      }
+    },
+    [selectedCanvas, switchCanvas]
+  );
+
+  // 初始化加载画布
+  useEffect(() => {
+    loadCanvases();
+  }, [loadCanvases]);
+
+  // 监听数据库变化事件，实现实时同步
+  useEffect(() => {
+    const handleDataChange = () => {
+      // 当数据发生变化时，重新加载画布列表以更新便签数量
+      loadCanvases();
+    };
+
+    // 监听数据变化事件
+    databaseEvents.on("notesChanged", handleDataChange);
+
+    // 清理事件监听
+    return () => {
+      databaseEvents.off("notesChanged", handleDataChange);
+    };
+  }, [loadCanvases]);
 
   // 过滤便签数据（根据搜索关键词）
   const filteredNotes = stickyNotes.filter(
@@ -88,16 +117,8 @@ const Sidebar: React.FC<SidebarProps> = () => {
       note.content.toLowerCase().includes(noteSearchValue.toLowerCase())
   );
 
-  // 将便签转换为显示格式
-  const displayNotes = filteredNotes.map((note) => ({
-    id: note.id,
-    title: note.title || "无标题便签",
-    color: getColorHex(note.color),
-    lastEdited: formatDate(note.updatedAt),
-  }));
-
   // 颜色映射函数
-  function getColorHex(color: string): string {
+  const getColorHex = (color: string): string => {
     const colorMap: Record<string, string> = {
       yellow: "#fef3c7",
       blue: "#dbeafe",
@@ -106,10 +127,11 @@ const Sidebar: React.FC<SidebarProps> = () => {
       purple: "#e9d5ff",
     };
     return colorMap[color] || "#fef3c7";
-  }
+  };
 
   // 日期格式化函数
-  function formatDate(date: Date): string {
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
     const now = new Date();
     const diffTime = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -126,12 +148,22 @@ const Sidebar: React.FC<SidebarProps> = () => {
     } else {
       return date.toLocaleDateString("zh-CN");
     }
-  }
-
-  // 处理画布选择
-  const handleCanvasSelect = (canvasId: string) => {
-    setSelectedCanvas(canvasId);
   };
+
+  // 计算每个画布的便签数量
+  const getCanvasNotesCount = (canvasId: string): number => {
+    return canvasId === selectedCanvas ? stickyNotes.length : 0;
+  };
+
+  // 将便签转换为显示格式
+  const displayNotes = filteredNotes.map((note) => ({
+    id: note.id,
+    title: note.title || "无标题便签",
+    color: getColorHex(note.color),
+    lastEdited: formatDate(note.updatedAt.toISOString()),
+  }));
+
+  const currentCanvas = canvasList.find((c) => c.id === selectedCanvas);
 
   return (
     <Sider
@@ -141,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
         height: "100vh",
         borderRight: "1px solid #f0f0f0",
         background: "#fcfcfc",
-        boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.1)", // 添加阴影
+        boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.1)",
       }}
       ref={siderRef as React.RefObject<HTMLDivElement>}
       collapsible
@@ -159,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "#fcfcfc", // 添加背景色
+                background: "#fcfcfc",
               }}
             >
               <div
@@ -189,19 +221,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 </div>
 
                 <Space direction="vertical" size={12} style={{ width: "100%" }}>
-                  <Input
-                    placeholder="搜索画布..."
-                    prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-                    value={canvasSearchValue}
-                    onChange={(e) => setCanvasSearchValue(e.target.value)}
-                    style={{
-                      borderRadius: "6px",
-                    }}
-                    size="middle"
-                  />
                   <Button
                     type="dashed"
                     icon={<PlusOutlined />}
+                    onClick={createCanvas}
                     style={{
                       width: "100%",
                       borderRadius: "6px",
@@ -222,12 +245,14 @@ const Sidebar: React.FC<SidebarProps> = () => {
               >
                 <List
                   itemLayout="horizontal"
-                  dataSource={mockCanvasList.map((canvas) => ({
-                    ...canvas,
-                    notesCount: canvas.id === "1" ? currentCanvasNotesCount : 0,
-                  }))}
+                  dataSource={canvasList}
+                  loading={canvasLoading}
+                  locale={{
+                    emptyText: "暂无画布，点击新建画布开始使用",
+                  }}
                   renderItem={(canvas) => {
                     const isSelected = selectedCanvas === canvas.id;
+                    const notesCount = getCanvasNotesCount(canvas.id);
 
                     return (
                       <List.Item
@@ -278,7 +303,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                               >
                                 {canvas.name}
                               </Text>
-                              {canvas.isStarred && (
+                              {canvas.is_default && (
                                 <StarFilled
                                   style={{
                                     color: "#FAAD14",
@@ -306,12 +331,13 @@ const Sidebar: React.FC<SidebarProps> = () => {
                                   marginRight: "12px",
                                 }}
                               >
-                                {canvas.notesCount} 便签
+                                {notesCount} 便签
                               </span>
                               <ClockCircleOutlined
                                 style={{ fontSize: "11px", marginRight: "4px" }}
                               />
-                              {canvas.lastEdited}
+                              {canvas.updated_at &&
+                                formatDate(canvas.updated_at)}
                             </Text>
                           </div>
                         </div>
@@ -330,7 +356,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "#fcfcfc", // 添加背景色
+                background: "#fcfcfc",
               }}
             >
               <div
@@ -356,9 +382,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                       color: "#262626",
                     }}
                   >
-                    {mockCanvasList.find((c) => c.id === selectedCanvas)
-                      ?.name || ""}
-                    中的便签
+                    {currentCanvas?.name || ""}中的便签
                   </Title>
                 </div>
                 <Input
@@ -389,7 +413,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                       ? `加载失败: ${notesError}`
                       : noteSearchValue
                       ? "未找到匹配的便签"
-                      : "暂无便签",
+                      : "暂无便签，双击画布或点击工具栏创建",
                   }}
                   renderItem={(note) => (
                     <List.Item
@@ -402,7 +426,6 @@ const Sidebar: React.FC<SidebarProps> = () => {
                         border: "1px solid #f0f0f0",
                         transition: "all 0.2s ease",
                       }}
-                      onClick={() => {}}
                     >
                       <div
                         style={{

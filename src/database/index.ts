@@ -6,9 +6,11 @@
 export { IndexedDBAdapter } from "./IndexedDBAdapter.js";
 export {
   useDatabase,
+  useCanvas,
   getDatabaseService,
   getDatabaseAdapter,
   resetDatabase,
+  databaseEvents,
 } from "./useIndexedDB.js";
 
 // IndexedDB 服务层（用于高级功能）

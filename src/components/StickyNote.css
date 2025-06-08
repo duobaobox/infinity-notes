@@ -9,7 +9,7 @@
   min-height: 150px;
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease;
   font-size: 14px; /* 基础字体大小 */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
@@ -50,14 +50,13 @@
 .sticky-note.dragging {
   cursor: grabbing;
   z-index: 1000;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2), 0 16px 40px rgba(0, 0, 0, 0.15); /* 拖拽时更强烈的阴影 */
-  /* transform: rotate(2deg); */ /* 拖拽时轻微旋转效果 */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 16px 64px rgba(0, 0, 0, 0.15); /* 拖动时更强的阴影 */
+  transform: scale(1.02); /* 轻微放大增强拖动感 */
 }
 
 .sticky-note.editing {
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15),
     0 8px 32px rgba(59, 130, 246, 0.1), 0 0 0 2px rgba(59, 130, 246, 0.2); /* 编辑时蓝色阴影+焦点环 */
-  /* transform: scale(1.02); */ /* 编辑时轻微放大 */
 }
 
 .sticky-note.new {
