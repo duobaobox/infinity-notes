@@ -124,10 +124,40 @@ export class IndexedDBService {
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], mode);
       const store = transaction.objectStore(storeName);
-      const request = operation(store);
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      // 添加事务级别的错误处理
+      transaction.onerror = (event) => {
+        const error = (event.target as IDBTransaction).error;
+        console.error(`事务执行失败 (${storeName}):`, error);
+        reject(error);
+      };
+
+      transaction.onabort = (event) => {
+        const error = (event.target as IDBTransaction).error;
+        console.error(`事务被中止 (${storeName}):`, error);
+        reject(error);
+      };
+
+      try {
+        const request = operation(store);
+
+        request.onsuccess = () => {
+          try {
+            resolve(request.result);
+          } catch (error) {
+            console.error(`处理请求结果时出错 (${storeName}):`, error);
+            reject(error);
+          }
+        };
+
+        request.onerror = () => {
+          console.error(`数据库操作失败 (${storeName}):`, request.error);
+          reject(request.error);
+        };
+      } catch (error) {
+        console.error(`执行数据库操作时出错 (${storeName}):`, error);
+        reject(error);
+      }
     });
   }
 
@@ -146,11 +176,40 @@ export class IndexedDBService {
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
-      const index = store.index(indexName);
-      const request = index.getAll(value);
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      try {
+        const index = store.index(indexName);
+        const request = index.getAll(value);
+
+        transaction.onerror = (event) => {
+          const error = (event.target as IDBTransaction).error;
+          console.error(`查询事务失败 (${storeName}.${indexName}):`, error);
+          reject(error);
+        };
+
+        transaction.onabort = (event) => {
+          const error = (event.target as IDBTransaction).error;
+          console.error(`查询事务被中止 (${storeName}.${indexName}):`, error);
+          reject(error);
+        };
+
+        request.onsuccess = () => {
+          try {
+            resolve(request.result || []);
+          } catch (error) {
+            console.error(`处理查询结果时出错 (${storeName}.${indexName}):`, error);
+            reject(error);
+          }
+        };
+
+        request.onerror = () => {
+          console.error(`查询操作失败 (${storeName}.${indexName}):`, request.error);
+          reject(request.error);
+        };
+      } catch (error) {
+        console.error(`执行查询操作时出错 (${storeName}.${indexName}):`, error);
+        reject(error);
+      }
     });
   }
 

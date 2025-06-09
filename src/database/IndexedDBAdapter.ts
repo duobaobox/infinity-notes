@@ -88,26 +88,56 @@ export class IndexedDBAdapter {
    * 创建或获取默认画布
    */
   async ensureDefaultCanvas(): Promise<string> {
-    // 尝试获取用户的画布
-    const canvases = await this.dbService.getCanvasesByUser(this.currentUserId);
+    try {
+      // 尝试获取用户的画布
+      const canvases = await this.dbService.getCanvasesByUser(this.currentUserId);
 
-    if (canvases.length > 0) {
-      this.currentCanvasId = canvases[0].id;
-      return canvases[0].id;
+      if (canvases.length > 0) {
+        // 如果已有画布，使用第一个画布
+        this.currentCanvasId = canvases[0].id;
+        return canvases[0].id;
+      }
+
+      // 如果没有画布，检查是否已经存在默认画布
+      const defaultCanvasId = `canvas_${this.currentUserId}_default`;
+      try {
+        const existingCanvas = await this.dbService.getCanvasById(defaultCanvasId);
+        if (existingCanvas) {
+          this.currentCanvasId = existingCanvas.id;
+          return existingCanvas.id;
+        }
+      } catch (error) {
+        // 如果画布不存在，忽略错误，继续创建新画布
+        console.log("检查默认画布时出错，将创建新画布:", error);
+      }
+
+      // 创建默认画布
+      try {
+        await this.dbService.createCanvas({
+          id: defaultCanvasId,
+          user_id: this.currentUserId,
+          name: "默认画布",
+          description: "我的便签画布",
+          is_default: true,
+        });
+
+        this.currentCanvasId = defaultCanvasId;
+        return defaultCanvasId;
+      } catch (error) {
+        if (error instanceof Error && error.name === "ConstraintError") {
+          // 如果创建失败（可能是并发操作导致的），尝试再次获取
+          const canvas = await this.dbService.getCanvasById(defaultCanvasId);
+          if (canvas) {
+            this.currentCanvasId = canvas.id;
+            return canvas.id;
+          }
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error("确保默认画布存在时出错:", error);
+      throw error;
     }
-
-    // 创建默认画布
-    const canvasId = `canvas_${Date.now()}`;
-    await this.dbService.createCanvas({
-      id: canvasId,
-      user_id: this.currentUserId,
-      name: "默认画布",
-      description: "我的便签画布",
-      is_default: true,
-    });
-
-    this.currentCanvasId = canvasId;
-    return canvasId;
   }
 
   /**

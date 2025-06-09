@@ -76,22 +76,41 @@ export function isDatabaseInitialized(): boolean {
  */
 async function initializeDatabase(): Promise<void> {
   const dbService = getDatabaseService();
-  await dbService.initialize();
+  
+  try {
+    await dbService.initialize();
 
-  // 确保有默认用户
-  const defaultUser = await dbService.getUserById("default_user");
-  if (!defaultUser) {
-    await dbService.createUser({
-      id: "default_user",
-      username: "user",
-      email: "user@example.com",
-      display_name: "用户",
-    });
+    // 检查默认用户是否存在，如果不存在才创建
+    let defaultUser = null;
+    try {
+      defaultUser = await dbService.getUserById("default_user");
+    } catch (error) {
+      console.log("检查默认用户时出错，可能是首次运行:", error);
+    }
+
+    if (!defaultUser) {
+      try {
+        await dbService.createUser({
+          id: "default_user",
+          username: "user",
+          email: "user@example.com",
+          display_name: "用户",
+        });
+      } catch (error) {
+        // 如果用户已存在，忽略错误
+        if (!(error instanceof Error) || !error.message.includes("already exists")) {
+          throw error;
+        }
+      }
+    }
+
+    // 确保默认画布存在
+    const adapter = getDatabaseAdapter();
+    await adapter.ensureDefaultCanvas();
+  } catch (error) {
+    console.error("数据库初始化过程中出错:", error);
+    throw error;
   }
-
-  // 确保默认画布
-  const adapter = getDatabaseAdapter();
-  await adapter.ensureDefaultCanvas();
 }
 
 /**
