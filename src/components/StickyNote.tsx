@@ -41,6 +41,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
   // 开始编辑内容
   const startEditing = useCallback(() => {
@@ -111,9 +112,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
-      // 将便签置顶
-      onBringToFront(note.id);
-
       // 计算鼠标在画布坐标系中的位置
       const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
       const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
@@ -127,6 +125,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 初始化临时位置为当前位置
       setTempPosition({ x: note.x, y: note.y });
       setIsDragging(true);
+
+      // 延迟执行置顶操作，避免拖动初期的卡顿
+      setTimeout(() => {
+        onBringToFront(note.id);
+      }, 50);
     },
     [
       isEditing,
@@ -164,26 +167,48 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        // 将屏幕坐标转换为画布逻辑坐标
-        const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
-        const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
-        const newX = canvasX - dragOffset.x;
-        const newY = canvasY - dragOffset.y;
+        // 取消之前的动画帧
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+        }
 
-        // 使用临时状态来更新位置，避免频繁的数据库操作
-        setTempPosition({ x: newX, y: newY });
+        // 使用 requestAnimationFrame 优化性能
+        rafRef.current = requestAnimationFrame(() => {
+          // 将屏幕坐标转换为画布逻辑坐标
+          const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
+          const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
+          const newX = canvasX - dragOffset.x;
+          const newY = canvasY - dragOffset.y;
+
+          // 使用临时状态来更新位置，避免频繁的数据库操作
+          setTempPosition({ x: newX, y: newY });
+        });
       } else if (isResizing) {
-        const deltaX = e.clientX / canvasScale - resizeStart.x;
-        const deltaY = e.clientY / canvasScale - resizeStart.y;
-        const newWidth = Math.max(200, resizeStart.width + deltaX);
-        const newHeight = Math.max(150, resizeStart.height + deltaY);
+        // 取消之前的动画帧
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+        }
 
-        // 使用临时状态来更新尺寸，避免频繁的数据库操作
-        setTempSize({ width: newWidth, height: newHeight });
+        // 使用 requestAnimationFrame 优化性能
+        rafRef.current = requestAnimationFrame(() => {
+          const deltaX = e.clientX / canvasScale - resizeStart.x;
+          const deltaY = e.clientY / canvasScale - resizeStart.y;
+          const newWidth = Math.max(200, resizeStart.width + deltaX);
+          const newHeight = Math.max(150, resizeStart.height + deltaY);
+
+          // 使用临时状态来更新尺寸，避免频繁的数据库操作
+          setTempSize({ width: newWidth, height: newHeight });
+        });
       }
     };
 
     const handleMouseUp = () => {
+      // 清理动画帧
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
       if (isDragging) {
         // 拖动结束时，将临时位置同步到数据库
         onUpdate(note.id, {
@@ -215,12 +240,21 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      // 清理动画帧
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, [
     isDragging,
     isResizing,
-    dragOffset,
-    resizeStart,
+    dragOffset.x,
+    dragOffset.y,
+    resizeStart.x,
+    resizeStart.y,
+    resizeStart.width,
+    resizeStart.height,
     note.id,
     onUpdate,
     canvasScale,
@@ -230,7 +264,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempPosition.y,
     tempSize.width,
     tempSize.height,
-    // isSyncingPosition, // 不需要作为依赖，因为它在 effect 内部被设置
   ]);
 
   // 处理位置同步的 Effect
