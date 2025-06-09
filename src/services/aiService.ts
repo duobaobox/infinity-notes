@@ -324,7 +324,7 @@ export const defaultAIConfig: AIConfig = {
   apiUrl: "",
   apiKey: "",
   aiModel: "",
-  enableAI: false, // 默认禁用AI功能
+  enableAI: true, // 默认启用（只要配置完整就可用）
   temperature: 0.7, // 默认温度值
   maxTokens: 1000, // 默认最大token数
 };

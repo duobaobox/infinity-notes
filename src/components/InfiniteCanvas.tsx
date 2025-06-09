@@ -218,23 +218,12 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         return;
       }
 
-      // 检查AI功能是否启用
-      if (!aiConfig.enableAI) {
-        message.error({
-          content: "AI功能未启用！请在设置中启用AI功能。",
-          duration: 4,
-        });
-        // 打开AI设置页面
-        openSettingsModal("ai");
-        return;
-      }
-
       // 检查AI配置是否有效
       if (!aiConfig.apiKey || !aiConfig.apiUrl || !aiConfig.aiModel) {
         // 使用错误提醒而不是信息提醒
         message.error({
-          content: "AI功能未配置！请先配置AI服务才能使用AI生成便签功能。",
-          duration: 4,
+          content: "AI功能未配置！请先在设置中配置AI服务（API地址、密钥、模型）才能使用AI生成便签功能。",
+          duration: 5,
         });
         // 打开AI设置页面
         openSettingsModal("ai");

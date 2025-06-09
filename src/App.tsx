@@ -3,7 +3,6 @@ import { useRef } from "react";
 import "./App.css";
 import InfiniteCanvas from "./components/InfiniteCanvas";
 import Sidebar from "./components/Sidebar";
-import AITestPanel from "./components/AITestPanel";
 import { useDatabase } from "./database/useIndexedDB";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
@@ -90,7 +89,6 @@ function App() {
       <Layout>
         <Content style={{ margin: "0", overflow: "hidden" }}>
           <InfiniteCanvas ref={canvasRef} />
-          <AITestPanel />
         </Content>
       </Layout>
     </Layout>

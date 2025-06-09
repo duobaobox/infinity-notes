@@ -57,16 +57,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
-    // 调试信息：打印AI配置状态
-    console.log("🎛️ CanvasConsole: AI配置状态", {
-      aiConfig,
-      hasValidConfig,
-      enableAI: aiConfig.enableAI,
-      hasApiKey: !!aiConfig.apiKey,
-      hasApiUrl: !!aiConfig.apiUrl,
-      hasAiModel: !!aiConfig.aiModel,
-    });
-
     // 暴露focus方法给父组件
     useImperativeHandle(
       ref,
@@ -139,8 +129,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       } else if (!hasValidConfig && onOpenAISettings) {
         // 如果没有有效AI配置，打开设置页面
         message.error({
-          content: "AI功能未配置！请先配置AI服务才能使用AI生成便签功能。",
-          duration: 4,
+          content: "AI功能未配置！请先在设置中配置AI服务（API地址、密钥、模型）才能使用AI生成便签功能。",
+          duration: 5,
         });
         onOpenAISettings();
         setInputValue("");
@@ -161,8 +151,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         // 如果未配置 AI，调用 onOpenAISettings 打开 AI 设置页面
         if (onOpenAISettings) {
           message.error({
-            content: "AI功能未配置！请先配置AI服务才能使用AI生成便签功能。",
-            duration: 4,
+            content: "AI功能未配置！请先在设置中配置AI服务（API地址、密钥、模型）才能使用AI生成便签功能。",
+            duration: 5,
           });
           onOpenAISettings();
         } else {

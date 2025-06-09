@@ -110,14 +110,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       const values = await aiForm.validateFields();
       console.log("🎛️ SettingsModal: 表单验证通过，获取的值", values);
 
-      const configToSave = { ...aiConfig, ...values };
+      // 自动启用AI功能（只要用户保存了配置就表示想要使用AI）
+      const configToSave = {
+        ...aiConfig,
+        ...values,
+        enableAI: true // 自动启用AI功能
+      };
       console.log("🎛️ SettingsModal: 准备保存的完整配置", configToSave);
 
       const success = await saveAIConfig(configToSave);
 
       if (success) {
         console.log("🎛️ SettingsModal: AI配置保存成功");
-        message.success("AI配置保存成功！");
+        message.success("AI配置保存成功！现在可以使用AI生成便签功能了。");
       } else {
         console.error("🎛️ SettingsModal: AI配置保存失败");
       }
@@ -412,9 +417,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             )}
             {!aiError && !hasValidConfig && (
               <Alert
-                message="AI 配置不完整"
-                description="请检查并完善API密钥、API地址等AI配置项以启用全部AI功能。"
-                type="warning"
+                message="AI 功能未配置"
+                description="请填写API地址、API密钥和AI模型名称，配置完成后即可使用AI生成便签等智能功能。"
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            {!aiError && hasValidConfig && (
+              <Alert
+                message="AI 功能已启用"
+                description="AI配置完整，现在可以使用AI生成便签功能了！"
+                type="success"
                 showIcon
                 style={{ marginBottom: 16 }}
               />
@@ -425,7 +439,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               onFinish={handleSaveAIConfig}
               preserve={true}
               initialValues={{
-                enableAI: aiConfig.enableAI || false,
                 apiUrl: aiConfig.apiUrl || "",
                 apiKey: aiConfig.apiKey || "",
                 aiModel: aiConfig.aiModel || "",
@@ -438,16 +451,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <RobotOutlined style={{ marginRight: 8 }} />
                   AI模型配置
                 </Title>
-
-                <Form.Item
-                  label="启用AI功能"
-                  name="enableAI"
-                  valuePropName="checked"
-                  extra="开启后可以使用AI生成便签等智能功能"
-                  style={{ marginBottom: 16 }}
-                >
-                  <Switch />
-                </Form.Item>
+                <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+                  配置完成后即可使用AI生成便签等智能功能
+                </Text>
 
                 <Form.Item
                   label="API地址"

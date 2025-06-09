@@ -21,9 +21,9 @@ export const useAISettings = (): UseAISettingsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 计算是否有有效配置（需要检查enableAI字段和必要的配置项）
+  // 计算是否有有效配置（只检查必要的配置项，不依赖enableAI）
   const hasValidConfig = Boolean(
-    config.enableAI && config.apiKey && config.apiUrl && config.aiModel
+    config.apiKey && config.apiUrl && config.aiModel
   );
 
   // 加载配置
@@ -155,19 +155,8 @@ export const useAISettings = (): UseAISettingsReturn => {
 
   // 组件挂载时加载配置
   useEffect(() => {
-    console.log("🔧 useAISettings: 组件挂载，开始加载配置");
     loadConfig();
   }, [loadConfig]);
-
-  // 调试：监听配置变化
-  useEffect(() => {
-    console.log("🔧 useAISettings: 配置状态变化", {
-      config,
-      hasValidConfig,
-      loading,
-      error,
-    });
-  }, [config, hasValidConfig, loading, error]);
 
   return {
     config,
