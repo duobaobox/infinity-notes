@@ -322,52 +322,50 @@ export function useDatabase() {
     }
   }, []);
 
-  // 清空数据库
+  // 清空数据库（简单暴力版本 - 直接删除整个数据库）
   const clearDatabase = useCallback(async (): Promise<void> => {
     try {
+      console.log("🗑️ 开始清空数据库（删除整个数据库）...");
+
       const adapter = getDatabaseAdapter();
       await adapter.clearDatabase();
 
-      // 重置状态
+      // 重置所有状态
       setNotes([]);
       setCurrentCanvasId(null);
       setLoading(false);
       setError(null);
 
-      // 重置全局实例，避免状态冲突
+      // 重置全局实例
       globalDbService = null;
       globalDbAdapter = null;
 
       // 触发数据变化事件
       databaseEvents.emit("notesChanged");
 
-      // 重新初始化
-      const init = async () => {
-        try {
-          setLoading(true);
-          await initializeDatabase();
-          const adapter = getDatabaseAdapter();
-          await adapter.ensureDefaultCanvas();
-          const currentId = adapter.getCurrentCanvasId();
-          if (currentId) {
-            setCurrentCanvasId(currentId);
-            const dbNotes = await adapter.getAllNotes();
-            setNotes(dbNotes);
-          }
-          setLoading(false);
-        } catch (err) {
-          console.error("数据库初始化失败:", err);
-          setError(err instanceof Error ? err.message : "数据库初始化失败");
-          setLoading(false);
+      console.log("🗑️ 数据库已完全删除，开始重新初始化...");
+
+      // 重新初始化数据库
+      try {
+        setLoading(true);
+        await initializeDatabase();
+        const newAdapter = getDatabaseAdapter();
+        await newAdapter.ensureDefaultCanvas();
+        const currentId = newAdapter.getCurrentCanvasId();
+        if (currentId) {
+          setCurrentCanvasId(currentId);
+          const dbNotes = await newAdapter.getAllNotes();
+          setNotes(dbNotes);
         }
-      };
-
-      // 执行初始化
-      await init();
-
-      console.log("数据库已清空并重新初始化");
+        setLoading(false);
+        console.log("✅ 数据库重新初始化完成，项目已回到最初状态");
+      } catch (err) {
+        console.error("❌ 数据库重新初始化失败:", err);
+        setError(err instanceof Error ? err.message : "数据库重新初始化失败");
+        setLoading(false);
+      }
     } catch (err) {
-      console.error("清空数据库失败:", err);
+      console.error("❌ 清空数据库失败:", err);
       setError(err instanceof Error ? err.message : "清空数据库失败");
       throw err;
     }

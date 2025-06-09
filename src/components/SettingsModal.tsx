@@ -68,10 +68,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     if (open && aiConfig) {
       // 只有当配置不是默认空配置时才更新表单值
       const hasValidData =
-        aiConfig.apiKey ||
-        aiConfig.enableAI ||
-        aiConfig.aiModel !== "deepseek-chat" ||
-        aiConfig.apiUrl !== "https://api.deepseek.com/v1";
+        aiConfig.apiKey || aiConfig.aiModel || aiConfig.apiUrl;
 
       if (hasValidData) {
         console.log("🎛️ SettingsModal: 更新AI表单值", aiConfig);
@@ -429,12 +426,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               preserve={true}
               initialValues={
                 aiConfig || {
-                  enableAI: false,
-                  aiModel: "deepseek-chat",
+                  apiUrl: "",
                   apiKey: "",
-                  apiUrl: "https://api.deepseek.com/v1",
-                  temperature: 0.7,
-                  maxTokens: 1000,
+                  aiModel: "",
                 }
               }
             >
@@ -443,29 +437,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <RobotOutlined style={{ marginRight: 8 }} />
                   AI模型配置
                 </Title>
-                <Form.Item
-                  label="启用AI功能"
-                  name="enableAI"
-                  valuePropName="checked"
-                  extra="开启后可使用AI生成便签功能"
-                >
-                  <Switch />
-                </Form.Item>
 
                 <Form.Item
-                  label="AI模型"
-                  name="aiModel"
-                  extra="选择要使用的AI模型"
-                  rules={[{ required: true, message: "请选择AI模型" }]}
+                  label="API地址"
+                  name="apiUrl"
+                  extra="AI服务的API基础地址，如：https://api.deepseek.com/v1"
+                  rules={[
+                    { required: true, message: "请输入API地址" },
+                    { type: "url", message: "请输入有效的URL地址" },
+                  ]}
                 >
-                  <Select style={{ width: "100%" }}>
-                    <Option value="deepseek-chat">DeepSeek Chat</Option>
-                    <Option value="deepseek-coder">DeepSeek Coder</Option>
-                    <Option value="gpt-3.5-turbo">GPT-3.5 Turbo</Option>
-                    <Option value="gpt-4">GPT-4</Option>
-                    <Option value="claude-3-haiku">Claude 3 Haiku</Option>
-                    <Option value="claude-3-sonnet">Claude 3 Sonnet</Option>
-                  </Select>
+                  <Input
+                    placeholder="https://api.deepseek.com/v1"
+                    style={{ width: "100%" }}
+                  />
                 </Form.Item>
 
                 <Form.Item
@@ -485,58 +470,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Form.Item>
 
                 <Form.Item
-                  label="API地址"
-                  name="apiUrl"
-                  extra="API服务的基础URL地址"
-                  rules={[
-                    { required: true, message: "请输入API地址" },
-                    { type: "url", message: "请输入有效的URL地址" },
-                  ]}
+                  label="AI模型"
+                  name="aiModel"
+                  extra="输入要使用的AI模型名称，如：deepseek-chat、gpt-3.5-turbo、claude-3-haiku等"
+                  rules={[{ required: true, message: "请输入AI模型名称" }]}
                 >
                   <Input
-                    placeholder="https://api.deepseek.com/v1"
+                    placeholder="deepseek-chat"
                     style={{ width: "100%" }}
-                  />
-                </Form.Item>
-              </Card>
-
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  模型参数
-                </Title>
-                <Form.Item
-                  label="温度值"
-                  name="temperature"
-                  extra="控制生成内容的随机性，0-1之间，值越高越随机"
-                >
-                  <Slider
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    marks={{
-                      0: "精确",
-                      0.5: "平衡",
-                      1: "创意",
-                    }}
-                    tooltip={{ formatter: (value) => `${value}` }}
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="最大生成令牌数"
-                  name="maxTokens"
-                  extra="控制生成内容的最大长度"
-                >
-                  <Slider
-                    min={50}
-                    max={4000}
-                    step={50}
-                    marks={{
-                      50: "简短",
-                      1000: "适中",
-                      4000: "详细",
-                    }}
-                    tooltip={{ formatter: (value) => `${value}` }}
                   />
                 </Form.Item>
               </Card>

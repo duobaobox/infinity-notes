@@ -1,11 +1,8 @@
 // AI服务模块 - 处理AI API调用和便签生成
 export interface AIConfig {
-  aiModel: string;
-  apiKey: string;
   apiUrl: string;
-  temperature: number;
-  maxTokens: number;
-  enableAI: boolean;
+  apiKey: string;
+  aiModel: string;
 }
 
 export interface AIMessage {
@@ -34,12 +31,7 @@ export class AIService {
 
   // 验证配置是否有效
   validateConfig(): boolean {
-    return !!(
-      this.config.enableAI &&
-      this.config.apiKey &&
-      this.config.apiUrl &&
-      this.config.aiModel
-    );
+    return !!(this.config.apiKey && this.config.apiUrl && this.config.aiModel);
   }
 
   // 测试API连接
@@ -49,7 +41,13 @@ export class AIService {
         return { success: false, error: "配置信息不完整" };
       }
 
-      const response = await fetch(`${this.config.apiUrl}/chat/completions`, {
+      // 直接使用用户配置的API地址，确保URL拼接正确
+      const baseUrl = this.config.apiUrl.endsWith("/")
+        ? this.config.apiUrl.slice(0, -1)
+        : this.config.apiUrl;
+      const apiUrl = `${baseUrl}/chat/completions`;
+
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,7 +130,13 @@ export class AIService {
         { role: "user", content: prompt },
       ];
 
-      const response = await fetch(`${this.config.apiUrl}/chat/completions`, {
+      // 直接使用用户配置的API地址，确保URL拼接正确
+      const baseUrl = this.config.apiUrl.endsWith("/")
+        ? this.config.apiUrl.slice(0, -1)
+        : this.config.apiUrl;
+      const apiUrl = `${baseUrl}/chat/completions`;
+
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -141,8 +145,8 @@ export class AIService {
         body: JSON.stringify({
           model: this.config.aiModel,
           messages,
-          max_tokens: this.config.maxTokens,
-          temperature: this.config.temperature,
+          max_tokens: 1000, // 固定最大令牌数
+          temperature: 0.7, // 固定温度值
           response_format: { type: "json_object" },
         }),
       });
@@ -254,7 +258,13 @@ export class AIService {
   "tags": ["相关标签数组"]
 }`;
 
-      const response = await fetch(`${this.config.apiUrl}/chat/completions`, {
+      // 直接使用用户配置的API地址，确保URL拼接正确
+      const baseUrl = this.config.apiUrl.endsWith("/")
+        ? this.config.apiUrl.slice(0, -1)
+        : this.config.apiUrl;
+      const apiUrl = `${baseUrl}/chat/completions`;
+
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -263,8 +273,8 @@ export class AIService {
         body: JSON.stringify({
           model: this.config.aiModel,
           messages: [{ role: "user", content: analysisPrompt }],
-          max_tokens: 200,
-          temperature: 0.3,
+          max_tokens: 200, // 分析功能使用较少令牌
+          temperature: 0.3, // 分析功能使用较低温度
         }),
       });
 
@@ -308,10 +318,7 @@ export const getAIService = (config?: AIConfig): AIService => {
 
 // 默认AI配置
 export const defaultAIConfig: AIConfig = {
-  aiModel: "deepseek-chat",
+  apiUrl: "",
   apiKey: "",
-  apiUrl: "https://api.deepseek.com/v1",
-  temperature: 0.7,
-  maxTokens: 1000,
-  enableAI: false,
+  aiModel: "",
 };

@@ -42,7 +42,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       onCreateNote,
       onGenerateWithAI,
       onOpenAISettings,
-      placeholder = "输入提示或直接添加便签...",
+      placeholder = "输入文本AI生成便签，留空创建空白便签...",
       disabled = false,
     },
     ref
@@ -68,15 +68,21 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       []
     );
 
-    // 修改 handleSend 函数，在 AI 配置不存在时打开设置
+    // 智能模式：有文本输入 → AI生成便签；无文本输入 → 手动创建空白便签
     const handleSend = async () => {
-      if (!inputValue.trim()) return;
-
       // 防止重复调用
       if (isGenerating) return;
 
-      // 如果启用AI且是带AI按钮的操作，调用AI生成
-      if (aiConfig.enableAI && hasValidConfig && onGenerateWithAI) {
+      // 如果没有文本输入，创建空白便签
+      if (!inputValue.trim()) {
+        if (onCreateNote) {
+          onCreateNote();
+        }
+        return;
+      }
+
+      // 有文本输入，使用AI生成便签
+      if (hasValidConfig && onGenerateWithAI) {
         try {
           setIsGenerating(true);
           setGenerationStatus({
@@ -120,13 +126,16 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         } finally {
           setIsGenerating(false);
         }
-      } else if (aiConfig.enableAI && !hasValidConfig && onOpenAISettings) {
-        // 如果AI功能启用但没有有效配置，打开设置页面
-        message.info("请先完成AI配置以使用此功能");
+      } else if (!hasValidConfig && onOpenAISettings) {
+        // 如果没有有效AI配置，打开设置页面
+        message.error({
+          content: "AI功能未配置！请先配置AI服务才能使用AI生成便签功能。",
+          duration: 4,
+        });
         onOpenAISettings();
         setInputValue("");
       } else if (onSendMessage) {
-        // 普通消息发送
+        // 备用：普通消息发送
         onSendMessage(inputValue);
         setInputValue("");
       }
@@ -138,10 +147,13 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         return;
       }
 
-      if (!aiConfig.enableAI || !hasValidConfig) {
+      if (!hasValidConfig) {
         // 如果未配置 AI，调用 onOpenAISettings 打开 AI 设置页面
         if (onOpenAISettings) {
-          message.info("请先配置 AI 服务以使用此功能");
+          message.error({
+            content: "AI功能未配置！请先配置AI服务才能使用AI生成便签功能。",
+            duration: 4,
+          });
           onOpenAISettings();
         } else {
           message.warning("请先在设置中配置AI服务");
@@ -255,12 +267,12 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         <div className={`console-container ${isFocused ? "focused" : ""}`}>
           {/* 左侧AI按钮 */}
           <Tooltip
-            title={hasValidConfig ? "使用AI生成便签" : "点击配置AI服务"}
+            title={hasValidConfig ? "AI智能生成便签" : "点击配置AI服务"}
             placement="top"
           >
             <Button
               icon={isGenerating ? <LoadingOutlined /> : <RobotOutlined />}
-              type={aiConfig.enableAI && hasValidConfig ? "primary" : "text"}
+              type={hasValidConfig ? "primary" : "text"}
               size="large"
               shape="circle"
               onClick={hasValidConfig ? handleAIGenerate : onOpenAISettings}
@@ -269,7 +281,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                 (!inputValue.trim() || isGenerating || disabled)
               }
               className={`console-button ai-button ${
-                aiConfig.enableAI && hasValidConfig ? "ai-enabled" : ""
+                hasValidConfig ? "ai-enabled" : ""
               }`}
             />
           </Tooltip>
@@ -289,7 +301,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
               className="console-input"
               suffix={
                 inputValue.trim() ? (
-                  aiConfig.enableAI && hasValidConfig ? (
+                  hasValidConfig ? (
                     <Tooltip title="AI生成便签 (Enter)" placement="top">
                       <Button
                         icon={
@@ -303,9 +315,9 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                       />
                     </Tooltip>
                   ) : (
-                    <Tooltip title="发送消息 (Enter)" placement="top">
+                    <Tooltip title="配置AI后可智能生成 (Enter)" placement="top">
                       <Button
-                        icon={<SendOutlined />}
+                        icon={<RobotOutlined />}
                         type="text"
                         size="small"
                         onClick={handleSend}
@@ -315,12 +327,12 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                     </Tooltip>
                   )
                 ) : (
-                  <Tooltip title="快速添加便签" placement="top">
+                  <Tooltip title="创建空白便签 (Enter)" placement="top">
                     <Button
                       icon={<PlusOutlined />}
                       type="text"
                       size="small"
-                      onClick={onCreateNote}
+                      onClick={handleSend}
                       className="add-button-inline"
                     />
                   </Tooltip>

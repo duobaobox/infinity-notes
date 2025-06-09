@@ -60,6 +60,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const [zoomAnimating, setZoomAnimating] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false); // 添加 AI 设置模态框状态
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState("general"); // 设置模态框默认标签页
   const [isAIGenerating, setIsAIGenerating] = useState(false); // 添加AI生成状态控制
 
   // AI设置Hook
@@ -218,15 +219,14 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       }
 
       // 检查AI配置是否有效
-      if (
-        !aiConfig.enableAI ||
-        !aiConfig.apiKey ||
-        !aiConfig.apiUrl ||
-        !aiConfig.aiModel
-      ) {
-        message.info("请先配置AI服务以使用此功能");
+      if (!aiConfig.apiKey || !aiConfig.apiUrl || !aiConfig.aiModel) {
+        // 使用错误提醒而不是信息提醒
+        message.error({
+          content: "AI功能未配置！请先配置AI服务才能使用AI生成便签功能。",
+          duration: 4,
+        });
         // 打开AI设置页面
-        setSettingsModalOpen(true);
+        openSettingsModal("ai");
         return;
       }
 
@@ -647,7 +647,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   }, []);
 
   // 设置模态框相关方法
-  const openSettingsModal = useCallback(() => {
+  const openSettingsModal = useCallback((defaultTab: string = "general") => {
+    setSettingsDefaultTab(defaultTab);
     setSettingsModalOpen(true);
   }, []);
 
@@ -920,7 +921,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         }}
         onCreateNote={createStickyNoteAtCenter}
         onGenerateWithAI={generateStickyNotesWithAI}
-        onOpenAISettings={openSettingsModal}
+        onOpenAISettings={() => openSettingsModal("ai")}
       />
 
       {/* 搜索模态框 */}
@@ -935,7 +936,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       <SettingsModal
         open={settingsModalOpen}
         onCancel={closeSettingsModal}
-        defaultActiveTab="ai"
+        defaultActiveTab={settingsDefaultTab}
       />
     </div>
   );

@@ -597,51 +597,37 @@ export class IndexedDBService {
   }
 
   /**
-   * 清空数据库中的所有数据
-   * 警告：此操作会删除所有存储的数据
+   * 清空数据库 - 直接删除整个数据库（简单暴力，适合开发测试）
+   * 警告：此操作会完全删除数据库，让项目回到最初状态
    */
   public async clearDatabase(): Promise<void> {
-    if (!this.db) {
-      await this.initialize();
+    console.log("🗑️ 开始删除整个数据库...");
+
+    // 关闭当前数据库连接
+    if (this.db) {
+      this.db.close();
+      this.db = null;
     }
+    this.initialized = false;
 
-    const storeNames = ["users", "canvases", "sticky_notes", "tags"];
-
-    for (const storeName of storeNames) {
-      await this.clearObjectStore(storeName);
-    }
-
-    console.log("IndexedDB 数据库已清空");
-  }
-
-  /**
-   * 清空特定的对象存储
-   */
-  private async clearObjectStore(storeName: string): Promise<void> {
+    // 直接删除整个数据库
     return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error("数据库未初始化"));
-        return;
-      }
+      const deleteRequest = indexedDB.deleteDatabase(this.dbName);
 
-      try {
-        const transaction = this.db.transaction(storeName, "readwrite");
-        const store = transaction.objectStore(storeName);
-        const request = store.clear();
+      deleteRequest.onsuccess = () => {
+        console.log("🗑️ 数据库已完全删除，项目已回到最初状态");
+        resolve();
+      };
 
-        request.onsuccess = () => {
-          console.log(`对象存储 ${storeName} 已清空`);
-          resolve();
-        };
+      deleteRequest.onerror = () => {
+        console.error("🗑️ 删除数据库失败:", deleteRequest.error);
+        reject(deleteRequest.error);
+      };
 
-        request.onerror = () => {
-          console.error(`清空对象存储 ${storeName} 失败:`, request.error);
-          reject(request.error);
-        };
-      } catch (error) {
-        console.error(`清空对象存储 ${storeName} 发生异常:`, error);
-        reject(error);
-      }
+      deleteRequest.onblocked = () => {
+        console.warn("🗑️ 数据库删除被阻塞，可能有其他连接正在使用");
+        // 继续等待，通常会自动解决
+      };
     });
   }
 }

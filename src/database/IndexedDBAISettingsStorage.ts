@@ -152,12 +152,7 @@ export class IndexedDBAISettingsStorage {
   static async hasValidConfig(): Promise<boolean> {
     try {
       const config = await this.loadConfig();
-      return !!(
-        config.enableAI &&
-        config.apiKey &&
-        config.apiUrl &&
-        config.aiModel
-      );
+      return !!(config.apiKey && config.apiUrl && config.aiModel);
     } catch {
       return false;
     }
@@ -175,13 +170,7 @@ export class IndexedDBAISettingsStorage {
         oldConfig.apiUrl && oldConfig.apiUrl !== defaultAIConfig.apiUrl;
       const hasCustomModel =
         oldConfig.aiModel && oldConfig.aiModel !== defaultAIConfig.aiModel;
-      const hasCustomSettings =
-        oldConfig.enableAI !== defaultAIConfig.enableAI ||
-        oldConfig.temperature !== defaultAIConfig.temperature ||
-        oldConfig.maxTokens !== defaultAIConfig.maxTokens;
-
-      const hasAnyCustomConfig =
-        hasApiKey || hasApiUrl || hasCustomModel || hasCustomSettings;
+      const hasAnyCustomConfig = hasApiKey || hasApiUrl || hasCustomModel;
 
       // 如果有任何自定义配置，保存到IndexedDB
       if (hasAnyCustomConfig) {
@@ -306,90 +295,10 @@ export class IndexedDBAISettingsStorage {
       }
     }
 
-    // 自动修正温度值
-    if (
-      typeof config.temperature !== "number" ||
-      config.temperature < 0 ||
-      config.temperature > 1
-    ) {
-      errors.push("温度值必须在0-1之间");
-      // 自动修正为有效范围
-      if (typeof config.temperature === "number") {
-        correctedConfig.temperature = Math.min(
-          Math.max(config.temperature, 0),
-          1
-        );
-        console.log(
-          `自动修正温度值: ${config.temperature} -> ${correctedConfig.temperature}`
-        );
-      } else {
-        correctedConfig.temperature = defaultAIConfig.temperature;
-        console.log(`温度值无效，使用默认值: ${defaultAIConfig.temperature}`);
-      }
-    }
-
-    // 自动修正maxTokens
-    if (
-      typeof config.maxTokens !== "number" ||
-      config.maxTokens < 1 ||
-      config.maxTokens > 4000
-    ) {
-      errors.push("最大Token数必须在1-4000之间");
-      // 自动修正为有效范围
-      if (typeof config.maxTokens === "number") {
-        correctedConfig.maxTokens = Math.min(
-          Math.max(config.maxTokens, 1),
-          4000
-        );
-        console.log(
-          `自动修正maxTokens: ${config.maxTokens} -> ${correctedConfig.maxTokens}`
-        );
-      } else {
-        correctedConfig.maxTokens = defaultAIConfig.maxTokens;
-        console.log(`maxTokens无效，使用默认值: ${defaultAIConfig.maxTokens}`);
-      }
-    }
-
     return {
       isValid: errors.length === 0,
       errors,
       correctedConfig: errors.length > 0 ? correctedConfig : undefined,
     };
-  }
-
-  // 获取预设配置
-  static getPresetConfigs(): Array<{
-    name: string;
-    config: Partial<AIConfig>;
-  }> {
-    return [
-      {
-        name: "DeepSeek默认配置",
-        config: {
-          aiModel: "deepseek-chat",
-          apiUrl: "https://api.deepseek.com/v1",
-          temperature: 0.7,
-          maxTokens: 1000,
-        },
-      },
-      {
-        name: "OpenAI GPT-3.5",
-        config: {
-          aiModel: "gpt-3.5-turbo",
-          apiUrl: "https://api.openai.com/v1",
-          temperature: 0.7,
-          maxTokens: 1000,
-        },
-      },
-      {
-        name: "OpenAI GPT-4",
-        config: {
-          aiModel: "gpt-4",
-          apiUrl: "https://api.openai.com/v1",
-          temperature: 0.5,
-          maxTokens: 1500,
-        },
-      },
-    ];
   }
 }
