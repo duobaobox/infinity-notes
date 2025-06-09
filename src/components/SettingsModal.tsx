@@ -424,19 +424,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               layout="vertical"
               onFinish={handleSaveAIConfig}
               preserve={true}
-              initialValues={
-                aiConfig || {
-                  apiUrl: "",
-                  apiKey: "",
-                  aiModel: "",
-                }
-              }
+              initialValues={{
+                enableAI: aiConfig.enableAI || false,
+                apiUrl: aiConfig.apiUrl || "",
+                apiKey: aiConfig.apiKey || "",
+                aiModel: aiConfig.aiModel || "",
+                temperature: aiConfig.temperature || 0.7,
+                maxTokens: aiConfig.maxTokens || 1000,
+              }}
             >
               <Card size="small" style={{ marginBottom: 16 }}>
                 <Title level={5} style={{ margin: "0 0 16px 0" }}>
                   <RobotOutlined style={{ marginRight: 8 }} />
                   AI模型配置
                 </Title>
+
+                <Form.Item
+                  label="启用AI功能"
+                  name="enableAI"
+                  valuePropName="checked"
+                  extra="开启后可以使用AI生成便签等智能功能"
+                  style={{ marginBottom: 16 }}
+                >
+                  <Switch />
+                </Form.Item>
 
                 <Form.Item
                   label="API地址"
@@ -478,6 +489,45 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <Input
                     placeholder="deepseek-chat"
                     style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </Card>
+
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  高级设置
+                </Title>
+
+                <Form.Item
+                  label="温度值"
+                  name="temperature"
+                  extra="控制AI回答的随机性，0-1之间，值越高越随机"
+                >
+                  <Slider
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    marks={{
+                      0: "0",
+                      0.3: "0.3",
+                      0.7: "0.7",
+                      1: "1",
+                    }}
+                    tooltip={{ formatter: (value) => `${value}` }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="最大Token数"
+                  name="maxTokens"
+                  extra="限制AI回答的最大长度，建议500-2000之间"
+                >
+                  <InputNumber
+                    min={100}
+                    max={4000}
+                    step={100}
+                    style={{ width: "100%" }}
+                    placeholder="1000"
                   />
                 </Form.Item>
               </Card>

@@ -3,6 +3,9 @@ export interface AIConfig {
   apiUrl: string;
   apiKey: string;
   aiModel: string;
+  enableAI?: boolean; // 新增：是否启用AI功能
+  temperature?: number; // 新增：AI温度参数
+  maxTokens?: number; // 新增：最大token数
 }
 
 export interface AIMessage {
@@ -145,8 +148,8 @@ export class AIService {
         body: JSON.stringify({
           model: this.config.aiModel,
           messages,
-          max_tokens: 1000, // 固定最大令牌数
-          temperature: 0.7, // 固定温度值
+          max_tokens: this.config.maxTokens || 1000, // 使用配置中的值，默认1000
+          temperature: this.config.temperature || 0.7, // 使用配置中的值，默认0.7
           response_format: { type: "json_object" },
         }),
       });
@@ -273,8 +276,8 @@ export class AIService {
         body: JSON.stringify({
           model: this.config.aiModel,
           messages: [{ role: "user", content: analysisPrompt }],
-          max_tokens: 200, // 分析功能使用较少令牌
-          temperature: 0.3, // 分析功能使用较低温度
+          max_tokens: Math.min(this.config.maxTokens || 1000, 500), // 分析功能限制最大500令牌
+          temperature: Math.min(this.config.temperature || 0.7, 0.5), // 分析功能使用较低温度
         }),
       });
 
@@ -321,4 +324,7 @@ export const defaultAIConfig: AIConfig = {
   apiUrl: "",
   apiKey: "",
   aiModel: "",
+  enableAI: false, // 默认禁用AI功能
+  temperature: 0.7, // 默认温度值
+  maxTokens: 1000, // 默认最大token数
 };

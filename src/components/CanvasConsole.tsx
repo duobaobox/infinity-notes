@@ -57,6 +57,16 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
+    // 调试信息：打印AI配置状态
+    console.log("🎛️ CanvasConsole: AI配置状态", {
+      aiConfig,
+      hasValidConfig,
+      enableAI: aiConfig.enableAI,
+      hasApiKey: !!aiConfig.apiKey,
+      hasApiUrl: !!aiConfig.apiUrl,
+      hasAiModel: !!aiConfig.aiModel,
+    });
+
     // 暴露focus方法给父组件
     useImperativeHandle(
       ref,

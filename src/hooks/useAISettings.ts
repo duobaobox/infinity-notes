@@ -21,7 +21,7 @@ export const useAISettings = (): UseAISettingsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 计算是否有有效配置
+  // 计算是否有有效配置（需要检查enableAI字段和必要的配置项）
   const hasValidConfig = Boolean(
     config.enableAI && config.apiKey && config.apiUrl && config.aiModel
   );
@@ -39,9 +39,8 @@ export const useAISettings = (): UseAISettingsReturn => {
 
       setConfig(loadedConfig);
       // 新增：确保加载后也更新 AIService
-      // 只有在AI启用且配置有效时才更新服务，避免用不完整的默认配置覆盖有效配置
+      // 只要配置有效就更新服务，不依赖enableAI字段（enableAI只是UI控制）
       if (
-        loadedConfig.enableAI &&
         loadedConfig.apiKey &&
         loadedConfig.apiUrl &&
         loadedConfig.aiModel
@@ -49,8 +48,8 @@ export const useAISettings = (): UseAISettingsReturn => {
         console.log("🔧 useAISettings: 使用有效配置更新AI服务");
         getAIService(loadedConfig);
       } else {
-        console.log("🔧 useAISettings: 配置无效或AI未启用，使用默认配置");
-        // 如果加载的配置不完整或AI未启用，确保服务使用默认/空配置
+        console.log("🔧 useAISettings: 配置无效，使用默认配置");
+        // 如果加载的配置不完整，确保服务使用默认/空配置
         getAIService(defaultAIConfig);
       }
     } catch (err) {
@@ -88,8 +87,8 @@ export const useAISettings = (): UseAISettingsReturn => {
 
         setConfig(newConfig);
 
-        // 更新AI服务配置
-        if (newConfig.enableAI) {
+        // 更新AI服务配置（只要配置有效就更新，不依赖enableAI字段）
+        if (newConfig.apiKey && newConfig.apiUrl && newConfig.aiModel) {
           getAIService(newConfig);
         }
 
@@ -111,7 +110,8 @@ export const useAISettings = (): UseAISettingsReturn => {
     success: boolean;
     error?: string;
   }> => {
-    if (!hasValidConfig) {
+    // 测试连接只检查必要的配置项，不检查enableAI
+    if (!config.apiKey || !config.apiUrl || !config.aiModel) {
       return { success: false, error: "配置信息不完整" };
     }
 
@@ -155,8 +155,19 @@ export const useAISettings = (): UseAISettingsReturn => {
 
   // 组件挂载时加载配置
   useEffect(() => {
+    console.log("🔧 useAISettings: 组件挂载，开始加载配置");
     loadConfig();
   }, [loadConfig]);
+
+  // 调试：监听配置变化
+  useEffect(() => {
+    console.log("🔧 useAISettings: 配置状态变化", {
+      config,
+      hasValidConfig,
+      loading,
+      error,
+    });
+  }, [config, hasValidConfig, loading, error]);
 
   return {
     config,
