@@ -38,49 +38,143 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [isEditing, setIsEditing] = useState(note.isEditing);
   const [isTitleEditing, setIsTitleEditing] = useState(note.isTitleEditing);
 
+  // 中文输入法合成状态跟踪
+  const [isComposing, setIsComposing] = useState(false);
+  const [isTitleComposing, setIsTitleComposing] = useState(false);
+
+  // 本地内容状态，用于在输入期间避免外部更新干扰
+  const [localContent, setLocalContent] = useState(note.content);
+  const [localTitle, setLocalTitle] = useState(note.title);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
+  // 防抖更新的 timer
+  const contentUpdateTimerRef = useRef<number | null>(null);
+  const titleUpdateTimerRef = useRef<number | null>(null);
+
   // 开始编辑内容
   const startEditing = useCallback(() => {
     setIsEditing(true);
-  }, []);
+    setLocalContent(note.content);
+  }, [note.content]);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
     setIsEditing(false);
-    // 只保存实际内容，不保存编辑状态
-    onUpdate(note.id, { updatedAt: new Date() });
-  }, [note.id, onUpdate]);
+    // 清理防抖计时器
+    if (contentUpdateTimerRef.current) {
+      clearTimeout(contentUpdateTimerRef.current);
+      contentUpdateTimerRef.current = null;
+    }
+    // 最后一次保存确保数据同步
+    onUpdate(note.id, { content: localContent, updatedAt: new Date() });
+  }, [note.id, onUpdate, localContent]);
 
   // 开始编辑标题
   const startTitleEditing = useCallback(() => {
     setIsTitleEditing(true);
-  }, []);
+    setLocalTitle(note.title);
+  }, [note.title]);
 
   // 停止编辑标题
   const stopTitleEditing = useCallback(() => {
     setIsTitleEditing(false);
-    // 只保存实际内容，不保存编辑状态
-    onUpdate(note.id, { updatedAt: new Date() });
-  }, [note.id, onUpdate]);
+    // 清理防抖计时器
+    if (titleUpdateTimerRef.current) {
+      clearTimeout(titleUpdateTimerRef.current);
+      titleUpdateTimerRef.current = null;
+    }
+    // 最后一次保存确保数据同步
+    onUpdate(note.id, { title: localTitle, updatedAt: new Date() });
+  }, [note.id, onUpdate, localTitle]);
+
+  // 防抖更新内容到数据库
+  const debouncedUpdateContent = useCallback(
+    (newContent: string) => {
+      if (contentUpdateTimerRef.current) {
+        clearTimeout(contentUpdateTimerRef.current);
+      }
+      contentUpdateTimerRef.current = setTimeout(() => {
+        onUpdate(note.id, { content: newContent });
+        contentUpdateTimerRef.current = null;
+      }, 300); // 300ms 防抖
+    },
+    [note.id, onUpdate]
+  );
+
+  // 防抖更新标题到数据库
+  const debouncedUpdateTitle = useCallback(
+    (newTitle: string) => {
+      if (titleUpdateTimerRef.current) {
+        clearTimeout(titleUpdateTimerRef.current);
+      }
+      titleUpdateTimerRef.current = setTimeout(() => {
+        onUpdate(note.id, { title: newTitle });
+        titleUpdateTimerRef.current = null;
+      }, 300); // 300ms 防抖
+    },
+    [note.id, onUpdate]
+  );
+
+  // 内容合成事件处理
+  const handleContentCompositionStart = useCallback(() => {
+    setIsComposing(true);
+  }, []);
+
+  const handleContentCompositionEnd = useCallback(
+    (e: React.CompositionEvent<HTMLTextAreaElement>) => {
+      setIsComposing(false);
+      const newContent = e.currentTarget.value;
+      setLocalContent(newContent);
+      debouncedUpdateContent(newContent);
+    },
+    [debouncedUpdateContent]
+  );
+
+  // 标题合成事件处理
+  const handleTitleCompositionStart = useCallback(() => {
+    setIsTitleComposing(true);
+  }, []);
+
+  const handleTitleCompositionEnd = useCallback(
+    (e: React.CompositionEvent<HTMLInputElement>) => {
+      setIsTitleComposing(false);
+      const newTitle = e.currentTarget.value;
+      setLocalTitle(newTitle);
+      debouncedUpdateTitle(newTitle);
+    },
+    [debouncedUpdateTitle]
+  );
 
   // 内容变化处理
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onUpdate(note.id, { content: e.target.value });
+      const newContent = e.target.value;
+      setLocalContent(newContent);
+
+      // 如果不是合成事件期间，则正常更新
+      if (!isComposing) {
+        debouncedUpdateContent(newContent);
+      }
     },
-    [note.id, onUpdate]
+    [isComposing, debouncedUpdateContent]
   );
 
   // 标题变化处理
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onUpdate(note.id, { title: e.target.value });
+      const newTitle = e.target.value;
+      setLocalTitle(newTitle);
+
+      // 如果不是合成事件期间，则正常更新
+      if (!isTitleComposing) {
+        debouncedUpdateTitle(newTitle);
+      }
     },
-    [note.id, onUpdate]
+    [isTitleComposing, debouncedUpdateTitle]
   );
 
   // 删除便签
@@ -288,6 +382,31 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [note.width, note.height, tempSize.width, tempSize.height, isSyncingSize]);
 
+  // 同步外部 props 到本地状态（仅在非编辑状态下）
+  useEffect(() => {
+    if (!isEditing && !isComposing) {
+      setLocalContent(note.content);
+    }
+  }, [note.content, isEditing, isComposing]);
+
+  useEffect(() => {
+    if (!isTitleEditing && !isTitleComposing) {
+      setLocalTitle(note.title);
+    }
+  }, [note.title, isTitleEditing, isTitleComposing]);
+
+  // 清理防抖计时器
+  useEffect(() => {
+    return () => {
+      if (contentUpdateTimerRef.current) {
+        clearTimeout(contentUpdateTimerRef.current);
+      }
+      if (titleUpdateTimerRef.current) {
+        clearTimeout(titleUpdateTimerRef.current);
+      }
+    };
+  }, []);
+
   // 当 note 的位置从 props 更新时，同步 tempPosition (非拖动或同步状态下)
   useEffect(() => {
     if (!isDragging && !isSyncingPosition) {
@@ -317,22 +436,22 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
       textareaRef.current.setSelectionRange(
-        note.content.length,
-        note.content.length
+        localContent.length,
+        localContent.length
       );
     }
-  }, [isEditing, note.content.length]); // 依赖本地编辑状态
+  }, [isEditing, localContent.length]); // 依赖本地编辑状态
 
   // 自动聚焦到标题输入框 - 仅在进入标题编辑模式时设置光标到末尾
   useEffect(() => {
     if (isTitleEditing && titleInputRef.current) {
       titleInputRef.current.focus();
       titleInputRef.current.setSelectionRange(
-        note.title.length,
-        note.title.length
+        localTitle.length,
+        localTitle.length
       );
     }
-  }, [isTitleEditing, note.title.length]); // 依赖本地编辑状态
+  }, [isTitleEditing, localTitle.length]); // 依赖本地编辑状态
 
   // 处理内容编辑键盘事件
   const handleContentKeyDown = useCallback(
@@ -431,7 +550,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 计算标题背景宽度 - 根据标题文本长度动态调整
   const getTitleBackgroundWidth = () => {
-    const titleText = note.title || "便签";
+    const titleText = localTitle || "便签";
     // 每个字符平均宽度约为10px（根据字体大小和字符类型调整）
     // 中文字符和英文字符宽度不同，这里取一个估计值
     const avgCharWidth = 10;
@@ -483,10 +602,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               <input
                 ref={titleInputRef}
                 type="text"
-                value={note.title}
+                value={localTitle}
                 onChange={handleTitleChange}
                 onKeyDown={handleTitleKeyDown}
                 onBlur={handleTitleBlur}
+                onCompositionStart={handleTitleCompositionStart}
+                onCompositionEnd={handleTitleCompositionEnd}
                 className="sticky-note-title-input"
                 placeholder="便签标题"
               />
@@ -510,7 +631,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   cursor: "text",
                 }}
               >
-                {note.title || "便签"}
+                {localTitle || "便签"}
               </h3>
             )}
           </div>
@@ -538,10 +659,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         {isEditing ? (
           <textarea
             ref={textareaRef}
-            value={note.content}
+            value={localContent}
             onChange={handleContentChange}
             onKeyDown={handleContentKeyDown}
             onBlur={handleContentBlur}
+            onCompositionStart={handleContentCompositionStart}
+            onCompositionEnd={handleContentCompositionEnd}
             placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑（会自动保存）&#10;• Ctrl/⌘ + Enter 保存"
             className="sticky-note-textarea"
           />
@@ -561,9 +684,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               backgroundColor: `rgba(255, 255, 255, ${getContentBackgroundOpacity()})`,
             }}
           >
-            {note.content.trim() ? (
+            {localContent.trim() ? (
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                {note.content}
+                {localContent}
               </ReactMarkdown>
             ) : (
               <div className="empty-note">双击开始编辑内容</div>
