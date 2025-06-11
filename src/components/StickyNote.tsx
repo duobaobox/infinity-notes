@@ -71,11 +71,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     } else {
       setDisplayContent(note.content);
       setShowCursor(false);
-      if (streamingContent && streamingContent !== note.content) {
-        // 流式完成，更新便签内容
-        onUpdate(note.id, { content: streamingContent });
-        onStreamingComplete?.();
-      }
+    }
+  }, [isStreaming, streamingContent, note.content]);
+
+  // 处理流式完成回调（分离逻辑避免循环依赖）
+  useEffect(() => {
+    if (!isStreaming && streamingContent && streamingContent !== note.content) {
+      // 流式完成，更新便签内容
+      onUpdate(note.id, { content: streamingContent });
+      onStreamingComplete?.();
     }
   }, [isStreaming, streamingContent, note.content, note.id, onUpdate, onStreamingComplete]);
 

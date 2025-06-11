@@ -81,8 +81,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         return;
       }
 
-      // 有文本输入，使用AI生成便签
-      if (hasValidConfig && onGenerateWithAI) {
+      // 有文本输入，使用AI生成便签（包括演示模式）
+      if (onGenerateWithAI) {
         try {
           setIsGenerating(true);
           setGenerationStatus({
@@ -126,14 +126,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         } finally {
           setIsGenerating(false);
         }
-      } else if (!hasValidConfig && onOpenAISettings) {
-        // 如果没有有效AI配置，打开设置页面
-        message.error({
-          content: "AI功能未配置！请先在设置中配置AI服务（API地址、密钥、模型）才能使用AI生成便签功能。",
-          duration: 5,
-        });
-        onOpenAISettings();
-        setInputValue("");
       } else if (onSendMessage) {
         // 备用：普通消息发送
         onSendMessage(inputValue);
@@ -147,24 +139,10 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         return;
       }
 
-      if (!hasValidConfig) {
-        // 如果未配置 AI，调用 onOpenAISettings 打开 AI 设置页面
-        if (onOpenAISettings) {
-          message.error({
-            content: "AI功能未配置！请先在设置中配置AI服务（API地址、密钥、模型）才能使用AI生成便签功能。",
-            duration: 5,
-          });
-          onOpenAISettings();
-        } else {
-          message.warning("请先在设置中配置AI服务");
-        }
-        return;
-      }
-
       // 防止重复调用
       if (isGenerating) return;
 
-      // 直接调用AI生成，不再通过handleSend
+      // 直接调用AI生成（包括演示模式）
       if (onGenerateWithAI) {
         try {
           setIsGenerating(true);
@@ -267,22 +245,17 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         <div className={`console-container ${isFocused ? "focused" : ""}`}>
           {/* 左侧AI按钮 */}
           <Tooltip
-            title={hasValidConfig ? "AI智能生成便签" : "点击配置AI服务"}
+            title={hasValidConfig ? "AI智能生成便签" : "AI演示模式（点击体验流式效果）"}
             placement="top"
           >
             <Button
               icon={isGenerating ? <LoadingOutlined /> : <RobotOutlined />}
-              type={hasValidConfig ? "primary" : "text"}
+              type="primary"
               size="large"
               shape="circle"
-              onClick={hasValidConfig ? handleAIGenerate : onOpenAISettings}
-              disabled={
-                hasValidConfig &&
-                (!inputValue.trim() || isGenerating || disabled)
-              }
-              className={`console-button ai-button ${
-                hasValidConfig ? "ai-enabled" : ""
-              }`}
+              onClick={handleAIGenerate}
+              disabled={!inputValue.trim() || isGenerating || disabled}
+              className="console-button ai-button ai-enabled"
             />
           </Tooltip>
 

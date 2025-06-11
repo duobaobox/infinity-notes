@@ -216,158 +216,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     canvasState.scale,
   ]);
 
-  // AI生成便签
+
+
+  // AI生成便签（流式）
   const generateStickyNotesWithAI = useCallback(
-    async (prompt: string) => {
-      // 防止并发请求
-      if (isAIGenerating) {
-        console.warn("AI正在生成中，忽略重复请求");
-        return;
-      }
-
-      // 检查AI配置是否有效
-      if (!aiConfig.apiKey || !aiConfig.apiUrl || !aiConfig.aiModel) {
-        // 使用错误提醒而不是信息提醒
-        message.error({
-          content: "AI功能未配置！请先在设置中配置AI服务（API地址、密钥、模型）才能使用AI生成便签功能。",
-          duration: 5,
-        });
-        // 打开AI设置页面
-        openSettingsModal("ai");
-        return;
-      }
-
-      try {
-        setIsAIGenerating(true);
-
-        // 更新AI服务配置
-        aiService.updateConfig(aiConfig);
-
-        // 调用AI服务生成便签数据
-        const result = await aiService.generateStickyNotes(prompt);
-
-        if (!result.success) {
-          message.error(result.error || "AI生成失败");
-          return;
-        }
-
-        if (!result.notes || result.notes.length === 0) {
-          message.warning("AI未生成任何便签内容");
-          return;
-        }
-
-        // 获取画布中心位置用于放置便签
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        // 转换为画布逻辑坐标
-        const logicalCenterX =
-          (centerX - canvasState.offsetX) / canvasState.scale;
-        const logicalCenterY =
-          (centerY - canvasState.offsetY) / canvasState.scale;
-
-        // 创建便签
-        const maxZ =
-          stickyNotes.length > 0
-            ? Math.max(...stickyNotes.map((note) => note.zIndex))
-            : 0;
-
-        // 如果生成多个便签，采用网格布局
-        const notesPerRow = Math.ceil(Math.sqrt(result.notes.length));
-        const spacing = 280; // 便签间距
-        const startX = logicalCenterX - ((notesPerRow - 1) * spacing) / 2;
-        const startY =
-          logicalCenterY -
-          ((Math.ceil(result.notes.length / notesPerRow) - 1) * spacing) / 2;
-
-        // 批量创建便签，避免在循环中频繁更新状态
-        const newNotes: StickyNoteType[] = [];
-
-        for (let i = 0; i < result.notes.length; i++) {
-          const noteData = result.notes[i];
-          const row = Math.floor(i / notesPerRow);
-          const col = i % notesPerRow;
-
-          // 计算便签位置
-          const x = startX + col * spacing;
-          const y = startY + row * spacing;
-
-          // 添加小范围随机偏移
-          const randomOffset = 30;
-          const offsetX = (Math.random() - 0.5) * randomOffset;
-          const offsetY = (Math.random() - 0.5) * randomOffset;
-
-          // 映射颜色
-          const colorMap: Record<string, StickyNoteType["color"]> = {
-            "#fef3c7": "yellow",
-            "#dbeafe": "blue",
-            "#d1fae5": "green",
-            "#fce7f3": "pink",
-            "#e9d5ff": "purple",
-          };
-
-          const defaultColor: StickyNoteType["color"] = "yellow";
-          const noteColor =
-            noteData.color && colorMap[noteData.color]
-              ? colorMap[noteData.color]
-              : defaultColor;
-
-          const newNote: StickyNoteType = {
-            id: `ai-note-${Date.now()}-${i}`,
-            x: x + offsetX,
-            y: y + offsetY,
-            width: 250,
-            height: 200,
-            content: noteData.content,
-            title: noteData.title,
-            color: noteColor,
-            isNew: true,
-            zIndex: maxZ + i + 1,
-            isEditing: false,
-            isTitleEditing: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-
-          newNotes.push(newNote);
-        }
-
-        // 批量添加便签到数据库
-        for (const note of newNotes) {
-          await addNote(note);
-        }
-
-        // 批量移除新建标记
-        setTimeout(() => {
-          newNotes.forEach((note) => {
-            updateStickyNote(note.id, { isNew: false });
-          });
-        }, 500);
-
-        message.success(`AI成功生成了 ${result.notes.length} 个便签`);
-      } catch (error) {
-        console.error("AI生成便签失败:", error);
-        message.error("AI生成便签失败，请检查网络连接和配置");
-      } finally {
-        setIsAIGenerating(false);
-      }
-    },
-    [
-      aiService,
-      aiConfig,
-      canvasState,
-      stickyNotes,
-      addNote,
-      updateStickyNote,
-      isAIGenerating,
-    ]
-  );
-
-  // 流式AI生成便签
-  const generateStickyNotesWithAIStreaming = useCallback(
     async (prompt: string) => {
       // 防止并发请求
       if (isAIGenerating) {
@@ -1306,7 +1158,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           // 这里可以集成AI API调用
         }}
         onCreateNote={createStickyNoteAtCenter}
-        onGenerateWithAI={generateStickyNotesWithAIStreaming}
+        onGenerateWithAI={generateStickyNotesWithAI}
         onOpenAISettings={() => openSettingsModal("ai")}
       />
 
