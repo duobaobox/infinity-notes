@@ -33,6 +33,9 @@ export interface StreamingCallbacks {
 
 export class AIService {
   private config: AIConfig;
+  private preconnectController: AbortController | null = null;
+  private isPreconnected: boolean = false;
+  private preconnectPromise: Promise<void> | null = null;
 
   constructor(config: AIConfig) {
     this.config = config;
@@ -41,6 +44,96 @@ export class AIService {
   // 更新AI配置
   updateConfig(config: AIConfig): void {
     this.config = config;
+    // 配置更新后重置预连接状态
+    this.resetPreconnection();
+  }
+
+  // 预连接到AI服务 - 用户输入时调用
+  async preconnectToAI(): Promise<void> {
+    if (!this.validateConfig()) {
+      console.log("⚠️ AI配置未完成，跳过预连接");
+      return;
+    }
+
+    if (this.isPreconnected || this.preconnectPromise) {
+      console.log("🔗 AI服务已预连接或正在连接中");
+      return;
+    }
+
+    console.log("🚀 开始预连接到AI服务...");
+
+    this.preconnectController = new AbortController();
+    this.preconnectPromise = this.performPreconnect();
+
+    try {
+      await this.preconnectPromise;
+      this.isPreconnected = true;
+      console.log("✅ AI服务预连接成功");
+    } catch (error) {
+      console.warn("⚠️ AI服务预连接失败:", error);
+      this.isPreconnected = false;
+    } finally {
+      this.preconnectPromise = null;
+    }
+  }
+
+  // 执行预连接的具体逻辑
+  private async performPreconnect(): Promise<void> {
+    const baseUrl = this.config.apiUrl.endsWith("/")
+      ? this.config.apiUrl.slice(0, -1)
+      : this.config.apiUrl;
+    const apiUrl = `${baseUrl}/chat/completions`;
+
+    // 发送一个轻量级的预连接请求
+    const preconnectRequest = {
+      model: this.config.aiModel,
+      messages: [
+        { role: "system" as const, content: "预连接测试" },
+        { role: "user" as const, content: "ping" }
+      ],
+      max_tokens: 1,
+      temperature: 0,
+      stream: false
+    };
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify(preconnectRequest),
+      signal: this.preconnectController?.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`预连接失败: ${response.status}`);
+    }
+
+    // 读取响应以完成连接
+    await response.json();
+  }
+
+  // 重置预连接状态
+  private resetPreconnection(): void {
+    if (this.preconnectController) {
+      this.preconnectController.abort();
+      this.preconnectController = null;
+    }
+    this.isPreconnected = false;
+    this.preconnectPromise = null;
+  }
+
+  // 等待预连接完成（如果正在进行中）
+  private async waitForPreconnection(): Promise<void> {
+    if (this.preconnectPromise) {
+      console.log("⏳ 等待预连接完成...");
+      try {
+        await this.preconnectPromise;
+      } catch (error) {
+        console.warn("⚠️ 预连接等待失败:", error);
+      }
+    }
   }
 
   // 验证配置是否有效
@@ -114,6 +207,9 @@ export class AIService {
         callbacks.onError?.(error);
         return { success: false, error };
       }
+
+      // 等待预连接完成（如果正在进行中）
+      await this.waitForPreconnection();
 
       const systemPrompt = `你是一个智能便签助手。根据用户的输入，生成结构化的便签内容。
 

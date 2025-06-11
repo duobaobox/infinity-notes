@@ -15,6 +15,7 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useAISettings } from "../hooks/useAISettings";
+import { getAIService } from "../services/aiService";
 import "./CanvasConsole.css";
 
 interface CanvasConsoleProps {
@@ -55,6 +56,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       status: "idle",
     });
     const inputRef = useRef<any>(null);
+    const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
@@ -69,6 +71,37 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         }
       });
     }, [aiConfig, hasValidConfig]);
+
+    // 预连接逻辑：用户输入时触发预连接
+    const triggerPreconnect = () => {
+      if (!hasValidConfig) return;
+
+      // 清除之前的定时器
+      if (preconnectTimeoutRef.current) {
+        clearTimeout(preconnectTimeoutRef.current);
+      }
+
+      // 延迟500ms触发预连接，避免频繁触发
+      preconnectTimeoutRef.current = setTimeout(() => {
+        try {
+          const aiService = getAIService(aiConfig);
+          aiService.preconnectToAI().catch(error => {
+            console.warn("🔗 预连接失败:", error);
+          });
+        } catch (error) {
+          console.warn("🔗 预连接初始化失败:", error);
+        }
+      }, 500);
+    };
+
+    // 清理定时器
+    useEffect(() => {
+      return () => {
+        if (preconnectTimeoutRef.current) {
+          clearTimeout(preconnectTimeoutRef.current);
+        }
+      };
+    }, []);
 
     // 暴露focus方法给父组件
     useImperativeHandle(
@@ -279,7 +312,13 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             <Input
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                // 用户输入时触发预连接
+                if (e.target.value.trim()) {
+                  triggerPreconnect();
+                }
+              }}
               onKeyPress={handleKeyPress}
               onFocus={handleFocus}
               onBlur={handleBlur}
