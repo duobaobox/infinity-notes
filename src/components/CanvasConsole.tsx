@@ -65,8 +65,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         config: {
           apiKey: aiConfig.apiKey ? "已设置" : "未设置",
           apiUrl: aiConfig.apiUrl || "未设置",
-          aiModel: aiConfig.aiModel || "未设置",
-          streamingMode: aiConfig.streamingMode || "未设置"
+          aiModel: aiConfig.aiModel || "未设置"
         }
       });
     }, [aiConfig, hasValidConfig]);

@@ -444,7 +444,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 aiModel: aiConfig.aiModel || "",
                 temperature: aiConfig.temperature || 0.7,
                 maxTokens: aiConfig.maxTokens || 1000,
-                streamingMode: aiConfig.streamingMode || 'auto',
               }}
             >
               <Card size="small" style={{ marginBottom: 16 }}>
@@ -538,18 +537,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </Form.Item>
 
-                <Form.Item
-                  label="流式模式"
-                  name="streamingMode"
-                  extra="选择AI内容的流式显示模式"
-                >
-                  <Select style={{ width: "100%" }}>
-                    <Option value="auto">自动选择（推荐）</Option>
-                    <Option value="real">真实流式</Option>
-                    <Option value="simulate">模拟流式</Option>
-                    <Option value="websocket">WebSocket流式（开发中）</Option>
-                  </Select>
-                </Form.Item>
+
               </Card>
 
               <div className="form-actions">

@@ -81,8 +81,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       config: {
         apiKey: aiConfig.apiKey ? "已设置" : "未设置",
         apiUrl: aiConfig.apiUrl || "未设置",
-        aiModel: aiConfig.aiModel || "未设置",
-        streamingMode: aiConfig.streamingMode || "未设置"
+        aiModel: aiConfig.aiModel || "未设置"
       }
     });
   }, [aiConfig, hasValidConfig, aiLoading]);
@@ -266,7 +265,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           apiKey: aiConfig.apiKey ? "已设置" : "未设置",
           apiUrl: aiConfig.apiUrl || "未设置",
           aiModel: aiConfig.aiModel || "未设置",
-          streamingMode: aiConfig.streamingMode || "未设置",
           enableAI: aiConfig.enableAI
         });
 
@@ -286,6 +284,37 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         // 流式生成回调
         const callbacks = {
           onNoteStart: async (noteIndex: number, title: string) => {
+            // 检查是否已经存在这个便签
+            const existingNoteId = noteIdMap.get(noteIndex);
+            if (existingNoteId) {
+              // 如果便签已存在，只更新标题
+              console.log("🔄 更新便签标题:", noteIndex, title);
+              await updateStickyNote(existingNoteId, {
+                title: title,
+                updatedAt: new Date()
+              });
+
+              // 更新流式状态中的标题
+              setStreamingNotes(prev => {
+                const newMap = new Map(prev);
+                const existing = newMap.get(existingNoteId);
+                if (existing) {
+                  newMap.set(existingNoteId, {
+                    ...existing,
+                    note: {
+                      ...existing.note,
+                      title: title
+                    }
+                  });
+                }
+                return newMap;
+              });
+              return;
+            }
+
+            // 创建新便签
+            console.log("📝 创建新便签:", noteIndex, title);
+
             // 计算便签位置（支持多个便签的网格布局）
             const spacing = 280;
             const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
@@ -417,8 +446,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           }
         };
 
-        // 调用统一的流式生成方法
-        await aiService.generateStickyNotesStreamingUnified(prompt, callbacks);
+        // 调用简化的真实流式生成方法
+        await aiService.generateStickyNotesStreaming(prompt, callbacks);
 
       } catch (error) {
         console.error("AI流式生成便签失败:", error);
