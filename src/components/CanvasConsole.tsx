@@ -3,6 +3,7 @@ import React, {
   useRef,
   forwardRef,
   useImperativeHandle,
+  useEffect,
 } from "react";
 import { Input, Button, Tooltip, message, Progress } from "antd";
 import {
@@ -57,6 +58,19 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
+    // 添加调试信息
+    useEffect(() => {
+      console.log("🎮 CanvasConsole AI配置状态:", {
+        hasValidConfig,
+        config: {
+          apiKey: aiConfig.apiKey ? "已设置" : "未设置",
+          apiUrl: aiConfig.apiUrl || "未设置",
+          aiModel: aiConfig.aiModel || "未设置",
+          streamingMode: aiConfig.streamingMode || "未设置"
+        }
+      });
+    }, [aiConfig, hasValidConfig]);
+
     // 暴露focus方法给父组件
     useImperativeHandle(
       ref,
@@ -82,6 +96,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       }
 
       // 有文本输入，使用AI生成便签（包括演示模式）
+      console.log("🎮 触发AI生成，输入:", inputValue, "hasValidConfig:", hasValidConfig);
       if (onGenerateWithAI) {
         try {
           setIsGenerating(true);
@@ -100,6 +115,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             });
           }, 500);
 
+          console.log("🎮 调用onGenerateWithAI函数");
           await onGenerateWithAI(inputValue);
 
           setGenerationStatus({

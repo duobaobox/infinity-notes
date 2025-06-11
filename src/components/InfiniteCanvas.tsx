@@ -71,7 +71,21 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   }>>(new Map());
 
   // AI设置Hook
-  const { config: aiConfig } = useAISettings();
+  const { config: aiConfig, hasValidConfig, loading: aiLoading } = useAISettings();
+
+  // 添加AI配置变化的调试日志
+  useEffect(() => {
+    console.log("🔄 AI配置更新:", {
+      hasValidConfig,
+      aiLoading,
+      config: {
+        apiKey: aiConfig.apiKey ? "已设置" : "未设置",
+        apiUrl: aiConfig.apiUrl || "未设置",
+        aiModel: aiConfig.aiModel || "未设置",
+        streamingMode: aiConfig.streamingMode || "未设置"
+      }
+    });
+  }, [aiConfig, hasValidConfig, aiLoading]);
 
   // AI服务实例
   const aiService = useMemo(() => {
@@ -248,7 +262,16 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         const timestamp = Date.now();
 
         // 检查AI配置是否有效，如果没有配置则使用演示模式
+        console.log("🤖 AI配置检查:", {
+          apiKey: aiConfig.apiKey ? "已设置" : "未设置",
+          apiUrl: aiConfig.apiUrl || "未设置",
+          aiModel: aiConfig.aiModel || "未设置",
+          streamingMode: aiConfig.streamingMode || "未设置",
+          enableAI: aiConfig.enableAI
+        });
+
         const isDemoMode = !aiConfig.apiKey || !aiConfig.apiUrl || !aiConfig.aiModel;
+        console.log("🤖 是否演示模式:", isDemoMode);
 
         if (isDemoMode) {
           // 演示模式：使用预设的便签内容
@@ -257,6 +280,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           return;
         }
 
+        console.log("🔧 更新AI服务配置:", aiConfig);
         aiService.updateConfig(aiConfig);
 
         // 流式生成回调
@@ -362,7 +386,24 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             }, 500);
           },
 
-          onAllComplete: (notes: any[]) => {
+          onAllComplete: async (notes: any[]) => {
+            console.log("🎉 onAllComplete 收到便签:", notes);
+
+            // 检查是否有便签没有通过流式过程创建（兜底逻辑）
+            for (let i = 0; i < notes.length; i++) {
+              const noteId = noteIdMap.get(i);
+              if (!noteId) {
+                console.log("⚠️ 发现遗漏的便签，补充创建:", i, notes[i].title);
+                // 如果有遗漏的便签，触发创建
+                await callbacks.onNoteStart?.(i, notes[i].title);
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // 快速显示内容（因为是兜底，不需要打字效果）
+                callbacks.onContentChunk?.(i, notes[i].content, notes[i].content);
+                callbacks.onNoteComplete?.(i, notes[i]);
+              }
+            }
+
             message.success(`AI成功生成了 ${notes.length} 个便签`);
             // 清理所有流式状态
             setTimeout(() => {
@@ -376,8 +417,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           }
         };
 
-        // 调用流式生成
-        await aiService.generateStickyNotesStreaming(prompt, callbacks);
+        // 调用统一的流式生成方法
+        await aiService.generateStickyNotesStreamingUnified(prompt, callbacks);
 
       } catch (error) {
         console.error("AI流式生成便签失败:", error);
