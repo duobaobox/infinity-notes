@@ -122,7 +122,7 @@ export class AIService {
 [
   {
     "title": "便签标题",
-    "content": "便签的详细内容",
+    "content": "便签的详细内容，使用Markdown格式",
     "color": "#fef3c7",
     "tags": ["标签1", "标签2"]
   }
@@ -138,10 +138,14 @@ export class AIService {
 要求：
 1. 根据内容类型选择合适的颜色
 2. 每个便签标题简洁明了
-3. 内容具体实用
+3. 内容具体实用，支持Markdown格式
 4. 合理添加相关标签
 5. 如果输入内容较多，可以拆分成多个便签
-6. 确保返回的是有效的JSON格式`;
+6. 确保返回的是有效的JSON格式
+
+示例：
+用户输入："明天要开会"
+返回：[{"title": "明天会议提醒", "content": "📅 **明天会议提醒**\\n\\n⏰ 时间：待确认\\n📍 地点：待确认\\n📋 议题：待确认\\n\\n💡 记得提前准备相关资料", "color": "#dbeafe", "tags": ["会议", "提醒"]}]`;
 
       const messages: AIMessage[] = [
         { role: "system", content: systemPrompt },
@@ -199,6 +203,9 @@ export class AIService {
       let currentNoteContent = "";
       let isStreamingNote = false;
       let streamingNoteTitle = "";
+      let jsonBuffer = "";
+      let isInContentField = false;
+      let contentStarted = false;
 
       try {
         // 先创建第一个便签开始流式显示
@@ -225,11 +232,18 @@ export class AIService {
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullResponse += content;
+                  jsonBuffer += content;
 
-                  // 实时显示内容 - 直接将API响应内容显示在便签中
-                  if (isStreamingNote) {
-                    currentNoteContent += content;
-                    callbacks.onContentChunk?.(currentNoteIndex, content, currentNoteContent);
+                  // 尝试实时提取content字段的内容进行流式显示
+                  const extractedContent = this.extractContentFromPartialJson(jsonBuffer);
+                  if (extractedContent && extractedContent !== currentNoteContent) {
+                    // 只显示新增的内容部分
+                    const newContent = extractedContent.substring(currentNoteContent.length);
+                    currentNoteContent = extractedContent;
+
+                    if (isStreamingNote && newContent) {
+                      callbacks.onContentChunk?.(currentNoteIndex, newContent, currentNoteContent);
+                    }
                   }
                 }
               } catch (e) {
@@ -256,12 +270,10 @@ export class AIService {
           } else {
             // 多个便签的情况，需要重新组织显示
             // 先完成当前流式便签
-            if (isStreamingNote) {
-              callbacks.onNoteComplete?.(0, {
-                title: "AI生成的内容",
-                content: currentNoteContent,
-                color: "#fef3c7"
-              });
+            if (isStreamingNote && finalNotes.notes.length > 0) {
+              const firstNote = finalNotes.notes[0];
+              callbacks.onNoteStart?.(0, firstNote.title);
+              callbacks.onNoteComplete?.(0, firstNote);
             }
 
             // 然后显示其他便签（如果有的话）
@@ -290,7 +302,7 @@ export class AIService {
         } else {
           // 解析失败，但流式内容已经显示，创建一个便签保存内容
           const fallbackNote: StickyNoteData = {
-            title: "AI生成的内容",
+            title: this.generateTitleFromContent(currentNoteContent || fullResponse),
             content: currentNoteContent || fullResponse,
             color: "#fef3c7"
           };
@@ -317,7 +329,56 @@ export class AIService {
     }
   }
 
+  // 从部分JSON中提取content字段的方法
+  private extractContentFromPartialJson(jsonStr: string): string {
+    try {
+      // 尝试找到content字段的值
+      const contentMatch = jsonStr.match(/"content"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
+      if (contentMatch) {
+        // 解码转义字符
+        return contentMatch[1]
+          .replace(/\\n/g, '\n')
+          .replace(/\\t/g, '\t')
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\');
+      }
 
+      // 如果找不到完整的content字段，尝试部分匹配
+      const partialMatch = jsonStr.match(/"content"\s*:\s*"([^"]*)/);
+      if (partialMatch) {
+        return partialMatch[1]
+          .replace(/\\n/g, '\n')
+          .replace(/\\t/g, '\t')
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\');
+      }
+
+      return "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // 从内容生成标题的辅助方法
+  private generateTitleFromContent(content: string): string {
+    if (!content || content.trim().length === 0) {
+      return "AI便签";
+    }
+
+    // 移除Markdown格式符号
+    let cleanContent = content
+      .replace(/[#*`_~\[\]()]/g, '') // 移除Markdown符号
+      .replace(/\n+/g, ' ') // 换行替换为空格
+      .trim();
+
+    // 提取第一行或前30个字符作为标题
+    const firstLine = cleanContent.split('\n')[0] || cleanContent;
+    const title = firstLine.length > 30
+      ? firstLine.substring(0, 30) + '...'
+      : firstLine;
+
+    return title || "AI便签";
+  }
 
   // 解析便签响应的私有方法
   private parseNotesResponse(aiResponse: string): {
