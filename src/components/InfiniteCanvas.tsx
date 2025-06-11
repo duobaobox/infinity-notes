@@ -63,6 +63,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const [settingsDefaultTab, setSettingsDefaultTab] = useState("general"); // 设置模态框默认标签页
   const [isAIGenerating, setIsAIGenerating] = useState(false); // 添加AI生成状态控制
 
+  // 流式便签状态管理
+  const [streamingNotes, setStreamingNotes] = useState<Map<string, {
+    note: StickyNoteType;
+    streamingContent: string;
+    isStreaming: boolean;
+  }>>(new Map());
+
   // AI设置Hook
   const { config: aiConfig } = useAISettings();
 
@@ -358,6 +365,370 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       isAIGenerating,
     ]
   );
+
+  // 流式AI生成便签
+  const generateStickyNotesWithAIStreaming = useCallback(
+    async (prompt: string) => {
+      // 防止并发请求
+      if (isAIGenerating) {
+        console.warn("AI正在生成中，忽略重复请求");
+        return;
+      }
+
+      try {
+        setIsAIGenerating(true);
+
+        // 获取画布中心位置用于放置便签
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const logicalCenterX = (centerX - canvasState.offsetX) / canvasState.scale;
+        const logicalCenterY = (centerY - canvasState.offsetY) / canvasState.scale;
+
+        const maxZ = stickyNotes.length > 0
+          ? Math.max(...stickyNotes.map((note) => note.zIndex))
+          : 0;
+
+        // 存储便签ID映射
+        const noteIdMap = new Map<number, string>();
+        const timestamp = Date.now();
+
+        // 检查AI配置是否有效，如果没有配置则使用演示模式
+        const isDemoMode = !aiConfig.apiKey || !aiConfig.apiUrl || !aiConfig.aiModel;
+
+        if (isDemoMode) {
+          // 演示模式：使用预设的便签内容
+          message.info("演示模式：使用预设内容展示流式效果");
+          await runDemoStreamingMode(prompt, logicalCenterX, logicalCenterY, maxZ, noteIdMap, timestamp);
+          return;
+        }
+
+        aiService.updateConfig(aiConfig);
+
+        // 流式生成回调
+        const callbacks = {
+          onNoteStart: async (noteIndex: number, title: string) => {
+            // 计算便签位置（支持多个便签的网格布局）
+            const spacing = 280;
+            const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
+            const row = Math.floor(noteIndex / notesPerRow);
+            const col = noteIndex % notesPerRow;
+
+            // 计算基础位置
+            const baseX = logicalCenterX + (col - (notesPerRow - 1) / 2) * spacing;
+            const baseY = logicalCenterY + (row - 0.5) * spacing;
+
+            // 添加小范围随机偏移
+            const offsetX = (Math.random() - 0.5) * 60;
+            const offsetY = (Math.random() - 0.5) * 60;
+
+            const noteId = `ai-streaming-note-${timestamp}-${noteIndex}`;
+            noteIdMap.set(noteIndex, noteId);
+
+            // 映射颜色
+            const colors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
+            const noteColor = colors[noteIndex % colors.length];
+
+            const newNote: StickyNoteType = {
+              id: noteId,
+              x: baseX + offsetX,
+              y: baseY + offsetY,
+              width: 250,
+              height: 200,
+              content: "", // 初始内容为空
+              title: title,
+              color: noteColor,
+              isNew: true,
+              zIndex: maxZ + noteIndex + 1,
+              isEditing: false,
+              isTitleEditing: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+
+            // 添加到数据库
+            await addNote(newNote);
+
+            // 添加到流式状态管理
+            setStreamingNotes(prev => {
+              const newMap = new Map(prev);
+              newMap.set(newNote.id, {
+                note: newNote,
+                streamingContent: "",
+                isStreaming: true,
+              });
+              return newMap;
+            });
+          },
+
+          onContentChunk: (noteIndex: number, chunk: string, fullContent: string) => {
+            // 更新流式内容
+            const noteId = noteIdMap.get(noteIndex);
+            if (!noteId) return;
+
+            setStreamingNotes(prev => {
+              const newMap = new Map(prev);
+              const existing = newMap.get(noteId);
+              if (existing) {
+                newMap.set(noteId, {
+                  ...existing,
+                  streamingContent: fullContent,
+                });
+              }
+              return newMap;
+            });
+          },
+
+          onNoteComplete: async (noteIndex: number, noteData: any) => {
+            const noteId = noteIdMap.get(noteIndex);
+            if (!noteId) return;
+
+            // 更新便签内容到数据库
+            await updateStickyNote(noteId, {
+              content: noteData.content,
+              updatedAt: new Date()
+            });
+
+            // 移除流式状态
+            setStreamingNotes(prev => {
+              const newMap = new Map(prev);
+              const existing = newMap.get(noteId);
+              if (existing) {
+                newMap.set(noteId, {
+                  ...existing,
+                  isStreaming: false,
+                });
+              }
+              return newMap;
+            });
+
+            // 延迟移除新建标记
+            setTimeout(() => {
+              updateStickyNote(noteId, { isNew: false });
+            }, 500);
+          },
+
+          onAllComplete: (notes: any[]) => {
+            message.success(`AI成功生成了 ${notes.length} 个便签`);
+            // 清理所有流式状态
+            setTimeout(() => {
+              setStreamingNotes(new Map());
+            }, 1000);
+          },
+
+          onError: (error: string) => {
+            message.error(error);
+            setStreamingNotes(new Map());
+          }
+        };
+
+        // 调用流式生成
+        await aiService.generateStickyNotesStreaming(prompt, callbacks);
+
+      } catch (error) {
+        console.error("AI流式生成便签失败:", error);
+        message.error("AI生成便签失败，请检查网络连接和配置");
+        setStreamingNotes(new Map());
+      } finally {
+        setIsAIGenerating(false);
+      }
+    },
+    [
+      aiService,
+      aiConfig,
+      canvasState,
+      stickyNotes,
+      addNote,
+      updateStickyNote,
+      isAIGenerating,
+    ]
+  );
+
+  // 演示模式的流式生成
+  const runDemoStreamingMode = async (
+    prompt: string,
+    logicalCenterX: number,
+    logicalCenterY: number,
+    maxZ: number,
+    noteIdMap: Map<number, string>,
+    timestamp: number
+  ) => {
+    // 预设的演示便签内容
+    const demoNotes = [
+      {
+        title: "📝 学习计划",
+        content: "今天要学习React的流式渲染技术，包括：\n\n1. 理解流式数据处理\n2. 实现打字机效果\n3. 优化用户体验\n\n预计用时：2小时",
+        color: "#dbeafe"
+      },
+      {
+        title: "💡 项目想法",
+        content: "开发一个智能便签应用：\n\n✨ 特色功能：\n- AI生成内容\n- 流式显示效果\n- 实时协作\n- 智能分类\n\n这将是一个很棒的项目！",
+        color: "#e9d5ff"
+      },
+      {
+        title: "🎯 今日目标",
+        content: "完成便签应用的核心功能：\n\n✅ 实现流式便签生成\n⏳ 优化打字效果\n⏳ 添加动画效果\n⏳ 测试用户体验\n\n进度：25%",
+        color: "#d1fae5"
+      }
+    ];
+
+    // 创建演示模式的回调对象
+    const callbacks = {
+      onNoteStart: async (noteIndex: number, title: string) => {
+        // 计算便签位置（支持多个便签的网格布局）
+        const spacing = 280;
+        const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
+        const row = Math.floor(noteIndex / notesPerRow);
+        const col = noteIndex % notesPerRow;
+
+        // 计算基础位置
+        const baseX = logicalCenterX + (col - (notesPerRow - 1) / 2) * spacing;
+        const baseY = logicalCenterY + (row - 0.5) * spacing;
+
+        // 添加小范围随机偏移
+        const offsetX = (Math.random() - 0.5) * 60;
+        const offsetY = (Math.random() - 0.5) * 60;
+
+        const noteId = `ai-streaming-note-${timestamp}-${noteIndex}`;
+        noteIdMap.set(noteIndex, noteId);
+
+        // 映射颜色
+        const colors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
+        const noteColor = colors[noteIndex % colors.length];
+
+        const newNote: StickyNoteType = {
+          id: noteId,
+          x: baseX + offsetX,
+          y: baseY + offsetY,
+          width: 250,
+          height: 200,
+          content: "", // 初始内容为空
+          title: title,
+          color: noteColor,
+          isNew: true,
+          zIndex: maxZ + noteIndex + 1,
+          isEditing: false,
+          isTitleEditing: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // 添加到数据库
+        await addNote(newNote);
+
+        // 添加到流式状态管理
+        setStreamingNotes(prev => {
+          const newMap = new Map(prev);
+          newMap.set(newNote.id, {
+            note: newNote,
+            streamingContent: "",
+            isStreaming: true,
+          });
+          return newMap;
+        });
+      },
+
+      onContentChunk: (noteIndex: number, chunk: string, fullContent: string) => {
+        // 更新流式内容
+        const noteId = noteIdMap.get(noteIndex);
+        if (!noteId) return;
+
+        setStreamingNotes(prev => {
+          const newMap = new Map(prev);
+          const existing = newMap.get(noteId);
+          if (existing) {
+            newMap.set(noteId, {
+              ...existing,
+              streamingContent: fullContent,
+            });
+          }
+          return newMap;
+        });
+      },
+
+      onNoteComplete: async (noteIndex: number, noteData: any) => {
+        const noteId = noteIdMap.get(noteIndex);
+        if (!noteId) return;
+
+        // 更新便签内容到数据库
+        await updateStickyNote(noteId, {
+          content: noteData.content,
+          updatedAt: new Date()
+        });
+
+        // 移除流式状态
+        setStreamingNotes(prev => {
+          const newMap = new Map(prev);
+          const existing = newMap.get(noteId);
+          if (existing) {
+            newMap.set(noteId, {
+              ...existing,
+              isStreaming: false,
+            });
+          }
+          return newMap;
+        });
+
+        // 延迟移除新建标记
+        setTimeout(() => {
+          updateStickyNote(noteId, { isNew: false });
+        }, 500);
+      },
+
+      onAllComplete: (notes: any[]) => {
+        message.success(`AI成功生成了 ${notes.length} 个便签`);
+        // 清理所有流式状态
+        setTimeout(() => {
+          setStreamingNotes(new Map());
+        }, 1000);
+      },
+
+      onError: (error: string) => {
+        message.error(error);
+        setStreamingNotes(new Map());
+      }
+    };
+
+    try {
+      // 模拟AI处理时间
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      for (let i = 0; i < demoNotes.length; i++) {
+        const noteData = demoNotes[i];
+
+        // 触发便签开始回调
+        await callbacks.onNoteStart?.(i, noteData.title);
+
+        // 模拟逐字显示
+        let currentContent = "";
+        for (let j = 0; j < noteData.content.length; j++) {
+          currentContent += noteData.content[j];
+          callbacks.onContentChunk?.(i, noteData.content[j], currentContent);
+
+          // 控制打字速度
+          const char = noteData.content[j];
+          const delay = /[\u4e00-\u9fa5]/.test(char) ? 50 : 30;
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        // 触发便签完成回调
+        await callbacks.onNoteComplete?.(i, noteData);
+
+        // 便签之间的间隔
+        if (i < demoNotes.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      }
+
+      // 触发全部完成回调
+      callbacks.onAllComplete?.(demoNotes);
+
+    } catch (error) {
+      callbacks.onError?.("演示模式出错");
+    }
+  };
 
   // 触发缩放动画
   const triggerZoomAnimation = useCallback(() => {
@@ -894,6 +1265,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
                 width: note.width * canvasState.scale,
                 height: note.height * canvasState.scale,
               };
+
+              // 检查是否是流式便签
+              const streamingData = streamingNotes.get(note.id);
+
               return (
                 <StickyNote
                   key={note.id}
@@ -901,10 +1276,21 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
                   onUpdate={updateStickyNote}
                   onDelete={deleteStickyNote}
                   onBringToFront={bringNoteToFront}
-                  canvasScale={canvasState.scale} // StickyNote still needs the raw scale for its internal logic
+                  canvasScale={canvasState.scale}
                   canvasOffset={{
-                    x: canvasState.offsetX, // This is the offset of the sticky-notes-container
-                    y: canvasState.offsetY, // This is the offset of the sticky-notes-container
+                    x: canvasState.offsetX,
+                    y: canvasState.offsetY,
+                  }}
+                  // 流式相关属性
+                  isStreaming={streamingData?.isStreaming || false}
+                  streamingContent={streamingData?.streamingContent || ''}
+                  onStreamingComplete={() => {
+                    // 流式完成后的清理工作
+                    setStreamingNotes(prev => {
+                      const newMap = new Map(prev);
+                      newMap.delete(note.id);
+                      return newMap;
+                    });
                   }}
                 />
               );
@@ -920,7 +1306,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           // 这里可以集成AI API调用
         }}
         onCreateNote={createStickyNoteAtCenter}
-        onGenerateWithAI={generateStickyNotesWithAI}
+        onGenerateWithAI={generateStickyNotesWithAIStreaming}
         onOpenAISettings={() => openSettingsModal("ai")}
       />
 

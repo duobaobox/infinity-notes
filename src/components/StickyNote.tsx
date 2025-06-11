@@ -14,6 +14,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onBringToFront,
   canvasScale,
   canvasOffset, // 新增：画布偏移量
+  // 流式相关属性
+  isStreaming = false,
+  streamingContent = '',
+  onStreamingComplete,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -46,6 +50,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [localContent, setLocalContent] = useState(note.content);
   const [localTitle, setLocalTitle] = useState(note.title);
 
+  // 流式显示相关状态
+  const [displayContent, setDisplayContent] = useState(note.content);
+  const [showCursor, setShowCursor] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
@@ -55,11 +63,39 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const contentUpdateTimerRef = useRef<number | null>(null);
   const titleUpdateTimerRef = useRef<number | null>(null);
 
+  // 处理流式内容更新
+  useEffect(() => {
+    if (isStreaming) {
+      setDisplayContent(streamingContent);
+      setShowCursor(true);
+    } else {
+      setDisplayContent(note.content);
+      setShowCursor(false);
+      if (streamingContent && streamingContent !== note.content) {
+        // 流式完成，更新便签内容
+        onUpdate(note.id, { content: streamingContent });
+        onStreamingComplete?.();
+      }
+    }
+  }, [isStreaming, streamingContent, note.content, note.id, onUpdate, onStreamingComplete]);
+
+  // 光标闪烁效果
+  useEffect(() => {
+    if (!isStreaming) return;
+
+    const interval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isStreaming]);
+
   // 开始编辑内容
   const startEditing = useCallback(() => {
+    if (isStreaming) return; // 流式过程中不允许编辑
     setIsEditing(true);
     setLocalContent(note.content);
-  }, [note.content]);
+  }, [note.content, isStreaming]);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
@@ -75,9 +111,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 开始编辑标题
   const startTitleEditing = useCallback(() => {
+    if (isStreaming) return; // 流式过程中不允许编辑
     setIsTitleEditing(true);
     setLocalTitle(note.title);
-  }, [note.title]);
+  }, [note.title, isStreaming]);
 
   // 停止编辑标题
   const stopTitleEditing = useCallback(() => {
@@ -180,6 +217,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 删除便签
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
+      if (isStreaming) return; // 流式过程中不允许删除
+
       e.stopPropagation();
       e.preventDefault(); // 添加阻止默认行为
 
@@ -195,13 +234,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         setIsTitleEditing(false);
       }
     },
-    [note.id, isEditing, isTitleEditing, onDelete]
+    [note.id, isEditing, isTitleEditing, onDelete, isStreaming]
   );
 
   // 鼠标按下开始拖拽
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (isEditing || isTitleEditing) return;
+      if (isEditing || isTitleEditing || isStreaming) return; // 流式过程中不允许拖拽
 
       e.preventDefault();
       e.stopPropagation();
@@ -228,6 +267,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [
       isEditing,
       isTitleEditing,
+      isStreaming,
       note.id,
       note.x,
       note.y,
@@ -572,7 +612,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       ref={noteRef}
       className={`sticky-note color-${note.color} ${
         isEditing ? "editing" : ""
-      } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""}`}
+      } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${
+        isStreaming ? "streaming" : ""
+      }`}
       style={{
         left: actualX,
         top: actualY,
@@ -684,18 +726,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               backgroundColor: `rgba(255, 255, 255, ${getContentBackgroundOpacity()})`,
             }}
           >
-            {localContent.trim() ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                {localContent}
-              </ReactMarkdown>
+            {displayContent.trim() ? (
+              <div className="streaming-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                  {displayContent}
+                </ReactMarkdown>
+                {isStreaming && showCursor && (
+                  <span className="streaming-cursor">|</span>
+                )}
+              </div>
             ) : (
-              <div className="empty-note">双击开始编辑内容</div>
+              <div className="empty-note">
+                {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {!isEditing && (
+      {!isEditing && !isStreaming && (
         <div
           className="resize-handle"
           onMouseDown={handleResizeMouseDown}

@@ -23,6 +23,47 @@
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
+/* 流式便签样式 */
+.sticky-note.streaming {
+  border: 2px solid #1890ff;
+  box-shadow: 0 0 10px rgba(24, 144, 255, 0.3);
+  animation: streamingPulse 2s ease-in-out infinite;
+}
+
+@keyframes streamingPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(24, 144, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(24, 144, 255, 0.5);
+  }
+}
+
+/* 流式内容容器 */
+.streaming-content {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+/* 流式光标样式 */
+.streaming-cursor {
+  display: inline-block;
+  color: #1890ff;
+  font-weight: bold;
+  animation: cursorBlink 1s infinite;
+  margin-left: 2px;
+}
+
+@keyframes cursorBlink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
 /* 便签颜色变体 */
 .sticky-note.color-yellow {
   background: #fef3c7;

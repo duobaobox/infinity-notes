@@ -20,6 +20,15 @@ export interface StickyNoteData {
   tags?: string[];
 }
 
+// 流式生成便签内容的回调接口
+export interface StreamingCallbacks {
+  onNoteStart?: (noteIndex: number, title: string) => void;
+  onContentChunk?: (noteIndex: number, chunk: string, fullContent: string) => void;
+  onNoteComplete?: (noteIndex: number, note: StickyNoteData) => void;
+  onAllComplete?: (notes: StickyNoteData[]) => void;
+  onError?: (error: string) => void;
+}
+
 export class AIService {
   private config: AIConfig;
 
@@ -86,7 +95,246 @@ export class AIService {
     }
   }
 
-  // 生成便签内容
+  // 流式生成便签内容
+  async generateStickyNotesStreaming(
+    prompt: string,
+    callbacks: StreamingCallbacks
+  ): Promise<{
+    success: boolean;
+    notes?: StickyNoteData[];
+    error?: string;
+  }> {
+    try {
+      if (!this.validateConfig()) {
+        const error = "AI配置未完成，请先在设置中配置AI服务";
+        callbacks.onError?.(error);
+        return { success: false, error };
+      }
+
+      const systemPrompt = `你是一个智能便签助手。根据用户的输入，生成结构化的便签内容。
+
+请按照以下格式返回JSON数组，每个便签包含title（标题）、content（内容）、color（颜色，可选）、tags（标签数组，可选）：
+
+[
+  {
+    "title": "便签标题",
+    "content": "便签的详细内容",
+    "color": "#fef3c7",
+    "tags": ["标签1", "标签2"]
+  }
+]
+
+颜色选项：
+- #fef3c7 (黄色，适合一般记录)
+- #dbeafe (蓝色，适合重要事项)
+- #d1fae5 (绿色，适合完成任务)
+- #fce7f3 (粉色，适合个人事务)
+- #e9d5ff (紫色，适合创意想法)
+
+要求：
+1. 根据内容类型选择合适的颜色
+2. 每个便签标题简洁明了
+3. 内容具体实用
+4. 合理添加相关标签
+5. 如果输入内容较多，可以拆分成多个便签
+6. 确保返回的是有效的JSON格式`;
+
+      const messages: AIMessage[] = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ];
+
+      // 直接使用用户配置的API地址，确保URL拼接正确
+      const baseUrl = this.config.apiUrl.endsWith("/")
+        ? this.config.apiUrl.slice(0, -1)
+        : this.config.apiUrl;
+      const apiUrl = `${baseUrl}/chat/completions`;
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.config.aiModel,
+          messages,
+          max_tokens: this.config.maxTokens || 1000,
+          temperature: this.config.temperature || 0.7,
+          stream: true, // 启用流式响应
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const error = errorData.error?.message || `API请求失败 (${response.status})`;
+        callbacks.onError?.(error);
+        return { success: false, error };
+      }
+
+      // 处理流式响应
+      const reader = response.body?.getReader();
+      if (!reader) {
+        const error = "无法读取响应流";
+        callbacks.onError?.(error);
+        return { success: false, error };
+      }
+
+      let fullResponse = "";
+      const decoder = new TextDecoder();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  fullResponse += content;
+                  // 这里我们先收集完整响应，然后模拟流式效果
+                }
+              } catch (e) {
+                // 忽略解析错误，继续处理下一行
+              }
+            }
+          }
+        }
+
+        // 解析完整的JSON响应
+        const notes = this.parseNotesResponse(fullResponse);
+        if (!notes.success) {
+          callbacks.onError?.(notes.error || "解析响应失败");
+          return notes;
+        }
+
+        // 模拟流式效果，逐个便签逐字显示
+        await this.simulateStreamingEffect(notes.notes!, callbacks);
+
+        callbacks.onAllComplete?.(notes.notes!);
+        return { success: true, notes: notes.notes };
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "流式处理失败";
+        callbacks.onError?.(errorMsg);
+        return { success: false, error: errorMsg };
+      } finally {
+        reader.releaseLock();
+      }
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "AI请求失败";
+      callbacks.onError?.(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  }
+
+  // 模拟流式效果的私有方法
+  private async simulateStreamingEffect(
+    notes: StickyNoteData[],
+    callbacks: StreamingCallbacks
+  ): Promise<void> {
+    for (let i = 0; i < notes.length; i++) {
+      const note = notes[i];
+      callbacks.onNoteStart?.(i, note.title);
+
+      // 逐字显示内容
+      let currentContent = "";
+      const content = note.content;
+
+      for (let j = 0; j < content.length; j++) {
+        currentContent += content[j];
+        callbacks.onContentChunk?.(i, content[j], currentContent);
+
+        // 控制打字速度，中文字符稍慢，英文和符号较快
+        const char = content[j];
+        const delay = /[\u4e00-\u9fa5]/.test(char) ? 50 : 30; // 中文50ms，其他30ms
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+
+      callbacks.onNoteComplete?.(i, note);
+
+      // 便签之间的间隔
+      if (i < notes.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+  }
+
+  // 解析便签响应的私有方法
+  private parseNotesResponse(aiResponse: string): {
+    success: boolean;
+    notes?: StickyNoteData[];
+    error?: string;
+  } {
+    try {
+      // 尝试解析JSON响应
+      let notes: StickyNoteData[];
+
+      // 检查是否是JSON数组格式
+      if (aiResponse.trim().startsWith("[")) {
+        notes = JSON.parse(aiResponse);
+      } else {
+        // 尝试提取JSON对象中的数组
+        const parsed = JSON.parse(aiResponse);
+        if (parsed.notes && Array.isArray(parsed.notes)) {
+          notes = parsed.notes;
+        } else if (Array.isArray(parsed)) {
+          notes = parsed;
+        } else {
+          // 如果不是预期格式，创建单个便签
+          notes = [
+            {
+              title: "AI生成的便签",
+              content: aiResponse,
+              color: "#fef3c7",
+            },
+          ];
+        }
+      }
+
+      // 验证便签数据格式
+      const validNotes = notes
+        .filter(
+          (note) => typeof note === "object" && note.title && note.content
+        )
+        .map((note) => ({
+          title: String(note.title).slice(0, 100), // 限制标题长度
+          content: String(note.content).slice(0, 1000), // 限制内容长度
+          color: note.color || "#fef3c7",
+          tags: Array.isArray(note.tags) ? note.tags.slice(0, 5) : undefined,
+        }));
+
+      if (validNotes.length === 0) {
+        return { success: false, error: "AI生成的内容格式不正确" };
+      }
+
+      return { success: true, notes: validNotes };
+    } catch (parseError) {
+      // 如果JSON解析失败，创建单个便签
+      return {
+        success: true,
+        notes: [
+          {
+            title: "AI生成的便签",
+            content: aiResponse,
+            color: "#fef3c7",
+          },
+        ],
+      };
+    }
+  }
+
+  // 生成便签内容（保持原有的非流式方法）
   async generateStickyNotes(prompt: string): Promise<{
     success: boolean;
     notes?: StickyNoteData[];
@@ -169,62 +417,8 @@ export class AIService {
         return { success: false, error: "未收到AI响应" };
       }
 
-      try {
-        // 尝试解析JSON响应
-        let notes: StickyNoteData[];
-
-        // 检查是否是JSON数组格式
-        if (aiResponse.trim().startsWith("[")) {
-          notes = JSON.parse(aiResponse);
-        } else {
-          // 尝试提取JSON对象中的数组
-          const parsed = JSON.parse(aiResponse);
-          if (parsed.notes && Array.isArray(parsed.notes)) {
-            notes = parsed.notes;
-          } else if (Array.isArray(parsed)) {
-            notes = parsed;
-          } else {
-            // 如果不是预期格式，创建单个便签
-            notes = [
-              {
-                title: "AI生成的便签",
-                content: aiResponse,
-                color: "#fef3c7",
-              },
-            ];
-          }
-        }
-
-        // 验证便签数据格式
-        const validNotes = notes
-          .filter(
-            (note) => typeof note === "object" && note.title && note.content
-          )
-          .map((note) => ({
-            title: String(note.title).slice(0, 100), // 限制标题长度
-            content: String(note.content).slice(0, 1000), // 限制内容长度
-            color: note.color || "#fef3c7",
-            tags: Array.isArray(note.tags) ? note.tags.slice(0, 5) : undefined,
-          }));
-
-        if (validNotes.length === 0) {
-          return { success: false, error: "AI生成的内容格式不正确" };
-        }
-
-        return { success: true, notes: validNotes };
-      } catch (parseError) {
-        // 如果JSON解析失败，创建单个便签
-        return {
-          success: true,
-          notes: [
-            {
-              title: "AI生成的便签",
-              content: aiResponse,
-              color: "#fef3c7",
-            },
-          ],
-        };
-      }
+      // 使用统一的解析方法
+      return this.parseNotesResponse(aiResponse);
     } catch (error) {
       return {
         success: false,
