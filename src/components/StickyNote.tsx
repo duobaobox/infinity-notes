@@ -5,7 +5,7 @@ import remarkBreaks from "remark-breaks";
 import type { StickyNoteProps } from "./types";
 import "./StickyNote.css";
 import { Button } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, LoadingOutlined } from "@ant-design/icons";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -754,6 +754,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           onMouseDown={handleResizeMouseDown}
           title="拖拽调整大小"
         />
+      )}
+
+      {/* AI生成加载状态指示器 - 只在等待生成时显示 */}
+      {isStreaming && !streamingContent && (
+        <div className="ai-loading-indicator">
+          <LoadingOutlined style={{ marginRight: 4, fontSize: 12 }} />
+          <span style={{ fontSize: 12 }}>等待AI响应...</span>
+        </div>
       )}
     </div>
   );

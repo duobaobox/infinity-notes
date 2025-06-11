@@ -18,7 +18,10 @@ import {
   message,
   Spin,
   Alert,
+  Dropdown,
+  Tooltip,
 } from "antd";
+import type { MenuProps } from "antd";
 import {
   UserOutlined,
   SettingOutlined,
@@ -27,8 +30,12 @@ import {
   BellOutlined,
   InfoCircleOutlined,
   RobotOutlined,
+  DownOutlined,
+  FileTextOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 import { useAISettings } from "../hooks/useAISettings";
+import { systemPromptTemplates } from "../services/aiService";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
@@ -99,6 +106,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       message.error("请先完善配置信息");
     } finally {
       setTestingConnection(false);
+    }
+  };
+
+  // 处理系统prompt模板选择
+  const handleTemplateSelect = (templatePrompt: string) => {
+    aiForm.setFieldsValue({ systemPrompt: templatePrompt });
+    message.success("已应用模板");
+  };
+
+  // 复制当前系统prompt
+  const handleCopyPrompt = () => {
+    const currentPrompt = aiForm.getFieldValue('systemPrompt');
+    if (currentPrompt) {
+      navigator.clipboard.writeText(currentPrompt).then(() => {
+        message.success("已复制到剪贴板");
+      }).catch(() => {
+        message.error("复制失败");
+      });
+    } else {
+      message.warning("没有可复制的内容");
     }
   };
 
@@ -444,6 +471,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 aiModel: aiConfig.aiModel || "",
                 temperature: aiConfig.temperature || 0.7,
                 maxTokens: aiConfig.maxTokens || 1000,
+                systemPrompt: aiConfig.systemPrompt || "",
               }}
             >
               <Card size="small" style={{ marginBottom: 16 }}>
@@ -536,8 +564,61 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     placeholder="1000"
                   />
                 </Form.Item>
+              </Card>
 
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  <FileTextOutlined style={{ marginRight: 8 }} />
+                  系统提示词设置
+                </Title>
+                <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+                  自定义AI的行为和回答风格，控制便签生成的格式和内容
+                </Text>
 
+                <Form.Item
+                  label={
+                    <Space>
+                      <span>系统提示词</span>
+                      <Dropdown
+                        menu={{
+                          items: systemPromptTemplates.map((template, index) => ({
+                            key: index,
+                            label: (
+                              <div style={{ maxWidth: 300 }}>
+                                <div style={{ fontWeight: 'bold' }}>{template.name}</div>
+                                <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                                  {template.description}
+                                </div>
+                              </div>
+                            ),
+                            onClick: () => handleTemplateSelect(template.prompt)
+                          }))
+                        }}
+                        placement="bottomLeft"
+                      >
+                        <Button size="small" type="link">
+                          选择模板 <DownOutlined />
+                        </Button>
+                      </Dropdown>
+                      <Tooltip title="复制当前提示词">
+                        <Button
+                          size="small"
+                          type="link"
+                          icon={<CopyOutlined />}
+                          onClick={handleCopyPrompt}
+                        />
+                      </Tooltip>
+                    </Space>
+                  }
+                  name="systemPrompt"
+                  extra="定义AI助手的角色和行为规则，留空将使用默认提示词"
+                >
+                  <Input.TextArea
+                    rows={8}
+                    placeholder="请输入自定义的系统提示词，或点击上方'选择模板'使用预设模板..."
+                    style={{ fontFamily: 'monospace', fontSize: '13px' }}
+                  />
+                </Form.Item>
               </Card>
 
               <div className="form-actions">
@@ -692,9 +773,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       title="设置"
       open={open}
       onCancel={onCancel}
-      width={720}
+      width="70%"
       centered
-      styles={{ body: { height: "60vh", overflowY: "hidden" } }}
+      styles={{
+        body: {
+          height: "70vh",
+          minHeight: "500px",
+          overflowY: "hidden"
+        }
+      }}
       footer={null}
       destroyOnHidden
       className="settings-modal"

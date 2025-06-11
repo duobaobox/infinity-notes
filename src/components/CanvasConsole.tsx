@@ -5,14 +5,12 @@ import React, {
   useImperativeHandle,
   useEffect,
 } from "react";
-import { Input, Button, Tooltip, message, Progress } from "antd";
+import { Input, Button, Tooltip, message } from "antd";
 import {
   SendOutlined,
   PlusOutlined,
   RobotOutlined,
   LoadingOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useAISettings } from "../hooks/useAISettings";
 import { getAIService } from "../services/aiService";
@@ -31,12 +29,6 @@ interface CanvasConsoleRef {
   focus: () => void;
 }
 
-interface GenerationStatus {
-  status: "idle" | "generating" | "success" | "error";
-  message?: string;
-  progress?: number;
-}
-
 const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
   (
     {
@@ -52,9 +44,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const [inputValue, setInputValue] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generationStatus, setGenerationStatus] = useState<GenerationStatus>({
-      status: "idle",
-    });
     const inputRef = useRef<any>(null);
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -132,45 +121,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       if (onGenerateWithAI) {
         try {
           setIsGenerating(true);
-          setGenerationStatus({
-            status: "generating",
-            message: "正在连接AI服务...",
-            progress: 20,
-          });
-
-          // 模拟进度更新
-          setTimeout(() => {
-            setGenerationStatus({
-              status: "generating",
-              message: "正在生成便签内容...",
-              progress: 60,
-            });
-          }, 500);
-
           console.log("🎮 调用onGenerateWithAI函数");
           await onGenerateWithAI(inputValue);
-
-          setGenerationStatus({
-            status: "success",
-            message: "便签生成成功！",
-            progress: 100,
-          });
-
-          setTimeout(() => {
-            setGenerationStatus({ status: "idle" });
-          }, 2000);
-
           setInputValue("");
         } catch (error) {
-          setGenerationStatus({
-            status: "error",
-            message: "AI生成失败，请检查配置或稍后重试",
-          });
           message.error("AI生成失败，请检查配置或稍后重试");
-
-          setTimeout(() => {
-            setGenerationStatus({ status: "idle" });
-          }, 3000);
         } finally {
           setIsGenerating(false);
         }
@@ -194,44 +149,10 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       if (onGenerateWithAI) {
         try {
           setIsGenerating(true);
-          setGenerationStatus({
-            status: "generating",
-            message: "正在连接AI服务...",
-            progress: 20,
-          });
-
-          // 模拟进度更新
-          setTimeout(() => {
-            setGenerationStatus({
-              status: "generating",
-              message: "正在生成便签内容...",
-              progress: 60,
-            });
-          }, 500);
-
           await onGenerateWithAI(inputValue);
-
-          setGenerationStatus({
-            status: "success",
-            message: "便签生成成功！",
-            progress: 100,
-          });
-
-          setTimeout(() => {
-            setGenerationStatus({ status: "idle" });
-          }, 2000);
-
           setInputValue("");
         } catch (error) {
-          setGenerationStatus({
-            status: "error",
-            message: "AI生成失败，请检查配置或稍后重试",
-          });
           message.error("AI生成失败，请检查配置或稍后重试");
-
-          setTimeout(() => {
-            setGenerationStatus({ status: "idle" });
-          }, 3000);
         } finally {
           setIsGenerating(false);
         }
@@ -250,46 +171,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
     return (
       <div className="canvas-console">
-        {/* 状态指示器 */}
-        {generationStatus.status !== "idle" && (
-          <div className="generation-status">
-            <div className="status-content">
-              {generationStatus.status === "generating" && (
-                <>
-                  <LoadingOutlined
-                    style={{ marginRight: 8, color: "#1890ff" }}
-                  />
-                  <span>{generationStatus.message}</span>
-                  {generationStatus.progress && (
-                    <Progress
-                      percent={generationStatus.progress}
-                      size="small"
-                      style={{ marginLeft: 12, width: 100 }}
-                      showInfo={false}
-                    />
-                  )}
-                </>
-              )}
-              {generationStatus.status === "success" && (
-                <>
-                  <CheckCircleOutlined
-                    style={{ marginRight: 8, color: "#52c41a" }}
-                  />
-                  <span>{generationStatus.message}</span>
-                </>
-              )}
-              {generationStatus.status === "error" && (
-                <>
-                  <ExclamationCircleOutlined
-                    style={{ marginRight: 8, color: "#ff4d4f" }}
-                  />
-                  <span>{generationStatus.message}</span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
         <div className={`console-container ${isFocused ? "focused" : ""}`}>
           {/* 左侧AI按钮 */}
           <Tooltip

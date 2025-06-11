@@ -22,6 +22,50 @@ import { useAISettings } from "../hooks/useAISettings";
 import { AIService } from "../services/aiService";
 import "./InfiniteCanvas.css";
 
+// 生成智能标题的工具函数
+const generateSmartTitle = (prompt: string): string => {
+  if (!prompt || prompt.trim().length === 0) {
+    return "AI思考中...";
+  }
+
+  // 清理prompt，移除多余的空格和换行
+  const cleanPrompt = prompt.trim().replace(/\s+/g, ' ');
+
+  // 根据prompt内容生成智能标题
+  const keywords = [
+    { patterns: ['学习', '教程', '课程', '知识'], prefix: '学习' },
+    { patterns: ['计划', '安排', '规划', '目标'], prefix: '计划' },
+    { patterns: ['想法', '创意', '点子', '灵感'], prefix: '想法' },
+    { patterns: ['工作', '任务', '项目', '开发'], prefix: '工作' },
+    { patterns: ['问题', '疑问', '困惑', '求助'], prefix: '问题' },
+    { patterns: ['总结', '回顾', '梳理', '整理'], prefix: '总结' },
+    { patterns: ['提醒', '备忘', '记住', '别忘'], prefix: '提醒' },
+    { patterns: ['购物', '买', '清单', '商品'], prefix: '购物' },
+    { patterns: ['旅行', '旅游', '出行', '行程'], prefix: '旅行' },
+    { patterns: ['健康', '运动', '锻炼', '健身'], prefix: '健康' },
+    { patterns: ['美食', '菜谱', '做饭', '料理'], prefix: '美食' },
+    { patterns: ['读书', '阅读', '书籍', '文章'], prefix: '阅读' },
+  ];
+
+  // 查找匹配的关键词
+  for (const keyword of keywords) {
+    if (keyword.patterns.some(pattern => cleanPrompt.includes(pattern))) {
+      // 提取prompt的前15个字符作为预览
+      const preview = cleanPrompt.length > 15
+        ? cleanPrompt.substring(0, 15) + '...'
+        : cleanPrompt;
+      return `${keyword.prefix}：${preview}`;
+    }
+  }
+
+  // 如果没有匹配的关键词，使用通用格式
+  const preview = cleanPrompt.length > 20
+    ? cleanPrompt.substring(0, 20) + '...'
+    : cleanPrompt;
+
+  return preview;
+};
+
 interface CanvasState {
   scale: number;
   offsetX: number;
@@ -274,12 +318,85 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         if (isDemoMode) {
           // 演示模式：使用预设的便签内容
           message.info("演示模式：使用预设内容展示流式效果");
+
+          // 立即创建第一个便签（演示模式）
+          const noteId = `ai-streaming-note-${timestamp}-0`;
+          noteIdMap.set(0, noteId);
+
+          // 生成智能的初始标题
+          const smartTitle = generateSmartTitle(prompt);
+
+          const newNote: StickyNoteType = {
+            id: noteId,
+            x: logicalCenterX + (Math.random() - 0.5) * 60,
+            y: logicalCenterY + (Math.random() - 0.5) * 60,
+            width: 250,
+            height: 200,
+            content: "", // 初始内容为空
+            title: smartTitle,
+            color: "yellow",
+            isNew: true,
+            zIndex: maxZ + 1,
+            isEditing: false,
+            isTitleEditing: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          // 立即添加到数据库和状态
+          await addNote(newNote);
+          setStreamingNotes(prev => {
+            const newMap = new Map(prev);
+            newMap.set(newNote.id, {
+              note: newNote,
+              streamingContent: "",
+              isStreaming: true,
+            });
+            return newMap;
+          });
+
           await runDemoStreamingMode(prompt, logicalCenterX, logicalCenterY, maxZ, noteIdMap, timestamp);
           return;
         }
 
         console.log("🔧 更新AI服务配置:", aiConfig);
         aiService.updateConfig(aiConfig);
+
+        // 立即创建第一个便签
+        const noteId = `ai-streaming-note-${timestamp}-0`;
+        noteIdMap.set(0, noteId);
+
+        // 生成智能的初始标题
+        const smartTitle = generateSmartTitle(prompt);
+
+        const newNote: StickyNoteType = {
+          id: noteId,
+          x: logicalCenterX + (Math.random() - 0.5) * 60,
+          y: logicalCenterY + (Math.random() - 0.5) * 60,
+          width: 250,
+          height: 200,
+          content: "", // 初始内容为空
+          title: smartTitle,
+          color: "yellow",
+          isNew: true,
+          zIndex: maxZ + 1,
+          isEditing: false,
+          isTitleEditing: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // 立即添加到数据库和状态
+        await addNote(newNote);
+        setStreamingNotes(prev => {
+          const newMap = new Map(prev);
+          newMap.set(newNote.id, {
+            note: newNote,
+            streamingContent: "",
+            isStreaming: true,
+          });
+          return newMap;
+        });
 
         // 流式生成回调
         const callbacks = {
@@ -312,60 +429,62 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               return;
             }
 
-            // 创建新便签
-            console.log("📝 创建新便签:", noteIndex, title);
+            // 如果是额外的便签（索引大于0），创建新便签
+            if (noteIndex > 0) {
+              console.log("📝 创建额外便签:", noteIndex, title);
 
-            // 计算便签位置（支持多个便签的网格布局）
-            const spacing = 280;
-            const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
-            const row = Math.floor(noteIndex / notesPerRow);
-            const col = noteIndex % notesPerRow;
+              // 计算便签位置（支持多个便签的网格布局）
+              const spacing = 280;
+              const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
+              const row = Math.floor(noteIndex / notesPerRow);
+              const col = noteIndex % notesPerRow;
 
-            // 计算基础位置
-            const baseX = logicalCenterX + (col - (notesPerRow - 1) / 2) * spacing;
-            const baseY = logicalCenterY + (row - 0.5) * spacing;
+              // 计算基础位置
+              const baseX = logicalCenterX + (col - (notesPerRow - 1) / 2) * spacing;
+              const baseY = logicalCenterY + (row - 0.5) * spacing;
 
-            // 添加小范围随机偏移
-            const offsetX = (Math.random() - 0.5) * 60;
-            const offsetY = (Math.random() - 0.5) * 60;
+              // 添加小范围随机偏移
+              const offsetX = (Math.random() - 0.5) * 60;
+              const offsetY = (Math.random() - 0.5) * 60;
 
-            const noteId = `ai-streaming-note-${timestamp}-${noteIndex}`;
-            noteIdMap.set(noteIndex, noteId);
+              const noteId = `ai-streaming-note-${timestamp}-${noteIndex}`;
+              noteIdMap.set(noteIndex, noteId);
 
-            // 映射颜色
-            const colors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
-            const noteColor = colors[noteIndex % colors.length];
+              // 映射颜色
+              const colors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
+              const noteColor = colors[noteIndex % colors.length];
 
-            const newNote: StickyNoteType = {
-              id: noteId,
-              x: baseX + offsetX,
-              y: baseY + offsetY,
-              width: 250,
-              height: 200,
-              content: "", // 初始内容为空
-              title: title,
-              color: noteColor,
-              isNew: true,
-              zIndex: maxZ + noteIndex + 1,
-              isEditing: false,
-              isTitleEditing: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            };
+              const newNote: StickyNoteType = {
+                id: noteId,
+                x: baseX + offsetX,
+                y: baseY + offsetY,
+                width: 250,
+                height: 200,
+                content: "", // 初始内容为空
+                title: title,
+                color: noteColor,
+                isNew: true,
+                zIndex: maxZ + noteIndex + 1,
+                isEditing: false,
+                isTitleEditing: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
 
-            // 添加到数据库
-            await addNote(newNote);
+              // 添加到数据库
+              await addNote(newNote);
 
-            // 添加到流式状态管理
-            setStreamingNotes(prev => {
-              const newMap = new Map(prev);
-              newMap.set(newNote.id, {
-                note: newNote,
-                streamingContent: "",
-                isStreaming: true,
+              // 添加到流式状态管理
+              setStreamingNotes(prev => {
+                const newMap = new Map(prev);
+                newMap.set(newNote.id, {
+                  note: newNote,
+                  streamingContent: "",
+                  isStreaming: true,
+                });
+                return newMap;
               });
-              return newMap;
-            });
+            }
           },
 
           onContentChunk: (noteIndex: number, chunk: string, fullContent: string) => {
@@ -499,57 +618,90 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     // 创建演示模式的回调对象
     const callbacks = {
       onNoteStart: async (noteIndex: number, title: string) => {
-        // 计算便签位置（支持多个便签的网格布局）
-        const spacing = 280;
-        const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
-        const row = Math.floor(noteIndex / notesPerRow);
-        const col = noteIndex % notesPerRow;
-
-        // 计算基础位置
-        const baseX = logicalCenterX + (col - (notesPerRow - 1) / 2) * spacing;
-        const baseY = logicalCenterY + (row - 0.5) * spacing;
-
-        // 添加小范围随机偏移
-        const offsetX = (Math.random() - 0.5) * 60;
-        const offsetY = (Math.random() - 0.5) * 60;
-
-        const noteId = `ai-streaming-note-${timestamp}-${noteIndex}`;
-        noteIdMap.set(noteIndex, noteId);
-
-        // 映射颜色
-        const colors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
-        const noteColor = colors[noteIndex % colors.length];
-
-        const newNote: StickyNoteType = {
-          id: noteId,
-          x: baseX + offsetX,
-          y: baseY + offsetY,
-          width: 250,
-          height: 200,
-          content: "", // 初始内容为空
-          title: title,
-          color: noteColor,
-          isNew: true,
-          zIndex: maxZ + noteIndex + 1,
-          isEditing: false,
-          isTitleEditing: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        // 添加到数据库
-        await addNote(newNote);
-
-        // 添加到流式状态管理
-        setStreamingNotes(prev => {
-          const newMap = new Map(prev);
-          newMap.set(newNote.id, {
-            note: newNote,
-            streamingContent: "",
-            isStreaming: true,
+        // 检查是否已经存在这个便签（第一个便签已经在外部创建）
+        const existingNoteId = noteIdMap.get(noteIndex);
+        if (existingNoteId) {
+          // 如果便签已存在，只更新标题
+          console.log("🔄 演示模式更新便签标题:", noteIndex, title);
+          await updateStickyNote(existingNoteId, {
+            title: title,
+            updatedAt: new Date()
           });
-          return newMap;
-        });
+
+          // 更新流式状态中的标题
+          setStreamingNotes(prev => {
+            const newMap = new Map(prev);
+            const existing = newMap.get(existingNoteId);
+            if (existing) {
+              newMap.set(existingNoteId, {
+                ...existing,
+                note: {
+                  ...existing.note,
+                  title: title
+                }
+              });
+            }
+            return newMap;
+          });
+          return;
+        }
+
+        // 如果是额外的便签（索引大于0），创建新便签
+        if (noteIndex > 0) {
+          console.log("📝 演示模式创建额外便签:", noteIndex, title);
+
+          // 计算便签位置（支持多个便签的网格布局）
+          const spacing = 280;
+          const notesPerRow = Math.ceil(Math.sqrt(4)); // 假设最多4个便签，可以根据实际情况调整
+          const row = Math.floor(noteIndex / notesPerRow);
+          const col = noteIndex % notesPerRow;
+
+          // 计算基础位置
+          const baseX = logicalCenterX + (col - (notesPerRow - 1) / 2) * spacing;
+          const baseY = logicalCenterY + (row - 0.5) * spacing;
+
+          // 添加小范围随机偏移
+          const offsetX = (Math.random() - 0.5) * 60;
+          const offsetY = (Math.random() - 0.5) * 60;
+
+          const noteId = `ai-streaming-note-${timestamp}-${noteIndex}`;
+          noteIdMap.set(noteIndex, noteId);
+
+          // 映射颜色
+          const colors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
+          const noteColor = colors[noteIndex % colors.length];
+
+          const newNote: StickyNoteType = {
+            id: noteId,
+            x: baseX + offsetX,
+            y: baseY + offsetY,
+            width: 250,
+            height: 200,
+            content: "", // 初始内容为空
+            title: title,
+            color: noteColor,
+            isNew: true,
+            zIndex: maxZ + noteIndex + 1,
+            isEditing: false,
+            isTitleEditing: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          // 添加到数据库
+          await addNote(newNote);
+
+          // 添加到流式状态管理
+          setStreamingNotes(prev => {
+            const newMap = new Map(prev);
+            newMap.set(newNote.id, {
+              note: newNote,
+              streamingContent: "",
+              isStreaming: true,
+            });
+            return newMap;
+          });
+        }
       },
 
       onContentChunk: (noteIndex: number, chunk: string, fullContent: string) => {

@@ -480,3 +480,19 @@
   border-color: #3b82f6;
   box-shadow: 0 0 0 1px #3b82f6;
 }
+
+/* AI生成加载指示器 - 简化版本 */
+.ai-loading-indicator {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  color: #666;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.ai-loading-indicator .anticon {
+  margin-right: 4px;
+}
