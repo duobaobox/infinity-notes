@@ -42,6 +42,11 @@ export class AIService {
     this.config = config;
   }
 
+  // 获取当前配置
+  getConfig(): AIConfig {
+    return { ...this.config };
+  }
+
   // 更新AI配置
   updateConfig(config: AIConfig): void {
     console.log("🔄 AIService.updateConfig: 更新配置", {
@@ -670,8 +675,11 @@ export const getAIService = (config?: AIConfig): AIService => {
   }
 
   // 如果没有实例，或者配置发生了变化，就创建/更新实例
-  if (!aiServiceInstance || isConfigChanged(config, aiServiceInstance["config"])) {
-    console.log("🔄 AI服务配置发生变化，更新实例");
+  if (!aiServiceInstance || isConfigChanged(config, aiServiceInstance.getConfig())) {
+    console.log("🔄 AI服务配置发生变化，更新实例", {
+      hasInstance: !!aiServiceInstance,
+      configChanged: aiServiceInstance ? isConfigChanged(config, aiServiceInstance.getConfig()) : true
+    });
 
     if (aiServiceInstance) {
       // 如果已有实例，使用updateConfig方法更新配置
@@ -680,6 +688,8 @@ export const getAIService = (config?: AIConfig): AIService => {
       // 如果没有实例，创建新实例
       aiServiceInstance = new AIService(config);
     }
+  } else {
+    console.log("🔄 AI服务配置未变化，使用现有实例");
   }
 
   return aiServiceInstance;

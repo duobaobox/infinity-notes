@@ -138,7 +138,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   useEffect(() => {
     console.log("🎯 提示词配置更新:", {
       systemPrompt: promptConfig.systemPrompt ? "已设置" : "未设置",
-      enableSystemPrompt: promptConfig.enableSystemPrompt,
       systemPromptLength: promptConfig.systemPrompt?.length || 0
     });
   }, [promptConfig]);
@@ -148,7 +147,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     return {
       ...aiConfig,
       systemPrompt: promptConfig.systemPrompt,
-      enableSystemPrompt: promptConfig.enableSystemPrompt,
     };
   }, [aiConfig, promptConfig]);
 
@@ -157,7 +155,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     console.log("🔧 更新AI服务配置:", {
       ...fullAIConfig,
       apiKey: fullAIConfig.apiKey ? "已设置" : "未设置",
-      enableSystemPrompt: fullAIConfig.enableSystemPrompt,
       systemPrompt: fullAIConfig.systemPrompt ? "已设置" : "未设置"
     });
 
@@ -392,10 +389,24 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         console.log("🔧 使用AI服务配置:", {
           ...fullAIConfig,
           apiKey: fullAIConfig.apiKey ? "已设置" : "未设置",
-          enableSystemPrompt: fullAIConfig.enableSystemPrompt,
-          systemPrompt: fullAIConfig.systemPrompt ? "已设置" : "未设置"
+          systemPrompt: fullAIConfig.systemPrompt ? `"${fullAIConfig.systemPrompt}"` : "未设置",
+          systemPromptLength: fullAIConfig.systemPrompt?.length || 0
         });
-        // AI服务实例已经使用最新配置创建，无需手动更新
+
+        // 额外检查：直接从AI服务实例获取配置
+        console.log("🔧 AI服务实例当前配置:", aiService.getConfig());
+
+        // 强制从数据库重新加载最新配置，确保配置同步
+        const { IndexedDBAISettingsStorage } = await import("../database/IndexedDBAISettingsStorage");
+        const latestConfig = await IndexedDBAISettingsStorage.loadConfig();
+        console.log("🔧 从数据库重新加载的最新配置:", {
+          systemPrompt: latestConfig.systemPrompt ? `"${latestConfig.systemPrompt}"` : "未设置",
+          systemPromptLength: latestConfig.systemPrompt?.length || 0
+        });
+
+        // 使用最新配置获取AI服务实例
+        const latestAIService = getAIService(latestConfig);
+        console.log("🔧 使用最新配置的AI服务实例:", latestAIService.getConfig());
 
         // 立即创建第一个便签
         const noteId = `ai-streaming-note-${timestamp}-0`;
@@ -600,8 +611,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           }
         };
 
-        // 调用简化的真实流式生成方法
-        await aiService.generateStickyNotesStreaming(prompt, callbacks);
+        // 调用简化的真实流式生成方法，使用最新的AI服务实例
+        await latestAIService.generateStickyNotesStreaming(prompt, callbacks);
 
       } catch (error) {
         console.error("AI流式生成便签失败:", error);

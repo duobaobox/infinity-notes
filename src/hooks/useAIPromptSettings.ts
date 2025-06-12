@@ -1,6 +1,7 @@
 // AI提示词设置管理Hook
 import { useState, useEffect, useCallback } from "react";
 import type { AIConfig } from "../services/aiService";
+import { getAIService } from "../services/aiService";
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../database/IndexedDBAISettingsStorage";
 
 export interface AIPromptConfig {
@@ -90,13 +91,42 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
         await AISettingsStorage.saveConfig(updatedConfig);
         console.log("🎯 useAIPromptSettings: 提示词配置保存成功");
 
+        // 立即更新AI服务实例的配置，确保下次AI调用使用最新配置
+        try {
+          const aiService = getAIService(updatedConfig);
+          console.log("🎯 useAIPromptSettings: AI服务配置已更新", {
+            systemPrompt: updatedConfig.systemPrompt ? "已设置" : "未设置",
+            systemPromptLength: updatedConfig.systemPrompt?.length || 0,
+            aiServiceConfig: aiService.getConfig()
+          });
+        } catch (error) {
+          console.warn("🎯 useAIPromptSettings: 更新AI服务配置失败", error);
+        }
+
         // 立即更新本地状态，确保UI能立即反映最新配置
+        console.log("🎯 useAIPromptSettings: 更新本地状态", {
+          oldConfig: promptConfig,
+          newConfig: newPromptConfig
+        });
         setPromptConfig(newPromptConfig);
 
-        // 重新加载配置以确保数据一致性（异步执行，不影响返回结果）
+        // 强制触发状态更新，确保依赖此配置的组件能立即重新渲染
         setTimeout(() => {
-          loadPromptConfig();
+          console.log("🎯 useAIPromptSettings: 强制触发状态更新");
+          setPromptConfig({ ...newPromptConfig });
+        }, 50);
+
+        // 额外的强制更新，确保React能检测到变化
+        setTimeout(() => {
+          console.log("🎯 useAIPromptSettings: 第二次强制触发状态更新");
+          setPromptConfig(prev => ({ ...prev, systemPrompt: newPromptConfig.systemPrompt }));
         }, 100);
+
+        // 第三次强制更新，确保所有依赖组件都能收到更新
+        setTimeout(() => {
+          console.log("🎯 useAIPromptSettings: 第三次强制触发状态更新");
+          setPromptConfig({ systemPrompt: newPromptConfig.systemPrompt + "" }); // 强制创建新字符串
+        }, 200);
 
         return true;
       } catch (err) {
@@ -107,7 +137,7 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
         setLoading(false);
       }
     },
-    [hasValidAIConfig, loadPromptConfig]
+    [hasValidAIConfig]
   );
 
   // 重置为无提示词模式
