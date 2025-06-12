@@ -35,6 +35,7 @@ import {
   CopyOutlined,
 } from "@ant-design/icons";
 import { useAISettings } from "../hooks/useAISettings";
+import { useAIPromptSettings } from "../hooks/useAIPromptSettings";
 import { systemPromptTemplates } from "../services/aiService";
 import "./SettingsModal.css";
 
@@ -54,10 +55,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [aiForm] = Form.useForm();
+  const [promptForm] = Form.useForm(); // 新增：AI提示词表单
   const [appearanceForm] = Form.useForm();
   const [dataForm] = Form.useForm();
   const [notificationForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
+  const [enableSystemPrompt, setEnableSystemPrompt] = useState(true); // 监听系统提示词开关状态
 
   const {
     config: aiConfig,
@@ -68,7 +71,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     hasValidConfig,
   } = useAISettings();
 
-  // 当aiConfig变化时，更新表单的值（只在模态框打开时）
+  // 新增：AI提示词设置Hook
+  const {
+    promptConfig,
+    loading: promptLoading,
+    error: promptError,
+    savePromptConfig,
+    resetToDefault: resetPromptToDefault,
+    canConfigurePrompt,
+  } = useAIPromptSettings(hasValidConfig);
+
+  // 当aiConfig变化时，更新AI基础配置表单的值（只在模态框打开时）
   React.useEffect(() => {
     console.log("🎛️ SettingsModal: AI配置变化", { open, aiConfig });
 
@@ -80,14 +93,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       if (hasValidData) {
         console.log("🎛️ SettingsModal: 更新AI表单值", aiConfig);
         try {
-          aiForm.setFieldsValue(aiConfig);
-          console.log("🎛️ SettingsModal: AI表单值已更新");
+          // 只设置基础AI配置，不包括systemPrompt
+          const { systemPrompt, ...basicAIConfig } = aiConfig;
+          aiForm.setFieldsValue(basicAIConfig);
+          console.log("🎛️ SettingsModal: AI基础配置表单值已更新");
         } catch (error) {
-          console.warn("🎛️ SettingsModal: 更新表单值失败", error);
+          console.warn("🎛️ SettingsModal: 更新AI表单值失败", error);
         }
       }
     }
   }, [aiConfig, open, aiForm]);
+
+  // 当promptConfig变化时，更新提示词表单的值（只在模态框打开时）
+  React.useEffect(() => {
+    console.log("🎛️ SettingsModal: 提示词配置变化", { open, promptConfig, canConfigurePrompt });
+
+    if (open && promptConfig && canConfigurePrompt) {
+      console.log("🎛️ SettingsModal: 更新提示词表单值", promptConfig);
+      try {
+        promptForm.setFieldsValue(promptConfig);
+        setEnableSystemPrompt(promptConfig.enableSystemPrompt !== false); // 更新开关状态
+        console.log("🎛️ SettingsModal: 提示词表单值已更新");
+      } catch (error) {
+        console.warn("🎛️ SettingsModal: 更新提示词表单值失败", error);
+      }
+    }
+  }, [promptConfig, open, promptForm, canConfigurePrompt]);
 
   // 测试AI连接
   const handleTestConnection = async () => {
@@ -109,15 +140,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 处理系统prompt模板选择
+  // 处理系统prompt模板选择（用于提示词标签页）
   const handleTemplateSelect = (templatePrompt: string) => {
-    aiForm.setFieldsValue({ systemPrompt: templatePrompt });
+    promptForm.setFieldsValue({ systemPrompt: templatePrompt });
     message.success("已应用模板");
   };
 
-  // 复制当前系统prompt
+  // 复制当前系统prompt（用于提示词标签页）
   const handleCopyPrompt = () => {
-    const currentPrompt = aiForm.getFieldValue('systemPrompt');
+    const currentPrompt = promptForm.getFieldValue('systemPrompt');
     if (currentPrompt) {
       navigator.clipboard.writeText(currentPrompt).then(() => {
         message.success("已复制到剪贴板");
@@ -129,37 +160,76 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 保存AI配置
+  // 保存AI提示词配置
+  const handleSavePromptConfig = async () => {
+    console.log("🎛️ SettingsModal: 用户点击保存提示词配置");
+
+    try {
+      const values = await promptForm.validateFields();
+      console.log("🎛️ SettingsModal: 提示词表单验证通过，获取的值", values);
+
+      const success = await savePromptConfig(values);
+
+      if (success) {
+        console.log("🎛️ SettingsModal: 提示词配置保存成功");
+        message.success("AI提示词配置保存成功！");
+      } else {
+        console.error("🎛️ SettingsModal: 提示词配置保存失败");
+      }
+    } catch (error) {
+      console.error("🎛️ SettingsModal: 提示词表单验证失败或保存异常", error);
+      message.error("请检查提示词配置信息");
+    }
+  };
+
+  // 重置提示词为默认
+  const handleResetPromptToDefault = async () => {
+    console.log("🎛️ SettingsModal: 用户点击重置提示词为默认");
+
+    const success = await resetPromptToDefault();
+    if (success) {
+      message.success("已重置为默认提示词");
+      // 重新加载表单值
+      promptForm.setFieldsValue({ systemPrompt: promptConfig.systemPrompt });
+    } else {
+      message.error("重置失败");
+    }
+  };
+
+  // 保存AI基础配置（不包括systemPrompt）
   const handleSaveAIConfig = async () => {
-    console.log("🎛️ SettingsModal: 用户点击保存AI配置");
+    console.log("🎛️ SettingsModal: 用户点击保存AI基础配置");
 
     try {
       const values = await aiForm.validateFields();
-      console.log("🎛️ SettingsModal: 表单验证通过，获取的值", values);
+      console.log("🎛️ SettingsModal: AI基础配置表单验证通过，获取的值", values);
 
-      // 自动启用AI功能（只要用户保存了配置就表示想要使用AI）
+      // 保留现有的systemPrompt，只更新基础AI配置
       const configToSave = {
         ...aiConfig,
         ...values,
-        enableAI: true // 自动启用AI功能
+        enableAI: true, // 自动启用AI功能
+        systemPrompt: aiConfig.systemPrompt // 保留现有的systemPrompt
       };
-      console.log("🎛️ SettingsModal: 准备保存的完整配置", configToSave);
+      console.log("🎛️ SettingsModal: 准备保存的完整AI配置", configToSave);
 
       const success = await saveAIConfig(configToSave);
 
       if (success) {
-        console.log("🎛️ SettingsModal: AI配置保存成功");
-        message.success("AI配置保存成功！现在可以使用AI生成便签功能了。");
+        console.log("🎛️ SettingsModal: AI基础配置保存成功");
+        message.success("AI基础配置保存成功！现在可以配置AI提示词了。");
       } else {
-        console.error("🎛️ SettingsModal: AI配置保存失败");
+        console.error("🎛️ SettingsModal: AI基础配置保存失败");
       }
     } catch (error) {
-      console.error("🎛️ SettingsModal: 表单验证失败或保存异常", error);
-      message.error("请检查配置信息");
+      console.error("🎛️ SettingsModal: AI基础配置表单验证失败或保存异常", error);
+      message.error("请检查AI基础配置信息");
     }
   };
 
-  const tabItems = [
+  // 动态生成标签页项目，根据AI配置状态决定是否显示AI提示词标签页
+  const getTabItems = () => {
+    const baseItems = [
     {
       key: "general",
       label: (
@@ -471,7 +541,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 aiModel: aiConfig.aiModel || "",
                 temperature: aiConfig.temperature || 0.7,
                 maxTokens: aiConfig.maxTokens || 1000,
-                systemPrompt: aiConfig.systemPrompt || "",
               }}
             >
               <Card size="small" style={{ marginBottom: 16 }}>
@@ -566,60 +635,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Form.Item>
               </Card>
 
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  <FileTextOutlined style={{ marginRight: 8 }} />
-                  系统提示词设置
-                </Title>
-                <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-                  自定义AI的行为和回答风格，控制便签生成的格式和内容
-                </Text>
 
-                <Form.Item
-                  label={
-                    <Space>
-                      <span>系统提示词</span>
-                      <Dropdown
-                        menu={{
-                          items: systemPromptTemplates.map((template, index) => ({
-                            key: index,
-                            label: (
-                              <div style={{ maxWidth: 300 }}>
-                                <div style={{ fontWeight: 'bold' }}>{template.name}</div>
-                                <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
-                                  {template.description}
-                                </div>
-                              </div>
-                            ),
-                            onClick: () => handleTemplateSelect(template.prompt)
-                          }))
-                        }}
-                        placement="bottomLeft"
-                      >
-                        <Button size="small" type="link">
-                          选择模板 <DownOutlined />
-                        </Button>
-                      </Dropdown>
-                      <Tooltip title="复制当前提示词">
-                        <Button
-                          size="small"
-                          type="link"
-                          icon={<CopyOutlined />}
-                          onClick={handleCopyPrompt}
-                        />
-                      </Tooltip>
-                    </Space>
-                  }
-                  name="systemPrompt"
-                  extra="定义AI助手的角色和行为规则，留空将使用默认提示词"
-                >
-                  <Input.TextArea
-                    rows={8}
-                    placeholder="请输入自定义的系统提示词，或点击上方'选择模板'使用预设模板..."
-                    style={{ fontFamily: 'monospace', fontSize: '13px' }}
-                  />
-                </Form.Item>
-              </Card>
 
               <div className="form-actions">
                 <Space>
@@ -644,9 +660,164 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </Spin>
         </div>
       ),
-    },
-    {
-      key: "notifications",
+    }
+    ];
+
+    // AI提示词设置标签页（只有AI配置有效时才显示）
+    const aiPromptTab = canConfigurePrompt ? {
+      key: "ai-prompt",
+      label: (
+        <span>
+          <FileTextOutlined />
+          AI提示词
+        </span>
+      ),
+      children: (
+        <div className="settings-modal-content">
+          <Spin spinning={promptLoading}>
+            {promptError && (
+              <Alert
+                message="提示词配置错误"
+                description={promptError}
+                type="error"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            {!promptError && canConfigurePrompt && (
+              <Alert
+                message="AI提示词配置"
+                description="自定义AI助手的行为和回答风格，控制便签生成的格式和内容。"
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            <Form
+              form={promptForm}
+              layout="vertical"
+              onFinish={handleSavePromptConfig}
+              preserve={true}
+              initialValues={{
+                systemPrompt: promptConfig.systemPrompt || "",
+                enableSystemPrompt: promptConfig.enableSystemPrompt !== false,
+              }}
+            >
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  <FileTextOutlined style={{ marginRight: 8 }} />
+                  系统提示词设置
+                </Title>
+                <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+                  定义AI助手的角色和行为规则，影响便签生成的格式和内容质量
+                </Text>
+
+                <Form.Item
+                  label="启用系统提示词"
+                  name="enableSystemPrompt"
+                  valuePropName="checked"
+                  extra="关闭后将使用原始AI模型进行对话，不添加任何角色设定"
+                  style={{ marginBottom: 24 }}
+                >
+                  <Switch
+                    checkedChildren="定制AI"
+                    unCheckedChildren="原始AI"
+                    onChange={(checked) => setEnableSystemPrompt(checked)}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label={
+                    <Space>
+                      <span>系统提示词</span>
+                      <Dropdown
+                        menu={{
+                          items: systemPromptTemplates.map((template, index) => ({
+                            key: index,
+                            label: (
+                              <div style={{ maxWidth: 300 }}>
+                                <div style={{ fontWeight: 'bold' }}>{template.name}</div>
+                                <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                                  {template.description}
+                                </div>
+                              </div>
+                            ),
+                            onClick: () => handleTemplateSelect(template.prompt)
+                          }))
+                        }}
+                        placement="bottomLeft"
+                        disabled={!enableSystemPrompt}
+                      >
+                        <Button
+                          size="small"
+                          type="link"
+                          disabled={!enableSystemPrompt}
+                        >
+                          选择模板 <DownOutlined />
+                        </Button>
+                      </Dropdown>
+                      <Tooltip title="复制当前提示词">
+                        <Button
+                          size="small"
+                          type="link"
+                          icon={<CopyOutlined />}
+                          onClick={handleCopyPrompt}
+                          disabled={!enableSystemPrompt}
+                        />
+                      </Tooltip>
+                    </Space>
+                  }
+                  name="systemPrompt"
+                  extra={enableSystemPrompt
+                    ? "定义AI助手的角色和行为规则，留空将使用默认提示词"
+                    : "系统提示词已禁用，当前使用原始AI模型"
+                  }
+                >
+                  <Input.TextArea
+                    rows={10}
+                    placeholder={enableSystemPrompt
+                      ? "请输入自定义的系统提示词，或点击上方'选择模板'使用预设模板..."
+                      : "系统提示词已禁用"
+                    }
+                    style={{
+                      fontFamily: 'monospace',
+                      fontSize: '13px',
+                      backgroundColor: enableSystemPrompt ? undefined : '#f5f5f5'
+                    }}
+                    disabled={!enableSystemPrompt}
+                  />
+                </Form.Item>
+              </Card>
+
+              <div className="form-actions">
+                <Space>
+                  <Button
+                    type="primary"
+                    onClick={handleSavePromptConfig}
+                    disabled={promptLoading}
+                  >
+                    保存提示词配置
+                  </Button>
+                  <Button
+                    onClick={handleResetPromptToDefault}
+                    disabled={promptLoading}
+                  >
+                    重置为默认
+                  </Button>
+                </Space>
+              </div>
+            </Form>
+          </Spin>
+        </div>
+      ),
+    } : null;
+
+    // 返回所有标签页，过滤掉null项
+    return [
+      ...baseItems,
+      aiPromptTab,
+      {
+        key: "notifications",
       label: (
         <span>
           <BellOutlined />
@@ -766,7 +937,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
       ),
     },
-  ];
+    ].filter(Boolean); // 过滤掉null项
+  };
+
+  // 获取动态生成的标签页项目
+  const tabItems = getTabItems();
 
   return (
     <Modal

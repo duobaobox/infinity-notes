@@ -19,6 +19,7 @@ import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "./types";
 import { useDatabase } from "../database";
 import { useAISettings } from "../hooks/useAISettings";
+import { useAIPromptSettings } from "../hooks/useAIPromptSettings";
 import { AIService } from "../services/aiService";
 import "./InfiniteCanvas.css";
 
@@ -117,6 +118,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   // AI设置Hook
   const { config: aiConfig, hasValidConfig, loading: aiLoading } = useAISettings();
 
+  // AI提示词设置Hook
+  const { promptConfig } = useAIPromptSettings(hasValidConfig);
+
   // 添加AI配置变化的调试日志
   useEffect(() => {
     console.log("🔄 AI配置更新:", {
@@ -130,10 +134,19 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     });
   }, [aiConfig, hasValidConfig, aiLoading]);
 
+  // 合并AI基础配置和提示词配置
+  const fullAIConfig = useMemo(() => {
+    return {
+      ...aiConfig,
+      systemPrompt: promptConfig.systemPrompt,
+      enableSystemPrompt: promptConfig.enableSystemPrompt,
+    };
+  }, [aiConfig, promptConfig]);
+
   // AI服务实例
   const aiService = useMemo(() => {
-    return new AIService(aiConfig);
-  }, [aiConfig]);
+    return new AIService(fullAIConfig);
+  }, [fullAIConfig]);
 
   // 使用数据库Hook管理便签
   const {
@@ -359,8 +372,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           return;
         }
 
-        console.log("🔧 更新AI服务配置:", aiConfig);
-        aiService.updateConfig(aiConfig);
+        console.log("🔧 更新AI服务配置:", {
+          ...fullAIConfig,
+          apiKey: fullAIConfig.apiKey ? "已设置" : "未设置",
+          enableSystemPrompt: fullAIConfig.enableSystemPrompt,
+          systemPrompt: fullAIConfig.systemPrompt ? "已设置" : "未设置"
+        });
+        aiService.updateConfig(fullAIConfig);
 
         // 立即创建第一个便签
         const noteId = `ai-streaming-note-${timestamp}-0`;
@@ -578,7 +596,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     },
     [
       aiService,
-      aiConfig,
+      fullAIConfig,
       canvasState,
       stickyNotes,
       addNote,
