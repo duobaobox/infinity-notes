@@ -6,8 +6,7 @@ export interface AIConfig {
   enableAI?: boolean; // 是否启用AI功能
   temperature?: number; // AI温度参数
   maxTokens?: number; // 最大token数
-  systemPrompt?: string; // 系统提示词（空字符串表示无提示词模式）
-  enableSystemPrompt?: boolean; // 保留字段以兼容旧配置，但不再使用
+  systemPrompt?: string; // 系统提示词（空字符串表示无提示词模式，有内容表示自定义prompt模式）
 }
 
 export interface AIMessage {
@@ -228,21 +227,21 @@ export class AIService {
 
       // 获取当前的系统提示词设置
       const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-      const isNoPromptMode = currentSystemPrompt === "";
+      const isNormalMode = currentSystemPrompt === "";
 
       // 调试日志：检查AI模式
       console.log("🎯 AI模式检查:", {
         systemPromptLength: currentSystemPrompt.length,
-        isNoPromptMode: isNoPromptMode,
-        mode: isNoPromptMode ? "无提示词模式" : "系统提示词模式"
+        isNormalMode: isNormalMode,
+        mode: isNormalMode ? "正常对话模式" : "自定义prompt模式"
       });
 
       // 根据提示词内容决定是否添加系统消息
-      if (!isNoPromptMode) {
+      if (!isNormalMode) {
         messages.push({ role: "system", content: currentSystemPrompt });
-        console.log("✅ 使用系统提示词模式，提示词长度:", currentSystemPrompt.length);
+        console.log("✅ 使用自定义prompt模式，提示词长度:", currentSystemPrompt.length);
       } else {
-        console.log("✅ 使用无提示词模式，直接与AI对话");
+        console.log("✅ 使用正常对话模式，直接与AI对话");
       }
 
       messages.push({ role: "user", content: prompt });
@@ -402,12 +401,12 @@ export class AIService {
         } else {
           // 解析失败，但流式内容已经显示，创建一个便签保存内容
           const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-          const isNoPromptMode = currentSystemPrompt === "";
+          const isNormalMode = currentSystemPrompt === "";
 
           const fallbackNote: StickyNoteData = {
             title: this.generateTitleFromContent(currentNoteContent || fullResponse),
             content: currentNoteContent || fullResponse,
-            color: isNoPromptMode ? "#e3f2fd" : "#fef3c7" // 无提示词模式使用蓝色，有提示词使用黄色
+            color: isNormalMode ? "#e3f2fd" : "#fef3c7" // 正常对话模式使用蓝色，自定义prompt模式使用黄色
           };
 
           callbacks.onNoteComplete?.(0, fallbackNote);
@@ -502,8 +501,8 @@ export class AIService {
 
           // 验证便签数据格式
           const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-          const isNoPromptMode = currentSystemPrompt === "";
-          const defaultColor = isNoPromptMode ? "#e3f2fd" : "#fef3c7";
+          const isNormalMode = currentSystemPrompt === "";
+          const defaultColor = isNormalMode ? "#e3f2fd" : "#fef3c7";
 
           const validNotes = notes
             .filter((note) => typeof note === "object" && note.title && note.content)
@@ -525,12 +524,12 @@ export class AIService {
 
       // 使用自然语言解析（现在是主要方式）
       const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-      const isNoPromptMode = currentSystemPrompt === "";
+      const isNormalMode = currentSystemPrompt === "";
 
       const note: StickyNoteData = {
         title: this.generateTitleFromContent(cleanResponse),
         content: cleanResponse,
-        color: isNoPromptMode ? "#e3f2fd" : "#fef3c7", // 无提示词模式使用蓝色，有提示词使用黄色
+        color: isNormalMode ? "#e3f2fd" : "#fef3c7", // 正常对话模式使用蓝色，自定义prompt模式使用黄色
       };
 
       console.log("✅ 自然语言解析成功:", {
@@ -648,7 +647,7 @@ let aiServiceInstance: AIService | null = null;
 const isConfigChanged = (newConfig: AIConfig, oldConfig: AIConfig): boolean => {
   // 比较关键配置字段
   const keyFields: (keyof AIConfig)[] = [
-    'apiUrl', 'apiKey', 'aiModel', 'temperature', 'maxTokens', 'systemPrompt', 'enableSystemPrompt'
+    'apiUrl', 'apiKey', 'aiModel', 'temperature', 'maxTokens', 'systemPrompt'
   ];
 
   const changedFields = keyFields.filter(field => newConfig[field] !== oldConfig[field]);
@@ -699,9 +698,9 @@ export const defaultSystemPrompt = `你是一个专业的个人助理，擅长�
 // 系统提示词预设模板
 export const systemPromptTemplates = [
   {
-    name: "无提示词模式",
-    description: "直接与AI对话，不添加任何角色设定和提示词",
-    prompt: "" // 空字符串表示无提示词
+    name: "正常对话模式",
+    description: "直接与AI对话，获得原始API回复，不添加任何角色设定",
+    prompt: "" // 空字符串表示正常对话模式
   },
   {
     name: "默认便签助手",
@@ -770,6 +769,5 @@ export const defaultAIConfig: AIConfig = {
   enableAI: true, // 默认启用（只要配置完整就可用）
   temperature: 0.7, // 默认温度值
   maxTokens: 1000, // 默认最大token数
-  systemPrompt: "", // 默认为无提示词模式
-  enableSystemPrompt: true, // 保留字段以兼容旧配置
+  systemPrompt: "", // 默认为无提示词模式（空字符串=正常API对话，有内容=自定义prompt回复）
 };
