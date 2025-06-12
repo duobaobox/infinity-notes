@@ -20,6 +20,7 @@ import {
   Alert,
   Dropdown,
   Tooltip,
+  Tag,
 } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -33,6 +34,7 @@ import {
   DownOutlined,
   FileTextOutlined,
   CopyOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import { useAISettings } from "../hooks/useAISettings";
 import { useAIPromptSettings } from "../hooks/useAIPromptSettings";
@@ -60,7 +62,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [dataForm] = Form.useForm();
   const [notificationForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
-  const [enableSystemPrompt, setEnableSystemPrompt] = useState(true); // 监听系统提示词开关状态
+  // 移除enableSystemPrompt状态，现在完全通过systemPrompt内容控制
 
   const {
     config: aiConfig,
@@ -112,7 +114,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       console.log("🎛️ SettingsModal: 更新提示词表单值", promptConfig);
       try {
         promptForm.setFieldsValue(promptConfig);
-        setEnableSystemPrompt(promptConfig.enableSystemPrompt !== false); // 更新开关状态
         console.log("🎛️ SettingsModal: 提示词表单值已更新");
       } catch (error) {
         console.warn("🎛️ SettingsModal: 更新提示词表单值失败", error);
@@ -142,6 +143,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 处理系统prompt模板选择（用于提示词标签页）
   const handleTemplateSelect = (templatePrompt: string) => {
+    console.log("🎛️ SettingsModal: 选择模板，提示词内容:", templatePrompt.substring(0, 50) + "...");
     promptForm.setFieldsValue({ systemPrompt: templatePrompt });
     message.success("已应用模板");
   };
@@ -182,16 +184,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 重置提示词为默认
+  // 重置提示词为无提示词模式
   const handleResetPromptToDefault = async () => {
-    console.log("🎛️ SettingsModal: 用户点击重置提示词为默认");
+    console.log("🎛️ SettingsModal: 用户点击重置为无提示词模式");
 
-    const success = await resetPromptToDefault();
-    if (success) {
-      message.success("已重置为默认提示词");
-      // 重新加载表单值
-      promptForm.setFieldsValue({ systemPrompt: promptConfig.systemPrompt });
-    } else {
+    // 直接设置为空字符串（无提示词模式）
+    promptForm.setFieldsValue({ systemPrompt: "" });
+
+    // 保存配置
+    try {
+      const success = await savePromptConfig({ systemPrompt: "" });
+      if (success) {
+        message.success("已重置为无提示词模式");
+      } else {
+        message.error("重置失败");
+      }
+    } catch (error) {
       message.error("重置失败");
     }
   };
@@ -700,7 +708,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               preserve={true}
               initialValues={{
                 systemPrompt: promptConfig.systemPrompt || "",
-                enableSystemPrompt: promptConfig.enableSystemPrompt !== false,
               }}
             >
               <Card size="small" style={{ marginBottom: 16 }}>
@@ -712,81 +719,80 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   定义AI助手的角色和行为规则，影响便签生成的格式和内容质量
                 </Text>
 
-                <Form.Item
-                  label="启用系统提示词"
-                  name="enableSystemPrompt"
-                  valuePropName="checked"
-                  extra="关闭后将使用原始AI模型进行对话，不添加任何角色设定"
-                  style={{ marginBottom: 24 }}
-                >
-                  <Switch
-                    checkedChildren="定制AI"
-                    unCheckedChildren="原始AI"
-                    onChange={(checked) => setEnableSystemPrompt(checked)}
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label={
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <Space>
-                      <span>系统提示词</span>
-                      <Dropdown
-                        menu={{
-                          items: systemPromptTemplates.map((template, index) => ({
-                            key: index,
-                            label: (
-                              <div style={{ maxWidth: 300 }}>
-                                <div style={{ fontWeight: 'bold' }}>{template.name}</div>
-                                <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
-                                  {template.description}
-                                </div>
-                              </div>
-                            ),
-                            onClick: () => handleTemplateSelect(template.prompt)
-                          }))
-                        }}
-                        placement="bottomLeft"
-                        disabled={!enableSystemPrompt}
-                      >
+                      <span style={{ fontWeight: 'bold' }}>AI模式选择</span>
+                      <Tooltip title="选择不同的AI交互模式">
                         <Button
                           size="small"
                           type="link"
-                          disabled={!enableSystemPrompt}
-                        >
-                          选择模板 <DownOutlined />
-                        </Button>
-                      </Dropdown>
-                      <Tooltip title="复制当前提示词">
-                        <Button
-                          size="small"
-                          type="link"
-                          icon={<CopyOutlined />}
-                          onClick={handleCopyPrompt}
-                          disabled={!enableSystemPrompt}
+                          icon={<QuestionCircleOutlined />}
                         />
                       </Tooltip>
                     </Space>
-                  }
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <Dropdown
+                      menu={{
+                        items: systemPromptTemplates.map((template, index) => ({
+                          key: index,
+                          label: (
+                            <div style={{ maxWidth: 350 }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+                                {template.name}
+                                {template.prompt === "" && (
+                                  <Tag size="small" color="blue" style={{ marginLeft: 8 }}>
+                                    推荐
+                                  </Tag>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>
+                                {template.description}
+                              </div>
+                            </div>
+                          ),
+                          onClick: () => handleTemplateSelect(template.prompt)
+                        }))
+                      }}
+                      placement="bottomLeft"
+                    >
+                      <Button type="primary" ghost>
+                        选择AI模式 <DownOutlined />
+                      </Button>
+                    </Dropdown>
+                    <Button
+                      style={{ marginLeft: 8 }}
+                      type="link"
+                      icon={<CopyOutlined />}
+                      onClick={handleCopyPrompt}
+                    >
+                      复制当前提示词
+                    </Button>
+                  </div>
+
+                  <Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
+                    选择预设模式或自定义系统提示词来定义AI助手的行为
+                  </Text>
+                </div>
+
+                <Form.Item
+                  label="系统提示词"
                   name="systemPrompt"
-                  extra={enableSystemPrompt
-                    ? "定义AI助手的角色和行为规则，留空将使用默认提示词"
-                    : "系统提示词已禁用，当前使用原始AI模型"
-                  }
+                  extra="留空表示无提示词模式（直接与AI对话），或输入自定义系统提示词"
                 >
                   <Input.TextArea
-                    rows={10}
-                    placeholder={enableSystemPrompt
-                      ? "请输入自定义的系统提示词，或点击上方'选择模板'使用预设模板..."
-                      : "系统提示词已禁用"
-                    }
+                    rows={8}
+                    placeholder="留空表示无提示词模式（直接与AI对话），或输入自定义系统提示词..."
                     style={{
                       fontFamily: 'monospace',
-                      fontSize: '13px',
-                      backgroundColor: enableSystemPrompt ? undefined : '#f5f5f5'
+                      fontSize: '13px'
                     }}
-                    disabled={!enableSystemPrompt}
                   />
                 </Form.Item>
+
+
               </Card>
 
               <div className="form-actions">
@@ -802,7 +808,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={handleResetPromptToDefault}
                     disabled={promptLoading}
                   >
-                    重置为默认
+                    重置为无提示词模式
                   </Button>
                 </Space>
               </div>

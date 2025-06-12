@@ -20,7 +20,7 @@ import type { StickyNote as StickyNoteType } from "./types";
 import { useDatabase } from "../database";
 import { useAISettings } from "../hooks/useAISettings";
 import { useAIPromptSettings } from "../hooks/useAIPromptSettings";
-import { AIService } from "../services/aiService";
+import { AIService, getAIService } from "../services/aiService";
 import "./InfiniteCanvas.css";
 
 // 生成智能标题的工具函数
@@ -134,6 +134,15 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     });
   }, [aiConfig, hasValidConfig, aiLoading]);
 
+  // 添加提示词配置变化的调试日志
+  useEffect(() => {
+    console.log("🎯 提示词配置更新:", {
+      systemPrompt: promptConfig.systemPrompt ? "已设置" : "未设置",
+      enableSystemPrompt: promptConfig.enableSystemPrompt,
+      systemPromptLength: promptConfig.systemPrompt?.length || 0
+    });
+  }, [promptConfig]);
+
   // 合并AI基础配置和提示词配置
   const fullAIConfig = useMemo(() => {
     return {
@@ -143,9 +152,17 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     };
   }, [aiConfig, promptConfig]);
 
-  // AI服务实例
+  // AI服务实例 - 使用单例模式确保配置更新及时生效
   const aiService = useMemo(() => {
-    return new AIService(fullAIConfig);
+    console.log("🔧 更新AI服务配置:", {
+      ...fullAIConfig,
+      apiKey: fullAIConfig.apiKey ? "已设置" : "未设置",
+      enableSystemPrompt: fullAIConfig.enableSystemPrompt,
+      systemPrompt: fullAIConfig.systemPrompt ? "已设置" : "未设置"
+    });
+
+    // 使用单例模式获取AI服务，确保配置更新能及时生效
+    return getAIService(fullAIConfig);
   }, [fullAIConfig]);
 
   // 使用数据库Hook管理便签
@@ -372,13 +389,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           return;
         }
 
-        console.log("🔧 更新AI服务配置:", {
+        console.log("🔧 使用AI服务配置:", {
           ...fullAIConfig,
           apiKey: fullAIConfig.apiKey ? "已设置" : "未设置",
           enableSystemPrompt: fullAIConfig.enableSystemPrompt,
           systemPrompt: fullAIConfig.systemPrompt ? "已设置" : "未设置"
         });
-        aiService.updateConfig(fullAIConfig);
+        // AI服务实例已经使用最新配置创建，无需手动更新
 
         // 立即创建第一个便签
         const noteId = `ai-streaming-note-${timestamp}-0`;

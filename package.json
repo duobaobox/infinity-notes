@@ -20,16 +20,14 @@
     "remark-gfm": "^4.0.1",
     "uuid": "^11.1.0",
     "ws": "^8.18.2"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.25.0",
+  },  "devDependencies": {
     "@types/lodash": "^4.17.17",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.4.1",
-    "eslint": "^9.25.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "typescript": "~5.8.3",

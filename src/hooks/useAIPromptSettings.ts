@@ -1,12 +1,11 @@
 // AI提示词设置管理Hook
 import { useState, useEffect, useCallback } from "react";
 import type { AIConfig } from "../services/aiService";
-import { defaultSystemPrompt } from "../services/aiService";
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../database/IndexedDBAISettingsStorage";
 
 export interface AIPromptConfig {
   systemPrompt: string;
-  enableSystemPrompt: boolean;
+  enableSystemPrompt?: boolean; // 保留字段以兼容旧配置，但不再使用
 }
 
 export interface UseAIPromptSettingsReturn {
@@ -21,7 +20,7 @@ export interface UseAIPromptSettingsReturn {
 
 export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSettingsReturn => {
   const [promptConfig, setPromptConfig] = useState<AIPromptConfig>({
-    systemPrompt: defaultSystemPrompt,
+    systemPrompt: "", // 默认为无提示词模式
     enableSystemPrompt: true,
   });
   const [loading, setLoading] = useState(false);
@@ -48,8 +47,8 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
       console.log("🎯 useAIPromptSettings: 完整配置加载成功", fullConfig);
 
       const extractedPromptConfig: AIPromptConfig = {
-        systemPrompt: fullConfig.systemPrompt || defaultSystemPrompt,
-        enableSystemPrompt: fullConfig.enableSystemPrompt !== false, // 默认启用
+        systemPrompt: fullConfig.systemPrompt || "", // 默认为空，表示无提示词模式
+        enableSystemPrompt: true, // 始终启用，通过systemPrompt内容控制模式
       };
 
       setPromptConfig(extractedPromptConfig);
@@ -57,8 +56,8 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
     } catch (err) {
       console.error("🎯 useAIPromptSettings: 加载提示词配置失败", err);
       setError(err instanceof Error ? err.message : "加载提示词配置失败");
-      // 加载失败时使用默认配置
-      setPromptConfig({ systemPrompt: defaultSystemPrompt });
+      // 加载失败时使用默认配置（无提示词模式）
+      setPromptConfig({ systemPrompt: "", enableSystemPrompt: true });
     } finally {
       setLoading(false);
     }
@@ -95,7 +94,14 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
         await AISettingsStorage.saveConfig(updatedConfig);
         console.log("🎯 useAIPromptSettings: 提示词配置保存成功");
 
+        // 立即更新本地状态，确保UI能立即反映最新配置
         setPromptConfig(newPromptConfig);
+
+        // 重新加载配置以确保数据一致性（异步执行，不影响返回结果）
+        setTimeout(() => {
+          loadPromptConfig();
+        }, 100);
+
         return true;
       } catch (err) {
         console.error("🎯 useAIPromptSettings: 保存提示词配置失败", err);
@@ -105,14 +111,14 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
         setLoading(false);
       }
     },
-    [hasValidAIConfig]
+    [hasValidAIConfig, loadPromptConfig]
   );
 
-  // 重置为默认提示词
+  // 重置为无提示词模式
   const resetToDefault = useCallback(async (): Promise<boolean> => {
     const defaultConfig: AIPromptConfig = {
-      systemPrompt: defaultSystemPrompt,
-      enableSystemPrompt: true, // 重置时默认启用
+      systemPrompt: "", // 重置为无提示词模式
+      enableSystemPrompt: true,
     };
     return await savePromptConfig(defaultConfig);
   }, [savePromptConfig]);
@@ -122,9 +128,9 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
     if (hasValidAIConfig) {
       loadPromptConfig();
     } else {
-      // AI配置无效时，清空提示词配置并重置为默认
+      // AI配置无效时，重置为无提示词模式
       setPromptConfig({
-        systemPrompt: defaultSystemPrompt,
+        systemPrompt: "", // 重置为无提示词模式
         enableSystemPrompt: true
       });
       setError(null);
