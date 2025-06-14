@@ -18,9 +18,11 @@ import {
   ClockCircleOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import { useDatabase, useCanvas, databaseEvents } from "../database";
 import type { Canvas } from "../database";
 import SettingsModal from "./SettingsModal";
+
+// 导入全局状态管理
+import { useStickyNotesStore, useUIStore } from "../stores";
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;
@@ -30,88 +32,74 @@ const Sidebar: React.FC = () => {
   const [selectedCanvas, setSelectedCanvas] = useState<string>("");
   const [noteSearchValue, setNoteSearchValue] = useState<string>("");
   const [collapsed, setCollapsed] = useState(false);
-  const [canvasList, setCanvasList] = useState<Canvas[]>([]);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
-  // 使用数据库Hook获取便签数据
+  // 使用全局状态管理获取便签数据和画布数据
   const {
     notes: stickyNotes,
     loading: notesLoading,
     error: notesError,
-  } = useDatabase();
-
-  // 使用Canvas Hook管理画布
-  const {
-    loading: canvasLoading,
-    getUserCanvases,
-    createCanvas: createCanvasAPI,
+    canvases: canvasList,
+    canvasLoading,
+    currentCanvasId,
     switchCanvas,
-  } = useCanvas();
+    loadCanvases,
+    createCanvas,
+  } = useStickyNotesStore();
 
-  // 加载画布列表
-  const loadCanvases = useCallback(async () => {
-    try {
-      const canvases = await getUserCanvases();
-      setCanvasList(canvases);
-
-      // 如果有画布且当前没有选中的画布，选中第一个
-      if (canvases.length > 0 && !selectedCanvas) {
-        const defaultCanvas =
-          canvases.find((c: Canvas) => c.is_default) || canvases[0];
-        setSelectedCanvas(defaultCanvas.id);
-        await switchCanvas(defaultCanvas.id);
-      }
-    } catch (error) {
-      console.error("加载画布失败:", error);
-      message.error("加载画布失败");
-    }
-  }, [selectedCanvas, getUserCanvases, switchCanvas]);
+  // 使用UI状态管理
+  const { openSettingsModal } = useUIStore();
 
   // 创建新画布
-  const createCanvas = useCallback(async () => {
+  const handleCreateCanvas = useCallback(async () => {
     try {
-      const canvasId = await createCanvasAPI(`画布 ${canvasList.length + 1}`);
-      await loadCanvases(); // 重新加载画布列表
+      const canvasId = await createCanvas(`画布 ${canvasList.length + 1}`);
       setSelectedCanvas(canvasId);
-      await switchCanvas(canvasId);
-      message.success("画布创建成功");
+      message.success("画布创建成功，点击画布名称切换到新画布");
     } catch (error) {
-      console.error("创建画布失败:", error);
+      console.error("❌ Sidebar: 创建画布失败:", error);
       message.error("创建画布失败");
     }
-  }, [canvasList.length, createCanvasAPI, loadCanvases, switchCanvas]);
+  }, [canvasList.length, createCanvas]);
 
   // 处理画布选择
   const handleCanvasSelect = useCallback(
     async (canvasId: string) => {
       if (canvasId !== selectedCanvas) {
-        setSelectedCanvas(canvasId);
-        await switchCanvas(canvasId);
+        try {
+          console.log("📋 Sidebar: 切换到画布:", canvasId);
+          setSelectedCanvas(canvasId);
+          await switchCanvas(canvasId);
+          console.log("✅ Sidebar: 画布切换成功");
+        } catch (error) {
+          console.error("❌ Sidebar: 画布切换失败:", error);
+          message.error("画布切换失败，请稍后重试");
+          // 如果切换失败，恢复之前的选择
+          setSelectedCanvas(selectedCanvas);
+        }
       }
     },
     [selectedCanvas, switchCanvas]
   );
 
-  // 初始化加载画布
+  // 组件初始化 - 设置当前选中的画布
   useEffect(() => {
-    loadCanvases();
-  }, [loadCanvases]);
+    if (currentCanvasId && !selectedCanvas) {
+      setSelectedCanvas(currentCanvasId);
+      console.log("📋 Sidebar: 设置当前画布:", currentCanvasId);
+    }
+  }, [currentCanvasId, selectedCanvas]);
 
-  // 监听数据库变化事件，实现实时同步
-  useEffect(() => {
-    const handleDataChange = () => {
-      // 当数据发生变化时，重新加载画布列表以更新便签数量
-      loadCanvases();
-    };
-
-    // 监听数据变化事件
-    databaseEvents.on("notesChanged", handleDataChange);
-
-    // 清理事件监听
-    return () => {
-      databaseEvents.off("notesChanged", handleDataChange);
-    };
-  }, [loadCanvases]);
+  // 注意：移除数据库事件监听，使用全局状态管理
+  // 便签数量变化会通过全局状态自动更新，不需要重新加载画布列表
+  // useEffect(() => {
+  //   const handleDataChange = () => {
+  //     loadCanvases();
+  //   };
+  //   databaseEvents.on("notesChanged", handleDataChange);
+  //   return () => {
+  //     databaseEvents.off("notesChanged", handleDataChange);
+  //   };
+  // }, [loadCanvases]);
 
   // 过滤便签数据（根据搜索关键词）
   const filteredNotes = stickyNotes.filter(
@@ -256,7 +244,7 @@ const Sidebar: React.FC = () => {
                     backgroundColor: "rgba(0, 0, 0, 0.02)",
                   }}
                   onClick={() => {
-                    setSettingsModalOpen(true);
+                    openSettingsModal('general');
                   }}
                 >
                   <span style={{ marginLeft: "8px" }}>设置</span>
@@ -294,7 +282,7 @@ const Sidebar: React.FC = () => {
                   <Button
                     type="dashed"
                     icon={<PlusOutlined />}
-                    onClick={createCanvas}
+                    onClick={handleCreateCanvas}
                     style={{
                       width: "100%",
                       borderRadius: "6px",
@@ -555,11 +543,7 @@ const Sidebar: React.FC = () => {
         </Splitter>
       )}
 
-      {/* 设置弹窗 */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onCancel={() => setSettingsModalOpen(false)}
-      />
+      {/* 设置弹窗现在由全局状态管理，在InfiniteCanvas中渲染 */}
     </Sider>
   );
 };

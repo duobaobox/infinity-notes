@@ -23,6 +23,7 @@ interface CanvasConsoleProps {
   onOpenAISettings?: () => void; // 新增：打开 AI 设置页面的回调
   placeholder?: string;
   disabled?: boolean;
+  isAIGenerating?: boolean; // 外部AI生成状态
 }
 
 interface CanvasConsoleRef {
@@ -38,6 +39,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       onOpenAISettings,
       placeholder = "输入文本AI生成便签，留空创建空白便签...",
       disabled = false,
+      isAIGenerating = false,
     },
     ref
   ) => {
@@ -48,6 +50,9 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
+
+    // 合并内部和外部的生成状态
+    const isCurrentlyGenerating = isGenerating || isAIGenerating;
 
     // 添加调试信息
     useEffect(() => {
@@ -106,12 +111,15 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     // 智能模式：有文本输入 → AI生成便签；无文本输入 → 手动创建空白便签
     const handleSend = async () => {
       // 防止重复调用
-      if (isGenerating) return;
+      if (isCurrentlyGenerating) return;
 
       // 如果没有文本输入，创建空白便签
       if (!inputValue.trim()) {
+        console.log('📝 控制台创建空白便签');
         if (onCreateNote) {
           onCreateNote();
+        } else {
+          console.warn('⚠️ onCreateNote 回调未定义');
         }
         return;
       }
@@ -143,7 +151,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       }
 
       // 防止重复调用
-      if (isGenerating) return;
+      if (isCurrentlyGenerating) return;
 
       // 直接调用AI生成（包括演示模式）
       if (onGenerateWithAI) {
@@ -178,12 +186,12 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             placement="top"
           >
             <Button
-              icon={isGenerating ? <LoadingOutlined /> : <RobotOutlined />}
+              icon={isCurrentlyGenerating ? <LoadingOutlined /> : <RobotOutlined />}
               type="primary"
               size="large"
               shape="circle"
               onClick={handleAIGenerate}
-              disabled={!inputValue.trim() || isGenerating || disabled}
+              disabled={!inputValue.trim() || isCurrentlyGenerating || disabled}
               className="console-button ai-button ai-enabled"
             />
           </Tooltip>
@@ -213,12 +221,12 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                     <Tooltip title="AI生成便签 (Enter)" placement="top">
                       <Button
                         icon={
-                          isGenerating ? <LoadingOutlined /> : <RobotOutlined />
+                          isCurrentlyGenerating ? <LoadingOutlined /> : <RobotOutlined />
                         }
                         type="primary"
                         size="small"
                         onClick={handleSend}
-                        disabled={disabled || isGenerating}
+                        disabled={disabled || isCurrentlyGenerating}
                         className="ai-send-button"
                       />
                     </Tooltip>

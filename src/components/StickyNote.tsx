@@ -626,6 +626,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         height: actualHeight,
         zIndex: note.zIndex,
       }}
+      onWheel={(e) => {
+        // 阻止滚轮事件冒泡到画布，避免在便签上滚动时触发画布缩放
+        e.stopPropagation();
+      }}
     >
       <div className="sticky-note-header">
         {/* 专门的拖拽区域 */}

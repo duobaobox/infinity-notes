@@ -11,6 +11,7 @@ export {
   getDatabaseAdapter,
   resetDatabase,
   databaseEvents,
+  initializeDatabase,
 } from "./useIndexedDB.js";
 
 // IndexedDB 服务层（用于高级功能）

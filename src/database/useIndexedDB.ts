@@ -74,7 +74,7 @@ export function isDatabaseInitialized(): boolean {
 /**
  * 初始化数据库
  */
-async function initializeDatabase(): Promise<void> {
+export async function initializeDatabase(): Promise<void> {
   const dbService = getDatabaseService();
   
   try {
@@ -169,8 +169,8 @@ export function useDatabase() {
       await adapter.addNote(note);
       setNotes((prev) => [...prev, note]);
 
-      // 触发数据变化事件，通知其他组件
-      databaseEvents.emit("notesChanged");
+      // 注意：不再触发事件，使用Zustand状态管理
+      // databaseEvents.emit("notesChanged");
     } catch (err) {
       console.error("添加便签失败:", err);
       setError(err instanceof Error ? err.message : "添加便签失败");
@@ -188,8 +188,8 @@ export function useDatabase() {
           prev.map((note) => (note.id === updatedNote.id ? updatedNote : note))
         );
 
-        // 触发数据变化事件，通知其他组件
-        databaseEvents.emit("notesChanged");
+        // 注意：不再触发事件，使用Zustand状态管理
+        // databaseEvents.emit("notesChanged");
       } catch (err) {
         console.error("更新便签失败:", err);
         setError(err instanceof Error ? err.message : "更新便签失败");
@@ -206,8 +206,8 @@ export function useDatabase() {
       await adapter.deleteNote(noteId);
       setNotes((prev) => prev.filter((note) => note.id !== noteId));
 
-      // 触发数据变化事件，通知其他组件
-      databaseEvents.emit("notesChanged");
+      // 注意：不再触发事件，使用Zustand状态管理
+      // databaseEvents.emit("notesChanged");
     } catch (err) {
       console.error("删除便签失败:", err);
       setError(err instanceof Error ? err.message : "删除便签失败");
@@ -359,8 +359,8 @@ export function useDatabase() {
       globalDbService = null;
       globalDbAdapter = null;
 
-      // 触发数据变化事件
-      databaseEvents.emit("notesChanged");
+      // 注意：不再触发事件，使用Zustand状态管理
+      // databaseEvents.emit("notesChanged");
 
       console.log("🗑️ 数据库已完全删除，开始重新初始化...");
 
@@ -390,26 +390,23 @@ export function useDatabase() {
     }
   }, []);
 
-  // 监听数据变化事件来刷新数据
-  useEffect(() => {
-    const handleNotesChange = async () => {
-      try {
-        const adapter = getDatabaseAdapter();
-        const updatedNotes = await adapter.getAllNotes();
-        setNotes(updatedNotes);
-      } catch (err) {
-        console.error("刷新便签数据失败:", err);
-      }
-    };
-
-    // 监听数据变化事件
-    databaseEvents.on("notesChanged", handleNotesChange);
-
-    // 清理函数
-    return () => {
-      databaseEvents.off("notesChanged", handleNotesChange);
-    };
-  }, []);
+  // 注意：禁用旧的事件监听系统，避免与新的Zustand状态管理冲突
+  // 现在使用Zustand Store直接管理状态，不需要事件驱动的数据刷新
+  // useEffect(() => {
+  //   const handleNotesChange = async () => {
+  //     try {
+  //       const adapter = getDatabaseAdapter();
+  //       const updatedNotes = await adapter.getAllNotes();
+  //       setNotes(updatedNotes);
+  //     } catch (err) {
+  //       console.error("刷新便签数据失败:", err);
+  //     }
+  //   };
+  //   databaseEvents.on("notesChanged", handleNotesChange);
+  //   return () => {
+  //     databaseEvents.off("notesChanged", handleNotesChange);
+  //   };
+  // }, []);
 
   return {
     // 新接口
@@ -453,8 +450,8 @@ export function useDatabase() {
       setCurrentCanvasId(canvasId);
       await refreshNotes();
 
-      // 触发数据变化事件，通知其他组件
-      databaseEvents.emit("notesChanged");
+      // 注意：不再触发事件，使用Zustand状态管理
+      // databaseEvents.emit("notesChanged");
     },
     isLoading: loading,
   };

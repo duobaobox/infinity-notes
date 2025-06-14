@@ -19,8 +19,10 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "uuid": "^11.1.0",
-    "ws": "^8.18.2"
-  },  "devDependencies": {
+    "ws": "^8.18.2",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
     "@types/lodash": "^4.17.17",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",

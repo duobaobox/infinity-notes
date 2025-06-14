@@ -6,6 +6,7 @@
   background-color: #f8fafc; /* 更柔和的背景色 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+  cursor: grab; /* 默认显示抓取光标 */
 
   /* 使用CSS变量存储关键值，便于JS访问和修改 */
   --canvas-scale: 1;
@@ -20,6 +21,11 @@
   will-change: transform;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 拖拽时的光标状态 */
+.infinite-canvas-container.dragging {
+  cursor: grabbing;
 }
 
 .canvas-toolbar {
@@ -60,13 +66,26 @@
   border-radius: 6px;
 }
 
+/* 画布背景区域 - 包含网格，不应用变换 */
+.canvas-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fafcff;
+  pointer-events: none; /* 允许点击穿透到画布 */
+  z-index: 1;
+}
+
 .infinite-canvas {
   width: 100%;
   height: 100%;
-  cursor: grab;
-  position: relative;
-  background-color: #fafcff;
-  transition: background-color 0.3s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2; /* 确保在网格之上 */
+  pointer-events: none; /* 让事件穿透到容器 */
 
   /* 性能优化 */
   will-change: transform;
@@ -78,8 +97,9 @@
   -webkit-backface-visibility: hidden;
 }
 
-.infinite-canvas:active {
-  cursor: grabbing;
+/* 便签恢复点击能力 */
+.infinite-canvas .sticky-note {
+  pointer-events: auto;
 }
 
 .canvas-content {
@@ -140,8 +160,8 @@
       transparent 1px
     ),
     linear-gradient(90deg, var(--small-grid-color) 1px, transparent 1px);
-  background-size: calc(var(--small-grid-size) * var(--canvas-scale))
-    calc(var(--small-grid-size) * var(--canvas-scale));
+  background-size: calc(max(var(--small-grid-size) * var(--canvas-scale), 5px))
+    calc(max(var(--small-grid-size) * var(--canvas-scale), 5px));
   background-position: var(--canvas-offset-x) var(--canvas-offset-y);
 }
 
@@ -152,8 +172,8 @@
       transparent 1px
     ),
     linear-gradient(90deg, var(--large-grid-color) 1px, transparent 1px);
-  background-size: calc(var(--large-grid-size) * var(--canvas-scale))
-    calc(var(--large-grid-size) * var(--canvas-scale));
+  background-size: calc(max(var(--large-grid-size) * var(--canvas-scale), 20px))
+    calc(max(var(--large-grid-size) * var(--canvas-scale), 20px));
   background-position: var(--canvas-offset-x) var(--canvas-offset-y);
 }
 
