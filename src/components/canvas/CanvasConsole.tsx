@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { Input, Button, Tooltip, message } from "antd";
 import {
-  SendOutlined,
   PlusOutlined,
   RobotOutlined,
   LoadingOutlined,
@@ -36,7 +35,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       onSendMessage,
       onCreateNote,
       onGenerateWithAI,
-      onOpenAISettings,
       placeholder = "输入文本AI生成便签，留空创建空白便签...",
       disabled = false,
       isAIGenerating = false,
@@ -144,30 +142,9 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       }
     };
 
-    const handleAIGenerate = async () => {
-      if (!inputValue.trim()) {
-        message.warning("请输入提示内容");
-        return;
-      }
 
-      // 防止重复调用
-      if (isCurrentlyGenerating) return;
 
-      // 直接调用AI生成（包括演示模式）
-      if (onGenerateWithAI) {
-        try {
-          setIsGenerating(true);
-          await onGenerateWithAI(inputValue);
-          setInputValue("");
-        } catch (error) {
-          message.error("AI生成失败，请检查配置或稍后重试");
-        } finally {
-          setIsGenerating(false);
-        }
-      }
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -179,24 +156,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
     return (
       <div className="canvas-console">
-        <div className={`console-container ${isFocused ? "focused" : ""}`}>
-          {/* 左侧AI按钮 */}
-          <Tooltip
-            title={hasValidConfig ? "AI智能生成便签" : "AI演示模式（点击体验流式效果）"}
-            placement="top"
-          >
-            <Button
-              icon={isCurrentlyGenerating ? <LoadingOutlined /> : <RobotOutlined />}
-              type="primary"
-              size="large"
-              shape="circle"
-              onClick={handleAIGenerate}
-              disabled={!inputValue.trim() || isCurrentlyGenerating || disabled}
-              className="console-button ai-button ai-enabled"
-            />
-          </Tooltip>
-
-          {/* 中央输入框 */}
+        <div className={`console-container ${isFocused ? "focused" : ""} ${isCurrentlyGenerating ? "ai-generating" : ""}`}>
+          {/* 输入框 */}
           <div className="console-input-container">
             <Input
               ref={inputRef}
@@ -208,7 +169,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                   triggerPreconnect();
                 }
               }}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder={placeholder}

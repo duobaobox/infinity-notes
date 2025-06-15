@@ -19,7 +19,6 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import type { Canvas } from "../../database";
-import SettingsModal from "../modals/SettingsModal";
 
 // 导入全局状态管理
 import { useStickyNotesStore, useUIStore } from "../../stores";
@@ -31,7 +30,7 @@ const Sidebar: React.FC = () => {
   const siderRef = useRef<HTMLDivElement>(null);
   const [selectedCanvas, setSelectedCanvas] = useState<string>("");
   const [noteSearchValue, setNoteSearchValue] = useState<string>("");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   // 使用全局状态管理获取便签数据和画布数据
   const {
@@ -42,7 +41,6 @@ const Sidebar: React.FC = () => {
     canvasLoading,
     currentCanvasId,
     switchCanvas,
-    loadCanvases,
     createCanvas,
   } = useStickyNotesStore();
 
@@ -103,7 +101,7 @@ const Sidebar: React.FC = () => {
 
   // 过滤便签数据（根据搜索关键词）
   const filteredNotes = stickyNotes.filter(
-    (note) =>
+    (note: { title: string; content: string }) =>
       note.title.toLowerCase().includes(noteSearchValue.toLowerCase()) ||
       note.content.toLowerCase().includes(noteSearchValue.toLowerCase())
   );
@@ -147,14 +145,14 @@ const Sidebar: React.FC = () => {
   };
 
   // 将便签转换为显示格式
-  const displayNotes = filteredNotes.map((note) => ({
+  const displayNotes = filteredNotes.map((note: { id: string; title: string; color: string; updatedAt: Date }) => ({
     id: note.id,
     title: note.title || "无标题便签",
     color: getColorHex(note.color),
     lastEdited: formatDate(note.updatedAt.toISOString()),
   }));
 
-  const currentCanvas = canvasList.find((c) => c.id === selectedCanvas);
+  const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);
 
   return (
     <Sider
@@ -310,7 +308,7 @@ const Sidebar: React.FC = () => {
                   locale={{
                     emptyText: "暂无画布，点击新建画布开始使用",
                   }}
-                  renderItem={(canvas) => {
+                  renderItem={(canvas: Canvas) => {
                     const isSelected = selectedCanvas === canvas.id;
                     const notesCount = getCanvasNotesCount(canvas.id);
 
@@ -477,7 +475,7 @@ const Sidebar: React.FC = () => {
                       ? "未找到匹配的便签"
                       : "暂无便签，双击画布或点击工具栏创建",
                   }}
-                  renderItem={(note) => (
+                  renderItem={(note: { color: string; title: string; lastEdited: string }) => (
                     <List.Item
                       style={{
                         padding: "6px 12px",
