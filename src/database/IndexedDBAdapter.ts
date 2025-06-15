@@ -307,22 +307,74 @@ export class IndexedDBAdapter {
     notes?: ComponentStickyNote[];
     tags?: any[];
   }): Promise<void> {
-    // 转换便签格式
-    let dbNotes: DbStickyNote[] | undefined;
-    if (data.notes) {
-      dbNotes = data.notes.map((note) => ({
-        ...this.componentNoteToDbNote(note),
-        created_at: note.createdAt.toISOString(),
-        updated_at: note.updatedAt.toISOString(),
-      }));
-    }
+    try {
+      // 验证数据格式
+      if (!data || typeof data !== 'object') {
+        throw new Error('导入数据格式无效');
+      }
 
-    await this.dbService.importData({
-      users: data.users,
-      canvases: data.canvases,
-      notes: dbNotes,
-      tags: data.tags,
-    });
+      // 转换便签格式
+      let dbNotes: DbStickyNote[] | undefined;
+      if (data.notes && Array.isArray(data.notes)) {
+        dbNotes = data.notes.map((note, index) => {
+          try {
+            // 验证必要字段
+            if (!note.id || typeof note.id !== 'string') {
+              throw new Error(`便签 ${index + 1} 缺少有效的ID字段`);
+            }
+
+            // 安全地处理日期字段 - 确保转换为Date对象再调用toISOString
+            let createdAt: Date;
+            let updatedAt: Date;
+
+            try {
+              createdAt = note.createdAt instanceof Date
+                ? note.createdAt
+                : new Date(note.createdAt);
+
+              if (isNaN(createdAt.getTime())) {
+                throw new Error('创建时间格式无效');
+              }
+            } catch (error) {
+              console.warn(`便签 ${note.id} 的创建时间无效，使用当前时间`, error);
+              createdAt = new Date();
+            }
+
+            try {
+              updatedAt = note.updatedAt instanceof Date
+                ? note.updatedAt
+                : new Date(note.updatedAt);
+
+              if (isNaN(updatedAt.getTime())) {
+                throw new Error('更新时间格式无效');
+              }
+            } catch (error) {
+              console.warn(`便签 ${note.id} 的更新时间无效，使用当前时间`, error);
+              updatedAt = new Date();
+            }
+
+            return {
+              ...this.componentNoteToDbNote(note),
+              created_at: createdAt.toISOString(),
+              updated_at: updatedAt.toISOString(),
+            };
+          } catch (error) {
+            console.error(`处理便签 ${index + 1} 时出错:`, error);
+            throw new Error(`便签 ${index + 1} 数据格式错误: ${error instanceof Error ? error.message : '未知错误'}`);
+          }
+        });
+      }
+
+      await this.dbService.importData({
+        users: data.users,
+        canvases: data.canvases,
+        notes: dbNotes,
+        tags: data.tags,
+      });
+    } catch (error) {
+      console.error('导入数据失败:', error);
+      throw error instanceof Error ? error : new Error('导入数据时发生未知错误');
+    }
   }
 
   /**

@@ -1,0 +1,76 @@
+{
+  "users": [
+    {
+      "id": "default_user",
+      "username": "测试用户",
+      "email": "test@example.com",
+      "display_name": "测试用户",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "canvases": [
+    {
+      "id": "canvas_default_user_default",
+      "user_id": "default_user",
+      "name": "测试画布",
+      "description": "这是一个测试画布",
+      "is_default": true,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z",
+      "last_accessed": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "test-note-1",
+      "x": 100,
+      "y": 100,
+      "width": 200,
+      "height": 200,
+      "content": "这是第一个测试便签",
+      "title": "测试便签1",
+      "isEditing": false,
+      "isTitleEditing": false,
+      "isNew": false,
+      "color": "yellow",
+      "zIndex": 1,
+      "createdAt": "2024-01-01T10:00:00.000Z",
+      "updatedAt": "2024-01-01T10:00:00.000Z"
+    },
+    {
+      "id": "test-note-2",
+      "x": 350,
+      "y": 150,
+      "width": 200,
+      "height": 200,
+      "content": "这是第二个测试便签\n支持多行文本",
+      "title": "测试便签2",
+      "isEditing": false,
+      "isTitleEditing": false,
+      "isNew": false,
+      "color": "blue",
+      "zIndex": 2,
+      "createdAt": "2024-01-01T11:00:00.000Z",
+      "updatedAt": "2024-01-01T11:00:00.000Z"
+    },
+    {
+      "id": "test-note-3",
+      "x": 200,
+      "y": 350,
+      "width": 250,
+      "height": 180,
+      "content": "这是第三个测试便签，用于验证导入功能",
+      "title": "导入测试",
+      "isEditing": false,
+      "isTitleEditing": false,
+      "isNew": false,
+      "color": "green",
+      "zIndex": 3,
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2024-01-01T12:00:00.000Z"
+    }
+  ],
+  "tags": [],
+  "exportDate": "2024-01-01T12:00:00.000Z"
+}

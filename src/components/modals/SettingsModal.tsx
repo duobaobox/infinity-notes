@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Tabs,
@@ -19,6 +19,12 @@ import {
   message,
   Spin,
   Alert,
+  Upload,
+  Progress,
+  Statistic,
+  Popconfirm,
+  Row,
+  Col,
 } from "antd";
 import {
   UserOutlined,
@@ -27,10 +33,17 @@ import {
   SafetyOutlined,
   InfoCircleOutlined,
   RobotOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+  DatabaseOutlined,
+  FileTextOutlined,
+  HddOutlined,
 } from "@ant-design/icons";
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import { useUIStore, PRESET_THEMES } from "../../stores/uiStore";
+import { useDatabase } from "../../database";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
@@ -50,8 +63,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [aiForm] = Form.useForm();
   const [promptForm] = Form.useForm();
   const [appearanceForm] = Form.useForm();
-  const [dataForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // 数据管理相关状态
+  const [dataStats, setDataStats] = useState<{
+    notesCount: number;
+    canvasesCount: number;
+    storageUsed: number;
+    storageTotal: number;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
 
   // 使用UIStore获取和设置外观、通用设置
   const {
@@ -73,6 +96,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     hasValidConfig,
   } = useAISettings();
 
+  // 数据库操作Hook
+  const {
+    exportData,
+    importData,
+    getStorageInfo,
+    getStats,
+    clearDatabase,
+  } = useDatabase();
+
   // AI提示词设置Hook
   const {
     promptConfig,
@@ -81,6 +113,92 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     savePromptConfig,
     canConfigurePrompt,
   } = useAIPromptSettings(hasValidConfig);
+
+  // 加载数据统计信息
+  const loadDataStats = async () => {
+    try {
+      setLoadingStats(true);
+      const [stats, storageInfo] = await Promise.all([
+        getStats(),
+        getStorageInfo(),
+      ]);
+
+      setDataStats({
+        notesCount: stats.totalNotes,
+        canvasesCount: stats.notesByCanvas?.length || 0,
+        storageUsed: storageInfo.used,
+        storageTotal: storageInfo.total,
+      });
+    } catch (error) {
+      console.error('加载数据统计失败:', error);
+      message.error('加载数据统计失败');
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  // 导出数据
+  const handleExportData = async () => {
+    try {
+      setExportLoading(true);
+      await exportData();
+      message.success('数据导出成功！');
+    } catch (error) {
+      console.error('导出数据失败:', error);
+      message.error('导出数据失败');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // 导入数据
+  const handleImportData = async (file: File) => {
+    try {
+      setImportLoading(true);
+
+      // 验证文件类型
+      if (!file.name.endsWith('.json')) {
+        throw new Error('请选择JSON格式的文件');
+      }
+
+      // 验证文件大小（限制为10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('文件大小不能超过10MB');
+      }
+
+      await importData(file);
+      message.success('数据导入成功！页面将自动刷新以显示最新数据。');
+
+      // 重新加载统计信息
+      await loadDataStats();
+    } catch (error) {
+      console.error('导入数据失败:', error);
+      const errorMessage = error instanceof Error ? error.message : '导入数据失败，请检查文件格式';
+      message.error(errorMessage);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  // 清空所有数据
+  const handleClearAllData = async () => {
+    try {
+      await clearDatabase();
+      message.success('所有数据已清空！');
+      // 重新加载统计信息
+      await loadDataStats();
+    } catch (error) {
+      console.error('清空数据失败:', error);
+      message.error('清空数据失败');
+    }
+  };
+
+  // 当模态框打开时加载数据统计
+  useEffect(() => {
+    if (open) {
+      loadDataStats();
+    }
+  }, [open]);
 
   // 当aiConfig变化时，更新AI基础配置表单的值（只在模态框打开时）
   React.useEffect(() => {
@@ -571,70 +689,115 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       key: "data",
       label: (
         <span>
-          <SafetyOutlined />
+          <DatabaseOutlined />
           数据管理
         </span>
       ),
       children: (
         <div className="settings-modal-content">
-          <Form
-            form={dataForm}
-            layout="vertical"
-            initialValues={{
-              autoBackup: true,
-              backupFrequency: "daily",
-              maxBackups: 10,
-            }}
-          >
+          <Spin spinning={loadingStats}>
+            {/* 数据统计信息 */}
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                备份设置
+                <HddOutlined style={{ marginRight: 8 }} />
+                数据统计
               </Title>
-              <Form.Item
-                label="自动备份"
-                name="autoBackup"
-                valuePropName="checked"
-                extra="定期自动备份您的数据"
-              >
-                <Switch />
-              </Form.Item>
+              {dataStats && (
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Statistic
+                      title="便签数量"
+                      value={dataStats.notesCount}
+                      prefix={<FileTextOutlined />}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="画布数量"
+                      value={dataStats.canvasesCount}
+                      prefix={<SafetyOutlined />}
+                    />
+                  </Col>
+                </Row>
+              )}
 
-              <Form.Item label="备份频率" name="backupFrequency">
-                <Select>
-                  <Option value="realtime">实时备份</Option>
-                  <Option value="daily">每日备份</Option>
-                  <Option value="weekly">每周备份</Option>
-                  <Option value="monthly">每月备份</Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item label="最大备份数量" name="maxBackups">
-                <InputNumber min={1} max={50} style={{ width: "100%" }} />
-              </Form.Item>
+              {dataStats && dataStats.storageTotal > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <Text type="secondary">存储使用情况</Text>
+                  <Progress
+                    percent={Math.round((dataStats.storageUsed / dataStats.storageTotal) * 100)}
+                    format={() => `${(dataStats.storageUsed / 1024 / 1024).toFixed(2)} MB`}
+                    style={{ marginTop: 8 }}
+                  />
+                </div>
+              )}
             </Card>
 
+            {/* 数据操作 */}
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
                 数据操作
               </Title>
-              <Space direction="vertical" style={{ width: "100%" }}>
-                <Button type="primary" ghost style={{ width: "100%" }}>
+              <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={handleExportData}
+                  loading={exportLoading}
+                  style={{ width: "100%" }}
+                >
                   导出所有数据
                 </Button>
-                <Button style={{ width: "100%" }}>导入数据</Button>
-                <Divider />
-                <Button danger style={{ width: "100%" }}>
-                  清空所有数据
-                </Button>
+
+                <Upload
+                  accept=".json"
+                  showUploadList={false}
+                  beforeUpload={(file) => {
+                    handleImportData(file);
+                    return false; // 阻止自动上传
+                  }}
+                  disabled={importLoading}
+                >
+                  <Button
+                    icon={<UploadOutlined />}
+                    loading={importLoading}
+                    style={{ width: "100%" }}
+                  >
+                    导入数据
+                  </Button>
+                </Upload>
+
+                <Divider style={{ margin: "8px 0" }} />
+
+                <Popconfirm
+                  title="确认清空所有数据？"
+                  description="此操作将删除所有便签、画布和设置，且不可恢复！"
+                  onConfirm={handleClearAllData}
+                  okText="确认清空"
+                  cancelText="取消"
+                  okType="danger"
+                >
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    style={{ width: "100%" }}
+                  >
+                    清空所有数据
+                  </Button>
+                </Popconfirm>
               </Space>
-              <Text
-                type="secondary"
-                style={{ fontSize: 12, marginTop: 8, display: "block" }}
-              >
-                ⚠️ 清空数据操作不可恢复，请谨慎操作
-              </Text>
+
+              <Alert
+                message="数据说明"
+                description="• 导出：将所有数据保存为JSON文件到本地
+• 导入：从JSON文件恢复数据（会覆盖现有数据）
+• 清空：删除所有数据，恢复到初始状态"
+                type="info"
+                showIcon
+                style={{ marginTop: 16 }}
+              />
             </Card>
-          </Form>
+          </Spin>
         </div>
       ),
     },
@@ -934,7 +1097,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     promptError,
     canConfigurePrompt,
     handleSavePromptConfig,
-    handleResetPromptToDefault
+    handleResetPromptToDefault,
+    // 数据管理相关依赖
+    dataStats,
+    loadingStats,
+    exportLoading,
+    importLoading,
+    handleExportData,
+    handleImportData,
+    handleClearAllData,
   ]);
 
   return (

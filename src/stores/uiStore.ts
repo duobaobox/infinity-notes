@@ -250,7 +250,6 @@ export const PRESET_THEMES: PresetTheme[] = [
 ];
 
 // 生成唯一ID
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 // 检测系统主题
 const getSystemTheme = (): boolean => {
