@@ -25,7 +25,6 @@ import {
   SettingOutlined,
   SkinOutlined,
   SafetyOutlined,
-  BellOutlined,
   InfoCircleOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
@@ -47,13 +46,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   open,
   onClose,
   defaultActiveTab = "general",
-}) => {
-  const [form] = Form.useForm();
+}) => {  const [form] = Form.useForm();
   const [aiForm] = Form.useForm();
   const [promptForm] = Form.useForm();
   const [appearanceForm] = Form.useForm();
   const [dataForm] = Form.useForm();
-  const [notificationForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
 
   // 使用UIStore获取和设置外观、通用设置
@@ -887,126 +884,37 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       ...baseItems,
       aiPromptTab,
       {
-        key: "notifications",
-      label: (
-        <span>
-          <BellOutlined />
-          通知设置
-        </span>
-      ),
-      children: (
-        <div className="settings-modal-content">
-          <Form
-            form={notificationForm}
-            layout="vertical"
-            initialValues={{
-              enableNotifications: true,
-              notifyOnSync: true,
-              notifyOnBackup: true,
-              notifyOnShare: true,
-              soundEnabled: true,
-              notificationSound: "default",
-            }}
-          >
+        key: "about",
+        label: (
+          <span>
+            <InfoCircleOutlined />
+            关于
+          </span>
+        ),
+        children: (
+          <div className="settings-modal-content">
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                通知选项
+                应用信息
               </Title>
-              <Form.Item
-                label="启用通知"
-                name="enableNotifications"
-                valuePropName="checked"
-                extra="允许应用发送系统通知"
-              >
-                <Switch />
-              </Form.Item>
-
-              <Form.Item
-                label="同步通知"
-                name="notifyOnSync"
-                valuePropName="checked"
-                extra="数据同步完成时通知"
-              >
-                <Switch />
-              </Form.Item>
-
-              <Form.Item
-                label="备份通知"
-                name="notifyOnBackup"
-                valuePropName="checked"
-                extra="自动备份完成时通知"
-              >
-                <Switch />
-              </Form.Item>
-
-              <Form.Item
-                label="分享通知"
-                name="notifyOnShare"
-                valuePropName="checked"
-                extra="内容被分享时通知"
-              >
-                <Switch />
-              </Form.Item>
+              <p>
+                <strong>便签画布</strong>{" "}
+                是一款创新的无限画布便签应用，让您自由组织思路和灵感。
+              </p>
+              <p>版本: 1.0.0</p>
+              <Divider />
+              <p>
+                <strong>开发者:</strong> 便签画布团队
+              </p>
+              <p>
+                <strong>联系我们:</strong> support@notes-canvas-app.example.com
+              </p>
+              <Divider />
+              <p>© 2023 便签画布. 保留所有权利.</p>
             </Card>
-
-            <Card size="small" style={{ marginBottom: 16 }}>
-              <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                声音设置
-              </Title>
-              <Form.Item
-                label="启用提示音"
-                name="soundEnabled"
-                valuePropName="checked"
-                extra="操作时播放提示音"
-              >
-                <Switch />
-              </Form.Item>
-
-              <Form.Item label="提示音选择" name="notificationSound">
-                <Select>
-                  <Option value="default">默认提示音</Option>
-                  <Option value="chime">清脆提示音</Option>
-                  <Option value="bell">铃声提示音</Option>
-                  <Option value="none">静音</Option>
-                </Select>
-              </Form.Item>
-            </Card>
-          </Form>
-        </div>
-      ),
-    },
-    {
-      key: "about",
-      label: (
-        <span>
-          <InfoCircleOutlined />
-          关于
-        </span>
-      ),
-      children: (
-        <div className="settings-modal-content">
-          <Card size="small" style={{ marginBottom: 16 }}>
-            <Title level={5} style={{ margin: "0 0 16px 0" }}>
-              应用信息
-            </Title>
-            <p>
-              <strong>便签画布</strong>{" "}
-              是一款创新的无限画布便签应用，让您自由组织思路和灵感。
-            </p>
-            <p>版本: 1.0.0</p>
-            <Divider />
-            <p>
-              <strong>开发者:</strong> 便签画布团队
-            </p>
-            <p>
-              <strong>联系我们:</strong> support@notes-canvas-app.example.com
-            </p>
-            <Divider />
-            <p>© 2023 便签画布. 保留所有权利.</p>
-          </Card>
-        </div>
-      ),
-    },
+          </div>
+        ),
+      },
     ].filter(Boolean) as TabsProps['items']; // 添加类型断言
   }, [
     general,

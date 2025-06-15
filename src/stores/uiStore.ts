@@ -21,18 +21,6 @@ export interface SearchState {
   isSearching: boolean;
 }
 
-// 通知状态接口
-export interface NotificationState {
-  notifications: Array<{
-    id: string;
-    type: 'success' | 'error' | 'warning' | 'info';
-    title: string;
-    message: string;
-    duration?: number;
-    timestamp: Date;
-  }>;
-}
-
 // 主题状态接口
 export interface ThemeState {
   theme: 'light' | 'dark' | 'auto';
@@ -67,9 +55,6 @@ export interface UIState {
   
   // 搜索状态
   search: SearchState;
-  
-  // 通知状态
-  notifications: NotificationState;
   
   // 主题状态
   theme: ThemeState;
@@ -109,11 +94,6 @@ export interface UIActions {
   setSearchResults: (results: SearchState['searchResults']) => void;
   setSearching: (isSearching: boolean) => void;
   clearSearch: () => void;
-  
-  // 通知操作
-  addNotification: (notification: Omit<NotificationState['notifications'][0], 'id' | 'timestamp'>) => string;
-  removeNotification: (id: string) => void;
-  clearNotifications: () => void;
   
   // 主题操作
   setTheme: (theme: ThemeState['theme']) => void;
@@ -295,9 +275,6 @@ export const useUIStore = create<UIState & UIActions>()(
         searchResults: [],
         isSearching: false,
       },
-      notifications: {
-        notifications: [],
-      },
       theme: {
         theme: 'auto',
         isDarkMode: getSystemTheme(),
@@ -386,44 +363,6 @@ export const useUIStore = create<UIState & UIActions>()(
         }));
       },
 
-      // 通知操作
-      addNotification: (notification) => {
-        const id = generateId();
-        const newNotification = {
-          ...notification,
-          id,
-          timestamp: new Date(),
-        };
-        
-        set(state => ({
-          notifications: {
-            notifications: [...state.notifications.notifications, newNotification]
-          }
-        }));
-        
-        // 自动移除通知（如果设置了duration）
-        if (notification.duration && notification.duration > 0) {
-          setTimeout(() => {
-            get().removeNotification(id);
-          }, notification.duration);
-        }
-        
-        return id;
-      },
-
-      removeNotification: (id) => {
-        set(state => ({
-          notifications: {
-            notifications: state.notifications.notifications.filter(n => n.id !== id)
-          }
-        }));
-      },
-
-      clearNotifications: () => {
-        set(_state => ({
-          notifications: { notifications: [] }
-        }));
-      },
 
       // 主题操作
       setTheme: (theme) => {
