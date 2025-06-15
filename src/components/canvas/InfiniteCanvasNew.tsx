@@ -15,7 +15,7 @@ import CanvasConsole from "./CanvasConsole";
 import StickyNote from "../notes/StickyNote";
 import SearchModal from "../modals/SearchModal";
 import SettingsModal from "../modals/SettingsModal";
-import { CANVAS_CONSTANTS, GRID_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
+import { CANVAS_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "../types";
 import "./InfiniteCanvas.css";
 
@@ -46,42 +46,7 @@ const shouldIgnoreCanvasEvent = (target: HTMLElement): boolean => {
   );
 };
 
-// 生成智能标题的工具函数
-const generateSmartTitle = (prompt: string): string => {
-  if (!prompt || prompt.trim().length === 0) {
-    return "AI思考中...";
-  }
 
-  // 清理prompt，移除多余的空格和换行
-  const cleanPrompt = prompt.trim().replace(/\s+/g, ' ');
-
-  // 根据prompt内容生成智能标题
-  const keywords = [
-    { patterns: ['学习', '教程', '课程', '知识'], prefix: '学习' },
-    { patterns: ['计划', '安排', '规划', '目标'], prefix: '计划' },
-    { patterns: ['想法', '创意', '点子', '灵感'], prefix: '想法' },
-    { patterns: ['工作', '任务', '项目', '开发'], prefix: '工作' },
-    { patterns: ['问题', '疑问', '困惑', '求助'], prefix: '问题' },
-    { patterns: ['总结', '回顾', '梳理', '整理'], prefix: '总结' },
-  ];
-
-  // 查找匹配的关键词
-  for (const keyword of keywords) {
-    if (keyword.patterns.some(pattern => cleanPrompt.includes(pattern))) {
-      const preview = cleanPrompt.length > 15
-        ? cleanPrompt.substring(0, 15) + '...'
-        : cleanPrompt;
-      return `${keyword.prefix}：${preview}`;
-    }
-  }
-
-  // 如果没有匹配的关键词，使用通用格式
-  const preview = cleanPrompt.length > 20
-    ? cleanPrompt.substring(0, 20) + '...'
-    : cleanPrompt;
-
-  return preview;
-};
 
 // 颜色转换工具函数 - 将十六进制颜色转换为便签颜色名称
 const convertColorToNoteName = (color?: string): StickyNoteType["color"] => {
@@ -128,13 +93,10 @@ interface InfiniteCanvasRef {
 const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const consoleRef = useRef<any>(null);
-  const requestRef = useRef<number | null>(null);
 
   // 全局状态管理 - 便签状态
   const {
     notes: stickyNotes,
-    loading: notesLoading,
-    error: notesError,
     streamingNotes,
     addNote,
     updateNote,
@@ -145,7 +107,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     updateStreamingContent,
     finishStreamingNote,
     cancelStreamingNote,
-    initialize: initializeStickyNotes,
   } = useStickyNotesStore();
 
   // 全局状态管理 - 画布状态
@@ -157,28 +118,20 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     zoomAnimating,
     zoomIn,
     zoomOut,
-    setScale,
-    setOffset,
     startDrag,
     updateDrag,
     endDrag,
     resetView,
-    screenToCanvas,
-    canvasToScreen,
-    setZoomAnimating,
     getCanvasCenter,
   } = useCanvasStore();
 
   // 全局状态管理 - AI状态
   const {
-    config: aiConfig,
     hasValidConfig,
-    loading: aiLoading,
     isGenerating: isAIGenerating,
     startGeneration,
     finishGeneration,
     getFullConfig,
-    initialize: initializeAI,
   } = useAIStore();
 
   // 全局状态管理 - UI状态
@@ -188,7 +141,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     closeSearchModal,
     openSettingsModal,
     closeSettingsModal,
-    initialize: initializeUI,
   } = useUIStore();
 
   // 获取完整AI配置
@@ -380,7 +332,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           console.log(`📝 便签 ${index} 开始生成:`, title);
           // AI便签标题保持固定，不需要更新
         },
-        onContentChunk: (index, chunk, fullContent) => {
+        onContentChunk: (_index, _chunk, fullContent) => {
           // 更新流式内容
           updateStreamingContent(addedNote.id, fullContent);
         },

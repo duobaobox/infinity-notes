@@ -82,7 +82,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     loading: promptLoading,
     error: promptError,
     savePromptConfig,
-    resetToDefault: resetPromptToDefault,
     canConfigurePrompt,
   } = useAIPromptSettings(hasValidConfig);
 
@@ -206,7 +205,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   // 处理通用设置变化
-  const handleGeneralChange = React.useCallback((changedFields: any, allFields: any) => {
+  const handleGeneralChange = React.useCallback((_changedFields: any, allFields: any) => {
     // 实时保存通用设置
     const { theme: themeValue, ...generalSettings } = allFields;
 
@@ -257,7 +256,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   }, []);
 
   // 处理外观设置变化
-  const handleAppearanceChange = React.useCallback((changedFields: any, allFields: any) => {
+  const handleAppearanceChange = React.useCallback((_changedFields: any, allFields: any) => {
     // 处理ColorPicker的值转换
     const processedFields = { ...allFields };
 

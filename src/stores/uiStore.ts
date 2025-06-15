@@ -420,7 +420,7 @@ export const useUIStore = create<UIState & UIActions>()(
       },
 
       clearNotifications: () => {
-        set(state => ({
+        set(_state => ({
           notifications: { notifications: [] }
         }));
       },
@@ -545,7 +545,7 @@ export const useUIStore = create<UIState & UIActions>()(
         };
 
         // 直接更新状态，不通过setAppearance避免重复保存
-        set(state => ({
+        set(_state => ({
           appearance: newAppearance
         }));
 

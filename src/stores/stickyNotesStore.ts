@@ -4,9 +4,7 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import type { StickyNote } from '../components/types';
 import type { Canvas } from '../database';
 import {
-  useDatabase as useIndexedDB,
   getDatabaseAdapter,
-  databaseEvents,
   initializeDatabase
 } from '../database';
 
@@ -34,7 +32,7 @@ export interface StickyNotesState {
 // 便签操作接口
 export interface StickyNotesActions {
   // 基础CRUD操作
-  addNote: (note: Omit<StickyNote, 'id' | 'createdAt' | 'updatedAt'>) => Promise<StickyNote>;
+  addNote: (note: Partial<Omit<StickyNote, 'id' | 'createdAt' | 'updatedAt'>> & Pick<StickyNote, 'x' | 'y' | 'content'>) => Promise<StickyNote>;
   updateNote: (id: string, updates: Partial<StickyNote>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   bringNoteToFront: (id: string) => Promise<void>;
@@ -82,12 +80,19 @@ export const useStickyNotesStore = create<StickyNotesState & StickyNotesActions>
         try {
           set({ operationLoading: true, error: null });
 
-          // 使用传入的便签数据，不重新生成ID
+          // 创建新便签对象，使用默认值和传入的数据
           const newNote: StickyNote = {
+            id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            width: 200,
+            height: 200,
+            color: 'yellow',
+            title: '',
+            isEditing: false,
+            isTitleEditing: false,
+            isNew: false,
+            zIndex: 1,
             ...noteData,
-            // 如果没有ID，则生成一个新的
-            id: noteData.id || `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            createdAt: noteData.createdAt || new Date(),
+            createdAt: new Date(),
             updatedAt: new Date(),
           };
 
@@ -191,12 +196,17 @@ export const useStickyNotesStore = create<StickyNotesState & StickyNotesActions>
           set({ loading: true, error: null });
           
           const adapter = getDatabaseAdapter();
-          await adapter.clearAllNotes();
+          const notes = get().notes;
           
-          set({ 
-            notes: [], 
+          // 逐个删除所有便签
+          for (const note of notes) {
+            await adapter.deleteNote(note.id);
+          }
+          
+          set({
+            notes: [],
             streamingNotes: new Map(),
-            loading: false 
+            loading: false
           });
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : '清空便签失败';

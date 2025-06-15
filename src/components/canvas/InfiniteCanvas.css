@@ -2,7 +2,7 @@
   position: relative;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow: visible; /* 修复：允许便签显示在容器边界外 */
   background-color: #f8fafc; /* 更柔和的背景色 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
@@ -23,6 +23,10 @@
   will-change: transform;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 修复：强制创建新的层叠上下文，确保子元素不被裁剪 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 /* 拖拽时的光标状态 */
@@ -84,6 +88,8 @@
   }
   pointer-events: none; /* 允许点击穿透到画布 */
   z-index: 1;
+  /* 确保背景不会裁剪内容 */
+  overflow: visible;
 }
 
 .infinite-canvas {
@@ -95,6 +101,8 @@
   z-index: 2; /* 确保在网格之上 */
   pointer-events: none; /* 让事件穿透到容器 */
   transform-origin: 0 0;
+  /* 确保便签可以显示在画布边界外 */
+  overflow: visible;
 
   /* 性能优化 - GPU加速 */
   will-change: transform;
@@ -104,9 +112,9 @@
   -webkit-perspective: 1000px;
   -webkit-backface-visibility: hidden;
 
-  /* 额外的性能优化 */
-  contain: layout style paint;
-  isolation: isolate;
+  /* 额外的性能优化 - 完全移除containment以避免裁剪问题 */
+  /* contain: layout style; */
+  /* isolation: isolate; */
 
   /* 使用CSS变量进行变换，确保与便签同步 */
   transform: translate3d(
