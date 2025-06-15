@@ -95,14 +95,12 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const consoleRef = useRef<any>(null);
 
   // 全局状态管理 - 便签状态
-  const {
-    notes: stickyNotes,
+  const {    notes: stickyNotes,
     streamingNotes,
     addNote,
     updateNote,
     deleteNote,
     bringNoteToFront,
-    clearAllNotes,
     startStreamingNote,
     updateStreamingContent,
     finishStreamingNote,
@@ -636,10 +634,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           // 以画布中心为缩放中心
           const center = getCanvasCenter();
           zoomOut(center.x, center.y);
-        }}
-        onReset={resetView}
-        onCreateNote={createStickyNoteAtCenter}
-        onClearDatabase={clearAllNotes}
+        }}        onReset={resetView}
         onSearch={openSearchModal}
         minScale={CANVAS_CONSTANTS.MIN_SCALE}
         maxScale={CANVAS_CONSTANTS.MAX_SCALE}

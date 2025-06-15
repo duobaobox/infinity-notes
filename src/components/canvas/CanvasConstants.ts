@@ -21,6 +21,6 @@ export const PERFORMANCE_CONSTANTS = {
 export const GRID_CONSTANTS = {
   SMALL_GRID_SIZE: 10, // 小网格大小 (px)
   LARGE_GRID_SIZE: 50, // 大网格大小 (px)
-  SMALL_GRID_COLOR: "rgba(226, 232, 240, 0.5)", // 小网格线颜色
-  LARGE_GRID_COLOR: "rgba(203, 213, 225, 0.5)", // 大网格线颜色
+  SMALL_GRID_COLOR: "rgba(226, 232, 240, 0.2)", // 小网格线颜色
+  LARGE_GRID_COLOR: "rgba(203, 213, 225, 0.4)", // 大网格线颜色
 };

@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { AIConfig } from "../../services/ai/aiService";
 import { defaultAIConfig, getAIService } from "../../services/ai/aiService";
-// 从 IndexedDB 导入新的 AI 设置存储服务
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 
 export interface UseAISettingsReturn {
@@ -21,10 +20,22 @@ export const useAISettings = (): UseAISettingsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 计算是否有有效配置（只检查必要的配置项，不依赖enableAI）
+  // 计算是否有有效配置（只检查必要的配置项）
   const hasValidConfig = Boolean(
     config.apiKey && config.apiUrl && config.aiModel
   );
+
+  // 更新配置和服务的工具函数
+  const updateConfigAndService = useCallback((newConfig: AIConfig) => {
+    setConfig(newConfig);
+    if (newConfig.apiKey && newConfig.apiUrl && newConfig.aiModel) {
+      console.log("🔧 useAISettings: 使用新配置更新AI服务");
+      getAIService(newConfig);
+    } else {
+      console.log("🔧 useAISettings: 配置无效，使用默认配置");
+      getAIService(defaultAIConfig);
+    }
+  }, []);
 
   // 加载配置
   const loadConfig = useCallback(async () => {
@@ -36,31 +47,15 @@ export const useAISettings = (): UseAISettingsReturn => {
     try {
       const loadedConfig = await AISettingsStorage.loadConfig();
       console.log("🔧 useAISettings: 配置加载成功", loadedConfig);
-
-      setConfig(loadedConfig);
-      // 新增：确保加载后也更新 AIService
-      // 只要配置有效就更新服务，不依赖enableAI字段（enableAI只是UI控制）
-      if (
-        loadedConfig.apiKey &&
-        loadedConfig.apiUrl &&
-        loadedConfig.aiModel
-      ) {
-        console.log("🔧 useAISettings: 使用有效配置更新AI服务");
-        getAIService(loadedConfig);
-      } else {
-        console.log("🔧 useAISettings: 配置无效，使用默认配置");
-        // 如果加载的配置不完整，确保服务使用默认/空配置
-        getAIService(defaultAIConfig);
-      }
+      updateConfigAndService(loadedConfig);
     } catch (err) {
       console.error("🔧 useAISettings: 加载配置失败", err);
       setError(err instanceof Error ? err.message : "加载配置失败");
-      // 即使加载失败，也尝试用默认配置更新一次服务，以防服务持有无效配置
       getAIService(defaultAIConfig);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateConfigAndService]);
 
   // 保存配置
   const saveConfig = useCallback(
@@ -84,13 +79,9 @@ export const useAISettings = (): UseAISettingsReturn => {
         // 保存配置
         await AISettingsStorage.saveConfig(newConfig);
         console.log("🔧 useAISettings: 配置保存成功，更新状态");
-
-        setConfig(newConfig);
-
-        // 更新AI服务配置（只要配置有效就更新，不依赖enableAI字段）
-        if (newConfig.apiKey && newConfig.apiUrl && newConfig.aiModel) {
-          getAIService(newConfig);
-        }
+        
+        // 立即更新配置和服务
+        updateConfigAndService(newConfig);
 
         console.log("🔧 useAISettings: AI配置保存完成");
         return true;
@@ -102,7 +93,7 @@ export const useAISettings = (): UseAISettingsReturn => {
         setLoading(false);
       }
     },
-    []
+    [updateConfigAndService]
   );
 
   // 测试连接
@@ -110,7 +101,6 @@ export const useAISettings = (): UseAISettingsReturn => {
     success: boolean;
     error?: string;
   }> => {
-    // 测试连接只检查必要的配置项，不检查enableAI
     if (!config.apiKey || !config.apiUrl || !config.aiModel) {
       return { success: false, error: "配置信息不完整" };
     }
@@ -134,7 +124,7 @@ export const useAISettings = (): UseAISettingsReturn => {
     } finally {
       setLoading(false);
     }
-  }, [config, hasValidConfig]);
+  }, [config]);
 
   // 清除配置
   const clearConfig = useCallback(async () => {
@@ -143,15 +133,13 @@ export const useAISettings = (): UseAISettingsReturn => {
 
     try {
       await AISettingsStorage.clearConfig();
-      setConfig(defaultAIConfig);
-      // 确保在清除配置后也更新 AIService
-      getAIService(defaultAIConfig);
+      updateConfigAndService(defaultAIConfig);
     } catch (err) {
       setError(err instanceof Error ? err.message : "清除配置失败");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateConfigAndService]);
 
   // 组件挂载时加载配置
   useEffect(() => {

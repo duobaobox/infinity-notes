@@ -19,10 +19,10 @@ interface CanvasConsoleProps {
   onSendMessage?: (message: string) => void;
   onCreateNote?: () => void;
   onGenerateWithAI?: (prompt: string) => Promise<void>;
-  onOpenAISettings?: () => void; // 新增：打开 AI 设置页面的回调
+  onOpenAISettings?: () => void;
   placeholder?: string;
   disabled?: boolean;
-  isAIGenerating?: boolean; // 外部AI生成状态
+  isAIGenerating?: boolean;
 }
 
 interface CanvasConsoleRef {
@@ -35,6 +35,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       onSendMessage,
       onCreateNote,
       onGenerateWithAI,
+      onOpenAISettings,
       placeholder = "输入文本AI生成便签，留空创建空白便签...",
       disabled = false,
       isAIGenerating = false,
@@ -44,29 +45,24 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const [inputValue, setInputValue] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [localHasValidConfig, setLocalHasValidConfig] = useState(false);
     const inputRef = useRef<any>(null);
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
+    // 同步 hasValidConfig 到本地状态
+    useEffect(() => {
+      console.log("🔄 AI配置状态更新:", { hasValidConfig, aiConfig });
+      setLocalHasValidConfig(hasValidConfig);
+    }, [hasValidConfig, aiConfig]);
+
     // 合并内部和外部的生成状态
     const isCurrentlyGenerating = isGenerating || isAIGenerating;
 
-    // 添加调试信息
-    useEffect(() => {
-      console.log("🎮 CanvasConsole AI配置状态:", {
-        hasValidConfig,
-        config: {
-          apiKey: aiConfig.apiKey ? "已设置" : "未设置",
-          apiUrl: aiConfig.apiUrl || "未设置",
-          aiModel: aiConfig.aiModel || "未设置"
-        }
-      });
-    }, [aiConfig, hasValidConfig]);
-
     // 预连接逻辑：用户输入时触发预连接
     const triggerPreconnect = () => {
-      if (!hasValidConfig) return;
+      if (!localHasValidConfig) return;
 
       // 清除之前的定时器
       if (preconnectTimeoutRef.current) {
@@ -123,7 +119,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       }
 
       // 有文本输入，使用AI生成便签（包括演示模式）
-      console.log("🎮 触发AI生成，输入:", inputValue, "hasValidConfig:", hasValidConfig);
       if (onGenerateWithAI) {
         try {
           setIsGenerating(true);
@@ -142,8 +137,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       }
     };
 
-
-
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -157,7 +150,6 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     return (
       <div className="canvas-console">
         <div className={`console-container ${isFocused ? "focused" : ""} ${isCurrentlyGenerating ? "ai-generating" : ""}`}>
-          {/* 输入框 */}
           <div className="console-input-container">
             <Input
               ref={inputRef}
@@ -178,12 +170,10 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
               className="console-input"
               suffix={
                 inputValue.trim() ? (
-                  hasValidConfig ? (
+                  localHasValidConfig ? (
                     <Tooltip title="AI生成便签 (Enter)" placement="top">
                       <Button
-                        icon={
-                          isCurrentlyGenerating ? <LoadingOutlined /> : <RobotOutlined />
-                        }
+                        icon={isCurrentlyGenerating ? <LoadingOutlined /> : <RobotOutlined />}
                         type="primary"
                         size="small"
                         onClick={handleSend}
@@ -192,13 +182,13 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                       />
                     </Tooltip>
                   ) : (
-                    <Tooltip title="配置AI后可智能生成 (Enter)" placement="top">
+                    <Tooltip title="点击进行AI设置" placement="top">
                       <Button
                         icon={<RobotOutlined />}
                         type="text"
                         size="small"
-                        onClick={handleSend}
-                        disabled={disabled}
+                        onClick={onOpenAISettings || (() => message.info('请先配置AI设置'))}
+                        disabled={disabled || !onOpenAISettings}
                         className="send-button"
                       />
                     </Tooltip>
@@ -207,7 +197,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                   <Tooltip title="创建空白便签 (Enter)" placement="top">
                     <Button
                       icon={<PlusOutlined />}
-                      type="text"
+                      type="primary"
+                      shape="circle"
                       size="small"
                       onClick={handleSend}
                       className="add-button-inline"
