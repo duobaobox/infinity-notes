@@ -50,6 +50,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [localContent, setLocalContent] = useState(note.content);
   const [localTitle, setLocalTitle] = useState(note.title);
 
+  // 光标位置保存状态
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+  const [shouldRestoreCursor, setShouldRestoreCursor] = useState(false);
+
   // 流式显示相关状态
   const [displayContent, setDisplayContent] = useState(note.content);
   const [showCursor, setShowCursor] = useState(false);
@@ -169,6 +173,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     (e: React.CompositionEvent<HTMLTextAreaElement>) => {
       setIsComposing(false);
       const newContent = e.currentTarget.value;
+
+      // 保存光标位置
+      const currentCursorPosition = e.currentTarget.selectionStart;
+      setCursorPosition(currentCursorPosition);
+      setShouldRestoreCursor(true);
+
       setLocalContent(newContent);
       debouncedUpdateContent(newContent);
     },
@@ -194,6 +204,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newContent = e.target.value;
+
+      // 保存当前光标位置
+      const currentCursorPosition = e.target.selectionStart;
+      setCursorPosition(currentCursorPosition);
+      setShouldRestoreCursor(true);
+
       setLocalContent(newContent);
 
       // 如果不是合成事件期间，则正常更新
@@ -479,12 +495,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
+      // 只在首次进入编辑模式时设置光标到末尾
       textareaRef.current.setSelectionRange(
         localContent.length,
         localContent.length
       );
     }
-  }, [isEditing, localContent.length]); // 依赖本地编辑状态
+  }, [isEditing]); // 只依赖编辑状态，不依赖内容长度
+
+  // 恢复光标位置 - 在内容更新后恢复之前保存的光标位置
+  useEffect(() => {
+    if (shouldRestoreCursor && cursorPosition !== null && textareaRef.current && isEditing) {
+      // 使用setTimeout确保DOM更新完成后再设置光标位置
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.setSelectionRange(cursorPosition, cursorPosition);
+          setShouldRestoreCursor(false);
+        }
+      }, 0);
+    }
+  }, [localContent, shouldRestoreCursor, cursorPosition, isEditing]);
 
   // 自动聚焦到标题输入框 - 仅在进入标题编辑模式时设置光标到末尾
   useEffect(() => {
@@ -495,17 +525,23 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         localTitle.length
       );
     }
-  }, [isTitleEditing, localTitle.length]); // 依赖本地编辑状态
+  }, [isTitleEditing]); // 只依赖编辑状态，不依赖内容长度
 
   // 处理内容编辑键盘事件
   const handleContentKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Escape") {
         stopEditing();
       } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         // Ctrl/Cmd + Enter 保存并退出编辑
         e.preventDefault();
         stopEditing();
+      } else {
+        // 对于其他按键，保存光标位置
+        const target = e.currentTarget;
+        setTimeout(() => {
+          setCursorPosition(target.selectionStart);
+        }, 0);
       }
     },
     [stopEditing]
@@ -554,6 +590,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     },
     [stopEditing]
   );
+
+  // 处理文本框点击事件 - 保存光标位置
+  const handleTextareaClick = useCallback((e: React.MouseEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget;
+    setTimeout(() => {
+      setCursorPosition(target.selectionStart);
+    }, 0);
+  }, []);
 
   // 标题失焦时停止编辑
   const handleTitleBlur = useCallback(
@@ -733,6 +777,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             onChange={handleContentChange}
             onKeyDown={handleContentKeyDown}
             onBlur={handleContentBlur}
+            onClick={handleTextareaClick}
             onCompositionStart={handleContentCompositionStart}
             onCompositionEnd={handleContentCompositionEnd}
             placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑（会自动保存）&#10;• Ctrl/⌘ + Enter 保存"
