@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   Modal,
   Tabs,
+  type TabsProps,
   Form,
   Switch,
   Select,
@@ -30,6 +31,7 @@ import {
 } from "@ant-design/icons";
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
+import { useUIStore, PRESET_THEMES } from "../../stores/uiStore";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
@@ -53,6 +55,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [dataForm] = Form.useForm();
   const [notificationForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // 使用UIStore获取和设置外观、通用设置
+  const {
+    theme,
+    appearance,
+    general,
+    setTheme,
+    setAppearance,
+    setGeneral,
+    applyPresetTheme,
+  } = useUIStore();
 
   const {
     config: aiConfig,
@@ -103,6 +116,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [promptConfig, open, promptForm, canConfigurePrompt]);
 
+  // 当模态框打开或状态变化时，同步表单值
+  React.useEffect(() => {
+    if (open) {
+      // 同步通用设置表单
+      form.setFieldsValue({
+        ...general,
+        theme: theme.theme,
+      });
+
+      // 同步外观设置表单
+      appearanceForm.setFieldsValue(appearance);
+    }
+  }, [open, general, theme, appearance, form, appearanceForm]);
+
   // 测试AI连接
   const handleTestConnection = async () => {
     try {
@@ -122,8 +149,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       setTestingConnection(false);
     }
   };
-
-
 
   // 保存AI提示词配置
   const handleSavePromptConfig = async () => {
@@ -180,8 +205,86 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  // 处理通用设置变化
+  const handleGeneralChange = React.useCallback((changedFields: any, allFields: any) => {
+    // 实时保存通用设置
+    const { theme: themeValue, ...generalSettings } = allFields;
+
+    // 更新主题
+    if (themeValue !== theme.theme) {
+      setTheme(themeValue);
+    }
+
+    // 更新通用设置
+    setGeneral(generalSettings);
+  }, [theme.theme, setTheme, setGeneral]);
+
+  // 处理颜色值转换的辅助函数
+  const convertColorValue = React.useCallback((colorValue: any): string => {
+    if (!colorValue) return '#000000';
+
+    // 如果是字符串，直接返回
+    if (typeof colorValue === 'string') {
+      return colorValue;
+    }
+
+    // 如果是对象（ColorPicker的Color对象）
+    if (typeof colorValue === 'object') {
+      try {
+        // 尝试调用toHexString方法
+        if (typeof colorValue.toHexString === 'function') {
+          return colorValue.toHexString();
+        }
+        // 尝试调用toHex方法
+        if (typeof colorValue.toHex === 'function') {
+          return colorValue.toHex();
+        }
+        // 如果有hex属性
+        if (colorValue.hex) {
+          return colorValue.hex;
+        }
+        // 如果有value属性
+        if (colorValue.value) {
+          return colorValue.value;
+        }
+      } catch (error) {
+
+      }
+    }
+
+
+    return '#000000';
+  }, []);
+
+  // 处理外观设置变化
+  const handleAppearanceChange = React.useCallback((changedFields: any, allFields: any) => {
+    // 处理ColorPicker的值转换
+    const processedFields = { ...allFields };
+
+    // 转换所有颜色字段
+    const colorFields = ['canvasBackground', 'gridColor', 'gridMajorColor', 'noteDefaultColor'];
+    colorFields.forEach(field => {
+      if (processedFields[field]) {
+        processedFields[field] = convertColorValue(processedFields[field]);
+      }
+    });
+
+    // 实时保存外观设置
+    setAppearance(processedFields);
+  }, [convertColorValue, setAppearance]);
+
+  // 处理预制主题应用
+  const handleApplyPresetTheme = React.useCallback((themeId: string, themeName: string) => {
+    try {
+      applyPresetTheme(themeId);
+      message.success(`已应用 ${themeName} 主题`);
+    } catch (error) {
+      message.error(`应用主题失败`);
+    }
+  }, [applyPresetTheme]);
+
   // 动态生成标签页项目，根据AI配置状态决定是否显示AI提示词标签页
-  const getTabItems = () => {
+  const getTabItems = React.useMemo(() => {
     const baseItems = [
     {
       key: "general",
@@ -197,14 +300,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             key="general-form"
             form={form}
             layout="vertical"
+            onValuesChange={handleGeneralChange}
             initialValues={{
-              autoSave: true,
-              language: "zh-CN",
-              theme: "light",
-              autoBackup: true,
-              saveInterval: 30,
-              username: "用户名称",
-              email: "user@example.com",
+              ...general,
+              theme: theme.theme,
             }}
           >
             <Card size="small" style={{ marginBottom: 16 }}>
@@ -291,15 +390,67 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <Form
             form={appearanceForm}
             layout="vertical"
-            initialValues={{
-              canvasBackground: "#ffffff",
-              gridVisible: true,
-              gridSize: 20,
-              noteDefaultColor: "#fef3c7",
-              fontSize: 14,
-              fontFamily: "system-ui",
-            }}
+            onValuesChange={handleAppearanceChange}
+            initialValues={appearance}
           >
+            {/* 预制主题选择器 */}
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                🎨 预制主题
+              </Title>
+              <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+                选择一个预制主题快速应用美观的配色方案，点击即可立即应用
+              </Text>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                gap: "8px",
+                marginBottom: "8px"
+              }}>
+                {PRESET_THEMES.map((theme) => (
+                  <div
+                    key={theme.id}
+                    style={{
+                      position: "relative",
+                      cursor: "pointer",
+                      padding: "12px 8px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "6px",
+                      border: "2px solid",
+                      borderColor: appearance.canvasBackground === theme.colors.canvasBackground ? "#1677ff" : "#f0f0f0",
+                      borderRadius: "12px",
+                      backgroundColor: "#fafafa",
+                      transition: "border-color 0.2s ease",
+                      textAlign: "center",
+                    }}
+                    onClick={() => handleApplyPresetTheme(theme.id, theme.name)}
+                    onMouseEnter={(e) => {
+                      if (appearance.canvasBackground !== theme.colors.canvasBackground) {
+                        e.currentTarget.style.borderColor = "#1677ff";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (appearance.canvasBackground !== theme.colors.canvasBackground) {
+                        e.currentTarget.style.borderColor = "#f0f0f0";
+                      }
+                    }}
+                  >
+                    <span style={{ fontSize: "24px", lineHeight: 1 }}>{theme.icon}</span>
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "#262626" }}>
+                        {theme.name}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#8c8c8c", marginTop: "2px" }}>
+                        {theme.description}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
                 画布设置
@@ -326,6 +477,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     30: "30px",
                     50: "50px",
                   }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="网格线颜色"
+                name="gridColor"
+                extra="细网格线的颜色"
+              >
+                <ColorPicker
+                  showText
+                  presets={[
+                    {
+                      label: "网格颜色",
+                      colors: [
+                        "#e2e8f0", // 默认灰色
+                        "#dbeafe", // 蓝色
+                        "#d1fae5", // 绿色
+                        "#fef3c7", // 黄色
+                        "#fce7f3", // 粉色
+                        "#e9d5ff", // 紫色
+                      ],
+                    },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="主网格线颜色"
+                name="gridMajorColor"
+                extra="粗网格线的颜色，用于突出显示"
+              >
+                <ColorPicker
+                  showText
+                  presets={[
+                    {
+                      label: "主网格颜色",
+                      colors: [
+                        "#cbd5e1", // 默认深灰
+                        "#93c5fd", // 蓝色
+                        "#86efac", // 绿色
+                        "#fde047", // 黄色
+                        "#f9a8d4", // 粉色
+                        "#c4b5fd", // 紫色
+                      ],
+                    },
+                  ]}
                 />
               </Form.Item>
             </Card>
@@ -686,7 +883,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       ),
     } : null;
 
-    // 返回所有标签页，过滤掉null项
+    // 返回所有标签页，过滤掉null项并转换类型
     return [
       ...baseItems,
       aiPromptTab,
@@ -811,11 +1008,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
       ),
     },
-    ].filter(Boolean); // 过滤掉null项
-  };
-
-  // 获取动态生成的标签页项目
-  const tabItems = getTabItems();
+    ].filter(Boolean) as TabsProps['items']; // 添加类型断言
+  }, [
+    general,
+    theme,
+    appearance,
+    handleGeneralChange,
+    handleAppearanceChange,
+    handleApplyPresetTheme,
+    aiLoading,
+    aiError,
+    hasValidConfig,
+    aiConfig,
+    handleSaveAIConfig,
+    testingConnection,
+    handleTestConnection,
+    promptLoading,
+    promptError,
+    canConfigurePrompt,
+    handleSavePromptConfig,
+    handleResetPromptToDefault
+  ]);
 
   return (
     <Modal
@@ -837,7 +1050,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     >
       <Tabs
         defaultActiveKey={defaultActiveTab}
-        items={tabItems}
+        items={getTabItems}
         tabPosition="left"
         className="settings-tabs"
         style={{ height: "100%" }}

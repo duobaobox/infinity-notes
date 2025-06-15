@@ -31,6 +31,7 @@ function App() {
   } = useAIStore();
   const {
     globalLoading,
+    openSettingsModal,
     initialize: initializeUI
   } = useUIStore();
 
@@ -48,25 +49,19 @@ function App() {
   useEffect(() => {
     const initializeStores = async () => {
       try {
-        console.log("🚀 App: 开始初始化所有Store...");
-
         // 先初始化便签Store（包含数据库初始化）
-        console.log("📝 App: 初始化便签Store...");
         await initializeStickyNotes();
 
         // 然后初始化AI Store
-        console.log("🤖 App: 初始化AI Store...");
         await initializeAI();
 
         // 最后初始化UI Store（同步操作）
-        console.log("🎨 App: 初始化UI Store...");
         initializeUI();
 
         // 标记应用初始化完成
         setAppInitialized(true);
-        console.log("✅ App: 所有Store初始化完成");
       } catch (error) {
-        console.error("❌ App: Store初始化失败:", error);
+        console.error("Store初始化失败:", error);
         setAppInitialized(true); // 即使失败也要标记完成，避免无限加载
       }
     };
@@ -80,8 +75,7 @@ function App() {
       canvasRef.current?.createNote?.();
     },
     onOpenSettings: () => {
-      // TODO: 打开设置模态框
-      console.log("打开设置");
+      openSettingsModal('general');
     },
     onFocusConsole: () => {
       canvasRef.current?.focusConsole?.();

@@ -5,12 +5,11 @@ interface CanvasGridProps {
   showAxis?: boolean; // 是否显示中心轴线
 }
 
-const CanvasGrid: React.FC<CanvasGridProps> = memo(({ showAxis = true }) => {
+const CanvasGrid: React.FC<CanvasGridProps> = memo(({ showAxis = false }) => {
   return (
     <>
-      {/* 网格背景 - 使用CSS变量而非内联样式 */}
-      <div className="grid-light small-grid"></div>
-      <div className="grid-light large-grid"></div>
+      {/* 统一的网格背景 - 同时包含小网格和大网格 */}
+      <div className="canvas-grid"></div>
 
       {/* 中心轴线 - 可选显示 */}
       {showAxis && <div className="canvas-axis"></div>}

@@ -12,10 +12,12 @@
   --canvas-scale: 1;
   --canvas-offset-x: 0px;
   --canvas-offset-y: 0px;
+  --canvas-background: #ffffff;
+  --grid-visible: 1;
   --small-grid-size: 10px;
   --large-grid-size: 50px;
-  --small-grid-color: rgba(226, 232, 240, 0.5);
-  --large-grid-color: rgba(203, 213, 225, 0.5);
+  --small-grid-color: rgba(226, 232, 240, 0.3);
+  --large-grid-color: rgba(203, 213, 225, 0.6);
 
   /* 性能优化 - 避免重绘和重排 */
   will-change: transform;
@@ -73,7 +75,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #fafcff;
+  background-color: var(--canvas-background, #ffffff);
+  /* 当选择纸质感主题时添加噪点效果 */
+  &.paper-texture {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-blend-mode: soft-light;
+    opacity: 0.5;
+  }
   pointer-events: none; /* 允许点击穿透到画布 */
   z-index: 1;
 }
@@ -153,38 +161,49 @@
   pointer-events: auto;
 }
 
-/* 网格自定义样式 */
-.grid-light {
+/* 统一的网格样式 - 简化版本 */
+.canvas-grid {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  will-change: background;
-}
+  opacity: var(--grid-visible, 1);
 
-/* 使用CSS变量的小网格 */
-.grid-light.small-grid {
-  background-image: linear-gradient(
-      var(--small-grid-color) 1px,
-      transparent 1px
-    ),
+  /* 只显示小网格，简洁清晰 */
+  background-image:
+    linear-gradient(var(--small-grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--small-grid-color) 1px, transparent 1px);
-  background-size: calc(max(var(--small-grid-size) * var(--canvas-scale), 5px))
-    calc(max(var(--small-grid-size) * var(--canvas-scale), 5px));
+
+  background-size:
+    calc(var(--small-grid-size) * var(--canvas-scale))
+    calc(var(--small-grid-size) * var(--canvas-scale));
+
   background-position: var(--canvas-offset-x) var(--canvas-offset-y);
+
+  /* 添加大网格效果 - 使用伪元素 */
 }
 
-/* 使用CSS变量的大网格 */
-.grid-light.large-grid {
-  background-image: linear-gradient(
-      var(--large-grid-color) 1px,
-      transparent 1px
-    ),
+.canvas-grid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: var(--grid-visible, 1);
+
+  /* 大网格线 - 更粗更明显 */
+  background-image:
+    linear-gradient(var(--large-grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--large-grid-color) 1px, transparent 1px);
-  background-size: calc(max(var(--large-grid-size) * var(--canvas-scale), 20px))
-    calc(max(var(--large-grid-size) * var(--canvas-scale), 20px));
+
+  background-size:
+    calc(var(--large-grid-size) * var(--canvas-scale))
+    calc(var(--large-grid-size) * var(--canvas-scale));
+
   background-position: var(--canvas-offset-x) var(--canvas-offset-y);
 }
 
