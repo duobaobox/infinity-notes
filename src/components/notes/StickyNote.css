@@ -97,7 +97,7 @@
 }
 
 .sticky-note.dragging {
-  cursor: grabbing;
+  cursor: move;
   z-index: 1000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.1); /* 简化阴影效果 */
   /* 移除缩放动画 */
@@ -498,6 +498,75 @@
   color: #666;
   font-size: 12px;
   opacity: 0.8;
+}
+
+/* 连接点样式 - 位于便签左下角 */
+.connection-point {
+  position: absolute;
+  bottom: -12px; /* 位于便签底部边缘外 */
+  left: 12px; /* 位于便签左下角 */
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0; /* 默认隐藏 */
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 便签悬停时显示连接点 */
+.sticky-note:hover .connection-point {
+  opacity: 1;
+}
+
+/* 连接点内部的圆点 */
+.connection-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(22, 119, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 连接点悬停效果 */
+.connection-point:hover .connection-dot {
+  background: #1677ff;
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.3);
+}
+
+/* 已连接状态的连接点 */
+.connection-point.connected {
+  opacity: 1; /* 已连接时始终显示 */
+}
+
+.connection-point.connected .connection-dot {
+  background: #52c41a; /* 绿色表示已连接 */
+  border-color: rgba(255, 255, 255, 1);
+  animation: connectedPulse 2s ease-in-out infinite;
+}
+
+/* 已连接状态的脉冲动画 */
+@keyframes connectedPulse {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(82, 196, 26, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(82, 196, 26, 0.2);
+  }
+}
+
+/* 连接点在不同便签颜色下的适配 */
+.sticky-note.color-yellow .connection-point.connected .connection-dot,
+.sticky-note.color-blue .connection-point.connected .connection-dot,
+.sticky-note.color-green .connection-point.connected .connection-dot,
+.sticky-note.color-pink .connection-point.connected .connection-dot,
+.sticky-note.color-purple .connection-point.connected .connection-dot {
+  background: #52c41a; /* 统一使用绿色表示连接状态 */
 }
 
 .ai-loading-indicator .anticon {

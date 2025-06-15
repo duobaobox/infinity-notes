@@ -18,6 +18,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   isStreaming = false,
   streamingContent = '',
   onStreamingComplete,
+  // 连接相关属性
+  onConnect,
+  isConnected = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -255,6 +258,22 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
     },
     [note.id, isEditing, isTitleEditing, onDelete, isStreaming]
+  );
+
+  // 处理连接点点击
+  const handleConnectionClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isStreaming) return; // 流式过程中不允许连接
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      // 调用连接回调
+      if (onConnect) {
+        onConnect(note);
+      }
+    },
+    [note, onConnect, isStreaming]
   );
 
   // 鼠标按下开始拖拽
@@ -702,7 +721,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           onMouseDown={handleMouseDown}
           style={{
             flexGrow: 1,
-            cursor: isDragging ? "grabbing" : "grab",
+            cursor: isDragging ? "move" : "move",
             minHeight: "20px",
             display: "flex",
             alignItems: "center",
@@ -832,6 +851,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           <span style={{ fontSize: 12 }}>等待AI响应...</span>
         </div>
       )}
+
+      {/* 连接点 - 只在非编辑和非流式状态下显示 */}
+      {!isEditing && !isStreaming && onConnect && (
+        <div
+          className={`connection-point ${isConnected ? 'connected' : ''}`}
+          onClick={handleConnectionClick}
+          title={isConnected ? "已连接到插槽" : "点击连接到插槽"}
+        >
+          <div className="connection-dot"></div>
+        </div>
+      )}
     </div>
   );
 };
@@ -856,6 +886,8 @@ export default memo(StickyNote, (prevProps, nextProps) => {
     prevProps.canvasOffset.x === nextProps.canvasOffset.x &&
     prevProps.canvasOffset.y === nextProps.canvasOffset.y &&
     prevProps.isStreaming === nextProps.isStreaming &&
-    prevProps.streamingContent === nextProps.streamingContent
+    prevProps.streamingContent === nextProps.streamingContent &&
+    prevProps.isConnected === nextProps.isConnected &&
+    prevProps.onConnect === nextProps.onConnect
   );
 });

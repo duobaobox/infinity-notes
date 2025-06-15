@@ -14,6 +14,9 @@ export interface StickyNote {
   zIndex: number; // 新增：Z 索引用于层级管理
   createdAt: Date;
   updatedAt: Date;
+  // 连接相关属性
+  isConnected?: boolean; // 是否已连接到插槽
+  connectionIndex?: number; // 在插槽中的连接索引
 }
 
 // 便签属性接口
@@ -28,4 +31,7 @@ export interface StickyNoteProps {
   isStreaming?: boolean;
   streamingContent?: string;
   onStreamingComplete?: () => void;
+  // 连接相关属性
+  onConnect?: (note: StickyNote) => void; // 连接便签回调
+  isConnected?: boolean; // 是否已连接
 }

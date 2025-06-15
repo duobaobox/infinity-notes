@@ -18,10 +18,10 @@
   display: flex;
   align-items: center;
   padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.96);
-  border-radius: 16px; /* 更小的圆角 */
-  box-shadow: none;
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
   border: 1px solid rgba(22, 119, 255, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -45,17 +45,13 @@
 }
 
 .console-container:hover {
-  box-shadow: none;
   background: rgba(255, 255, 255, 0.98);
   border-color: rgba(22, 119, 255, 0.15);
-  transform: translateY(-1px);
 }
 
 .console-container.focused {
-  box-shadow: none;
   background: rgba(255, 255, 255, 0.99);
   border-color: rgba(22, 119, 255, 0.25);
-  transform: translateY(-1px);
 }
 
 /* 输入框容器 */

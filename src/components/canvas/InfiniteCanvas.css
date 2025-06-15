@@ -6,7 +6,7 @@
   background-color: #f8fafc;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  cursor: grab;
+  cursor: default;
 
   /* 使用CSS变量存储关键值 */
   --canvas-scale: 1;
@@ -30,7 +30,7 @@
 
 /* 拖拽时的光标状态 */
 .infinite-canvas-container.dragging {
-  cursor: grabbing;
+  cursor: move;
 }
 
 .canvas-toolbar {

@@ -12,6 +12,7 @@ import { message } from "antd";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasGrid from "./CanvasGrid";
 import CanvasConsole from "./CanvasConsole";
+import StickyNoteSlots from "./StickyNoteSlots";
 import StickyNote from "../notes/StickyNote";
 import SearchModal from "../modals/SearchModal";
 import SettingsModal from "../modals/SettingsModal";
@@ -24,8 +25,10 @@ import {
   useStickyNotesStore,
   useCanvasStore,
   useAIStore,
-  useUIStore
+  useUIStore,
+  useConnectionStore
 } from "../../stores";
+import { connectionUtils } from "../../stores/connectionStore";
 
 // AI服务导入
 import { getAIService } from "../../services/ai/aiService";
@@ -140,6 +143,18 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     openSettingsModal,
     closeSettingsModal,
   } = useUIStore();
+
+  // 全局状态管理 - 连接状态
+  const {
+    connectedNotes,
+    connectionMode,
+    isVisible: slotsVisible,
+    addConnection,
+    removeConnection,
+    clearAllConnections,
+    setConnectionMode,
+    isNoteConnected,
+  } = useConnectionStore();
 
   // 获取完整AI配置
   const fullAIConfig = useMemo(() => {
@@ -276,7 +291,15 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 开始AI生成状态
       startGeneration();
 
-      console.log("🤖 开始AI生成便签，prompt:", prompt);
+      // 如果有连接的便签，将其内容包含在提示中
+      const finalPrompt = connectedNotes.length > 0
+        ? connectionUtils.generateAIPromptWithConnections(prompt, connectedNotes)
+        : prompt;
+
+      console.log("🤖 开始AI生成便签，prompt:", finalPrompt);
+      if (connectedNotes.length > 0) {
+        console.log("🔗 使用了", connectedNotes.length, "个连接的便签");
+      }
 
       // 计算便签创建位置（画布中心附近）
       const rect = canvasRef.current?.getBoundingClientRect();
@@ -325,7 +348,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       startStreamingNote(addedNote.id, addedNote);
 
       // 调用AI服务生成内容
-      const result = await aiService.generateStickyNotesStreaming(prompt, {
+      const result = await aiService.generateStickyNotesStreaming(finalPrompt, {
         onNoteStart: (index, title) => {
           console.log(`📝 便签 ${index} 开始生成:`, title);
           // AI便签标题保持固定，不需要更新
@@ -348,6 +371,21 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         },
         onAllComplete: (notes) => {
           console.log("🎉 所有便签生成完成:", notes.length);
+
+          // 处理连接模式
+          if (connectedNotes.length > 0) {
+            if (connectionMode === "replace") {
+              // 替换模式：删除原始便签
+              console.log("🔄 替换模式：删除原始连接的便签");
+              connectedNotes.forEach(note => {
+                deleteNote(note.id);
+              });
+            }
+            // 清空连接（无论哪种模式）
+            clearAllConnections();
+            console.log("🧹 已清空便签连接");
+          }
+
           message.success(`AI生成完成！共创建 ${notes.length} 个便签`);
         },
         onError: (error) => {
@@ -374,7 +412,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       finishGeneration();
     }
   }, [
-    prompt,
     startGeneration,
     finishGeneration,
     aiService,
@@ -389,7 +426,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     startStreamingNote,
     updateStreamingContent,
     finishStreamingNote,
-    cancelStreamingNote
+    cancelStreamingNote,
+    connectedNotes,
+    connectionMode,
+    clearAllConnections
   ]);
 
   // 鼠标事件处理
@@ -665,10 +705,22 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               canvasOffset={canvasOffset}
               isStreaming={streamingData?.isStreaming}
               streamingContent={streamingData?.streamingContent}
+              onConnect={addConnection}
+              isConnected={isNoteConnected(note.id)}
             />
           );
         })}
       </div>
+
+      {/* 便签链接插槽 - 位于控制台上方 */}
+      <StickyNoteSlots
+        connectedNotes={connectedNotes}
+        connectionMode={connectionMode}
+        onModeChange={setConnectionMode}
+        onRemoveConnection={removeConnection}
+        onClearAllConnections={clearAllConnections}
+        visible={slotsVisible}
+      />
 
       {/* 控制台 */}
       <CanvasConsole

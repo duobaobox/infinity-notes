@@ -1,0 +1,390 @@
+/* 便签链接插槽样式 - 与控制台完全一致的尺寸和样式 */
+.slots-container {
+  position: fixed;
+  bottom: 90px; /* 位于控制台上方 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 98; /* 略低于控制台 */
+  max-width: 480px; /* 与控制台一致 */
+  width: 75%; /* 与控制台一致 */
+  min-width: 320px; /* 与控制台一致 */
+  margin-left: auto;
+  margin-right: auto;
+
+  /* 容器样式 - 与顶部工具栏一致的阴影 */
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(22, 119, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  /* 默认隐藏，只有在有连接时才显示 */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.slots-container.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+
+  /* 一排布局 - 固定高度54px */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 6px 10px;
+  gap: 12px;
+  height: 54px; /* 固定高度 */
+  box-sizing: border-box;
+}
+
+.slots-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.02), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.slots-container:hover::before {
+  opacity: 1;
+}
+
+.slots-container:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(22, 119, 255, 0.15);
+}
+
+/* 标题样式 - 横向布局 */
+.slots-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(22, 119, 255, 0.8);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 插槽列表容器 - 横排布局 */
+.slots-list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  height: 100%; /* 填满容器高度 */
+
+  /* 隐藏滚动条但保持滚动功能 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.slots-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* 空状态样式 */
+.empty-slots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  color: rgba(22, 119, 255, 0.5);
+  width: 100%;
+  gap: 8px;
+  padding: 0;
+  height: 100%; /* 填满54px高度 */
+}
+
+.empty-slot-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(22, 119, 255, 0.05);
+  border: 1px dashed rgba(22, 119, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.empty-slot-icon {
+  font-size: 10px;
+  color: rgba(22, 119, 255, 0.3);
+  font-weight: 300;
+}
+
+.empty-text-container {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.empty-text {
+  font-size: 10px;
+  font-weight: 500;
+  margin-bottom: 1px;
+  color: rgba(22, 119, 255, 0.6);
+}
+
+.empty-hint {
+  font-size: 9px;
+  opacity: 0.8;
+  color: rgba(22, 119, 255, 0.4);
+}
+
+/* 便签插槽样式 - 圆形设计 */
+.note-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.note-slot:hover {
+  transform: translateY(-2px);
+}
+
+.note-slot.connected {
+  /* 连接状态的样式在圆形插槽中定义 */
+}
+
+/* 圆形插槽样式 */
+.slot-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(22, 119, 255, 0.1);
+  border: 1px solid rgba(22, 119, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.note-slot:hover .slot-circle {
+  background: rgba(22, 119, 255, 0.15);
+  border-color: rgba(22, 119, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.note-slot.connected .slot-circle {
+  background: rgba(22, 119, 255, 0.2);
+  border-color: #1677ff;
+  box-shadow: 0 1px 4px rgba(22, 119, 255, 0.2);
+  animation: slotConnectedPulse 2s ease-in-out infinite;
+}
+
+/* 连接状态的脉冲动画 */
+@keyframes slotConnectedPulse {
+  0%, 100% {
+    box-shadow: 0 1px 4px rgba(22, 119, 255, 0.2), 0 0 0 0 rgba(22, 119, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 1px 6px rgba(22, 119, 255, 0.3), 0 0 0 2px rgba(22, 119, 255, 0.2);
+  }
+}
+
+/* 插槽索引数字 */
+.slot-index {
+  font-size: 9px;
+  font-weight: 600;
+  color: #1677ff;
+  user-select: none;
+}
+
+/* 移除按钮 - 位于圆形右上角 */
+.slot-remove {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 77, 79, 0.9);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  border: 1px solid white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.slot-remove:hover {
+  background: #ff4d4f;
+  transform: scale(1.15);
+  box-shadow: 0 1px 4px rgba(255, 77, 79, 0.4);
+}
+
+/* 模式切换容器 */
+.mode-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 切换开关样式 */
+.mode-toggle-input {
+  display: none;
+}
+
+.mode-toggle-label {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  cursor: pointer;
+  display: block;
+}
+
+.mode-toggle-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(22, 119, 255, 0.2);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.mode-toggle-input:checked + .mode-toggle-label .mode-toggle-track {
+  background: #1677ff;
+}
+
+.mode-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle-input:checked + .mode-toggle-label .mode-toggle-thumb {
+  transform: translateX(12px);
+}
+
+.mode-toggle-text {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(22, 119, 255, 0.8);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* 清空连接按钮 */
+.clear-all-connections {
+  padding: 4px 8px;
+  background: rgba(255, 77, 79, 0.08);
+  border: 1px solid rgba(255, 77, 79, 0.2);
+  border-radius: 6px;
+  color: #ff4d4f;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.clear-all-connections:hover:not(:disabled) {
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.3);
+  transform: translateY(-1px);
+}
+
+.clear-all-connections:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 响应式设计 - 与控制台保持一致 */
+@media (max-width: 768px) {
+  .slots-container {
+    width: 85%; /* 与控制台一致 */
+    min-width: 280px; /* 与控制台一致 */
+    bottom: 80px; /* 与控制台调整后的位置一致 */
+  }
+
+  .slots-container.visible {
+    padding: 6px 10px; /* 与控制台一致 */
+    gap: 8px;
+    height: 48px; /* 移动端稍微小一点 */
+  }
+
+  .slots-title {
+    font-size: 10px;
+  }
+
+  .slots-list {
+    gap: 6px;
+  }
+
+  .slot-circle {
+    width: 18px;
+    height: 18px;
+  }
+
+  .slot-index {
+    font-size: 8px;
+  }
+
+  .slot-remove {
+    width: 10px;
+    height: 10px;
+    font-size: 7px;
+    top: -1px;
+    right: -1px;
+  }
+
+  .mode-toggle-label {
+    width: 24px;
+    height: 14px;
+  }
+
+  .mode-toggle-thumb {
+    width: 10px;
+    height: 10px;
+  }
+
+  .mode-toggle-input:checked + .mode-toggle-label .mode-toggle-thumb {
+    transform: translateX(10px);
+  }
+
+  .mode-toggle-text {
+    font-size: 9px;
+  }
+
+  .clear-all-connections {
+    font-size: 9px;
+    padding: 3px 6px;
+  }
+}
+
+
