@@ -7,7 +7,7 @@ import React, {
   useImperativeHandle,
   forwardRef,
 } from "react";
-import { throttle } from "lodash";
+import { throttle, debounce } from "lodash";
 import { message } from "antd";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasGrid from "./CanvasGrid";
@@ -15,7 +15,7 @@ import CanvasConsole from "./CanvasConsole";
 import StickyNote from "../notes/StickyNote";
 import SearchModal from "../modals/SearchModal";
 import SettingsModal from "../modals/SettingsModal";
-import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
+import { CANVAS_CONSTANTS, GRID_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType } from "../types";
 import "./InfiniteCanvas.css";
 
@@ -29,6 +29,22 @@ import {
 
 // AI服务导入
 import { getAIService } from "../../services/ai/aiService";
+
+// 检查是否应该忽略画布事件的工具函数
+const shouldIgnoreCanvasEvent = (target: HTMLElement): boolean => {
+  return !!(
+    target.closest('.sticky-note') ||
+    target.closest('.canvas-console') ||
+    target.closest('.canvas-toolbar') ||
+    target.closest('.ant-modal') ||           // Ant Design 模态框
+    target.closest('.settings-modal') ||     // 设置模态框
+    target.closest('.search-modal') ||       // 搜索模态框
+    target.closest('.ant-drawer') ||         // Ant Design 抽屉
+    target.closest('.ant-popover') ||        // Ant Design 弹出框
+    target.closest('.ant-tooltip') ||        // Ant Design 提示框
+    target.closest('.ant-dropdown')          // Ant Design 下拉菜单
+  );
+};
 
 // 生成智能标题的工具函数
 const generateSmartTitle = (prompt: string): string => {
@@ -65,6 +81,35 @@ const generateSmartTitle = (prompt: string): string => {
     : cleanPrompt;
 
   return preview;
+};
+
+// 颜色转换工具函数 - 将十六进制颜色转换为便签颜色名称
+const convertColorToNoteName = (color?: string): StickyNoteType["color"] => {
+  if (!color) return "yellow";
+
+  // 十六进制颜色映射
+  const colorMap: Record<string, StickyNoteType["color"]> = {
+    "#fef3c7": "yellow",
+    "#e3f2fd": "blue",
+    "#dbeafe": "blue",
+    "#d1fae5": "green",
+    "#fce7f3": "pink",
+    "#e9d5ff": "purple",
+  };
+
+  // 直接匹配
+  if (colorMap[color.toLowerCase()]) {
+    return colorMap[color.toLowerCase()];
+  }
+
+  // 如果已经是颜色名称，直接返回
+  const validColors: StickyNoteType["color"][] = ["yellow", "blue", "green", "pink", "purple"];
+  if (validColors.includes(color as StickyNoteType["color"])) {
+    return color as StickyNoteType["color"];
+  }
+
+  // 默认返回黄色
+  return "yellow";
 };
 
 // 组件接口
@@ -161,6 +206,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     return getAIService(fullAIConfig);
   }, [fullAIConfig]);
 
+  // 优化便签渲染 - 缓存画布偏移对象，避免每次渲染都创建新对象
+  const canvasOffset = useMemo(() => ({ x: offsetX, y: offsetY }), [offsetX, offsetY]);
+
   // 便签操作函数
   const updateStickyNote = useCallback(
     async (id: string, updates: Partial<StickyNoteType>) => {
@@ -214,19 +262,27 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           updatedAt: new Date(),
         };
 
-        console.log('📝 创建新便签:', newNote.id);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📝 创建新便签:', newNote.id);
+        }
 
         // 添加到数据库，addNote会返回实际添加的便签
         const addedNote = await addNote(newNote);
 
-        console.log('✅ 便签添加完成:', addedNote.id);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 便签添加完成:', addedNote.id);
+        }
 
         // 500ms 后移除新建标记
         setTimeout(async () => {
           try {
-            console.log('🔄 移除新建标记:', addedNote.id);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔄 移除新建标记:', addedNote.id);
+            }
             await updateStickyNote(addedNote.id, { isNew: false });
-            console.log('✅ 新建标记移除完成:', addedNote.id);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ 新建标记移除完成:', addedNote.id);
+            }
           } catch (error) {
             console.error('❌ 移除新建标记失败:', error);
           }
@@ -259,6 +315,133 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     }
   }, [createStickyNote, offsetX, offsetY, scale]);
 
+  // AI生成便签功能
+  const handleAIGenerate = useCallback(async (prompt: string) => {
+    if (!prompt.trim()) {
+      message.warning("请输入提示内容");
+      return;
+    }
+
+    try {
+      // 开始AI生成状态
+      startGeneration();
+
+      console.log("🤖 开始AI生成便签，prompt:", prompt);
+
+      // 计算便签创建位置（画布中心附近）
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) {
+        throw new Error("无法获取画布位置");
+      }
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      // 添加随机偏移，避免便签重叠
+      const randomRange = 150;
+      const distributedScreenX = centerX + (Math.random() * randomRange - randomRange / 2);
+      const distributedScreenY = centerY + (Math.random() * randomRange - randomRange / 2);
+
+      // 将屏幕坐标转换为画布逻辑坐标
+      const logicalX = (distributedScreenX - offsetX) / scale;
+      const logicalY = (distributedScreenY - offsetY) / scale;
+
+      // 创建临时便签用于流式显示
+      const maxZ = stickyNotes.length > 0
+        ? Math.max(...stickyNotes.map((note) => note.zIndex))
+        : 0;
+
+      const tempNote: StickyNoteType = {
+        id: `ai-note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        x: logicalX,
+        y: logicalY,
+        width: 280,
+        height: 220,
+        content: "",
+        title: "AI便签",
+        color: hasValidConfig ? "blue" : "yellow", // 有效配置用蓝色，演示模式用黄色
+        isNew: false,
+        zIndex: maxZ + 1,
+        isEditing: false,
+        isTitleEditing: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // 添加临时便签到数据库
+      const addedNote = await addNote(tempNote);
+
+      // 开始流式生成
+      startStreamingNote(addedNote.id, addedNote);
+
+      // 调用AI服务生成内容
+      const result = await aiService.generateStickyNotesStreaming(prompt, {
+        onNoteStart: (index, title) => {
+          console.log(`📝 便签 ${index} 开始生成:`, title);
+          // AI便签标题保持固定，不需要更新
+        },
+        onContentChunk: (index, chunk, fullContent) => {
+          // 更新流式内容
+          updateStreamingContent(addedNote.id, fullContent);
+        },
+        onNoteComplete: async (index, noteData) => {
+          console.log(`✅ 便签 ${index} 生成完成:`, noteData);
+
+          // 完成流式生成，更新最终内容
+          await finishStreamingNote(addedNote.id, noteData.content);
+
+          // 更新便签的其他属性（保持AI便签标题不变）
+          await updateStickyNote(addedNote.id, {
+            color: convertColorToNoteName(noteData.color) || tempNote.color,
+            updatedAt: new Date(),
+          });
+        },
+        onAllComplete: (notes) => {
+          console.log("🎉 所有便签生成完成:", notes.length);
+          message.success(`AI生成完成！共创建 ${notes.length} 个便签`);
+        },
+        onError: (error) => {
+          console.error("❌ AI生成失败:", error);
+          message.error(`AI生成失败: ${error}`);
+
+          // 清理流式状态
+          cancelStreamingNote(addedNote.id);
+
+          // 删除临时便签
+          deleteNote(addedNote.id);
+        }
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "AI生成失败");
+      }
+
+    } catch (error) {
+      console.error("❌ AI生成过程失败:", error);
+      message.error(error instanceof Error ? error.message : "AI生成失败");
+    } finally {
+      // 结束AI生成状态
+      finishGeneration();
+    }
+  }, [
+    prompt,
+    startGeneration,
+    finishGeneration,
+    aiService,
+    hasValidConfig,
+    offsetX,
+    offsetY,
+    scale,
+    stickyNotes,
+    addNote,
+    updateStickyNote,
+    deleteNote,
+    startStreamingNote,
+    updateStreamingContent,
+    finishStreamingNote,
+    cancelStreamingNote
+  ]);
+
   // 鼠标事件处理
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -267,25 +450,35 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
       // 如果点击的是便签或其他交互元素，不处理画布拖拽
       const target = e.target as HTMLElement;
-      if (target.closest('.sticky-note') || target.closest('.canvas-console') || target.closest('.canvas-toolbar')) {
+      if (shouldIgnoreCanvasEvent(target)) {
         return;
       }
 
       e.preventDefault();
-      console.log('🖱️ 开始拖拽画布', { x: e.clientX, y: e.clientY });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🖱️ 开始拖拽画布', { x: e.clientX, y: e.clientY });
+      }
       startDrag(e.clientX, e.clientY);
     },
     [startDrag]
+  );
+
+  // 节流的鼠标移动处理 - 提升拖拽性能
+  const throttledUpdateDrag = useMemo(
+    () => throttle((clientX: number, clientY: number) => {
+      updateDrag(clientX, clientY);
+    }, PERFORMANCE_CONSTANTS.DRAG_THROTTLE_MS), // 60fps
+    [updateDrag]
   );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
         e.preventDefault();
-        updateDrag(e.clientX, e.clientY);
+        throttledUpdateDrag(e.clientX, e.clientY);
       }
     },
-    [dragState.isDragging, updateDrag]
+    [dragState.isDragging, throttledUpdateDrag]
   );
 
   const handleMouseUp = useCallback(
@@ -303,7 +496,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     (e: React.MouseEvent) => {
       // 如果双击的是便签或其他交互元素，不创建新便签
       const target = e.target as HTMLElement;
-      if (target.closest('.sticky-note') || target.closest('.canvas-console') || target.closest('.canvas-toolbar')) {
+      if (shouldIgnoreCanvasEvent(target)) {
         return;
       }
 
@@ -315,19 +508,34 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       const canvasX = (e.clientX - rect.left - offsetX) / scale;
       const canvasY = (e.clientY - rect.top - offsetY) / scale;
 
-      console.log('🖱️ 双击创建便签', {
-        clientX: e.clientX,
-        clientY: e.clientY,
-        canvasX: canvasX.toFixed(1),
-        canvasY: canvasY.toFixed(1)
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🖱️ 双击创建便签', {
+          clientX: e.clientX,
+          clientY: e.clientY,
+          canvasX: canvasX.toFixed(1),
+          canvasY: canvasY.toFixed(1)
+        });
+      }
 
       createStickyNote(canvasX, canvasY);
     },
     [offsetX, offsetY, scale, createStickyNote]
   );
 
-  // 滚轮缩放处理
+  // 节流的滚轮缩放处理 - 提升缩放性能
+  const throttledZoom = useMemo(
+    () => throttle((deltaY: number, centerX: number, centerY: number) => {
+      if (deltaY < 0) {
+        // 向上滚动，放大
+        zoomIn(centerX, centerY);
+      } else {
+        // 向下滚动，缩小
+        zoomOut(centerX, centerY);
+      }
+    }, CANVAS_CONSTANTS.WHEEL_THROTTLE_MS),
+    [zoomIn, zoomOut]
+  );
+
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
@@ -340,34 +548,62 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       const centerX = e.clientX - rect.left;
       const centerY = e.clientY - rect.top;
 
-      if (e.deltaY < 0) {
-        // 向上滚动，放大
-        zoomIn(centerX, centerY);
-      } else {
-        // 向下滚动，缩小
-        zoomOut(centerX, centerY);
-      }
+      throttledZoom(e.deltaY, centerX, centerY);
     },
-    [zoomIn, zoomOut]
+    [throttledZoom]
+  );
+
+  // 即时更新CSS变量 - 确保画布和便签同步
+  const updateCSSVariables = useCallback((scale: number, offsetX: number, offsetY: number) => {
+    const container = document.querySelector('.infinite-canvas-container') as HTMLElement;
+    if (!container) return;
+
+    // 批量更新CSS变量，减少重排重绘
+    container.style.setProperty('--canvas-scale', scale.toString());
+    container.style.setProperty('--canvas-offset-x', `${offsetX}px`);
+    container.style.setProperty('--canvas-offset-y', `${offsetY}px`);
+    // 同时更新内容偏移变量，确保画布内容和便签同步
+    container.style.setProperty('--content-offset-x', `${offsetX}px`);
+    container.style.setProperty('--content-offset-y', `${offsetY}px`);
+  }, []);
+
+  // 防抖的日志输出 - 只用于日志，不影响渲染
+  const debouncedLogUpdate = useMemo(
+    () => debounce((scale: number, offsetX: number, offsetY: number) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🎨 画布状态更新: scale=${scale.toFixed(2)}, offset=(${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`);
+      }
+    }, PERFORMANCE_CONSTANTS.CSS_UPDATE_DEBOUNCE_MS),
+    []
   );
 
   // 同步画布状态到CSS变量，用于网格显示
   useEffect(() => {
-    const container = document.querySelector('.infinite-canvas-container') as HTMLElement;
-    if (!container) return;
+    // 即时更新CSS变量，确保画布和便签同步
+    updateCSSVariables(scale, offsetX, offsetY);
 
-    // 更新CSS变量，让网格跟随画布变换
-    container.style.setProperty('--canvas-scale', scale.toString());
-    container.style.setProperty('--canvas-offset-x', `${offsetX}px`);
-    container.style.setProperty('--canvas-offset-y', `${offsetY}px`);
+    // 防抖日志输出，避免拖拽时的日志噪音
+    if (!dragState.isDragging) {
+      debouncedLogUpdate(scale, offsetX, offsetY);
+    }
+  }, [scale, offsetX, offsetY, dragState.isDragging, updateCSSVariables, debouncedLogUpdate]);
 
-    console.log(`🎨 画布状态更新: scale=${scale.toFixed(2)}, offset=(${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`);
-  }, [scale, offsetX, offsetY]);
-
-  // 组件初始化（Store已在App中初始化，这里只做组件级别的初始化）
+  // 组件初始化和清理
   useEffect(() => {
-    console.log("🎨 InfiniteCanvas 组件初始化完成");
-  }, []);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🎨 InfiniteCanvas 组件初始化完成");
+    }
+
+    // 组件卸载时清理节流和防抖函数
+    return () => {
+      throttledUpdateDrag.cancel();
+      throttledZoom.cancel();
+      debouncedLogUpdate.cancel();
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🧹 InfiniteCanvas 组件清理完成");
+      }
+    };
+  }, [throttledUpdateDrag, throttledZoom, debouncedLogUpdate]);
 
   // 设置全局鼠标事件监听器
   useEffect(() => {
@@ -393,7 +629,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     const handleWheelEvent = (e: WheelEvent) => {
       // 检查事件是否来自便签或其他交互元素
       const target = e.target as HTMLElement;
-      if (target.closest('.sticky-note') || target.closest('.canvas-console') || target.closest('.canvas-toolbar')) {
+      if (shouldIgnoreCanvasEvent(target)) {
         return; // 不处理这些元素上的滚轮事件
       }
 
@@ -463,14 +699,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         <CanvasGrid showAxis={false} />
       </div>
 
-      {/* 画布内容区域 - 应用变换 */}
+      {/* 画布内容区域 - 通过CSS变量应用变换 */}
       <div
         ref={canvasRef}
         className="infinite-canvas"
-        style={{
-          transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale})`,
-          transformOrigin: '0 0',
-        }}
       >
         {/* 便签 */}
         {stickyNotes.map((note) => {
@@ -483,7 +715,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               onDelete={deleteStickyNote}
               onBringToFront={bringNoteToFront}
               canvasScale={scale}
-              canvasOffset={{ x: offsetX, y: offsetY }}
+              canvasOffset={canvasOffset}
               isStreaming={streamingData?.isStreaming}
               streamingContent={streamingData?.streamingContent}
             />
@@ -495,10 +727,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       <CanvasConsole
         ref={consoleRef}
         onCreateNote={createStickyNoteAtCenter}
-        onGenerateWithAI={(prompt) => {
-          // TODO: 实现AI生成功能
-          message.info(`AI生成功能待实现: ${prompt}`);
-        }}
+        onGenerateWithAI={handleAIGenerate}
         isAIGenerating={isAIGenerating}
         onOpenAISettings={() => openSettingsModal("ai")}
       />
@@ -508,7 +737,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         open={searchModalOpen}
         onClose={closeSearchModal}
         notes={stickyNotes}
-        onNoteSelect={(note) => {
+        onSelectNote={(note) => {
           // TODO: 实现便签定位功能
           message.info(`定位到便签: ${note.title}`);
           closeSearchModal();

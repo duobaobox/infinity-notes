@@ -86,15 +86,26 @@
   left: 0;
   z-index: 2; /* 确保在网格之上 */
   pointer-events: none; /* 让事件穿透到容器 */
+  transform-origin: 0 0;
 
-  /* 性能优化 */
+  /* 性能优化 - GPU加速 */
   will-change: transform;
   backface-visibility: hidden;
   transform-style: preserve-3d;
-  /* 添加 GPU 加速 */
   perspective: 1000px;
   -webkit-perspective: 1000px;
   -webkit-backface-visibility: hidden;
+
+  /* 额外的性能优化 */
+  contain: layout style paint;
+  isolation: isolate;
+
+  /* 使用CSS变量进行变换，确保与便签同步 */
+  transform: translate3d(
+    var(--content-offset-x, 0px),
+    var(--content-offset-y, 0px),
+    0
+  ) scale(var(--canvas-scale, 1));
 }
 
 /* 便签恢复点击能力 */

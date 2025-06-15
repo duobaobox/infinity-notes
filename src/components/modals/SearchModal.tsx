@@ -5,7 +5,7 @@ import {
   CloseOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
-import type { StickyNote } from "./types";
+import type { StickyNote } from "../types";
 import "./SearchModal.css";
 
 const { Text } = Typography;

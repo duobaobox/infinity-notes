@@ -37,13 +37,13 @@ const { Option } = Select;
 
 interface SettingsModalProps {
   open: boolean;
-  onCancel: () => void;
+  onClose: () => void;
   defaultActiveTab?: string;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
   open,
-  onCancel,
+  onClose,
   defaultActiveTab = "general",
 }) => {
   const [form] = Form.useForm();
@@ -821,7 +821,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     <Modal
       title="设置"
       open={open}
-      onCancel={onCancel}
+      onCancel={onClose}
       width="70%"
       centered
       styles={{

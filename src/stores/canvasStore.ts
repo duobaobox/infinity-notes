@@ -1,6 +1,7 @@
 // 画布状态管理Store
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
+import { CANVAS_CONSTANTS } from '../components/canvas/CanvasConstants';
 
 // 拖拽状态接口
 export interface DragState {
@@ -68,14 +69,7 @@ export interface CanvasActions {
   getCanvasCenter: () => { x: number; y: number };
 }
 
-// 画布常量
-const CANVAS_CONSTANTS = {
-  MIN_SCALE: 0.1,
-  MAX_SCALE: 3.0,
-  DEFAULT_SCALE: 1.0,
-  ZOOM_STEP: 0.1,
-  ZOOM_ANIMATION_DURATION: 200,
-};
+
 
 // 创建画布Store
 export const useCanvasStore = create<CanvasState & CanvasActions>()(
@@ -202,6 +196,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       },
 
       endDrag: () => {
+        const { offsetX, offsetY } = get();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🖱️ 结束拖拽画布', {
+            finalOffset: { x: offsetX.toFixed(1), y: offsetY.toFixed(1) }
+          });
+        }
         set({
           dragState: {
             isDragging: false,

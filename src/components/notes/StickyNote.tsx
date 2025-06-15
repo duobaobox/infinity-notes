@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import type { StickyNoteProps } from "./types";
+import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
 import { Button } from "antd";
 import { DeleteOutlined, LoadingOutlined } from "@ant-design/icons";
@@ -586,10 +586,30 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [stopTitleEditing]
   );
 
-  // 计算背景色透明度 - 根据文本长度
+  // 计算背景色透明度 - 根据便签状态和内容
   const getContentBackgroundOpacity = () => {
-    // 返回透明度0，即完全透明
-    return 0;
+    // 流式生成时使用较低透明度，突出流式效果
+    if (isStreaming) {
+      return 0.1;
+    }
+
+    // 编辑状态时使用较高透明度，便于编辑
+    if (isEditing) {
+      return 0.15;
+    }
+
+    // 新建便签使用中等透明度
+    if (note.isNew) {
+      return 0.12;
+    }
+
+    // 有内容时使用标准透明度
+    if (displayContent.trim()) {
+      return 0.08;
+    }
+
+    // 空便签使用最低透明度
+    return 0.05;
   };
 
   // 计算标题背景宽度 - 根据标题文本长度动态调整
@@ -771,4 +791,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   );
 };
 
-export default StickyNote;
+// 使用React.memo优化性能，避免不必要的重渲染
+export default memo(StickyNote, (prevProps, nextProps) => {
+  // 自定义比较函数，只在关键props变化时重新渲染
+  return (
+    prevProps.note.id === nextProps.note.id &&
+    prevProps.note.x === nextProps.note.x &&
+    prevProps.note.y === nextProps.note.y &&
+    prevProps.note.width === nextProps.note.width &&
+    prevProps.note.height === nextProps.note.height &&
+    prevProps.note.content === nextProps.note.content &&
+    prevProps.note.title === nextProps.note.title &&
+    prevProps.note.color === nextProps.note.color &&
+    prevProps.note.zIndex === nextProps.note.zIndex &&
+    prevProps.note.isEditing === nextProps.note.isEditing &&
+    prevProps.note.isTitleEditing === nextProps.note.isTitleEditing &&
+    prevProps.note.isNew === nextProps.note.isNew &&
+    prevProps.canvasScale === nextProps.canvasScale &&
+    prevProps.canvasOffset.x === nextProps.canvasOffset.x &&
+    prevProps.canvasOffset.y === nextProps.canvasOffset.y &&
+    prevProps.isStreaming === nextProps.isStreaming &&
+    prevProps.streamingContent === nextProps.streamingContent
+  );
+});
