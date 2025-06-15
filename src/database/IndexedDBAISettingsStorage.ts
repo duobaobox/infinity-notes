@@ -1,9 +1,9 @@
 // 使用 IndexedDB 存储 AI 设置
-import { type AIConfig, defaultAIConfig } from "../services/aiService";
+import { type AIConfig, defaultAIConfig } from "../services/ai/aiService";
 import { IndexedDBService } from "./IndexedDBService";
 
 // 临时保留本地存储版本，便于数据迁移
-import { AISettingsStorage as LocalStorageAISettingsStorage } from "../services/aiSettingsStorage";
+import { AISettingsStorage as LocalStorageAISettingsStorage } from "../services/ai/aiSettingsStorage";
 
 // 定义存储在 IndexedDB 中的 AI 设置结构
 interface StoredAISettings extends AIConfig {

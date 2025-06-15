@@ -1,9 +1,9 @@
 // AI设置管理Hook
 import { useState, useEffect, useCallback } from "react";
-import type { AIConfig } from "../services/aiService";
-import { defaultAIConfig, getAIService } from "../services/aiService";
+import type { AIConfig } from "../../services/ai/aiService";
+import { defaultAIConfig, getAIService } from "../../services/ai/aiService";
 // 从 IndexedDB 导入新的 AI 设置存储服务
-import { IndexedDBAISettingsStorage as AISettingsStorage } from "../database/IndexedDBAISettingsStorage";
+import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 
 export interface UseAISettingsReturn {
   config: AIConfig;

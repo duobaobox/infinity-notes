@@ -12,23 +12,23 @@ import { message } from "antd";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasGrid from "./CanvasGrid";
 import CanvasConsole from "./CanvasConsole";
-import StickyNote from "./StickyNote";
-import SearchModal from "./SearchModal";
-import SettingsModal from "./SettingsModal";
+import StickyNote from "../notes/StickyNote";
+import SearchModal from "../modals/SearchModal";
+import SettingsModal from "../modals/SettingsModal";
 import { CANVAS_CONSTANTS, GRID_CONSTANTS } from "./CanvasConstants";
-import type { StickyNote as StickyNoteType } from "./types";
+import type { StickyNote as StickyNoteType } from "../types";
 import "./InfiniteCanvas.css";
 
 // 全局状态管理导入
-import { 
-  useStickyNotesStore, 
-  useCanvasStore, 
-  useAIStore, 
-  useUIStore 
-} from "../stores";
+import {
+  useStickyNotesStore,
+  useCanvasStore,
+  useAIStore,
+  useUIStore
+} from "../../stores";
 
 // AI服务导入
-import { getAIService } from "../services/aiService";
+import { getAIService } from "../../services/ai/aiService";
 
 // 生成智能标题的工具函数
 const generateSmartTitle = (prompt: string): string => {

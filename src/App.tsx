@@ -1,8 +1,8 @@
 import { Layout, Spin } from "antd";
 import { useRef, useEffect, useState } from "react";
 import "./App.css";
-import InfiniteCanvas from "./components/InfiniteCanvasNew";
-import Sidebar from "./components/Sidebar";
+import InfiniteCanvas from "./components/canvas/InfiniteCanvasNew";
+import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 // 导入全局状态管理

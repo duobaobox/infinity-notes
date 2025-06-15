@@ -18,11 +18,11 @@ import {
   ClockCircleOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import type { Canvas } from "../database";
-import SettingsModal from "./SettingsModal";
+import type { Canvas } from "../../database";
+import SettingsModal from "../modals/SettingsModal";
 
 // 导入全局状态管理
-import { useStickyNotesStore, useUIStore } from "../stores";
+import { useStickyNotesStore, useUIStore } from "../../stores";
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;

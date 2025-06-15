@@ -12,8 +12,8 @@ import {
   RobotOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { useAISettings } from "../hooks/useAISettings";
-import { getAIService } from "../services/aiService";
+import { useAISettings } from "../../hooks/ai/useAISettings";
+import { getAIService } from "../../services/ai/aiService";
 import "./CanvasConsole.css";
 
 interface CanvasConsoleProps {

@@ -28,8 +28,8 @@ import {
   InfoCircleOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
-import { useAISettings } from "../hooks/useAISettings";
-import { useAIPromptSettings } from "../hooks/useAIPromptSettings";
+import { useAISettings } from "../../hooks/ai/useAISettings";
+import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;

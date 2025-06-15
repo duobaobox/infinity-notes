@@ -1,8 +1,8 @@
 // AI状态管理Store
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import type { AIConfig } from '../services/aiService';
-import { defaultAIConfig, getAIService } from '../services/aiService';
+import type { AIConfig } from '../services/ai/aiService';
+import { defaultAIConfig, getAIService } from '../services/ai/aiService';
 import { IndexedDBAISettingsStorage as AISettingsStorage } from '../database/IndexedDBAISettingsStorage';
 
 // AI提示词配置接口

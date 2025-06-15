@@ -18,7 +18,7 @@ export {
 export { IndexedDBService } from "./IndexedDBService.js";
 
 // 类型导出
-export type { StickyNote } from "../components/types.js";
+export type { StickyNote } from "../components/types";
 
 // 定义必要的数据库类型
 export interface User {

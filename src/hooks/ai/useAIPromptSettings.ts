@@ -1,8 +1,8 @@
 // AI提示词设置管理Hook
 import { useState, useEffect, useCallback } from "react";
-import type { AIConfig } from "../services/aiService";
-import { getAIService } from "../services/aiService";
-import { IndexedDBAISettingsStorage as AISettingsStorage } from "../database/IndexedDBAISettingsStorage";
+import type { AIConfig } from "../../services/ai/aiService";
+import { getAIService } from "../../services/ai/aiService";
+import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 
 export interface AIPromptConfig {
   systemPrompt: string; // 系统提示词（空字符串=无提示词模式，有内容=自定义prompt模式）
