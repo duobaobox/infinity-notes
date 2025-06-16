@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { StickyNote } from '../components/types';
 import { ConnectionMode } from '../components/canvas/StickyNoteSlots';
+import { connectionLineManager } from '../utils/connectionLineManager';
 
 // 连接状态接口
 export interface ConnectionState {
@@ -32,6 +33,8 @@ export interface ConnectionActions {
   isNoteConnected: (noteId: string) => boolean; // 检查便签是否已连接
   getConnectionIndex: (noteId: string) => number; // 获取便签在连接列表中的索引
   canAddConnection: () => boolean; // 检查是否可以添加更多连接
+  updateConnectionLines: () => void; // 更新所有连接线位置
+  updateNoteConnectionLines: (noteId: string) => void; // 更新特定便签的连接线位置
 }
 
 // 创建连接Store
@@ -47,59 +50,81 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       // 连接操作
       addConnection: (note: StickyNote) => {
         const state = get();
-        
+
         // 检查是否已连接
         if (state.isNoteConnected(note.id)) {
           console.warn(`便签 ${note.id} 已经连接`);
           return false;
         }
-        
+
         // 检查是否超过最大连接数
         if (!state.canAddConnection()) {
           console.warn(`已达到最大连接数 ${state.maxConnections}`);
           return false;
         }
-        
+
+        // 计算新的连接索引
+        const newIndex = state.connectedNotes.length + 1;
+
         // 添加连接
         const updatedNote = {
           ...note,
           isConnected: true,
-          connectionIndex: state.connectedNotes.length + 1,
+          connectionIndex: newIndex,
         };
-        
+
         set({
           connectedNotes: [...state.connectedNotes, updatedNote],
           isVisible: true, // 有连接时显示插槽容器
         });
-        
+
+        // 延迟创建连接线，确保DOM已更新
+        setTimeout(async () => {
+          await connectionLineManager.createConnection(updatedNote, newIndex);
+        }, 100);
+
         console.log(`✅ 便签 ${note.id} 已连接到插槽`);
         return true;
       },
 
       removeConnection: (noteId: string) => {
         const state = get();
+
+        // 移除连接线
+        connectionLineManager.removeConnection(noteId);
+
         const updatedNotes = state.connectedNotes.filter(note => note.id !== noteId);
-        
+
         // 重新分配连接索引
         const reindexedNotes = updatedNotes.map((note, index) => ({
           ...note,
           connectionIndex: index + 1,
         }));
-        
+
         set({
           connectedNotes: reindexedNotes,
           isVisible: reindexedNotes.length > 0, // 没有连接时隐藏插槽容器
         });
-        
+
+        // 延迟重新创建剩余连接线，确保DOM已更新
+        setTimeout(async () => {
+          for (const note of reindexedNotes) {
+            await connectionLineManager.createConnection(note, note.connectionIndex!);
+          }
+        }, 100);
+
         console.log(`🗑️ 便签 ${noteId} 已从插槽移除`);
       },
 
       clearAllConnections: () => {
+        // 清空所有连接线
+        connectionLineManager.clearAllConnections();
+
         set({
           connectedNotes: [],
           isVisible: false,
         });
-        
+
         console.log('🧹 已清空所有连接');
       },
 
@@ -129,6 +154,15 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       canAddConnection: () => {
         const state = get();
         return state.connectedNotes.length < state.maxConnections;
+      },
+
+      // 连接线管理
+      updateConnectionLines: () => {
+        connectionLineManager.updateConnectionPositions();
+      },
+
+      updateNoteConnectionLines: (noteId: string) => {
+        connectionLineManager.updateNoteConnections(noteId);
       },
     }),
     {

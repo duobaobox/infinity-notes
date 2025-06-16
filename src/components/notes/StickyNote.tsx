@@ -6,6 +6,7 @@ import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
 import { Button } from "antd";
 import { DeleteOutlined, LoadingOutlined } from "@ant-design/icons";
+import { useConnectionStore } from "../../stores/connectionStore";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -71,6 +72,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const titleUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
 
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // 连接状态管理
+  const { updateNoteConnectionLines } = useConnectionStore();
 
   // 处理流式内容更新
   useEffect(() => {
@@ -361,6 +365,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
           // 使用临时状态来更新位置，避免频繁的数据库操作
           setTempPosition({ x: newX, y: newY });
+
+          // 实时更新连接线位置（节流处理）
+          updateNoteConnectionLines(note.id);
         });
       } else if (isResizing) {
         // 取消之前的动画帧
@@ -453,8 +460,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       note.y === tempPosition.y
     ) {
       setIsSyncingPosition(false);
+      // 位置同步完成后，更新连接线位置
+      updateNoteConnectionLines(note.id);
     }
-  }, [note.x, note.y, tempPosition.x, tempPosition.y, isSyncingPosition]);
+  }, [note.x, note.y, tempPosition.x, tempPosition.y, isSyncingPosition, note.id, updateNoteConnectionLines]);
 
   // 处理尺寸同步的 Effect
   useEffect(() => {
@@ -703,6 +712,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   return (
     <div
       ref={noteRef}
+      data-note-id={note.id}
       className={`sticky-note color-${note.color} ${
         isEditing ? "editing" : ""
       } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${

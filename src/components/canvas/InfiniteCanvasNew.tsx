@@ -154,6 +154,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     clearAllConnections,
     setConnectionMode,
     isNoteConnected,
+    updateConnectionLines,
   } = useConnectionStore();
 
   // 获取完整AI配置
@@ -576,7 +577,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     if (!dragState.isDragging) {
       debouncedLogUpdate(scale, offsetX, offsetY);
     }
-  }, [scale, offsetX, offsetY, dragState.isDragging, updateCSSVariables, debouncedLogUpdate]);
+
+    // 画布状态变化时更新所有连接线位置
+    updateConnectionLines();
+  }, [scale, offsetX, offsetY, dragState.isDragging, updateCSSVariables, debouncedLogUpdate, updateConnectionLines]);
 
   // 组件初始化和清理
   useEffect(() => {

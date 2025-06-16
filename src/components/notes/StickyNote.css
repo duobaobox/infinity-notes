@@ -504,14 +504,14 @@
 /* 连接点样式 - 位于便签左下角 */
 .connection-point {
   position: absolute;
-  bottom: -12px; /* 位于便签底部边缘外 */
-  left: 12px; /* 位于便签左下角 */
-  width: 24px;
-  height: 24px;
+  bottom: 8px; /* 调整到便签内部，距离底部8px */
+  left: 8px; /* 调整到便签内部，距离左边8px */
+  width: 18px; /* 与插槽尺寸统一 */
+  height: 18px; /* 与插槽尺寸统一 */
   cursor: pointer;
   z-index: 10;
   opacity: 0; /* 默认隐藏 */
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease; /* 只对透明度做过渡，避免位置变化 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,20 +524,21 @@
 
 /* 连接点内部的圆点 */
 .connection-dot {
-  width: 12px;
-  height: 12px;
+  width: 15px; /* 与插槽内部元素尺寸协调 */
+  height: 15px;
   border-radius: 50%;
-  background: rgba(22, 119, 255, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(22, 119, 255, 0.9); /* 增加不透明度 */
+  border: 1px solid rgba(255, 255, 255, 1); /* 与插槽边框粗细一致 */
+  transition: background-color 0.2s ease, box-shadow 0.2s ease; /* 只对颜色和阴影做过渡 */
+  box-shadow: 0 1px 4px rgba(22, 119, 255, 0.3); /* 与插槽阴影一致 */
+  /* 确保圆点完全居中，但不使用transform避免位置偏移 */
+  margin: auto;
 }
 
-/* 连接点悬停效果 */
+/* 连接点悬停效果 - 移除transform避免位置偏移 */
 .connection-point:hover .connection-dot {
   background: #1677ff;
-  transform: scale(1.2);
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.3);
+  box-shadow: 0 1px 6px rgba(22, 119, 255, 0.4);
 }
 
 /* 已连接状态的连接点 */

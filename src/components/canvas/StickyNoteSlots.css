@@ -155,7 +155,7 @@
 }
 
 .note-slot:hover {
-  transform: translateY(-2px);
+  /* 移除悬浮效果 */
 }
 
 .note-slot.connected {
@@ -164,8 +164,8 @@
 
 /* 圆形插槽样式 */
 .slot-circle {
-  width: 20px;
-  height: 20px;
+  width: 20px; /* 与连接点尺寸统一 */
+  height: 20px; /* 与连接点尺寸统一 */
   border-radius: 50%;
   background: rgba(22, 119, 255, 0.1);
   border: 1px solid rgba(22, 119, 255, 0.3);
@@ -178,9 +178,7 @@
 }
 
 .note-slot:hover .slot-circle {
-  background: rgba(22, 119, 255, 0.15);
-  border-color: rgba(22, 119, 255, 0.4);
-  transform: scale(1.1);
+  /* 移除悬浮效果 */
 }
 
 .note-slot.connected .slot-circle {
