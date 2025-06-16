@@ -74,7 +74,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const previewRef = useRef<HTMLDivElement>(null);
 
   // 连接状态管理
-  const { updateNoteConnectionLines } = useConnectionStore();
+  const { updateNoteConnectionLines, updateNoteConnectionLinesImmediate } = useConnectionStore();
 
   // 处理流式内容更新
   useEffect(() => {
@@ -366,8 +366,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           // 使用临时状态来更新位置，避免频繁的数据库操作
           setTempPosition({ x: newX, y: newY });
 
-          // 实时更新连接线位置（节流处理）
-          updateNoteConnectionLines(note.id);
+          // 立即更新连接线位置，确保与便签位置同步
+          updateNoteConnectionLinesImmediate(note.id);
         });
       } else if (isResizing) {
         // 取消之前的动画帧

@@ -14,6 +14,7 @@ export const PERFORMANCE_CONSTANTS = {
   DRAG_THROTTLE_MS: 16, // 拖拽事件节流时间 (ms) - 60fps
   CSS_UPDATE_DEBOUNCE_MS: 16, // CSS变量更新防抖时间 (ms) - 优化拖拽响应速度
   RENDER_THROTTLE_MS: 16, // 渲染节流时间 (ms)
+  CONNECTION_UPDATE_THROTTLE_MS: 16, // 连接线更新节流时间 (ms) - 60fps
   MAX_VISIBLE_NOTES: 100, // 最大可见便签数量（虚拟化阈值）
 };
 

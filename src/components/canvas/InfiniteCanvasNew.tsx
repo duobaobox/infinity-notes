@@ -155,6 +155,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     setConnectionMode,
     isNoteConnected,
     updateConnectionLines,
+    updateConnectionLinesImmediate,
   } = useConnectionStore();
 
   // 获取完整AI配置
@@ -462,14 +463,18 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     [updateDrag]
   );
 
+
+
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
         e.preventDefault();
         throttledUpdateDrag(e.clientX, e.clientY);
+        // 拖拽过程中立即更新连接线位置，确保同步
+        updateConnectionLinesImmediate();
       }
     },
-    [dragState.isDragging, throttledUpdateDrag]
+    [dragState.isDragging, throttledUpdateDrag, updateConnectionLinesImmediate]
   );
 
   const handleMouseUp = useCallback(
@@ -578,8 +583,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       debouncedLogUpdate(scale, offsetX, offsetY);
     }
 
-    // 画布状态变化时更新所有连接线位置
-    updateConnectionLines();
+    // 只在拖拽结束后更新连接线位置，避免拖拽过程中的频繁更新
+    if (!dragState.isDragging) {
+      updateConnectionLines();
+    }
   }, [scale, offsetX, offsetY, dragState.isDragging, updateCSSVariables, debouncedLogUpdate, updateConnectionLines]);
 
   // 组件初始化和清理

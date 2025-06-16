@@ -35,6 +35,8 @@ export interface ConnectionActions {
   canAddConnection: () => boolean; // 检查是否可以添加更多连接
   updateConnectionLines: () => void; // 更新所有连接线位置
   updateNoteConnectionLines: (noteId: string) => void; // 更新特定便签的连接线位置
+  updateNoteConnectionLinesImmediate: (noteId: string) => void; // 立即更新特定便签的连接线位置
+  updateConnectionLinesImmediate: () => void; // 立即更新所有连接线位置
 }
 
 // 创建连接Store
@@ -163,6 +165,14 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
 
       updateNoteConnectionLines: (noteId: string) => {
         connectionLineManager.updateNoteConnections(noteId);
+      },
+
+      updateNoteConnectionLinesImmediate: (noteId: string) => {
+        connectionLineManager.updateNoteConnectionsImmediate(noteId);
+      },
+
+      updateConnectionLinesImmediate: () => {
+        connectionLineManager.updateConnectionPositionsImmediate();
       },
     }),
     {

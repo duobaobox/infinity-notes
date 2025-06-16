@@ -1,5 +1,6 @@
 // 连接线管理器 - 使用Leader Line实现便签到插槽的连接线
 import type { StickyNote } from '../components/types';
+import { PERFORMANCE_CONSTANTS } from '../components/canvas/CanvasConstants';
 
 // Leader Line类型定义
 declare class LeaderLineClass {
@@ -72,6 +73,9 @@ interface ConnectionLine {
 class ConnectionLineManager {
   private connections: Map<string, ConnectionLine> = new Map(); // 连接线映射表
   private isInitialized = false; // 是否已初始化
+  private updateThrottleTimeout: NodeJS.Timeout | null = null; // 更新节流定时器
+  private rafId: number | null = null; // requestAnimationFrame ID
+  private pendingUpdates = new Set<string>(); // 待更新的连接线ID
 
   constructor() {
     this.init();
@@ -237,28 +241,133 @@ class ConnectionLineManager {
     }
   }
 
-  // 更新连接线位置
+  // 更新连接线位置 - 使用节流优化性能
   updateConnectionPositions(): void {
-    try {
-      for (const connection of this.connections.values()) {
-        connection.line.position();
-      }
-    } catch (error) {
-      console.error('更新连接线位置失败:', error);
+    // 如果没有连接线，直接返回
+    if (this.connections.size === 0) {
+      return;
     }
+
+    // 如果已有待处理的更新，直接返回
+    if (this.updateThrottleTimeout) {
+      return;
+    }
+
+    // 节流处理，避免频繁更新
+    this.updateThrottleTimeout = setTimeout(() => {
+      this.performConnectionUpdate();
+      this.updateThrottleTimeout = null;
+    }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_THROTTLE_MS);
   }
 
-  // 更新特定便签的连接线位置
+  // 执行连接线位置更新
+  private performConnectionUpdate(): void {
+    // 取消之前的动画帧
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+    }
+
+    // 使用 requestAnimationFrame 优化性能
+    this.rafId = requestAnimationFrame(() => {
+      try {
+        for (const connection of this.connections.values()) {
+          connection.line.position();
+        }
+      } catch (error) {
+        console.error('更新连接线位置失败:', error);
+      }
+      this.rafId = null;
+    });
+  }
+
+  // 更新特定便签的连接线位置 - 使用节流优化性能
   updateNoteConnections(noteId: string): void {
+    // 检查该便签是否有连接线
+    let hasConnection = false;
+    for (const connection of this.connections.values()) {
+      if (connection.noteId === noteId) {
+        hasConnection = true;
+        break;
+      }
+    }
+
+    // 如果该便签没有连接线，直接返回
+    if (!hasConnection) {
+      return;
+    }
+
+    // 将便签ID添加到待更新列表
+    this.pendingUpdates.add(noteId);
+
+    // 如果已有待处理的更新，直接返回
+    if (this.updateThrottleTimeout) {
+      return;
+    }
+
+    // 节流处理，避免频繁更新
+    this.updateThrottleTimeout = setTimeout(() => {
+      this.performNoteConnectionUpdate();
+      this.updateThrottleTimeout = null;
+    }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_THROTTLE_MS);
+  }
+
+  // 立即更新特定便签的连接线位置 - 用于拖动时的实时同步
+  updateNoteConnectionsImmediate(noteId: string): void {
     try {
+      // 遍历所有连接线，更新指定便签的连接线
       for (const connection of this.connections.values()) {
         if (connection.noteId === noteId) {
+          // 立即更新连接线位置
           connection.line.position();
         }
       }
     } catch (error) {
-      console.error('更新便签连接线位置失败:', error);
+      console.error('立即更新便签连接线位置失败:', error);
     }
+  }
+
+  // 立即更新所有连接线位置 - 用于画布拖动时的实时同步
+  updateConnectionPositionsImmediate(): void {
+    try {
+      // 如果没有连接线，直接返回
+      if (this.connections.size === 0) {
+        return;
+      }
+
+      // 立即更新所有连接线位置
+      for (const connection of this.connections.values()) {
+        connection.line.position();
+      }
+    } catch (error) {
+      console.error('立即更新所有连接线位置失败:', error);
+    }
+  }
+
+  // 执行特定便签的连接线位置更新
+  private performNoteConnectionUpdate(): void {
+    // 取消之前的动画帧
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+    }
+
+    // 使用 requestAnimationFrame 优化性能
+    this.rafId = requestAnimationFrame(() => {
+      try {
+        // 批量更新所有待更新的便签连接线
+        for (const noteId of this.pendingUpdates) {
+          for (const connection of this.connections.values()) {
+            if (connection.noteId === noteId) {
+              connection.line.position();
+            }
+          }
+        }
+        // 清空待更新列表
+        this.pendingUpdates.clear();
+      } catch (error) {
+        console.error('更新便签连接线位置失败:', error);
+      }
+      this.rafId = null;
+    });
   }
 
   // 获取连接线数量
@@ -307,7 +416,7 @@ class ConnectionLineManager {
       this.scrollTimeout = setTimeout(() => {
         this.updateConnectionPositions();
         this.scrollTimeout = null;
-      }, 16); // 约60fps
+      }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_THROTTLE_MS);
     }
   };
 
@@ -316,17 +425,31 @@ class ConnectionLineManager {
   // 销毁管理器
   destroy(): void {
     this.clearAllConnections();
-    
+
     if (this.isInitialized) {
       window.removeEventListener('resize', this.handleWindowResize);
       window.removeEventListener('scroll', this.handleScroll, true);
       this.isInitialized = false;
     }
 
+    // 清理所有定时器和动画帧
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
       this.scrollTimeout = null;
     }
+
+    if (this.updateThrottleTimeout) {
+      clearTimeout(this.updateThrottleTimeout);
+      this.updateThrottleTimeout = null;
+    }
+
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+
+    // 清空待更新列表
+    this.pendingUpdates.clear();
 
     console.log('🔗 连接线管理器已销毁');
   }
