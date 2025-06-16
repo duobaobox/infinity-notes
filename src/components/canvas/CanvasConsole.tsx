@@ -73,7 +73,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       preconnectTimeoutRef.current = setTimeout(() => {
         try {
           const aiService = getAIService(aiConfig);
-          aiService.preconnectToAI().catch(error => {
+          aiService.preconnectToAI().catch((error) => {
             console.warn("🔗 预连接失败:", error);
           });
         } catch (error) {
@@ -109,11 +109,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
       // 如果没有文本输入，创建空白便签
       if (!inputValue.trim()) {
-        console.log('📝 控制台创建空白便签');
+        console.log("📝 控制台创建空白便签");
         if (onCreateNote) {
           onCreateNote();
         } else {
-          console.warn('⚠️ onCreateNote 回调未定义');
+          console.warn("⚠️ onCreateNote 回调未定义");
         }
         return;
       }
@@ -149,7 +149,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
 
     return (
       <div className="canvas-console">
-        <div className={`console-container ${isFocused ? "focused" : ""} ${isCurrentlyGenerating ? "ai-generating" : ""}`}>
+        <div
+          className={`console-container ${isFocused ? "focused" : ""} ${
+            isCurrentlyGenerating ? "ai-generating" : ""
+          }`}
+        >
           <div className="console-input-container">
             <Input
               ref={inputRef}
@@ -168,45 +172,57 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
               disabled={disabled}
               size="large"
               className="console-input"
-              suffix={
-                inputValue.trim() ? (
-                  localHasValidConfig ? (
-                    <Tooltip title="AI生成便签 (Enter)" placement="top">
-                      <Button
-                        icon={isCurrentlyGenerating ? <LoadingOutlined /> : <RobotOutlined />}
-                        type="primary"
-                        size="small"
-                        onClick={handleSend}
-                        disabled={disabled || isCurrentlyGenerating}
-                        className="ai-send-button"
-                      />
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="点击进行AI设置" placement="top">
-                      <Button
-                        icon={<RobotOutlined />}
-                        type="text"
-                        size="small"
-                        onClick={onOpenAISettings || (() => message.info('请先配置AI设置'))}
-                        disabled={disabled || !onOpenAISettings}
-                        className="send-button"
-                      />
-                    </Tooltip>
-                  )
-                ) : (
-                  <Tooltip title="创建空白便签 (Enter)" placement="top">
-                    <Button
-                      icon={<PlusOutlined />}
-                      type="primary"
-                      shape="circle"
-                      size="small"
-                      onClick={handleSend}
-                      className="add-button-inline"
-                    />
-                  </Tooltip>
-                )
-              }
             />
+          </div>
+
+          {/* 外部按钮区域 */}
+          <div className="console-external-buttons">
+            {inputValue.trim() ? (
+              localHasValidConfig ? (
+                <Tooltip title="AI生成便签 (Enter)" placement="top">
+                  <Button
+                    icon={
+                      isCurrentlyGenerating ? (
+                        <LoadingOutlined />
+                      ) : (
+                        <RobotOutlined />
+                      )
+                    }
+                    type="primary"
+                    shape="circle"
+                    size="middle"
+                    onClick={handleSend}
+                    disabled={disabled || isCurrentlyGenerating}
+                    className="external-button ai-external-button"
+                  />
+                </Tooltip>
+              ) : (
+                <Tooltip title="点击进行AI设置" placement="top">
+                  <Button
+                    icon={<RobotOutlined />}
+                    type="primary"
+                    shape="circle"
+                    size="middle"
+                    onClick={
+                      onOpenAISettings || (() => message.info("请先配置AI设置"))
+                    }
+                    disabled={disabled || !onOpenAISettings}
+                    className="external-button ai-external-button"
+                  />
+                </Tooltip>
+              )
+            ) : (
+              <Tooltip title="创建空白便签 (Enter)" placement="top">
+                <Button
+                  icon={<PlusOutlined />}
+                  type="primary"
+                  shape="circle"
+                  size="middle"
+                  onClick={handleSend}
+                  className="external-button add-external-button"
+                />
+              </Tooltip>
+            )}
           </div>
         </div>
       </div>

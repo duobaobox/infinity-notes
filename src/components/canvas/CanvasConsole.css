@@ -1,4 +1,4 @@
-/* 控制台样式 - 精致小巧设计 */
+/* 移除动画效果 */
 .canvas-console {
   position: fixed; /* 相对于视口定位 */
   bottom: 24px; /* 距离底部一段距离 */
@@ -17,57 +17,33 @@
 .console-container {
   display: flex;
   align-items: center;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.95);
+  justify-content: space-between; /* 添加 space-between 布局 */
+  padding: 8px 10px; /* 调整内边距使按钮和输入框高度协调 */
+  background: #ffffff; /* 纯白色背景 */
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(22, 119, 255, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
-.console-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.02), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.console-container:hover::before {
-  opacity: 1;
-}
-
-.console-container:hover {
-  background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(22, 119, 255, 0.15);
-}
-
-.console-container.focused {
-  background: rgba(255, 255, 255, 0.99);
-  border-color: rgba(22, 119, 255, 0.25);
-}
+/* 移除悬停和聚焦状态的交互效果 */
 
 /* 输入框容器 */
 .console-input-container {
   flex: 1;
+  margin-right: 10px; /* 添加右侧间距，为外部按钮留出空间 */
+  display: flex; /* 添加flex布局 */
+  align-items: center; /* 垂直居中 */
 }
 
-/* 输入框样式 - Ant Design 蓝色主题 */
+/* 输入框样式 - 去除边线只保留底色 */
 .console-input {
   border-radius: 12px !important;
-  border: 1px solid rgba(22, 119, 255, 0.1) !important;
-  background: rgba(248, 250, 252, 0.9) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important; /* 去掉边线 */
+  background: #f5f5f5 !important; /* 修改底色为#f5f5f5 */
   font-size: 12px !important;
-  padding: 6px 12px !important;
-  box-shadow: inset 0 1px 2px rgba(22, 119, 255, 0.04) !important;
+  padding: 8px 12px !important; /* 调整内边距 */
+  height: auto !important; /* 取消固定高度 */
 }
 
 .console-input::placeholder {
@@ -75,26 +51,10 @@
   font-weight: 400 !important;
 }
 
-.console-input:hover {
-  border-color: rgba(22, 119, 255, 0.2) !important;
-  background: rgba(248, 250, 252, 0.95) !important;
-  box-shadow: inset 0 1px 2px rgba(22, 119, 255, 0.06) !important;
-}
-
-.console-input:focus,
-.console-input.ant-input-focused {
-  border-color: #1677ff !important;
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1), inset 0 1px 2px rgba(22, 119, 255, 0.08) !important;
-  background: rgba(255, 255, 255, 1) !important;
-}
-
-
-
-/* 内联按钮样式 - Ant Design 蓝色主题，按钮更大 */
+/* 内联按钮样式 - 无交互效果 */
 .send-button,
 .add-button-inline,
 .ai-send-button {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   border-radius: 50% !important;
   margin-right: 2px !important;
   position: relative !important;
@@ -106,38 +66,15 @@
   justify-content: center !important;
 }
 
-/* AI发送按钮 - 蓝色渐变风格 */
+/* AI发送按钮 - 基本样式无交互 */
 .ai-send-button {
   background: linear-gradient(135deg, #1677ff, #0958d9) !important;
   border: none !important;
   color: white !important;
   font-size: 16px !important;
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.25) !important;
 }
 
-.ai-send-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.ai-send-button:hover::before {
-  opacity: 1;
-}
-
-.ai-send-button:hover {
-  background: linear-gradient(135deg, #0958d9, #003eb3) !important;
-  transform: scale(1.15) !important;
-  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.35) !important;
-}
-
-/* 演示模式发送按钮 - 蓝色透明风格 */
+/* 演示模式发送按钮 - 基本样式无交互 */
 .send-button {
   color: #1677ff !important;
   background: rgba(22, 119, 255, 0.08) !important;
@@ -145,14 +82,7 @@
   font-size: 16px !important;
 }
 
-.send-button:hover {
-  color: #0958d9 !important;
-  background: rgba(22, 119, 255, 0.15) !important;
-  border-color: rgba(22, 119, 255, 0.3) !important;
-  transform: scale(1.15) !important;
-}
-
-/* 手动添加按钮 - 蓝色辅助风格 */
+/* 手动添加按钮 - 基本样式无交互 */
 .add-button-inline {
   color: #1677ff !important;
   background: rgba(22, 119, 255, 0.05) !important;
@@ -160,20 +90,11 @@
   font-size: 16px !important;
 }
 
-.add-button-inline:hover {
-  color: #0958d9 !important;
-  background: rgba(22, 119, 255, 0.12) !important;
-  border-color: rgba(22, 119, 255, 0.25) !important;
-  transform: scale(1.15) !important;
-}
-
 .send-button:disabled,
 .ai-send-button:disabled {
   color: rgba(22, 119, 255, 0.3) !important;
   background: rgba(22, 119, 255, 0.05) !important;
   border-color: rgba(22, 119, 255, 0.1) !important;
-  transform: none !important;
-  box-shadow: none !important;
 }
 
 /* 状态指示器样式 */
@@ -211,7 +132,90 @@
   }
 }
 
-/* 响应式设计 - 精致小巧适配 */
+/* 外部按钮容器 */
+.console-external-buttons {
+  display: flex;
+  align-items: center;
+  padding-left: 0; /* 移除左侧内边距 */
+}
+
+/* 外部便签生成按钮 */
+.external-button {
+  border-radius: 50% !important;
+  width: 38px !important; /* 确保宽高一致 */
+  height: 38px !important; /* 确保宽高一致 */
+  min-width: 38px !important; /* 防止按钮被压缩 */
+  min-height: 38px !important; /* 防止按钮被压缩 */
+  padding: 0 !important; /* 移除内边距 */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 0 !important; /* 移除左侧外边距，去掉按钮左侧空白区域 */
+  font-size: 18px !important;
+  flex-shrink: 0 !important; /* 防止按钮被挤压 */
+  box-sizing: border-box !important; /* 确保边框不影响尺寸 */
+}
+
+/* AI生成按钮 - 外部样式 */
+.ai-external-button {
+  background: #1677ff !important; /* 纯色背景 */
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(24, 144, 255, 0.45),
+    0 0 0 1px rgba(24, 144, 255, 0.2) !important; /* 添加阴影和边缘轮廓 */
+  transition: all 0.2s ease !important; /* 添加过渡效果 */
+}
+
+/* 创建空白便签按钮 - 外部样式 */
+.add-external-button {
+  background: #4096ff !important; /* 更鲜明的蓝色背景 */
+  border: none !important; /* 移除边框 */
+  color: white !important; /* 改为白色图标，增加对比度 */
+  box-shadow: 0 2px 6px rgba(24, 144, 255, 0.45),
+    0 0 0 1px rgba(24, 144, 255, 0.2) !important; /* 增强阴影并添加边缘轮廓 */
+  transition: all 0.2s ease !important; /* 添加过渡效果 */
+}
+
+/* 创建空白便签按钮 - 悬停状态 */
+.add-external-button:hover {
+  background: #2a7ae2 !important; /* 悬停时更深的蓝色 */
+  box-shadow: 0 4px 10px rgba(24, 144, 255, 0.55),
+    0 0 0 1px rgba(24, 144, 255, 0.3) !important; /* 悬停时进一步增强阴影和边缘 */
+  transform: scale(1.05) !important; /* 轻微放大效果 */
+}
+
+/* AI生成按钮 - 悬停状态 */
+.ai-external-button:hover {
+  background: #0958d9 !important; /* 悬停时深蓝色 */
+  box-shadow: 0 4px 10px rgba(24, 144, 255, 0.55),
+    0 0 0 1px rgba(24, 144, 255, 0.3) !important; /* 悬停时进一步增强阴影和边缘 */
+  transform: scale(1.05) !important; /* 轻微放大效果 */
+}
+
+/* 覆盖 Ant Design 按钮的默认样式，确保圆形按钮 */
+.console-external-buttons .ant-btn-circle {
+  border-radius: 50% !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 修复按钮图标居中问题 */
+.console-external-buttons .ant-btn-circle .anticon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+
+/* 响应式设计 - 基本适配无动画 */
 @media (max-width: 768px) {
   .canvas-console {
     width: 85%;
@@ -220,7 +224,7 @@
   }
 
   .console-container {
-    padding: 6px 10px;
+    padding: 6px 12px;
     border-radius: 14px;
   }
 
@@ -231,36 +235,21 @@
   }
 
   /* 移动端按钮优化 */
-  .ai-send-button,
-  .send-button,
-  .add-button-inline {
-    width: 24px !important;
-    height: 24px !important;
-    font-size: 14px !important;
+  .external-button,
+  .console-external-buttons .ant-btn-circle {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    font-size: 16px !important;
+    margin-left: 0 !important; /* 移除左侧外边距，保持与桌面版一致 */
+  }
+
+  .console-external-buttons .ant-btn-circle .anticon {
+    font-size: 16px !important;
   }
 }
 
-/* 加载动画效果 */
-@keyframes console-appear {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-.canvas-console {
-  animation: console-appear 0.3s ease-out;
-}
+/* 移除加载动画效果 */
 
-/* AI生成状态下的控制台样式 */
-.console-container.ai-generating {
-  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.2),
-    0 4px 16px rgba(22, 119, 255, 0.1);
-  border-color: rgba(22, 119, 255, 0.3);
-}
-
-
-
+/* 移除AI生成状态下的特殊样式 */
