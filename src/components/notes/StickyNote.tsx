@@ -16,7 +16,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   canvasOffset, // 新增：画布偏移量
   // 流式相关属性
   isStreaming = false,
-  streamingContent = '',
+  streamingContent = "",
   onStreamingComplete,
   // 连接相关属性
   onConnect,
@@ -67,14 +67,20 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const rafRef = useRef<number | null>(null);
 
   // 防抖更新的 timer
-  const contentUpdateTimerRef = useRef<number | null>(null);
-  const titleUpdateTimerRef = useRef<number | null>(null);
+  const contentUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
+  const titleUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
+
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // 处理流式内容更新
   useEffect(() => {
     if (isStreaming) {
       setDisplayContent(streamingContent);
       setShowCursor(true);
+      // 内容更新时滚动到底部
+      if (previewRef.current) {
+        previewRef.current.scrollTop = previewRef.current.scrollHeight;
+      }
     } else {
       setDisplayContent(note.content);
       setShowCursor(false);
@@ -804,6 +810,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           />
         ) : (
           <div
+            ref={previewRef}
             className="sticky-note-preview"
             onMouseDown={(e) => {
               // 阻止父元素的拖拽事件

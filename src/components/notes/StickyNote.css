@@ -247,6 +247,7 @@
   padding-left: 0; /* Ensure consistent left padding */
   /* padding-right: 17px; -- Removed as per user feedback */
   margin-right: -17px; /* Pull scrollbar area into the overflow hidden area */
+  scroll-behavior: smooth; /* 添加平滑滚动效果 */
 }
 
 .sticky-note-preview:hover {

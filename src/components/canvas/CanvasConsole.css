@@ -47,7 +47,7 @@
 }
 
 .console-input::placeholder {
-  color: rgba(22, 119, 255, 0.45) !important;
+  color: #999999 !important;
   font-weight: 400 !important;
 }
 
