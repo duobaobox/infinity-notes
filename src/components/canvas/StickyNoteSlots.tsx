@@ -1,19 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { Tooltip } from "antd";
 import type { StickyNote } from "../types";
 import "./StickyNoteSlots.css";
 
 // 连接模式枚举
-export enum ConnectionMode {
-  SUMMARY = "summary", // 汇总模式：保留原始便签，并自动将它们连接到新便签
-  REPLACE = "replace", // 替换模式：删除原始便签，只保留新生成的便签
-}
+export const ConnectionMode = {
+  SUMMARY: "summary", // 汇总模式：保留原始便签，并自动将它们连接到新便签
+  REPLACE: "replace", // 替换模式：删除原始便签，只保留新生成的便签
+} as const;
 
 // 插槽组件属性接口
 interface StickyNoteSlotsProps {
   connectedNotes: StickyNote[]; // 已连接的便签列表
-  connectionMode: ConnectionMode; // 连接模式
-  onModeChange: (mode: ConnectionMode) => void; // 模式切换回调
+  connectionMode: typeof ConnectionMode[keyof typeof ConnectionMode]; // 连接模式
+  onModeChange: (mode: typeof ConnectionMode[keyof typeof ConnectionMode]) => void; // 模式切换回调
   onRemoveConnection: (noteId: string) => void; // 移除连接回调
   onClearAllConnections: () => void; // 清空所有连接回调
   visible?: boolean; // 是否显示插槽容器
@@ -47,19 +47,7 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
       : "替换模式：删除原始便签，只保留新生成的便签<br>汇总模式：保留原始便签，并自动将它们连接到新便签";
   };
 
-  return (
-    <div className={`slots-container ${visible && connectedNotes.length > 0 ? 'visible' : ''}`} id="slots-container">
-      {/* 标题 */}
-      <div className="slots-title">
-        {connectedNotes.length > 0 ? (
-          <span>
-            已连接便签 <span className="connection-count">({connectedNotes.length})</span>
-          </span>
-        ) : (
-          "已连接便签"
-        )}
-      </div>
-
+  return (    <div className={`slots-container ${visible && connectedNotes.length > 0 ? 'visible' : ''}`} id="slots-container">
       {/* 插槽列表 */}
       <div className="slots-list" id="slots-list">
         {connectedNotes.length === 0 ? (

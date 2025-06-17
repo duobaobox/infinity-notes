@@ -58,8 +58,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     // 动态placeholder文本
     const dynamicPlaceholder = placeholder || (
       hasConnections
-        ? `输入处理指令处理连接的便签（如：总结、分析、整理等）`
-        : "输入文本AI生成便签，留空创建空白便签..."
+        ? `   请输入指令处理便签（如：总结、分析、整理等）`
+        : " 输入文本AI生成便签，留空创建空白便签..."
     );
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
@@ -123,7 +123,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
       // 如果有连接便签，必须输入处理命令
       if (hasConnections) {
         if (!inputValue.trim()) {
-          message.warning("请输入处理指令处理便签（如：总结、分析、整理等）");
+          message.warning("请输入处理指令（如：总结、分析、整理等）");
           return;
         }
         // 有连接便签且有输入，执行AI智能处理
@@ -222,14 +222,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             {hasConnections ? (
               // 有连接便签时：始终显示绿色的AI智能处理按钮
               localHasValidConfig ? (
-                <Tooltip
-                  title={
-                    inputValue.trim()
-                      ? `处理 ${connectedNotes.length} 个便签 (Enter)`
-                      : `必须输入指令才能处理这 ${connectedNotes.length} 个便签`
-                  }
-                  placement="top"
-                >
+                inputValue.trim() ? (
+                  // 有输入时不显示Tooltip
                   <Button
                     icon={
                       isCurrentlyGenerating ? (
@@ -243,9 +237,31 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                     size="middle"
                     onClick={handleSend}
                     disabled={disabled || isCurrentlyGenerating}
-                    className={`external-button ai-smart-process-button ${!inputValue.trim() ? 'requires-input' : ''}`}
+                    className="external-button ai-smart-process-button"
                   />
-                </Tooltip>
+                ) : (
+                  // 无输入时显示提示
+                  <Tooltip
+                    title={`必须输入指令才能处理这 ${connectedNotes.length} 个便签`}
+                    placement="top"
+                  >
+                    <Button
+                      icon={
+                        isCurrentlyGenerating ? (
+                          <LoadingOutlined />
+                        ) : (
+                          <BranchesOutlined />
+                        )
+                      }
+                      type="primary"
+                      shape="circle"
+                      size="middle"
+                      onClick={handleSend}
+                      disabled={disabled || isCurrentlyGenerating}
+                      className="external-button ai-smart-process-button requires-input"
+                    />
+                  </Tooltip>
+                )
               ) : (
                 <Tooltip title="点击进行AI设置" placement="top">
                   <Button
@@ -253,9 +269,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                     type="primary"
                     shape="circle"
                     size="middle"
-                    onClick={
-                      onOpenAISettings || (() => message.info("请先配置AI设置"))
-                    }
+                    onClick={onOpenAISettings || (() => message.info("请先配置AI设置"))}
                     disabled={disabled || !onOpenAISettings}
                     className="external-button ai-smart-process-button requires-input"
                   />
@@ -291,9 +305,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                       type="primary"
                       shape="circle"
                       size="middle"
-                      onClick={
-                        onOpenAISettings || (() => message.info("请先配置AI设置"))
-                      }
+                      onClick={onOpenAISettings || (() => message.info("请先配置AI设置"))}
                       disabled={disabled || !onOpenAISettings}
                       className="external-button ai-external-button"
                     />

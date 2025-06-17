@@ -95,7 +95,7 @@ interface InfiniteCanvasRef {
 
 const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const consoleRef = useRef<any>(null);
+  const consoleRef = useRef<{ focus: () => void }>(null);
 
   // 全局状态管理 - 便签状态
   const {    notes: stickyNotes,

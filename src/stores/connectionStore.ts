@@ -3,15 +3,18 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { StickyNote } from '../components/types';
 import { ConnectionMode } from '../components/canvas/StickyNoteSlots';
+
+// 连接模式类型
+type ConnectionModeType = typeof ConnectionMode[keyof typeof ConnectionMode];
 import { connectionLineManager } from '../utils/connectionLineManager';
 
 // 连接状态接口
 export interface ConnectionState {
   // 连接数据
   connectedNotes: StickyNote[]; // 已连接的便签列表
-  connectionMode: ConnectionMode; // 连接模式
+  connectionMode: ConnectionModeType; // 连接模式
   maxConnections: number; // 最大连接数量
-  
+
   // 状态标识
   isVisible: boolean; // 插槽容器是否可见
 }
@@ -24,7 +27,7 @@ export interface ConnectionActions {
   clearAllConnections: () => void; // 清空所有连接
   
   // 模式管理
-  setConnectionMode: (mode: ConnectionMode) => void; // 设置连接模式
+  setConnectionMode: (mode: ConnectionModeType) => void; // 设置连接模式
   
   // 可见性管理
   setVisible: (visible: boolean) => void; // 设置可见性
@@ -155,7 +158,7 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       },
 
       // 模式管理
-      setConnectionMode: (mode: ConnectionMode) => {
+      setConnectionMode: (mode: ConnectionModeType) => {
         set({ connectionMode: mode });
         console.log(`🔄 连接模式已切换为: ${mode}`);
       },

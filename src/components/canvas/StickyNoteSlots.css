@@ -28,13 +28,11 @@
 .slots-container.visible {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%);
-  display: flex; /* 显示时改为 flex 布局 */
+  transform: translateX(-50%);  display: flex; /* 显示时改为 flex 布局 */
   flex-direction: row;
   align-items: center;
   padding: 6px 10px;
-  gap: 12px;
-  height: 54px; /* 固定高度 */
+  height: 44px; /* 减小高度 */
   box-sizing: border-box;
 }
 
@@ -57,15 +55,6 @@
 .slots-container:hover {
   background: rgba(255, 255, 255, 0.98);
   border-color: rgba(22, 119, 255, 0.15);
-}
-
-/* 标题样式 - 横向布局 */
-.slots-title {
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(22, 119, 255, 0.8);
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* 连接数量样式 */
@@ -239,6 +228,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-right: 12px; /* 添加右侧外边距 */
   flex-shrink: 0;
 }
 
