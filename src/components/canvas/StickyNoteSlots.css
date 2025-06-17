@@ -11,28 +11,25 @@
   margin-left: auto;
   margin-right: auto;
 
-  /* 容器样式 - 与顶部工具栏一致的阴影 */
-  background: rgba(255, 255, 255, 0.95);
+  /* 容器样式 - 与顶部工具栏一致的阴影 */  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(5px);
   border: 1px solid rgba(22, 119, 255, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease-out; /* 只对透明度应用快速过渡 */
   overflow: hidden;
-
   /* 默认隐藏，只有在有连接时才显示 */
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateX(-50%);
+  display: none; /* 添加 display: none 以彻底隐藏 */
 }
 
 .slots-container.visible {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
-
-  /* 一排布局 - 固定高度54px */
-  display: flex;
+  transform: translateX(-50%);
+  display: flex; /* 显示时改为 flex 布局 */
   flex-direction: row;
   align-items: center;
   padding: 6px 10px;
