@@ -227,17 +227,31 @@ class ConnectionLineManager {
       return false;
     }
   }
-
   // 清空所有连接线
   clearAllConnections(): void {
     try {
-      for (const connection of this.connections.values()) {
-        connection.line.remove();
+      console.log('🔍 开始清空连接线，当前连接数:', this.connections.size);
+      
+      // 逐个移除连接线
+      for (const [id, connection] of this.connections.entries()) {
+        try {
+          console.log(`📌 正在移除连接线: ${id}`);
+          connection.line.remove();
+          this.connections.delete(id);
+        } catch (lineError) {
+          console.error(`❌ 移除连接线 ${id} 失败:`, lineError);
+        }
       }
+
+      // 确保完全清空
       this.connections.clear();
+      
       console.log('🧹 已清空所有连接线');
     } catch (error) {
-      console.error('清空连接线失败:', error);
+      console.error('❌ 清空连接线失败:', error);
+      // 出错时也要尝试强制清空
+      this.connections.clear();
+      throw error; // 抛出错误以便上层处理
     }
   }
 

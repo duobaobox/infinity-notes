@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import { getAIService } from "../../services/ai/aiService";
+import { useConnectionStore } from "../../stores";
 import "./CanvasConsole.css";
 
 interface CanvasConsoleProps {
@@ -48,6 +49,10 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const [localHasValidConfig, setLocalHasValidConfig] = useState(false);
     const inputRef = useRef<any>(null);
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 获取连接状态
+    const { connectedNotes } = useConnectionStore();
+    const hasConnections = connectedNotes.length > 0;
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
@@ -147,12 +152,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const handleFocus = () => setIsFocused(true);
     const handleBlur = () => setIsFocused(false);
 
-    return (
-      <div className="canvas-console">
+    return (      <div className={`canvas-console`}>
         <div
           className={`console-container ${isFocused ? "focused" : ""} ${
             isCurrentlyGenerating ? "ai-generating" : ""
-          }`}
+          } ${hasConnections ? "has-connections" : ""}`}
         >
           <div className="console-input-container">
             <Input

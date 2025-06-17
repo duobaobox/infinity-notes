@@ -158,6 +158,29 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     updateConnectionLinesImmediate,
   } = useConnectionStore();
 
+  // 处理清空所有连接的函数
+  const handleClearAllConnections = useCallback(() => {
+    try {
+      console.log('🔄 开始清空所有连接...');
+      if (connectedNotes.length === 0) {
+        console.log('ℹ️ 没有需要清空的连接');
+        return;
+      }
+
+      // 清空所有连接
+      clearAllConnections();
+      
+      // 更新画布状态
+      updateConnectionLinesImmediate();
+      
+      console.log('✅ 清空连接操作完成');
+    } catch (error) {
+      console.error('❌ 清空连接失败:', error);
+      // 显示错误消息
+      message.error('清空连接失败，请重试');
+    }
+  }, [connectedNotes, clearAllConnections, updateConnectionLinesImmediate]);
+
   // 获取完整AI配置
   const fullAIConfig = useMemo(() => {
     return getFullConfig();
@@ -729,7 +752,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         connectionMode={connectionMode}
         onModeChange={setConnectionMode}
         onRemoveConnection={removeConnection}
-        onClearAllConnections={clearAllConnections}
+        onClearAllConnections={handleClearAllConnections}
         visible={slotsVisible}
       />
 

@@ -119,15 +119,39 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       },
 
       clearAllConnections: () => {
-        // 清空所有连接线
-        connectionLineManager.clearAllConnections();
+        try {
+          // 获取当前状态
+          const state = get();
+          const noteIds = state.connectedNotes.map(note => note.id);
+          
+          if (noteIds.length === 0) {
+            console.log('ℹ️ 没有需要清空的连接');
+            return;
+          }
 
-        set({
-          connectedNotes: [],
-          isVisible: false,
-        });
+          console.log('📊 开始清空连接:', {
+            连接数量: state.connectedNotes.length,
+            连接的便签IDs: noteIds
+          });
 
-        console.log('🧹 已清空所有连接');
+          // 清空所有连接线
+          connectionLineManager.clearAllConnections();
+
+          // 重置状态
+          set({
+            connectedNotes: [], // 清空连接的便签列表
+            isVisible: false, // 隐藏插槽容器
+          });
+
+          console.log('✅ 已成功清空所有连接');
+        } catch (error) {
+          console.error('❌ 清空连接失败:', error);
+          // 即使出错也尝试重置状态
+          set({
+            connectedNotes: [],
+            isVisible: false,
+          });
+        }
       },
 
       // 模式管理

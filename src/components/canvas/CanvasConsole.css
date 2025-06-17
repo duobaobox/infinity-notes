@@ -14,6 +14,30 @@
   margin-right: auto;
 }
 
+/* 添加连接边框样式 */
+.console-container.has-connections {
+  border: 2px solid #52c41a !important; /* 加粗的绿色边框 */
+  box-shadow: 0 4px 20px rgba(82, 196, 26, 0.12),
+              0 2px 8px rgba(82, 196, 26, 0.08),
+              0 0 0 1px rgba(82, 196, 26, 0.1),
+              inset 0 0 15px rgba(82, 196, 26, 0.03) !important; /* 多层立体阴影 */
+  background: linear-gradient(to bottom, 
+              rgba(82, 196, 26, 0.02),
+              rgba(255, 255, 255, 1) 15%,
+              rgba(255, 255, 255, 1)) !important; /* 渐变背景 */
+  transform: translateY(0); /* 为悬浮效果准备 */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 平滑过渡 */
+}
+
+/* 添加悬浮效果 */
+.console-container.has-connections:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(82, 196, 26, 0.15),
+              0 2px 8px rgba(82, 196, 26, 0.1),
+              0 0 0 1px rgba(82, 196, 26, 0.12),
+              inset 0 0 15px rgba(82, 196, 26, 0.04) !important;
+}
+
 .console-container {
   display: flex;
   align-items: center;
@@ -21,9 +45,11 @@
   padding: 8px 10px; /* 调整内边距使按钮和输入框高度协调 */
   background: #ffffff; /* 纯白色背景 */
   border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06); /* 默认边框 */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* 添加过渡效果 */
 }
 
 /* 移除悬停和聚焦状态的交互效果 */
