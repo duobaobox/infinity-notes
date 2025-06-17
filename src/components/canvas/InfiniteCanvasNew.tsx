@@ -400,15 +400,18 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           // 处理连接模式
           if (connectedNotes.length > 0) {
             if (connectionMode === "replace") {
-              // 替换模式：删除原始便签
+              // 替换模式：删除原始便签，但保留连接状态
               console.log("🔄 替换模式：删除原始连接的便签");
               connectedNotes.forEach(note => {
                 deleteNote(note.id);
               });
+              // 替换模式下清空连接，因为原始便签已被删除
+              clearAllConnections();
+              console.log("🧹 替换模式：已清空便签连接");
+            } else {
+              // 汇总模式：保留原始便签和连接
+              console.log("📌 汇总模式：保留便签连接");
             }
-            // 清空连接（无论哪种模式）
-            clearAllConnections();
-            console.log("🧹 已清空便签连接");
           }
 
           message.success(`AI生成完成！共创建 ${notes.length} 个便签`);

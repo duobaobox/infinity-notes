@@ -68,33 +68,47 @@
   transform: translateY(-50%);
   display: flex;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 2px;
   background: rgba(82, 196, 26, 0.12);
   border: 1px solid rgba(82, 196, 26, 0.25);
-  border-radius: 14px;
-  padding: 3px 8px;
+  border-radius: 50%; /* 改为圆形 */
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
+  min-width: 24px; /* 防止压缩 */
   z-index: 10;
-  font-size: 10px;
+  font-size: 9px;
   color: #52c41a;
-  font-weight: 600;
+  font-weight: 700;
   pointer-events: none;
   box-shadow: 0 1px 3px rgba(82, 196, 26, 0.1);
 }
 
 .connection-icon {
-  font-size: 9px;
-  opacity: 0.9;
+  display: none; /* 隐藏图标，只显示数字 */
 }
 
 .connection-text {
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1;
   font-weight: 700;
+  text-align: center;
+}
+
+/* 连接指示器显示/隐藏状态 */
+.connection-indicator.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.connection-indicator.hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* 有连接时调整输入框左边距 */
 .console-container.has-connections .console-input {
-  padding-left: 50px !important; /* 为连接指示器留出更多空间 */
+  padding-left: 45px !important; /* 为圆形连接指示器留出空间 */
 }
 
 /* 输入框样式 - 去除边线只保留底色 */

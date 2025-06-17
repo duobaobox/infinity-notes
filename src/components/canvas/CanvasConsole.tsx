@@ -58,7 +58,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     // 动态placeholder文本
     const dynamicPlaceholder = placeholder || (
       hasConnections
-        ? `   请输入指令处理便签（如：总结、分析、整理等）`
+        ? ` 请输入指令处理便签（如：总结、分析、整理等）`
         : " 输入文本AI生成便签，留空创建空白便签..."
     );
 
@@ -190,13 +190,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
           } ${hasConnections ? "has-connections" : ""}`}
         >
           <div className="console-input-container">
-            {/* 连接状态指示器 */}
-            {hasConnections && (
-              <div className="connection-indicator">
-                <span className="connection-icon">🔗</span>
-                <span className="connection-text">{connectedNotes.length}</span>
-              </div>
-            )}
+            {/* 连接状态指示器 - 始终存在，通过CSS控制显示 */}
+            <div className={`connection-indicator ${hasConnections ? 'visible' : 'hidden'}`}>
+              <span className="connection-icon">🔗</span>
+              <span className="connection-text">{connectedNotes.length}</span>
+            </div>
             <Input
               ref={inputRef}
               value={inputValue}
