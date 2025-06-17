@@ -29,13 +29,10 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 平滑过渡 */
 }
 
-/* 添加悬浮效果 */
+/* 连接状态下移除悬浮动效 */
 .console-container.has-connections:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(82, 196, 26, 0.15),
-              0 2px 8px rgba(82, 196, 26, 0.1),
-              0 0 0 1px rgba(82, 196, 26, 0.12),
-              inset 0 0 15px rgba(82, 196, 26, 0.04) !important;
+  /* 保持原位置，不添加向上悬浮效果 */
+  transform: translateY(0);
 }
 
 .console-container {
@@ -60,6 +57,44 @@
   margin-right: 10px; /* 添加右侧间距，为外部按钮留出空间 */
   display: flex; /* 添加flex布局 */
   align-items: center; /* 垂直居中 */
+  position: relative; /* 为连接指示器定位 */
+}
+
+/* 连接状态指示器 */
+.connection-indicator {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(82, 196, 26, 0.12);
+  border: 1px solid rgba(82, 196, 26, 0.25);
+  border-radius: 14px;
+  padding: 3px 8px;
+  z-index: 10;
+  font-size: 10px;
+  color: #52c41a;
+  font-weight: 600;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(82, 196, 26, 0.1);
+}
+
+.connection-icon {
+  font-size: 9px;
+  opacity: 0.9;
+}
+
+.connection-text {
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* 有连接时调整输入框左边距 */
+.console-container.has-connections .console-input {
+  padding-left: 50px !important; /* 为连接指示器留出更多空间 */
 }
 
 /* 输入框样式 - 去除边线只保留底色 */
@@ -192,6 +227,16 @@
   transition: all 0.2s ease !important; /* 添加过渡效果 */
 }
 
+/* AI智能处理按钮 - 独立的绿色按钮样式 */
+.ai-smart-process-button {
+  background: #52c41a !important; /* 绿色背景 */
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(82, 196, 26, 0.45),
+    0 0 0 1px rgba(82, 196, 26, 0.2) !important; /* 绿色阴影和边缘轮廓 */
+  transition: all 0.2s ease !important; /* 添加过渡效果 */
+}
+
 /* 创建空白便签按钮 - 外部样式 */
 .add-external-button {
   background: #4096ff !important; /* 更鲜明的蓝色背景 */
@@ -216,6 +261,31 @@
   box-shadow: 0 4px 10px rgba(24, 144, 255, 0.55),
     0 0 0 1px rgba(24, 144, 255, 0.3) !important; /* 悬停时进一步增强阴影和边缘 */
   transform: scale(1.05) !important; /* 轻微放大效果 */
+}
+
+/* AI智能处理按钮 - 悬停状态 */
+.ai-smart-process-button:hover {
+  background: #389e0d !important; /* 悬停时深绿色 */
+  box-shadow: 0 4px 10px rgba(82, 196, 26, 0.55),
+    0 0 0 1px rgba(82, 196, 26, 0.3) !important; /* 悬停时绿色阴影增强 */
+  transform: scale(1.05) !important; /* 轻微放大效果 */
+}
+
+/* AI智能处理按钮 - 需要输入时的无法使用悬浮效果 */
+.ai-smart-process-button.requires-input:hover {
+  background: #52c41a !important; /* 保持原绿色，不变深 */
+  box-shadow: 0 2px 6px rgba(255, 77, 79, 0.3),
+    0 0 0 2px rgba(255, 77, 79, 0.2) !important; /* 红色警告边框 */
+  transform: scale(1.02) !important; /* 轻微放大，但比正常状态小 */
+  cursor: not-allowed !important; /* 禁用光标 */
+  animation: shake 0.5s ease-in-out !important; /* 添加轻微摇摆动画 */
+}
+
+/* 摇摆动画 */
+@keyframes shake {
+  0%, 100% { transform: scale(1.02) translateX(0); }
+  25% { transform: scale(1.02) translateX(-1px); }
+  75% { transform: scale(1.02) translateX(1px); }
 }
 
 /* 覆盖 Ant Design 按钮的默认样式，确保圆形按钮 */

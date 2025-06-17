@@ -50,7 +50,15 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
   return (
     <div className={`slots-container ${visible && connectedNotes.length > 0 ? 'visible' : ''}`} id="slots-container">
       {/* 标题 */}
-      <div className="slots-title">已连接便签</div>
+      <div className="slots-title">
+        {connectedNotes.length > 0 ? (
+          <span>
+            已连接便签 <span className="connection-count">({connectedNotes.length})</span>
+          </span>
+        ) : (
+          "已连接便签"
+        )}
+      </div>
 
       {/* 插槽列表 */}
       <div className="slots-list" id="slots-list">
@@ -61,7 +69,7 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
             </div>
             <div className="empty-text-container">
               <span className="empty-text">暂无连接的便签</span>
-              <span className="empty-hint">悬停便签并点击连接点来建立连接</span>
+              <span className="empty-hint">悬停便签并点击左下角 <span className="connection-dot-demo">●</span> 连接点来建立连接</span>
             </div>
           </div>
         ) : (
