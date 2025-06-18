@@ -19,6 +19,7 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import type { Canvas } from "../../database";
+import { connectionLineManager } from "../../utils/connectionLineManager";
 
 // 导入全局状态管理
 import { useStickyNotesStore, useUIStore } from "../../stores";
@@ -45,7 +46,18 @@ const Sidebar: React.FC = () => {
   } = useStickyNotesStore();
 
   // 使用UI状态管理
-  const { openSettingsModal } = useUIStore();
+  const { openSettingsModal, setSidebarCollapsed } = useUIStore();
+
+  // 处理侧边栏折叠状态变化
+  const handleCollapseChange = useCallback((value: boolean) => {
+    setCollapsed(value);
+    // 同步更新 UI Store 状态
+    setSidebarCollapsed(value);
+    // 延迟更新连接线位置，等待侧边栏动画完成
+    setTimeout(() => {
+      connectionLineManager.updateConnectionPositionsImmediate();
+    }, 300);
+  }, [setSidebarCollapsed]);
 
   // 创建新画布
   const handleCreateCanvas = useCallback(async () => {
@@ -164,11 +176,10 @@ const Sidebar: React.FC = () => {
         background:
           "linear-gradient(180deg,rgb(255, 255, 255) 0%,rgb(255, 255, 255) 100%)", // Gradient background
         boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.05)", // Softer shadow
-      }}
-      ref={siderRef as React.RefObject<HTMLDivElement>}
+      }}      ref={siderRef as React.RefObject<HTMLDivElement>}
       collapsible
       collapsed={collapsed}
-      onCollapse={(value) => setCollapsed(value)}
+      onCollapse={handleCollapseChange}
       collapsedWidth={0}
     >
       {!collapsed && (

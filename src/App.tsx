@@ -8,9 +8,8 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 // 导入全局状态管理
 import {
   useStickyNotesStore,
-  useCanvasStore,
   useAIStore,
-  useUIStore
+  useUIStore,
 } from "./stores";
 
 const { Content } = Layout;
@@ -64,9 +63,7 @@ function App() {
         console.error("Store初始化失败:", error);
         setAppInitialized(true); // 即使失败也要标记完成，避免无限加载
       }
-    };
-
-    initializeStores();
+    };    initializeStores();
   }, [initializeStickyNotes, initializeAI, initializeUI]);
 
   // 设置键盘快捷键
