@@ -140,38 +140,38 @@ function App() {
       </div>
     );
   }
-
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Sidebar />
-      <Layout>
-        <Content style={{ margin: "0", overflow: "hidden" }}>
-          <InfiniteCanvas ref={canvasRef} />
+      {/* 画布占据全屏 */}
+      <Content style={{ margin: "0", overflow: "hidden", position: "relative" }}>
+        <InfiniteCanvas ref={canvasRef} />
+        
+        {/* 悬浮侧边栏 */}
+        <Sidebar />
 
-          {/* 操作加载指示器 - 小的、不阻塞的加载提示 */}
-          {operationInProgress && (
-            <div
-              style={{
-                position: "fixed",
-                top: "20px",
-                right: "20px",
-                background: "rgba(0, 0, 0, 0.7)",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius: "6px",
-                fontSize: "12px",
-                zIndex: 10000,
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <Spin size="small" />
-              <span>处理中...</span>
-            </div>
-          )}
-        </Content>
-      </Layout>
+        {/* 操作加载指示器 - 小的、不阻塞的加载提示 */}
+        {operationInProgress && (
+          <div
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              background: "rgba(0, 0, 0, 0.7)",
+              color: "white",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              zIndex: 10000,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Spin size="small" />
+            <span>处理中...</span>
+          </div>
+        )}
+      </Content>
     </Layout>
   );
 }

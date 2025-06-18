@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Layout,
   Typography,
   List,
   Avatar,
@@ -17,6 +16,7 @@ import {
   StarFilled,
   ClockCircleOutlined,
   SettingOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import type { Canvas } from "../../database";
 import { connectionLineManager } from "../../utils/connectionLineManager";
@@ -24,7 +24,6 @@ import { connectionLineManager } from "../../utils/connectionLineManager";
 // 导入全局状态管理
 import { useStickyNotesStore, useUIStore } from "../../stores";
 
-const { Sider } = Layout;
 const { Title, Text } = Typography;
 
 const Sidebar: React.FC = () => {
@@ -58,6 +57,11 @@ const Sidebar: React.FC = () => {
       connectionLineManager.updateConnectionPositionsImmediate();
     }, 300);
   }, [setSidebarCollapsed]);
+
+  // 切换侧边栏显示状态
+  const toggleSidebar = useCallback(() => {
+    handleCollapseChange(!collapsed);
+  }, [collapsed, handleCollapseChange]);
 
   // 创建新画布
   const handleCreateCanvas = useCallback(async () => {
@@ -164,25 +168,63 @@ const Sidebar: React.FC = () => {
     lastEdited: formatDate(note.updatedAt.toISOString()),
   }));
 
-  const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);
+  const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);  return (
+    <>      {/* 侧边栏触发按钮 - 与侧边栏紧贴，风格统一 */}
+      <div
+        onClick={toggleSidebar}
+        aria-label={collapsed ? "打开侧边栏" : "关闭侧边栏"}
+        style={{
+          position: "fixed",
+          top: "16px",
+          left: collapsed ? "0" : "220px", // 紧贴侧边栏边缘
+          zIndex: 1001,
+          width: "32px",
+          height: "32px",
+          background: "#ffffff",
+          borderRadius: collapsed ? "0 8px 8px 0" : "0 8px 8px 0", // 左侧始终无圆角，与侧边栏或屏幕边缘贴合
+          border: collapsed ? "1px solid #e0e0e0" : "1px solid #e0e0e0",
+          borderLeft: "none", // 始终无左边框，与侧边栏或屏幕边缘完美融合
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          boxShadow: collapsed ? "2px 0 8px rgba(0, 0, 0, 0.08)" : "2px 0 4px rgba(0, 0, 0, 0.04)", // 展开时保持轻微阴影增加层次感
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#f8f9fa";
+          e.currentTarget.style.borderColor = "#1677ff";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#ffffff";
+          e.currentTarget.style.borderColor = "#e0e0e0";
+        }}
+      >
+        <MenuOutlined 
+          style={{
+            fontSize: "14px",
+            color: "#666",
+            transition: "color 0.2s ease",
+          }}
+        />
+      </div>
 
-  return (
-    <Sider
-      width={220}
-      theme="light"
-      style={{
-        height: "100vh",
-        borderRight: "1px solid #f0f0f0",
-        background:
-          "linear-gradient(180deg,rgb(255, 255, 255) 0%,rgb(255, 255, 255) 100%)", // Gradient background
-        boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.05)", // Softer shadow
-      }}      ref={siderRef as React.RefObject<HTMLDivElement>}
-      collapsible
-      collapsed={collapsed}
-      onCollapse={handleCollapseChange}
-      collapsedWidth={0}
-    >
-      {!collapsed && (
+      {/* 悬浮侧边栏 */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: collapsed ? "-220px" : "0",
+          width: "220px",
+          height: "100vh",
+          background: "#ffffff",
+          borderRight: "1px solid #e0e0e0",
+          zIndex: 1000,
+          transition: "left 0.3s ease",
+          overflow: "hidden",
+        }}
+        ref={siderRef as React.RefObject<HTMLDivElement>}
+      >
         <Splitter layout="vertical" style={{ height: "100%" }}>
           <Splitter.Panel>
             {/* 上部区域：画布列表 */}
@@ -546,14 +588,36 @@ const Sidebar: React.FC = () => {
                     </List.Item>
                   )}
                 />
-              </div>
-            </div>
+              </div>            </div>
           </Splitter.Panel>
         </Splitter>
-      )}
 
-      {/* 设置弹窗现在由全局状态管理，在InfiniteCanvas中渲染 */}
-    </Sider>
+        {/* 侧边栏触发按钮 */}
+        <div
+          onClick={toggleSidebar}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: collapsed ? "0" : "-40px",
+            width: "40px",
+            height: "40px",
+            backgroundColor: "#1677ff",
+            color: "#fff",
+            borderRadius: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+            transition: "left 0.3s ease",
+            zIndex: 1100,
+          }}
+          aria-label="Toggle sidebar"
+        >
+          <MenuOutlined style={{ fontSize: "18px" }} />
+        </div>
+      </div>
+    </>
   );
 };
 
