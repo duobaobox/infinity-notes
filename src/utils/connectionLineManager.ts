@@ -328,12 +328,25 @@ class ConnectionLineManager {
   // 立即更新特定便签的连接线位置 - 用于拖动时的实时同步
   updateNoteConnectionsImmediate(noteId: string): void {
     try {
-      // 遍历所有连接线，更新指定便签的连接线
+      // 检查该便签是否有连接线
+      let hasConnection = false;
+      const connectionsToUpdate: ConnectionLine[] = [];
+
       for (const connection of this.connections.values()) {
         if (connection.noteId === noteId) {
-          // 立即更新连接线位置
-          connection.line.position();
+          hasConnection = true;
+          connectionsToUpdate.push(connection);
         }
+      }
+
+      // 如果该便签没有连接线，直接返回
+      if (!hasConnection) {
+        return;
+      }
+
+      // 批量更新连接线位置
+      for (const connection of connectionsToUpdate) {
+        connection.line.position();
       }
     } catch (error) {
       console.error('立即更新便签连接线位置失败:', error);

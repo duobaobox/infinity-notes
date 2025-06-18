@@ -11,10 +11,11 @@ export const CANVAS_CONSTANTS = {
 
 // 性能优化常量
 export const PERFORMANCE_CONSTANTS = {
-  DRAG_THROTTLE_MS: 16, // 拖拽事件节流时间 (ms) - 60fps
-  CSS_UPDATE_DEBOUNCE_MS: 16, // CSS变量更新防抖时间 (ms) - 优化拖拽响应速度
+  DRAG_THROTTLE_MS: 8, // 拖拽事件节流时间 (ms) - 120fps，提升响应性
+  CSS_UPDATE_DEBOUNCE_MS: 0, // CSS变量更新防抖时间 (ms) - 立即更新，避免延迟
   RENDER_THROTTLE_MS: 16, // 渲染节流时间 (ms)
-  CONNECTION_UPDATE_THROTTLE_MS: 16, // 连接线更新节流时间 (ms) - 60fps
+  CONNECTION_UPDATE_THROTTLE_MS: 32, // 连接线更新节流时间 (ms) - 降低频率，减少卡顿
+  CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS: 16, // 立即连接线更新节流时间 (ms) - 拖拽时使用
   MAX_VISIBLE_NOTES: 100, // 最大可见便签数量（虚拟化阈值）
 };
 

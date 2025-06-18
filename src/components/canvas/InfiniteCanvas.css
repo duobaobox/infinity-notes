@@ -20,12 +20,14 @@
   --large-grid-color: rgba(203, 213, 225, 0.4);
   --paper-texture-opacity: 0.03;
 
-  /* 性能优化 */
+  /* 性能优化 - GPU加速 */
   will-change: transform;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* 拖拽时的光标状态 */

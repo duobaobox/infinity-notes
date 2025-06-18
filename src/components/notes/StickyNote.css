@@ -25,7 +25,9 @@
   /* 性能优化 - GPU加速 */
   will-change: transform, opacity;
   backface-visibility: hidden;
-  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
   /* 移除contain以避免裁剪问题 */
   /* contain: layout style paint; */
 }

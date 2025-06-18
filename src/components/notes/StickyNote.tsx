@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback, memo } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from "react";
+import { throttle } from "lodash";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -308,10 +309,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       setTempPosition({ x: note.x, y: note.y });
       setIsDragging(true);
 
-      // 延迟执行置顶操作，避免拖动初期的卡顿
-      setTimeout(() => {
-        onBringToFront(note.id);
-      }, 50);
+      // 立即执行置顶操作，提升响应性
+      onBringToFront(note.id);
     },
     [
       isEditing,
@@ -346,6 +345,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note.width, note.height, canvasScale]
   );
 
+  // 节流的连接线更新 - 减少便签拖拽时的连接线更新频率
+  const throttledNoteConnectionUpdate = useMemo(
+    () => throttle(() => {
+      updateNoteConnectionLinesImmediate(note.id);
+    }, 16), // 60fps
+    [updateNoteConnectionLinesImmediate, note.id]
+  );
+
   // 全局鼠标移动处理
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -366,8 +373,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           // 使用临时状态来更新位置，避免频繁的数据库操作
           setTempPosition({ x: newX, y: newY });
 
-          // 立即更新连接线位置，确保与便签位置同步
-          updateNoteConnectionLinesImmediate(note.id);
+          // 使用节流的连接线更新，减少卡顿
+          throttledNoteConnectionUpdate();
         });
       } else if (isResizing) {
         // 取消之前的动画帧
@@ -450,6 +457,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempPosition.y,
     tempSize.width,
     tempSize.height,
+    throttledNoteConnectionUpdate,
   ]);
 
   // 处理位置同步的 Effect

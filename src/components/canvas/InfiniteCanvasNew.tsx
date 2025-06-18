@@ -491,16 +491,24 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
 
 
+  // 节流的连接线更新 - 减少画布拖拽时的连接线更新频率
+  const throttledConnectionUpdate = useMemo(
+    () => throttle(() => {
+      updateConnectionLinesImmediate();
+    }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS),
+    [updateConnectionLinesImmediate]
+  );
+
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
         e.preventDefault();
         throttledUpdateDrag(e.clientX, e.clientY);
-        // 拖拽过程中立即更新连接线位置，确保同步
-        updateConnectionLinesImmediate();
+        // 使用节流的连接线更新，减少卡顿
+        throttledConnectionUpdate();
       }
     },
-    [dragState.isDragging, throttledUpdateDrag, updateConnectionLinesImmediate]
+    [dragState.isDragging, throttledUpdateDrag, throttledConnectionUpdate]
   );
 
   const handleMouseUp = useCallback(
@@ -625,12 +633,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     return () => {
       throttledUpdateDrag.cancel();
       throttledZoom.cancel();
+      throttledConnectionUpdate.cancel();
       debouncedLogUpdate.cancel();
       if (process.env.NODE_ENV === 'development') {
         console.log("🧹 InfiniteCanvas 组件清理完成");
       }
     };
-  }, [throttledUpdateDrag, throttledZoom, debouncedLogUpdate]);
+  }, [throttledUpdateDrag, throttledZoom, throttledConnectionUpdate, debouncedLogUpdate]);
 
   // 设置全局鼠标事件监听器
   useEffect(() => {
