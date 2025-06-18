@@ -83,10 +83,10 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
           isVisible: true, // 有连接时显示插槽容器
         });
 
-        // 延迟创建连接线，确保DOM已更新
-        setTimeout(async () => {
+        // 使用requestAnimationFrame确保DOM已更新，减少延迟
+        requestAnimationFrame(async () => {
           await connectionLineManager.createConnection(updatedNote, newIndex);
-        }, 100);
+        });
 
         console.log(`✅ 便签 ${note.id} 已连接到插槽`);
         return true;
@@ -111,12 +111,12 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
           isVisible: reindexedNotes.length > 0, // 没有连接时隐藏插槽容器
         });
 
-        // 延迟重新创建剩余连接线，确保DOM已更新
-        setTimeout(async () => {
+        // 使用requestAnimationFrame重新创建剩余连接线，减少延迟
+        requestAnimationFrame(async () => {
           for (const note of reindexedNotes) {
             await connectionLineManager.createConnection(note, note.connectionIndex!);
           }
-        }, 100);
+        });
 
         console.log(`🗑️ 便签 ${noteId} 已从插槽移除`);
       },

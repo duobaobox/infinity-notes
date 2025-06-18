@@ -106,8 +106,8 @@ class ConnectionLineManager {
         return false;
       }
 
-      // 等待DOM更新完成
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // 使用requestAnimationFrame等待DOM更新，减少延迟
+      await new Promise(resolve => requestAnimationFrame(resolve));
 
       // 获取便签连接点元素 - 使用连接点容器作为连接目标
       const noteElement = document.querySelector(`[data-note-id="${note.id}"]`);
@@ -164,9 +164,9 @@ class ConnectionLineManager {
       });
 
       // 立即更新位置确保精确连接
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         line.position();
-      }, 50);
+      });
 
       // 创建连接线记录
       const connection: ConnectionLine = {
