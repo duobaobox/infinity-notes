@@ -186,13 +186,13 @@ const SearchModal: React.FC<SearchModalProps> = ({
             {filteredNotes.length} / {notes.length} 个便签
           </Text>
         </div>
-      }
-      open={open}
+      }      open={open}
       onCancel={onClose}
       footer={null}
       width={700}
       className="search-modal"
       destroyOnHidden
+      zIndex={1010} // 确保搜索弹窗在侧边栏按钮之上
     >
       <div className="search-modal-content">
         {/* 搜索输入框 */}

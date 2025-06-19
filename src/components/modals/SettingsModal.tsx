@@ -1107,7 +1107,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     handleImportData,
     handleClearAllData,
   ]);
-
   return (
     <Modal
       title="设置"
@@ -1125,6 +1124,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       footer={null}
       destroyOnHidden
       className="settings-modal"
+      zIndex={1010} // 确保设置弹窗在侧边栏按钮之上
     >
       <Tabs
         defaultActiveKey={defaultActiveTab}
