@@ -9,7 +9,7 @@ export class IndexedDBService {
   private static instance: IndexedDBService;
   private initialized = false;
   private readonly dbName = "StickyNotesDB";
-  private readonly dbVersion = 2; // 增加版本号，确保新表被创建
+  private readonly dbVersion = 3; // 增加版本号，确保新表被创建
 
   private constructor() {
     // 私有构造函数，确保单例模式
@@ -99,13 +99,21 @@ export class IndexedDBService {
       noteStore.createIndex("updated_at", "updated_at", { unique: false });
       noteStore.createIndex("title", "title", { unique: false });
       noteStore.createIndex("content", "content", { unique: false });
-    }
-
-    // 标签表
+    }    // 标签表
     if (!db.objectStoreNames.contains("tags")) {
       const tagStore = db.createObjectStore("tags", { keyPath: "id" });
       tagStore.createIndex("user_id", "user_id", { unique: false });
       tagStore.createIndex("name", "name", { unique: false });
+    }
+
+    // UI设置表
+    if (!db.objectStoreNames.contains("ui_settings")) {
+      const uiSettingsStore = db.createObjectStore("ui_settings", {
+        keyPath: "id",
+      });
+      uiSettingsStore.createIndex("user_id", "user_id", { unique: false });
+      uiSettingsStore.createIndex("setting_type", "setting_type", { unique: false });
+      uiSettingsStore.createIndex("updated_at", "updated_at", { unique: false });
     }
   }
 

@@ -1,6 +1,7 @@
 // UI状态管理Store
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
+import { IndexedDBUISettingsStorage } from '../database/IndexedDBUISettingsStorage';
 
 // 模态框状态接口
 export interface ModalState {
@@ -131,9 +132,8 @@ export interface UIActions {
   // 快捷键操作
   toggleShortcuts: () => void;
   setShortcutsEnabled: (enabled: boolean) => void;
-  
   // 初始化
-  initialize: () => void;
+  initialize: () => Promise<void>;
 }
 
 // 预制主题配置
@@ -374,14 +374,16 @@ export const useUIStore = create<UIState & UIActions>()(
         } else {
           isDarkMode = getSystemTheme();
         }
-        
-        set(state => ({
+          set(state => ({
           theme: { ...state.theme, theme, isDarkMode }
         }));
         
-        // 保存到localStorage
+        // 保存到IndexedDB
         if (typeof window !== 'undefined') {
-          localStorage.setItem('ui-theme', theme);
+          const themeSettings = { theme, isDarkMode };
+          IndexedDBUISettingsStorage.saveThemeSettings(themeSettings).catch(error => {
+            console.error('保存主题设置失败:', error);
+          });
         }
       },
 
@@ -389,18 +391,18 @@ export const useUIStore = create<UIState & UIActions>()(
         const currentTheme = get().theme.theme;
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         get().setTheme(newTheme);
-      },
-
-      // 外观设置操作
+      },      // 外观设置操作
       setAppearance: (appearance) => {
         set(state => ({
           appearance: { ...state.appearance, ...appearance }
         }));
 
-        // 保存到localStorage
+        // 保存到IndexedDB
         if (typeof window !== 'undefined') {
           const currentAppearance = get().appearance;
-          localStorage.setItem('ui-appearance', JSON.stringify(currentAppearance));
+          IndexedDBUISettingsStorage.saveAppearanceSettings(currentAppearance).catch(error => {
+            console.error('保存外观设置失败:', error);
+          });
 
           // 立即应用画布背景色和网格设置
           get().applyAppearanceSettings();
@@ -430,18 +432,18 @@ export const useUIStore = create<UIState & UIActions>()(
 
       setFontFamily: (family) => {
         get().setAppearance({ fontFamily: family });
-      },
-
-      // 通用设置操作
+      },      // 通用设置操作
       setGeneral: (general) => {
         set(state => ({
           general: { ...state.general, ...general }
         }));
 
-        // 保存到localStorage
+        // 保存到IndexedDB
         if (typeof window !== 'undefined') {
           const currentGeneral = get().general;
-          localStorage.setItem('ui-general', JSON.stringify(currentGeneral));
+          IndexedDBUISettingsStorage.saveGeneralSettings(currentGeneral).catch(error => {
+            console.error('保存通用设置失败:', error);
+          });
         }
       },
 
@@ -480,16 +482,16 @@ export const useUIStore = create<UIState & UIActions>()(
           gridColor: theme.colors.gridColor,
           gridMajorColor: theme.colors.gridMajorColor,
           noteDefaultColor: theme.colors.noteDefaultColor,
-        };
-
-        // 直接更新状态，不通过setAppearance避免重复保存
+        };        // 直接更新状态，不通过setAppearance避免重复保存
         set(_state => ({
           appearance: newAppearance
         }));
 
-        // 保存到localStorage
+        // 保存到IndexedDB
         if (typeof window !== 'undefined') {
-          localStorage.setItem('ui-appearance', JSON.stringify(newAppearance));
+          IndexedDBUISettingsStorage.saveAppearanceSettings(newAppearance).catch(error => {
+            console.error('保存预设主题失败:', error);
+          });
         }
 
         // 立即应用到DOM
@@ -567,47 +569,78 @@ export const useUIStore = create<UIState & UIActions>()(
 
       setShortcutsEnabled: (enabled) => {
         set({ shortcutsEnabled: enabled });
-      },
-
-      // 初始化
-      initialize: () => {
+      },      // 初始化
+      initialize: async () => {
         if (typeof window !== 'undefined') {
-          // 从localStorage加载主题设置
-          const savedTheme = localStorage.getItem('ui-theme') as ThemeState['theme'];
-          if (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) {
-            get().setTheme(savedTheme);
-          }
+          try {
+            // 首先执行数据迁移（从localStorage迁移到IndexedDB）
+            await IndexedDBUISettingsStorage.migrateFromLocalStorage();
 
-          // 从localStorage加载外观设置
-          const savedAppearance = localStorage.getItem('ui-appearance');
-          if (savedAppearance) {
-            try {
-              const appearance = JSON.parse(savedAppearance) as AppearanceState;
+            // 从IndexedDB加载主题设置
+            const savedTheme = await IndexedDBUISettingsStorage.loadThemeSettings();
+            if (savedTheme) {
               set(state => ({
-                appearance: { ...state.appearance, ...appearance }
+                theme: { ...state.theme, ...savedTheme }
               }));
-            } catch (error) {
-              console.warn('加载外观设置失败:', error);
+            }
+
+            // 从IndexedDB加载外观设置
+            const savedAppearance = await IndexedDBUISettingsStorage.loadAppearanceSettings();
+            if (savedAppearance) {
+              set(state => ({
+                appearance: { ...state.appearance, ...savedAppearance }
+              }));
+            }
+
+            // 从IndexedDB加载通用设置
+            const savedGeneral = await IndexedDBUISettingsStorage.loadGeneralSettings();
+            if (savedGeneral) {
+              set(state => ({
+                general: { ...state.general, ...savedGeneral }
+              }));
+            }
+
+            // 应用外观设置到DOM
+            setTimeout(() => {
+              get().applyAppearanceSettings();
+            }, 100);
+
+            console.log("✅ UI设置初始化完成");
+          } catch (error) {
+            console.error("UI设置初始化失败:", error);
+            
+            // 如果IndexedDB加载失败，回退到localStorage
+            console.warn("回退到localStorage加载设置");
+            
+            const savedTheme = localStorage.getItem('ui-theme') as ThemeState['theme'];
+            if (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) {
+              get().setTheme(savedTheme);
+            }
+
+            const savedAppearance = localStorage.getItem('ui-appearance');
+            if (savedAppearance) {
+              try {
+                const appearance = JSON.parse(savedAppearance) as AppearanceState;
+                set(state => ({
+                  appearance: { ...state.appearance, ...appearance }
+                }));
+              } catch (error) {
+                console.warn('加载外观设置失败:', error);
+              }
+            }
+
+            const savedGeneral = localStorage.getItem('ui-general');
+            if (savedGeneral) {
+              try {
+                const general = JSON.parse(savedGeneral) as GeneralState;
+                set(state => ({
+                  general: { ...state.general, ...general }
+                }));
+              } catch (error) {
+                console.warn('加载通用设置失败:', error);
+              }
             }
           }
-
-          // 从localStorage加载通用设置
-          const savedGeneral = localStorage.getItem('ui-general');
-          if (savedGeneral) {
-            try {
-              const general = JSON.parse(savedGeneral) as GeneralState;
-              set(state => ({
-                general: { ...state.general, ...general }
-              }));
-            } catch (error) {
-              console.warn('加载通用设置失败:', error);
-            }
-          }
-
-          // 应用外观设置到DOM
-          setTimeout(() => {
-            get().applyAppearanceSettings();
-          }, 100);
 
           // 监听系统主题变化
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -622,13 +655,9 @@ export const useUIStore = create<UIState & UIActions>()(
 
           mediaQuery.addEventListener('change', handleThemeChange);
 
-          // 清理函数（在实际应用中可能需要在组件卸载时调用）
-          return () => {
-            mediaQuery.removeEventListener('change', handleThemeChange);
-          };
+          // 在这里我们不返回清理函数，而是将其存储到store中
+          // 或者使用其他方式管理清理
         }
-
-
       },
     })),
     {
