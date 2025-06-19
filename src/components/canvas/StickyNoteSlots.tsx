@@ -28,17 +28,8 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
   visible = true,
 }) => {
   // 处理模式切换
-  const handleModeToggle = () => {
-    const newMode = connectionMode === ConnectionMode.SUMMARY 
-      ? ConnectionMode.REPLACE 
-      : ConnectionMode.SUMMARY;
-    onModeChange(newMode);
-  };
 
   // 获取模式显示文本
-  const getModeText = () => {
-    return connectionMode === ConnectionMode.SUMMARY ? "汇总模式" : "替换模式";
-  };
 
   // 获取模式提示文本
   const getModeTooltip = () => {
@@ -86,30 +77,28 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
         )}
       </div>
 
-      {/* 连接模式切换开关 */}
-      <div className="mode-toggle-container" id="connection-mode-selector">
-        <input
-          type="checkbox"
-          id="mode-toggle"
-          className="mode-toggle-input"
-          checked={connectionMode === ConnectionMode.SUMMARY}
-          onChange={handleModeToggle}
-        />
-        <label htmlFor="mode-toggle" className="mode-toggle-label">
-          <span className="mode-toggle-track"></span>
-          <span className="mode-toggle-thumb"></span>
-        </label>
-        <Tooltip 
-          title={
-            <div dangerouslySetInnerHTML={{ __html: getModeTooltip() }} />
-          }
-          placement="top"
-        >
-          <span className="mode-toggle-text">
-            {getModeText()}
-          </span>
-        </Tooltip>
-      </div>
+      {/* 连接模式切换器 */}
+      <Tooltip
+        title={<div dangerouslySetInnerHTML={{ __html: getModeTooltip() }} />}
+        placement="top"
+        arrow={false}
+        mouseEnterDelay={0.5} /* 延迟0.5秒显示 */
+      >
+        <div className="mode-selector" id="connection-mode-selector">
+          <button
+            className={`mode-button ${connectionMode === ConnectionMode.SUMMARY ? 'active' : ''}`}
+            onClick={() => onModeChange(ConnectionMode.SUMMARY)}
+          >
+            汇总
+          </button>
+          <button
+            className={`mode-button ${connectionMode === ConnectionMode.REPLACE ? 'active' : ''}`}
+            onClick={() => onModeChange(ConnectionMode.REPLACE)}
+          >
+            替换
+          </button>
+        </div>
+      </Tooltip>
 
       {/* 清除所有连接按钮 */}
       <button

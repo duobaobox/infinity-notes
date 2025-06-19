@@ -21,10 +21,6 @@
               0 2px 8px rgba(82, 196, 26, 0.08),
               0 0 0 1px rgba(82, 196, 26, 0.1),
               inset 0 0 15px rgba(82, 196, 26, 0.03) !important; /* 多层立体阴影 */
-  background: linear-gradient(to bottom, 
-              rgba(82, 196, 26, 0.02),
-              rgba(255, 255, 255, 1) 15%,
-              rgba(255, 255, 255, 1)) !important; /* 渐变背景 */
   transform: translateY(0); /* 为悬浮效果准备 */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 平滑过渡 */
 }

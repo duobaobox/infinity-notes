@@ -46,6 +46,7 @@
   background: linear-gradient(135deg, rgba(22, 119, 255, 0.02), transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none; /* 确保伪元素不拦截鼠标事件 */
 }
 
 .slots-container:hover::before {
@@ -223,66 +224,40 @@
   box-shadow: 0 1px 4px rgba(255, 77, 79, 0.4);
 }
 
-/* 模式切换容器 */
-.mode-toggle-container {
+/* 模式切换器样式 */
+.mode-selector {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-right: 12px; /* 添加右侧外边距 */
+  background-color: rgba(22, 119, 255, 0.08);
+  border-radius: 6px;
+  padding: 2px;
+  margin-right: 12px;
   flex-shrink: 0;
+  border: 1px solid rgba(22, 119, 255, 0.15);
 }
 
-/* 切换开关样式 */
-.mode-toggle-input {
-  display: none;
-}
-
-.mode-toggle-label {
-  position: relative;
-  width: 28px;
-  height: 16px;
+.mode-button {
+  background-color: transparent;
+  border: none;
+  color: rgba(22, 119, 255, 0.7);
+  padding: 3px 8px;
+  border-radius: 5px;
   cursor: pointer;
-  display: block;
-}
-
-.mode-toggle-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(22, 119, 255, 0.2);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.mode-toggle-input:checked + .mode-toggle-label .mode-toggle-track {
-  background: #1677ff;
-}
-
-.mode-toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  background: white;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.mode-toggle-input:checked + .mode-toggle-label .mode-toggle-thumb {
-  transform: translateX(12px);
-}
-
-.mode-toggle-text {
   font-size: 10px;
   font-weight: 500;
-  color: rgba(22, 119, 255, 0.8);
-  cursor: pointer;
-  user-select: none;
+  transition: all 0.2s ease;
   white-space: nowrap;
+}
+
+.mode-button.active {
+  background-color: #1677ff;
+  color: white;
+  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.3);
+}
+
+.mode-button:not(.active):hover {
+  background-color: rgba(22, 119, 255, 0.1);
+  color: #1677ff;
 }
 
 /* 清空连接按钮 */
