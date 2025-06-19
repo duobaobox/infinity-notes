@@ -28,21 +28,18 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     onSearch,
     minScale,
     maxScale,
-  }) => {
-
-    return (
-      <div className="canvas-toolbar">
-        <Space>
-          <Tooltip title="搜索便签 (Ctrl/⌘ + F)" placement="bottom">
+  }) => {    return (
+      <div className="canvas-toolbar">        <Space size={8} direction="vertical" align="center"> {/* 改为垂直方向 */}          <Tooltip title="搜索便签 (Ctrl/⌘ + F)" placement="left"> {/* 调整tooltip位置为左边 */}
             <Button
               icon={<SearchOutlined />}
               onClick={onSearch}
               type="text"
               shape="circle"
+              className="first-button" // 添加特殊样式类
             />
           </Tooltip>
 
-          <Tooltip title="放大画布 (Ctrl/⌘ +)" placement="bottom">
+          <Tooltip title="放大画布 (Ctrl/⌘ +)" placement="left">
             <Button
               icon={<ZoomInOutlined />}
               onClick={onZoomIn}
@@ -51,7 +48,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
-          <Tooltip title="缩小画布 (Ctrl/⌘ -)" placement="bottom">
+          <Tooltip title="缩小画布 (Ctrl/⌘ -)" placement="left">
             <Button
               icon={<ZoomOutOutlined />}
               onClick={onZoomOut}
@@ -60,17 +57,22 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
-          <Tooltip title="重置画布位置和缩放 (Ctrl/⌘ 0)" placement="bottom">
+          <Tooltip title="重置画布位置和缩放 (Ctrl/⌘ 0)" placement="left">
             <Button
               icon={<RedoOutlined />}
               onClick={onReset}
               type="text"
               shape="circle"
             />
-          </Tooltip>          <span
+          </Tooltip>
+          
+          {/* 分隔线 */}
+          <div className="toolbar-divider" />
+            <span
             className={`zoom-indicator ${zoomAnimating ? "zoom-change" : ""}`}
           >
-            {Math.round(scale * 100)}%
+            <div>{Math.round(scale * 100)}</div>
+            <div>%</div>
           </span>
         </Space>
       </div>

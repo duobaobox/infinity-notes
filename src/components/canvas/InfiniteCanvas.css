@@ -37,18 +37,18 @@
 
 .canvas-toolbar {
   position: fixed; /* 相对于视口定位 */
-  top: 20px; /* 距离顶部一段距离 */
-  left: 50%; /* 水平居中 */
-  transform: translateX(-50%); /* 精确水平居中 */
+  top: 50%; /* 垂直居中 */
+  right: 20px; /* 距离右侧一段距离 */
+  transform: translateY(-50%); /* 精确垂直居中 */
   z-index: 100;
-  padding: 12px 24px; /* 调整内边距以适应药丸形状 */
+  padding: 8px 6px 16px 6px; /* 减少顶部内边距到8px，底部保持16px */
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 50px; /* 创建药丸形状 */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(5px);
+  border-radius: 32px; /* 保持药丸形状 */
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
   display: flex; /* 用于内部元素对齐 */
-  align-items: center; /* 垂直对齐内部元素 */
-  flex-direction: column; /* 新增：允许提示文本在下方 */
+  align-items: center; /* 水平对齐内部元素 */
+  flex-direction: column; /* 修改为垂直排列 */
 
   /* 性能优化 */
   will-change: transform;
@@ -64,13 +64,35 @@
 }
 
 .zoom-indicator {
-  font-size: 14px;
-  color: #333;
-  font-weight: 600;
-  margin-left: 12px;
-  padding: 3px 8px;
-  background-color: #f3f4f6;
-  border-radius: 6px;
+  font-size: 12px; /* 增大字体大小 */
+  color: #666;
+  font-weight: 600; /* 增加字重，更醒目 */
+  margin-top: 8px; /* 改为上边距，适应垂直布局 */
+  padding: 0; /* 移除内边距 */
+  background: none; /* 移除背景 */
+  border: none; /* 移除边框 */
+  text-align: center; /* 文字居中 */
+  line-height: 1.1; /* 紧凑的行高 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: auto; /* 移除最小宽度限制 */
+  width: fit-content; /* 自适应内容宽度 */
+}
+
+/* 缩放指示器内部元素样式 */
+.zoom-indicator div {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+/* 工具栏分隔线 */
+.canvas-toolbar .toolbar-divider {
+  width: 20px; /* 改为水平线 */
+  height: 1px; /* 改为水平线 */
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 4px 0; /* 改为上下边距 */
 }
 
 /* 画布背景区域 - 包含网格，不应用变换 */
@@ -292,39 +314,50 @@
   scrollbar-width: none;
 }
 
+/* 第一个按钮去掉上间隔 */
+.canvas-toolbar .first-button {
+  margin-top: -16px; /* 进一步减少顶部间距 */
+}
+
 /* 工具栏按钮美化 */
 .canvas-toolbar .ant-btn {
-  width: 32px;
-  height: 32px;
+  width: 32px; /* 修正按钮尺寸为32x32 */
+  height: 32px; /* 保持32px高度 */
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 15px; /* 稍微减小图标大小 */
+  border-radius: 8px; /* 按钮圆角 */
+  transition: all 0.2s ease; /* 添加过渡效果 */
 }
 
 .canvas-toolbar .ant-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(22, 119, 255, 0.1); /* 更明显的悬停效果 */
   color: #1677ff;
+  transform: translateY(-1px); /* 轻微上浮效果 */
 }
 
 .canvas-toolbar .ant-btn:active {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(22, 119, 255, 0.15);
+  transform: translateY(0); /* 按下时回到原位 */
 }
 
 .canvas-toolbar .ant-btn[disabled] {
   color: rgba(0, 0, 0, 0.25);
   background-color: transparent;
+  transform: none; /* 禁用状态不应用变换 */
 }
 
 /* 缩放指示器呼吸效果 */
 @keyframes subtle-pulse {
   0% {
-    background-color: #f3f4f6;
+    opacity: 1;
   }
   50% {
-    background-color: #eef1f5;
+    opacity: 0.7;
   }
   100% {
-    background-color: #f3f4f6;
+    opacity: 1;
   }
 }
 
