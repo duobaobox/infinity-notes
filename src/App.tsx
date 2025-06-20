@@ -6,11 +6,7 @@ import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 // 导入全局状态管理
-import {
-  useStickyNotesStore,
-  useAIStore,
-  useUIStore,
-} from "./stores";
+import { useStickyNotesStore, useAIStore, useUIStore } from "./stores";
 
 const { Content } = Layout;
 
@@ -22,16 +18,13 @@ function App() {
     loading: notesLoading, // 只用于初始化加载
     operationLoading: notesOperationLoading, // 操作加载状态
     error: notesError,
-    initialize: initializeStickyNotes
+    initialize: initializeStickyNotes,
   } = useStickyNotesStore();
-  const {
-    loading: aiLoading,
-    initialize: initializeAI
-  } = useAIStore();
+  const { loading: aiLoading, initialize: initializeAI } = useAIStore();
   const {
     globalLoading,
     openSettingsModal,
-    initialize: initializeUI
+    initialize: initializeUI,
   } = useUIStore();
 
   // 应用初始化状态
@@ -63,7 +56,8 @@ function App() {
         console.error("Store初始化失败:", error);
         setAppInitialized(true); // 即使失败也要标记完成，避免无限加载
       }
-    };    initializeStores();
+    };
+    initializeStores();
   }, [initializeStickyNotes, initializeAI, initializeUI]);
 
   // 设置键盘快捷键
@@ -72,7 +66,7 @@ function App() {
       canvasRef.current?.createNote?.();
     },
     onOpenSettings: () => {
-      openSettingsModal('general');
+      openSettingsModal("appearance");
     },
     onFocusConsole: () => {
       canvasRef.current?.focusConsole?.();
@@ -113,13 +107,11 @@ function App() {
         }}
       >
         <Spin size="large" />
-        <div style={{ color: "#666", fontSize: "16px" }}>
-          正在初始化应用...
-        </div>
+        <div style={{ color: "#666", fontSize: "16px" }}>正在初始化应用...</div>
         <div style={{ color: "#999", fontSize: "12px" }}>
-          便签: {notesLoading ? '加载中' : '完成'} |
-          AI: {aiLoading ? '加载中' : '完成'} |
-          UI: {globalLoading ? '加载中' : '完成'}
+          便签: {notesLoading ? "加载中" : "完成"} | AI:{" "}
+          {aiLoading ? "加载中" : "完成"} | UI:{" "}
+          {globalLoading ? "加载中" : "完成"}
         </div>
       </div>
     );
@@ -143,9 +135,11 @@ function App() {
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* 画布占据全屏 */}
-      <Content style={{ margin: "0", overflow: "hidden", position: "relative" }}>
+      <Content
+        style={{ margin: "0", overflow: "hidden", position: "relative" }}
+      >
         <InfiniteCanvas ref={canvasRef} />
-        
+
         {/* 悬浮侧边栏 */}
         <Sidebar />
 

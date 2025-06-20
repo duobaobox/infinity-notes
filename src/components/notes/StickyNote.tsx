@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+  useMemo,
+} from "react";
 import { throttle } from "lodash";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -75,7 +82,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const previewRef = useRef<HTMLDivElement>(null);
 
   // 连接状态管理
-  const { updateNoteConnectionLines, updateNoteConnectionLinesImmediate } = useConnectionStore();
+  const { updateNoteConnectionLines, updateNoteConnectionLinesImmediate } =
+    useConnectionStore();
 
   // 处理流式内容更新
   useEffect(() => {
@@ -99,14 +107,21 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       onUpdate(note.id, { content: streamingContent });
       onStreamingComplete?.();
     }
-  }, [isStreaming, streamingContent, note.content, note.id, onUpdate, onStreamingComplete]);
+  }, [
+    isStreaming,
+    streamingContent,
+    note.content,
+    note.id,
+    onUpdate,
+    onStreamingComplete,
+  ]);
 
   // 光标闪烁效果
   useEffect(() => {
     if (!isStreaming) return;
 
     const interval = setInterval(() => {
-      setShowCursor(prev => !prev);
+      setShowCursor((prev) => !prev);
     }, 500);
 
     return () => clearInterval(interval);
@@ -347,9 +362,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 节流的连接线更新 - 减少便签拖拽时的连接线更新频率
   const throttledNoteConnectionUpdate = useMemo(
-    () => throttle(() => {
-      updateNoteConnectionLinesImmediate(note.id);
-    }, 16), // 60fps
+    () =>
+      throttle(() => {
+        updateNoteConnectionLinesImmediate(note.id);
+      }, 16), // 60fps
     [updateNoteConnectionLinesImmediate, note.id]
   );
 
@@ -471,7 +487,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 位置同步完成后，更新连接线位置
       updateNoteConnectionLines(note.id);
     }
-  }, [note.x, note.y, tempPosition.x, tempPosition.y, isSyncingPosition, note.id, updateNoteConnectionLines]);
+  }, [
+    note.x,
+    note.y,
+    tempPosition.x,
+    tempPosition.y,
+    isSyncingPosition,
+    note.id,
+    updateNoteConnectionLines,
+  ]);
 
   // 处理尺寸同步的 Effect
   useEffect(() => {
@@ -547,7 +571,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 恢复光标位置 - 在内容更新后恢复之前保存的光标位置
   useEffect(() => {
-    if (shouldRestoreCursor && cursorPosition !== null && textareaRef.current && isEditing) {
+    if (
+      shouldRestoreCursor &&
+      cursorPosition !== null &&
+      textareaRef.current &&
+      isEditing
+    ) {
       // 使用setTimeout确保DOM更新完成后再设置光标位置
       setTimeout(() => {
         if (textareaRef.current) {
@@ -634,12 +663,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   );
 
   // 处理文本框点击事件 - 保存光标位置
-  const handleTextareaClick = useCallback((e: React.MouseEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget;
-    setTimeout(() => {
-      setCursorPosition(target.selectionStart);
-    }, 0);
-  }, []);
+  const handleTextareaClick = useCallback(
+    (e: React.MouseEvent<HTMLTextAreaElement>) => {
+      const target = e.currentTarget;
+      setTimeout(() => {
+        setCursorPosition(target.selectionStart);
+      }, 0);
+    },
+    []
+  );
 
   // 标题失焦时停止编辑
   const handleTitleBlur = useCallback(
@@ -671,32 +703,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     },
     [stopTitleEditing]
   );
-
-  // 计算背景色透明度 - 根据便签状态和内容
-  const getContentBackgroundOpacity = () => {
-    // 流式生成时使用较低透明度，突出流式效果
-    if (isStreaming) {
-      return 0.1;
-    }
-
-    // 编辑状态时使用较高透明度，便于编辑
-    if (isEditing) {
-      return 0.15;
-    }
-
-    // 新建便签使用中等透明度
-    if (note.isNew) {
-      return 0.12;
-    }
-
-    // 有内容时使用标准透明度
-    if (displayContent.trim()) {
-      return 0.08;
-    }
-
-    // 空便签使用最低透明度
-    return 0.05;
-  };
 
   // 计算标题背景宽度 - 根据标题文本长度动态调整
   const getTitleBackgroundWidth = () => {
@@ -840,7 +846,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               startEditing();
             }}
             style={{
-              backgroundColor: `rgba(255, 255, 255, ${getContentBackgroundOpacity()})`,
+              backgroundColor: "transparent",
             }}
           >
             {displayContent.trim() ? (
@@ -880,7 +886,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       {/* 连接点 - 只在非编辑和非流式状态下显示 */}
       {!isEditing && !isStreaming && onConnect && (
         <div
-          className={`connection-point ${isConnected ? 'connected' : ''}`}
+          className={`connection-point ${isConnected ? "connected" : ""}`}
           onClick={handleConnectionClick}
           title={isConnected ? "已连接到插槽" : "点击连接到插槽"}
         >
