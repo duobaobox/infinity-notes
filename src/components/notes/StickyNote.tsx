@@ -13,8 +13,17 @@ import remarkBreaks from "remark-breaks";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
 import { Button } from "antd";
-import { DeleteOutlined, LoadingOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  LoadingOutlined,
+  LinkOutlined,
+  BarChartOutlined,
+  TagOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
 import { useConnectionStore } from "../../stores/connectionStore";
+import { useStickyNotesStore } from "../../stores/stickyNotesStore";
+import { connectionLineManager } from "../../utils/connectionLineManager";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -70,6 +79,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [displayContent, setDisplayContent] = useState(note.content);
   const [showCursor, setShowCursor] = useState(false);
 
+  // 溯源连接线状态
+  const [sourceConnectionsVisible, setSourceConnectionsVisible] =
+    useState(false);
+
+  // 设置菜单状态
+  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
@@ -84,6 +100,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 连接状态管理
   const { updateNoteConnectionLines, updateNoteConnectionLinesImmediate } =
     useConnectionStore();
+
+  // 获取所有便签数据，用于溯源功能
+  useStickyNotesStore();
 
   // 处理流式内容更新
   useEffect(() => {
@@ -286,7 +305,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note.id, isEditing, isTitleEditing, onDelete, isStreaming]
   );
 
-  // 处理连接点点击
+  // 处理连接点点击 - 简单的单击连接
   const handleConnectionClick = useCallback(
     (e: React.MouseEvent) => {
       if (isStreaming) return; // 流式过程中不允许连接
@@ -296,10 +315,78 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
       // 调用连接回调
       if (onConnect) {
+        console.log("🔗 单击连接点，执行连接功能");
         onConnect(note);
       }
     },
     [note, onConnect, isStreaming]
+  );
+
+  // 处理溯源按钮点击 - 改为单击触发，避免与连接点冲突
+  const handleSourceButtonClick = useCallback(
+    async (e: React.MouseEvent) => {
+      if (isStreaming) return; // 流式过程中不允许操作
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      if (!note.sourceNoteIds || note.sourceNoteIds.length === 0) {
+        console.log("⚠️ 该便签没有源便签，无法显示溯源连接");
+        return;
+      }
+
+      console.log(
+        "🔍 单击溯源按钮触发溯源功能，便签ID:",
+        note.id,
+        "源便签数量:",
+        note.sourceNoteIds.length,
+        "当前状态:",
+        sourceConnectionsVisible ? "显示" : "隐藏"
+      );
+
+      if (sourceConnectionsVisible) {
+        // 隐藏溯源连接线
+        for (const sourceNoteId of note.sourceNoteIds) {
+          connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
+        }
+        setSourceConnectionsVisible(false);
+        console.log("🔗 已隐藏溯源连接线");
+      } else {
+        // 显示溯源连接线
+        let successCount = 0;
+        for (const sourceNoteId of note.sourceNoteIds) {
+          const success = await connectionLineManager.createSourceConnection(
+            sourceNoteId,
+            note.id
+          );
+          if (success) {
+            successCount++;
+          }
+        }
+
+        if (successCount > 0) {
+          setSourceConnectionsVisible(true);
+          console.log(`🔗 已显示 ${successCount} 条溯源连接线`);
+        } else {
+          console.warn("⚠️ 未能创建任何溯源连接线");
+        }
+      }
+    },
+    [note.id, note.sourceNoteIds, isStreaming, sourceConnectionsVisible]
+  );
+
+  // 处理设置按钮点击
+  const handleSettingsClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isStreaming) return; // 流式过程中不允许操作
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      setSettingsMenuVisible(!settingsMenuVisible);
+      console.log("⚙️ 切换设置菜单显示状态:", !settingsMenuVisible);
+    },
+    [isStreaming, settingsMenuVisible]
   );
 
   // 鼠标按下开始拖拽
@@ -723,202 +810,340 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const actualHeight =
     isResizing || isSyncingSize ? tempSize.height : note.height;
 
+  // 组件卸载时清理溯源连接线
+  useEffect(() => {
+    return () => {
+      // 清理溯源连接线
+      if (note.sourceNoteIds && sourceConnectionsVisible) {
+        for (const sourceNoteId of note.sourceNoteIds) {
+          connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
+        }
+      }
+    };
+  }, [note.id, note.sourceNoteIds, sourceConnectionsVisible]);
+
+  // 点击外部区域关闭设置工具栏
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsMenuVisible && noteRef.current) {
+        const target = event.target as HTMLElement;
+        // 检查点击是否在便签内部或工具栏内部
+        const isInsideNote = noteRef.current.contains(target);
+        const isInsideToolbar = target.closest(".settings-toolbar");
+
+        // 如果点击的不是便签内部也不是工具栏内部，关闭设置工具栏
+        if (!isInsideNote && !isInsideToolbar) {
+          setSettingsMenuVisible(false);
+        }
+      }
+    };
+
+    if (settingsMenuVisible) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [settingsMenuVisible]);
+
   return (
-    <div
-      ref={noteRef}
-      data-note-id={note.id}
-      className={`sticky-note color-${note.color} ${
-        isEditing ? "editing" : ""
-      } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${
-        isStreaming ? "streaming" : ""
-      }`}
-      style={{
-        left: actualX,
-        top: actualY,
-        width: actualWidth,
-        height: actualHeight,
-        zIndex: note.zIndex,
-      }}
-      onWheel={(e) => {
-        // 阻止滚轮事件冒泡到画布，避免在便签上滚动时触发画布缩放
-        e.stopPropagation();
-      }}
-    >
-      <div className="sticky-note-header">
-        {/* 专门的拖拽区域 */}
+    <>
+      {/* 外部溯源按钮 - 位于便签左上角外侧 */}
+      {note.sourceNoteIds && note.sourceNoteIds.length > 0 && (
         <div
-          className="drag-handle"
-          onMouseDown={handleMouseDown}
+          className={`external-source-button ${
+            sourceConnectionsVisible ? "active" : ""
+          }`}
           style={{
-            flexGrow: 1,
-            cursor: isDragging ? "move" : "move",
-            minHeight: "20px",
-            display: "flex",
-            alignItems: "center",
+            left: actualX - 20, // 位于便签左侧外20px
+            top: actualY - 10, // 位于便签上方外10px
+            zIndex: note.zIndex + 1, // 确保在便签之上
           }}
-          title="拖拽移动便签"
+          onClick={(e) => {
+            handleSourceButtonClick(e);
+            // 如果设置工具栏是打开的，也关闭它
+            if (settingsMenuVisible) {
+              setSettingsMenuVisible(false);
+            }
+          }}
+          title={
+            sourceConnectionsVisible
+              ? `隐藏 ${note.sourceNoteIds.length} 个源便签的连接线`
+              : `查看 ${note.sourceNoteIds.length} 个源便签的连接关系`
+          }
         >
-          <div
-            style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}
+          <span className="external-source-count">
+            {note.sourceNoteIds.length}
+          </span>
+        </div>
+      )}
+
+      {/* 设置工具栏 - 位于便签头部上方 */}
+      {settingsMenuVisible && (
+        <div
+          className="settings-toolbar"
+          style={{
+            left: actualX,
+            top: actualY - 45, // 位于便签头部上方20px
+            zIndex: note.zIndex + 2, // 确保在便签和溯源按钮之上
+          }}
+        >
+          {/* 溯源连接按钮 */}
+          <Button
+            className={`settings-toolbar-button ${
+              !note.sourceNoteIds || note.sourceNoteIds.length === 0
+                ? "disabled"
+                : sourceConnectionsVisible
+                ? "active"
+                : ""
+            }`}
+            icon={<LinkOutlined />}
+            size="small"
+            type="text"
+            disabled={!note.sourceNoteIds || note.sourceNoteIds.length === 0}
+            onClick={(e) => {
+              if (note.sourceNoteIds && note.sourceNoteIds.length > 0) {
+                handleSourceButtonClick(e);
+                setSettingsMenuVisible(false); // 点击后关闭工具栏
+              }
+            }}
+            title={
+              note.sourceNoteIds && note.sourceNoteIds.length > 0
+                ? sourceConnectionsVisible
+                  ? `隐藏 ${note.sourceNoteIds.length} 个源便签的连接线`
+                  : `显示 ${note.sourceNoteIds.length} 个源便签的连接关系`
+                : "此便签没有源便签"
+            }
           >
-            {isTitleEditing ? (
-              <input
-                ref={titleInputRef}
-                type="text"
-                value={localTitle}
-                onChange={handleTitleChange}
-                onKeyDown={handleTitleKeyDown}
-                onBlur={handleTitleBlur}
-                onCompositionStart={handleTitleCompositionStart}
-                onCompositionEnd={handleTitleCompositionEnd}
-                className="sticky-note-title-input"
-                placeholder="便签标题"
-              />
-            ) : (
-              <h3
-                className="sticky-note-title"
-                onMouseDown={(e) => {
-                  // 阻止父元素的拖拽事件
-                  e.stopPropagation();
-                }}
-                onDoubleClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  startTitleEditing();
-                }}
-                title="双击编辑标题"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
-                  width: getTitleBackgroundWidth(),
-                  display: "inline-block",
-                  cursor: "text",
-                }}
-              >
-                {localTitle || "便签"}
-              </h3>
+            {note.sourceNoteIds && note.sourceNoteIds.length > 0 && (
+              <span className="toolbar-badge">{note.sourceNoteIds.length}</span>
             )}
+          </Button>
+
+          {/* 统计信息按钮 */}
+          <Button
+            className="settings-toolbar-button disabled"
+            icon={<BarChartOutlined />}
+            size="small"
+            type="text"
+            disabled
+            title="统计信息 - 即将推出"
+          />
+
+          {/* 标签管理按钮 */}
+          <Button
+            className="settings-toolbar-button disabled"
+            icon={<TagOutlined />}
+            size="small"
+            type="text"
+            disabled
+            title="标签管理 - 即将推出"
+          />
+
+          {/* 模板应用按钮 */}
+          <Button
+            className="settings-toolbar-button disabled"
+            icon={<FileTextOutlined />}
+            size="small"
+            type="text"
+            disabled
+            title="模板应用 - 即将推出"
+          />
+        </div>
+      )}
+
+      <div
+        ref={noteRef}
+        data-note-id={note.id}
+        className={`sticky-note color-${note.color} ${
+          isEditing ? "editing" : ""
+        } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${
+          isStreaming ? "streaming" : ""
+        }`}
+        style={{
+          left: actualX,
+          top: actualY,
+          width: actualWidth,
+          height: actualHeight,
+          zIndex: note.zIndex,
+        }}
+        onWheel={(e) => {
+          // 阻止滚轮事件冒泡到画布，避免在便签上滚动时触发画布缩放
+          e.stopPropagation();
+        }}
+      >
+        <div className="sticky-note-header">
+          {/* 专门的拖拽区域 */}
+          <div
+            className="drag-handle"
+            onMouseDown={handleMouseDown}
+            style={{
+              flexGrow: 1,
+              cursor: isDragging ? "move" : "move",
+              minHeight: "20px",
+              display: "flex",
+              alignItems: "center",
+            }}
+            title="拖拽移动便签"
+          >
+            <div
+              style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}
+            >
+              {isTitleEditing ? (
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={localTitle}
+                  onChange={handleTitleChange}
+                  onKeyDown={handleTitleKeyDown}
+                  onBlur={handleTitleBlur}
+                  onCompositionStart={handleTitleCompositionStart}
+                  onCompositionEnd={handleTitleCompositionEnd}
+                  className="sticky-note-title-input"
+                  placeholder="便签标题"
+                />
+              ) : (
+                <h3
+                  className="sticky-note-title"
+                  onMouseDown={(e) => {
+                    // 阻止父元素的拖拽事件
+                    e.stopPropagation();
+                  }}
+                  onDoubleClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startTitleEditing();
+                  }}
+                  title="双击编辑标题"
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
+                    width: getTitleBackgroundWidth(),
+                    display: "inline-block",
+                    cursor: "text",
+                  }}
+                >
+                  {localTitle || "便签"}
+                </h3>
+              )}
+            </div>
+          </div>
+          <div className="sticky-note-controls">
+            {/* 设置按钮 - 三个点 */}
+            <Button
+              icon={<span className="settings-icon">⋯</span>}
+              onClick={handleSettingsClick}
+              title="便签设置"
+              type="text"
+              size="small"
+              style={{
+                color: "#666", // 默认灰色图标
+                backgroundColor: "rgba(0, 0, 0, 0.06)", // 与删除按钮背景色一致
+                borderRadius: "4px",
+                marginRight: "4px", // 与删除按钮保持间距
+              }}
+              className="settings-button sticky-note-settings-button"
+            />
+            {/* 删除按钮 */}
+            <Button
+              icon={<DeleteOutlined />}
+              onClick={handleDelete}
+              title="删除"
+              type="text"
+              danger={false} // 移除危险按钮样式
+              size="small"
+              style={{
+                color: "#666", // 默认灰色图标
+                backgroundColor: "rgba(0, 0, 0, 0.06)", // 与标题背景色一致
+                borderRadius: "4px",
+              }}
+              className="delete-button sticky-note-delete-button" // 添加多个类名以增强识别
+            />
           </div>
         </div>
-        <div className="sticky-note-controls">
-          {/* 编辑按钮已移除 */}
-          <Button
-            icon={<DeleteOutlined />}
-            onClick={handleDelete}
-            title="删除"
-            type="text"
-            danger={false} // 移除危险按钮样式
-            size="small"
-            style={{
-              color: "#666", // 默认灰色图标
-              backgroundColor: "rgba(0, 0, 0, 0.06)", // 与标题背景色一致
-              borderRadius: "4px",
-            }}
-            className="delete-button sticky-note-delete-button" // 添加多个类名以增强识别
-          />
-        </div>
-      </div>
 
-      <div className="sticky-note-content">
-        {isEditing ? (
-          <textarea
-            ref={textareaRef}
-            value={localContent}
-            onChange={handleContentChange}
-            onKeyDown={handleContentKeyDown}
-            onBlur={handleContentBlur}
-            onClick={handleTextareaClick}
-            onCompositionStart={handleContentCompositionStart}
-            onCompositionEnd={handleContentCompositionEnd}
-            placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑（会自动保存）&#10;• Ctrl/⌘ + Enter 保存"
-            className="sticky-note-textarea"
-          />
-        ) : (
+        <div className="sticky-note-content">
+          {isEditing ? (
+            <textarea
+              ref={textareaRef}
+              value={localContent}
+              onChange={handleContentChange}
+              onKeyDown={handleContentKeyDown}
+              onBlur={handleContentBlur}
+              onClick={handleTextareaClick}
+              onCompositionStart={handleContentCompositionStart}
+              onCompositionEnd={handleContentCompositionEnd}
+              placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑（会自动保存）&#10;• Ctrl/⌘ + Enter 保存"
+              className="sticky-note-textarea"
+            />
+          ) : (
+            <div
+              ref={previewRef}
+              className="sticky-note-preview"
+              onMouseDown={(e) => {
+                // 阻止父元素的拖拽事件
+                e.stopPropagation();
+              }}
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                startEditing();
+              }}
+              style={{
+                backgroundColor: "transparent",
+              }}
+            >
+              {displayContent.trim() ? (
+                <div className="streaming-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    {displayContent}
+                  </ReactMarkdown>
+                  {isStreaming && showCursor && (
+                    <span className="streaming-cursor">|</span>
+                  )}
+                </div>
+              ) : (
+                <div className="empty-note">
+                  {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {!isEditing && !isStreaming && (
           <div
-            ref={previewRef}
-            className="sticky-note-preview"
-            onMouseDown={(e) => {
-              // 阻止父元素的拖拽事件
-              e.stopPropagation();
-            }}
-            onDoubleClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              startEditing();
-            }}
-            style={{
-              backgroundColor: "transparent",
-            }}
+            className="resize-handle"
+            onMouseDown={handleResizeMouseDown}
+            title="拖拽调整大小"
+          />
+        )}
+
+        {/* AI生成加载状态指示器 - 只在等待生成时显示 */}
+        {isStreaming && !streamingContent && (
+          <div className="ai-loading-indicator">
+            <LoadingOutlined style={{ marginRight: 4, fontSize: 12 }} />
+            <span style={{ fontSize: 12 }}>等待AI响应...</span>
+          </div>
+        )}
+
+        {/* 连接点 - 只在非编辑和非流式状态下显示 */}
+        {!isEditing && !isStreaming && onConnect && (
+          <div
+            className={`connection-point ${isConnected ? "connected" : ""} ${
+              note.sourceNoteIds && note.sourceNoteIds.length > 0
+                ? "has-source"
+                : ""
+            } ${sourceConnectionsVisible ? "source-active" : ""}`}
+            onClick={handleConnectionClick}
+            title={isConnected ? "已连接到插槽" : "点击连接到插槽"}
           >
-            {displayContent.trim() ? (
-              <div className="streaming-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                  {displayContent}
-                </ReactMarkdown>
-                {isStreaming && showCursor && (
-                  <span className="streaming-cursor">|</span>
-                )}
-              </div>
-            ) : (
-              <div className="empty-note">
-                {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
-              </div>
-            )}
+            <div className="connection-dot"></div>
           </div>
         )}
       </div>
-
-      {!isEditing && !isStreaming && (
-        <div
-          className="resize-handle"
-          onMouseDown={handleResizeMouseDown}
-          title="拖拽调整大小"
-        />
-      )}
-
-      {/* AI生成加载状态指示器 - 只在等待生成时显示 */}
-      {isStreaming && !streamingContent && (
-        <div className="ai-loading-indicator">
-          <LoadingOutlined style={{ marginRight: 4, fontSize: 12 }} />
-          <span style={{ fontSize: 12 }}>等待AI响应...</span>
-        </div>
-      )}
-
-      {/* 连接点 - 只在非编辑和非流式状态下显示 */}
-      {!isEditing && !isStreaming && onConnect && (
-        <div
-          className={`connection-point ${isConnected ? "connected" : ""}`}
-          onClick={handleConnectionClick}
-          title={isConnected ? "已连接到插槽" : "点击连接到插槽"}
-        >
-          <div className="connection-dot"></div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 
 // 使用React.memo优化性能，避免不必要的重渲染
-export default memo(StickyNote, (prevProps, nextProps) => {
-  // 自定义比较函数，只在关键props变化时重新渲染
-  return (
-    prevProps.note.id === nextProps.note.id &&
-    prevProps.note.x === nextProps.note.x &&
-    prevProps.note.y === nextProps.note.y &&
-    prevProps.note.width === nextProps.note.width &&
-    prevProps.note.height === nextProps.note.height &&
-    prevProps.note.content === nextProps.note.content &&
-    prevProps.note.title === nextProps.note.title &&
-    prevProps.note.color === nextProps.note.color &&
-    prevProps.note.zIndex === nextProps.note.zIndex &&
-    prevProps.note.isEditing === nextProps.note.isEditing &&
-    prevProps.note.isTitleEditing === nextProps.note.isTitleEditing &&
-    prevProps.note.isNew === nextProps.note.isNew &&
-    prevProps.canvasScale === nextProps.canvasScale &&
-    prevProps.canvasOffset.x === nextProps.canvasOffset.x &&
-    prevProps.canvasOffset.y === nextProps.canvasOffset.y &&
-    prevProps.isStreaming === nextProps.isStreaming &&
-    prevProps.streamingContent === nextProps.streamingContent &&
-    prevProps.isConnected === nextProps.isConnected &&
-    prevProps.onConnect === nextProps.onConnect
-  );
-});
+export default memo(StickyNote);

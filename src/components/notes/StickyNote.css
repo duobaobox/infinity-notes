@@ -40,7 +40,8 @@
 }
 
 @keyframes streamingPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(24, 144, 255, 0.3);
   }
   50% {
@@ -65,10 +66,12 @@
 }
 
 @keyframes cursorBlink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -196,6 +199,205 @@
 .sticky-note-controls button.delete-button:hover {
   color: #ff4d4f !important; /* 悬浮时图标变为红色 */
   background: rgba(255, 77, 79, 0.1); /* 悬浮时背景带有淡红色 */
+}
+
+/* 溯源按钮样式 - 与删除按钮保持一致 */
+.sticky-note-controls button.source-button {
+  background: rgba(0, 0, 0, 0.06); /* 与删除按钮背景色一致 */
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease; /* 添加过渡动画 */
+}
+
+.sticky-note-controls button.source-button:hover {
+  color: #fa8c16 !important; /* 悬浮时图标变为橙色 */
+  background: rgba(250, 140, 22, 0.1); /* 悬浮时背景带有淡橙色 */
+}
+
+/* 溯源按钮激活状态 */
+.sticky-note-controls button.source-button.active {
+  color: #fa8c16 !important; /* 激活时橙色 */
+  background: rgba(250, 140, 22, 0.15); /* 激活时背景更明显 */
+}
+
+/* 设置按钮样式 - 与删除按钮保持一致 */
+.sticky-note-controls button.settings-button {
+  background: rgba(0, 0, 0, 0.06); /* 与删除按钮背景色一致 */
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease; /* 添加过渡动画 */
+}
+
+.sticky-note-controls button.settings-button:hover {
+  color: #1677ff !important; /* 悬浮时图标变为蓝色 */
+  background: rgba(22, 119, 255, 0.1); /* 悬浮时背景带有淡蓝色 */
+}
+
+/* 设置按钮图标样式 */
+.settings-icon {
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  transform: rotate(90deg); /* 将横向三点转为竖向 */
+}
+
+/* 外部溯源按钮 - 位于便签外左上角 */
+.external-source-button {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fa8c16; /* 橙色背景 */
+  border: 2px solid rgba(255, 255, 255, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.external-source-button:hover {
+  background: #ff9c3a;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(250, 140, 22, 0.4);
+}
+
+.external-source-button.active {
+  background: #d46b08;
+  animation: externalSourcePulse 2s ease-in-out infinite;
+}
+
+/* 外部溯源按钮数字 */
+.external-source-count {
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.4);
+}
+
+/* 外部溯源按钮激活动画 */
+@keyframes externalSourcePulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(212, 107, 8, 0.6);
+  }
+  50% {
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2), 0 0 0 4px rgba(212, 107, 8, 0.3);
+  }
+}
+
+/* 设置工具栏样式 - 位于便签头部上方，极简设计 */
+.settings-toolbar {
+  position: absolute;
+  display: flex;
+  gap: 4px; /* 进一步减小按钮间距 */
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 6px; /* 进一步减小圆角 */
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04); /* 进一步减轻阴影 */
+  backdrop-filter: blur(6px); /* 进一步减少模糊效果 */
+  border: 1px solid rgba(0, 0, 0, 0.04); /* 进一步减淡边框 */
+  padding: 4px; /* 进一步减小内边距 */
+  z-index: 20; /* 确保在便签之上 */
+  animation: settingsToolbarSlideIn 0.12s ease-out; /* 进一步加快动画速度 */
+}
+
+/* 设置工具栏滑入动画 */
+@keyframes settingsToolbarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 设置工具栏按钮 - 基于Ant Design Button的极简设计 */
+.settings-toolbar .settings-toolbar-button {
+  position: relative;
+  width: 28px !important; /* 进一步减小尺寸 */
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border-radius: 4px !important; /* 进一步减小圆角 */
+  border: none !important;
+  box-shadow: none !important;
+  transition: all 0.12s ease !important;
+}
+
+.settings-toolbar .settings-toolbar-button:hover:not(.disabled) {
+  background: rgba(22, 119, 255, 0.06) !important;
+  transform: scale(1.03) !important; /* 减小缩放幅度 */
+}
+
+.settings-toolbar .settings-toolbar-button.active {
+  background: rgba(250, 140, 22, 0.1) !important;
+  color: #fa8c16 !important;
+}
+
+.settings-toolbar .settings-toolbar-button.active:hover {
+  background: rgba(250, 140, 22, 0.14) !important;
+  transform: scale(1.03) !important;
+}
+
+.settings-toolbar .settings-toolbar-button.disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed !important;
+}
+
+.settings-toolbar .settings-toolbar-button.disabled:hover {
+  transform: none !important;
+  background: transparent !important;
+}
+
+/* 工具栏按钮图标样式 */
+.settings-toolbar .settings-toolbar-button .anticon {
+  font-size: 12px !important; /* 进一步减小图标尺寸 */
+  color: inherit;
+}
+
+/* 工具栏徽章 - 右上角小数字，极简设计 */
+.settings-toolbar .toolbar-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #fa8c16;
+  color: white;
+  font-size: 8px; /* 进一步减小字体 */
+  font-weight: bold;
+  padding: 1px 2px; /* 进一步减小内边距 */
+  border-radius: 4px; /* 进一步减小圆角 */
+  min-width: 12px; /* 进一步减小最小宽度 */
+  height: 12px; /* 进一步减小高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid white; /* 进一步减细边框 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* 进一步减轻阴影 */
+  z-index: 1;
+}
+
+.settings-toolbar .settings-toolbar-button.active .toolbar-badge {
+  background: #d46b08;
+}
+
+.settings-toolbar .settings-toolbar-button.disabled .toolbar-badge {
+  background: #ccc;
+  opacity: 0.6;
 }
 
 .sticky-note-content {
@@ -543,9 +745,25 @@
   box-shadow: 0 1px 6px rgba(22, 119, 255, 0.4);
 }
 
-/* 已连接状态的连接点 */
+/* 已连接状态的连接点 - 始终显示 */
 .connection-point.connected {
   opacity: 1; /* 已连接时始终显示 */
+}
+
+/* 有溯源连接线激活时的连接点 - 始终显示 */
+.connection-point.source-active {
+  opacity: 1; /* 有溯源连接线时始终显示 */
+}
+
+/* 有溯源标识的连接点 - 如果已连接或有溯源连接线激活，则始终显示 */
+.connection-point.has-source.connected,
+.connection-point.has-source.source-active {
+  opacity: 1; /* 已连接或有溯源连接线时始终显示 */
+}
+
+/* 便签悬停时显示所有连接点 - 统一的显示逻辑 */
+.sticky-note:hover .connection-point {
+  opacity: 1; /* 悬停时完全显示，包括有溯源标识的连接点 */
 }
 
 .connection-point.connected .connection-dot {
@@ -556,7 +774,8 @@
 
 /* 已连接状态的脉冲动画 */
 @keyframes connectedPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(82, 196, 26, 0.4);
   }
   50% {
@@ -571,6 +790,17 @@
 .sticky-note.color-pink .connection-point.connected .connection-dot,
 .sticky-note.color-purple .connection-point.connected .connection-dot {
   background: #52c41a; /* 统一使用绿色表示连接状态 */
+}
+
+/* 连接点有溯源时的额外样式调整 - 保留用于向后兼容 */
+.connection-point.has-source {
+  /* 有溯源标识的连接点可以有稍微不同的边框 */
+  border-color: rgba(250, 140, 22, 0.1); /* 非常淡的橙色边框提示 */
+}
+
+/* 有溯源标识的连接点悬停时的特殊效果 */
+.connection-point.has-source:hover {
+  border-color: rgba(250, 140, 22, 0.3); /* 悬停时橙色边框更明显 */
 }
 
 .ai-loading-indicator .anticon {

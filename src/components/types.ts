@@ -17,6 +17,8 @@ export interface StickyNote {
   // 连接相关属性
   isConnected?: boolean; // 是否已连接到插槽
   connectionIndex?: number; // 在插槽中的连接索引
+  // 汇总溯源相关属性
+  sourceNoteIds?: string[]; // 汇总生成便签的源便签ID列表，用于溯源功能
 }
 
 // 便签属性接口
