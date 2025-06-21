@@ -56,6 +56,10 @@ export class IndexedDBAdapter {
       zIndex: dbNote.z_index || 1,
       createdAt: new Date(dbNote.created_at),
       updatedAt: new Date(dbNote.updated_at),
+      // 处理溯源便签ID列表
+      sourceNoteIds: (dbNote as any).source_note_ids
+        ? JSON.parse((dbNote as any).source_note_ids)
+        : undefined,
     };
   }
 
@@ -69,7 +73,7 @@ export class IndexedDBAdapter {
       throw new Error("No canvas selected");
     }
 
-    return {
+    const dbNote: any = {
       id: note.id,
       canvas_id: this.currentCanvasId,
       position_x: note.x,
@@ -82,6 +86,13 @@ export class IndexedDBAdapter {
       font_size: 14, // 默认字体大小
       z_index: note.zIndex || 1,
     };
+
+    // 处理溯源便签ID列表
+    if (note.sourceNoteIds && note.sourceNoteIds.length > 0) {
+      dbNote.source_note_ids = JSON.stringify(note.sourceNoteIds);
+    }
+
+    return dbNote;
   }
 
   /**
@@ -90,7 +101,9 @@ export class IndexedDBAdapter {
   async ensureDefaultCanvas(): Promise<string> {
     try {
       // 尝试获取用户的画布
-      const canvases = await this.dbService.getCanvasesByUser(this.currentUserId);
+      const canvases = await this.dbService.getCanvasesByUser(
+        this.currentUserId
+      );
 
       if (canvases.length > 0) {
         // 如果已有画布，使用第一个画布
@@ -101,7 +114,9 @@ export class IndexedDBAdapter {
       // 如果没有画布，检查是否已经存在默认画布
       const defaultCanvasId = `canvas_${this.currentUserId}_default`;
       try {
-        const existingCanvas = await this.dbService.getCanvasById(defaultCanvasId);
+        const existingCanvas = await this.dbService.getCanvasById(
+          defaultCanvasId
+        );
         if (existingCanvas) {
           this.currentCanvasId = existingCanvas.id;
           return existingCanvas.id;
@@ -309,8 +324,8 @@ export class IndexedDBAdapter {
   }): Promise<void> {
     try {
       // 验证数据格式
-      if (!data || typeof data !== 'object') {
-        throw new Error('导入数据格式无效');
+      if (!data || typeof data !== "object") {
+        throw new Error("导入数据格式无效");
       }
 
       // 转换便签格式
@@ -319,7 +334,7 @@ export class IndexedDBAdapter {
         dbNotes = data.notes.map((note, index) => {
           try {
             // 验证必要字段
-            if (!note.id || typeof note.id !== 'string') {
+            if (!note.id || typeof note.id !== "string") {
               throw new Error(`便签 ${index + 1} 缺少有效的ID字段`);
             }
 
@@ -328,28 +343,36 @@ export class IndexedDBAdapter {
             let updatedAt: Date;
 
             try {
-              createdAt = note.createdAt instanceof Date
-                ? note.createdAt
-                : new Date(note.createdAt);
+              createdAt =
+                note.createdAt instanceof Date
+                  ? note.createdAt
+                  : new Date(note.createdAt);
 
               if (isNaN(createdAt.getTime())) {
-                throw new Error('创建时间格式无效');
+                throw new Error("创建时间格式无效");
               }
             } catch (error) {
-              console.warn(`便签 ${note.id} 的创建时间无效，使用当前时间`, error);
+              console.warn(
+                `便签 ${note.id} 的创建时间无效，使用当前时间`,
+                error
+              );
               createdAt = new Date();
             }
 
             try {
-              updatedAt = note.updatedAt instanceof Date
-                ? note.updatedAt
-                : new Date(note.updatedAt);
+              updatedAt =
+                note.updatedAt instanceof Date
+                  ? note.updatedAt
+                  : new Date(note.updatedAt);
 
               if (isNaN(updatedAt.getTime())) {
-                throw new Error('更新时间格式无效');
+                throw new Error("更新时间格式无效");
               }
             } catch (error) {
-              console.warn(`便签 ${note.id} 的更新时间无效，使用当前时间`, error);
+              console.warn(
+                `便签 ${note.id} 的更新时间无效，使用当前时间`,
+                error
+              );
               updatedAt = new Date();
             }
 
@@ -360,7 +383,11 @@ export class IndexedDBAdapter {
             };
           } catch (error) {
             console.error(`处理便签 ${index + 1} 时出错:`, error);
-            throw new Error(`便签 ${index + 1} 数据格式错误: ${error instanceof Error ? error.message : '未知错误'}`);
+            throw new Error(
+              `便签 ${index + 1} 数据格式错误: ${
+                error instanceof Error ? error.message : "未知错误"
+              }`
+            );
           }
         });
       }
@@ -372,8 +399,10 @@ export class IndexedDBAdapter {
         tags: data.tags,
       });
     } catch (error) {
-      console.error('导入数据失败:', error);
-      throw error instanceof Error ? error : new Error('导入数据时发生未知错误');
+      console.error("导入数据失败:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("导入数据时发生未知错误");
     }
   }
 

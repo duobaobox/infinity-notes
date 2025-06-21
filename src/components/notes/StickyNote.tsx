@@ -322,7 +322,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note, onConnect, isStreaming]
   );
 
-  // 处理溯源按钮点击 - 改为单击触发，避免与连接点冲突
+  // 处理溯源按钮点击
   const handleSourceButtonClick = useCallback(
     async (e: React.MouseEvent) => {
       if (isStreaming) return; // 流式过程中不允许操作
@@ -330,19 +330,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.stopPropagation();
       e.preventDefault();
 
+      // 检查是否有源便签
       if (!note.sourceNoteIds || note.sourceNoteIds.length === 0) {
-        console.log("⚠️ 该便签没有源便签，无法显示溯源连接");
+        console.warn("该便签没有源便签，无法显示溯源连接");
         return;
       }
-
-      console.log(
-        "🔍 单击溯源按钮触发溯源功能，便签ID:",
-        note.id,
-        "源便签数量:",
-        note.sourceNoteIds.length,
-        "当前状态:",
-        sourceConnectionsVisible ? "显示" : "隐藏"
-      );
 
       if (sourceConnectionsVisible) {
         // 隐藏溯源连接线
@@ -350,7 +342,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
         }
         setSourceConnectionsVisible(false);
-        console.log("🔗 已隐藏溯源连接线");
       } else {
         // 显示溯源连接线
         let successCount = 0;
@@ -366,9 +357,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         if (successCount > 0) {
           setSourceConnectionsVisible(true);
-          console.log(`🔗 已显示 ${successCount} 条溯源连接线`);
         } else {
-          console.warn("⚠️ 未能创建任何溯源连接线");
+          console.warn("🔗 没有成功创建任何溯源连接线");
         }
       }
     },
@@ -384,7 +374,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.preventDefault();
 
       setSettingsMenuVisible(!settingsMenuVisible);
-      console.log("⚙️ 切换设置菜单显示状态:", !settingsMenuVisible);
     },
     [isStreaming, settingsMenuVisible]
   );
@@ -830,18 +819,27 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         // 检查点击是否在便签内部或工具栏内部
         const isInsideNote = noteRef.current.contains(target);
         const isInsideToolbar = target.closest(".settings-toolbar");
+        const isInsideToolbarButton = target.closest(
+          ".settings-toolbar-button"
+        );
 
         // 如果点击的不是便签内部也不是工具栏内部，关闭设置工具栏
-        if (!isInsideNote && !isInsideToolbar) {
+        // 但是如果点击的是工具栏按钮，不要关闭（让按钮自己处理）
+        if (!isInsideNote && !isInsideToolbar && !isInsideToolbarButton) {
           setSettingsMenuVisible(false);
         }
       }
     };
 
     if (settingsMenuVisible) {
-      document.addEventListener("mousedown", handleClickOutside);
+      // 使用setTimeout延迟添加事件监听器，避免与按钮点击冲突
+      const timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleClickOutside);
+      }, 150); // 增加延迟时间，确保按钮点击事件先执行
+
       return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
+        clearTimeout(timeoutId);
+        document.removeEventListener("click", handleClickOutside);
       };
     }
   }, [settingsMenuVisible]);
@@ -884,8 +882,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           className="settings-toolbar"
           style={{
             left: actualX,
-            top: actualY - 45, // 位于便签头部上方20px
-            zIndex: note.zIndex + 2, // 确保在便签和溯源按钮之上
+            top: actualY - 45, // 位于便签头部上方45px
+            zIndex: Math.max(note.zIndex + 10, 9999), // 确保足够高的z-index
+          }}
+          onClick={(e) => {
+            // 阻止点击工具栏本身时关闭菜单
+            e.stopPropagation();
           }}
         >
           {/* 溯源连接按钮 */}
@@ -902,10 +904,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             type="text"
             disabled={!note.sourceNoteIds || note.sourceNoteIds.length === 0}
             onClick={(e) => {
-              if (note.sourceNoteIds && note.sourceNoteIds.length > 0) {
-                handleSourceButtonClick(e);
-                setSettingsMenuVisible(false); // 点击后关闭工具栏
+              e.stopPropagation();
+              e.preventDefault();
+
+              // 检查按钮是否被禁用
+              if (!note.sourceNoteIds || note.sourceNoteIds.length === 0) {
+                return;
               }
+
+              handleSourceButtonClick(e);
             }}
             title={
               note.sourceNoteIds && note.sourceNoteIds.length > 0

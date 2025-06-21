@@ -199,6 +199,7 @@
 .sticky-note-controls button.delete-button:hover {
   color: #ff4d4f !important; /* 悬浮时图标变为红色 */
   background: rgba(255, 77, 79, 0.1); /* 悬浮时背景带有淡红色 */
+  transform: scale(1.05); /* 悬浮时轻微放大 */
 }
 
 /* 溯源按钮样式 - 与删除按钮保持一致 */
@@ -235,8 +236,9 @@
 }
 
 .sticky-note-controls button.settings-button:hover {
-  color: #1677ff !important; /* 悬浮时图标变为蓝色 */
+  color: #1677ff !important; /* 悬浮时图标变为主题蓝色 */
   background: rgba(22, 119, 255, 0.1); /* 悬浮时背景带有淡蓝色 */
+  transform: scale(1.05); /* 悬浮时轻微放大 */
 }
 
 /* 设置按钮图标样式 */
@@ -265,9 +267,9 @@
 }
 
 .external-source-button:hover {
-  background: #ff9c3a;
+  background: #1677ff; /* 悬浮时变为主题蓝色 */
   transform: scale(1.1);
-  box-shadow: 0 3px 8px rgba(250, 140, 22, 0.4);
+  box-shadow: 0 3px 8px rgba(22, 119, 255, 0.4); /* 蓝色阴影 */
 }
 
 .external-source-button.active {
@@ -295,7 +297,7 @@
   }
 }
 
-/* 设置工具栏样式 - 位于便签头部上方，极简设计 */
+/* 便签工具栏样式 - 位于便签头部上方，极简设计 */
 .settings-toolbar {
   position: absolute;
   display: flex;
@@ -306,7 +308,7 @@
   backdrop-filter: blur(6px); /* 进一步减少模糊效果 */
   border: 1px solid rgba(0, 0, 0, 0.04); /* 进一步减淡边框 */
   padding: 4px; /* 进一步减小内边距 */
-  z-index: 20; /* 确保在便签之上 */
+  /* 移除固定的z-index，让JavaScript动态设置 */
   animation: settingsToolbarSlideIn 0.12s ease-out; /* 进一步加快动画速度 */
 }
 
@@ -337,31 +339,53 @@
   border: none !important;
   box-shadow: none !important;
   transition: all 0.12s ease !important;
+  pointer-events: auto !important; /* 确保可以点击 */
+  cursor: pointer !important; /* 确保显示指针 */
 }
 
+/* 增强选择器优先级，确保悬浮效果能覆盖Ant Design默认样式 */
+.settings-toolbar .settings-toolbar-button.ant-btn:hover:not(.disabled),
 .settings-toolbar .settings-toolbar-button:hover:not(.disabled) {
-  background: rgba(22, 119, 255, 0.06) !important;
-  transform: scale(1.03) !important; /* 减小缩放幅度 */
+  background: rgba(22, 119, 255, 0.1) !important; /* 增强蓝色背景 */
+  color: #1677ff !important; /* 图标变为主题蓝色 */
+  transform: scale(1.05) !important; /* 轻微放大 */
+  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.2) !important; /* 添加蓝色阴影 */
+  border-color: transparent !important; /* 确保边框透明 */
 }
 
+/* 确保图标也变成蓝色 */
+.settings-toolbar
+  .settings-toolbar-button.ant-btn:hover:not(.disabled)
+  .anticon,
+.settings-toolbar .settings-toolbar-button:hover:not(.disabled) .anticon {
+  color: #1677ff !important;
+}
+
+/* 激活状态样式 - 增强选择器优先级 */
+.settings-toolbar .settings-toolbar-button.ant-btn.active,
 .settings-toolbar .settings-toolbar-button.active {
   background: rgba(250, 140, 22, 0.1) !important;
   color: #fa8c16 !important;
 }
 
+.settings-toolbar .settings-toolbar-button.ant-btn.active:hover,
 .settings-toolbar .settings-toolbar-button.active:hover {
   background: rgba(250, 140, 22, 0.14) !important;
   transform: scale(1.03) !important;
 }
 
+/* 禁用状态样式 - 增强选择器优先级 */
+.settings-toolbar .settings-toolbar-button.ant-btn.disabled,
 .settings-toolbar .settings-toolbar-button.disabled {
   opacity: 0.25 !important;
   cursor: not-allowed !important;
 }
 
+.settings-toolbar .settings-toolbar-button.ant-btn.disabled:hover,
 .settings-toolbar .settings-toolbar-button.disabled:hover {
   transform: none !important;
   background: transparent !important;
+  color: inherit !important;
 }
 
 /* 工具栏按钮图标样式 */
@@ -715,7 +739,7 @@
   cursor: pointer;
   z-index: 10;
   opacity: 0; /* 默认隐藏 */
-  transition: opacity 0.3s ease; /* 只对透明度做过渡，避免位置变化 */
+  transition: all 0.2s ease; /* 添加所有属性的过渡动画 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -739,10 +763,15 @@
   margin: auto;
 }
 
-/* 连接点悬停效果 - 移除transform避免位置偏移 */
+/* 连接点悬停效果 */
+.connection-point:hover {
+  transform: scale(1.1); /* 悬浮时轻微放大 */
+}
+
 .connection-point:hover .connection-dot {
-  background: #1677ff;
-  box-shadow: 0 1px 6px rgba(22, 119, 255, 0.4);
+  background: #1677ff; /* 主题蓝色 */
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.5); /* 增强蓝色阴影 */
+  border-color: rgba(22, 119, 255, 0.3); /* 蓝色边框 */
 }
 
 /* 已连接状态的连接点 - 始终显示 */
