@@ -1,12 +1,12 @@
 // 便签连接状态管理Store
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import type { StickyNote } from '../components/types';
-import { ConnectionMode } from '../components/canvas/StickyNoteSlots';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import type { StickyNote } from "../components/types";
+import { ConnectionMode } from "../components/canvas/StickyNoteSlots";
 
 // 连接模式类型
-type ConnectionModeType = typeof ConnectionMode[keyof typeof ConnectionMode];
-import { connectionLineManager } from '../utils/connectionLineManager';
+type ConnectionModeType = (typeof ConnectionMode)[keyof typeof ConnectionMode];
+import { connectionLineManager } from "../utils/connectionLineManager";
 
 // 连接状态接口
 export interface ConnectionState {
@@ -25,13 +25,13 @@ export interface ConnectionActions {
   addConnection: (note: StickyNote) => boolean; // 添加连接，返回是否成功
   removeConnection: (noteId: string) => void; // 移除连接
   clearAllConnections: () => void; // 清空所有连接
-  
+
   // 模式管理
   setConnectionMode: (mode: ConnectionModeType) => void; // 设置连接模式
-  
+
   // 可见性管理
   setVisible: (visible: boolean) => void; // 设置可见性
-  
+
   // 工具方法
   isNoteConnected: (noteId: string) => boolean; // 检查便签是否已连接
   getConnectionIndex: (noteId: string) => number; // 获取便签在连接列表中的索引
@@ -58,13 +58,11 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
 
         // 检查是否已连接
         if (state.isNoteConnected(note.id)) {
-          console.warn(`便签 ${note.id} 已经连接`);
           return false;
         }
 
         // 检查是否超过最大连接数
         if (!state.canAddConnection()) {
-          console.warn(`已达到最大连接数 ${state.maxConnections}`);
           return false;
         }
 
@@ -88,7 +86,6 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
           await connectionLineManager.createConnection(updatedNote, newIndex);
         });
 
-        console.log(`✅ 便签 ${note.id} 已连接到插槽`);
         return true;
       },
 
@@ -98,7 +95,9 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
         // 移除连接线
         connectionLineManager.removeConnection(noteId);
 
-        const updatedNotes = state.connectedNotes.filter(note => note.id !== noteId);
+        const updatedNotes = state.connectedNotes.filter(
+          (note) => note.id !== noteId
+        );
 
         // 重新分配连接索引
         const reindexedNotes = updatedNotes.map((note, index) => ({
@@ -114,28 +113,23 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
         // 使用requestAnimationFrame重新创建剩余连接线，减少延迟
         requestAnimationFrame(async () => {
           for (const note of reindexedNotes) {
-            await connectionLineManager.createConnection(note, note.connectionIndex!);
+            await connectionLineManager.createConnection(
+              note,
+              note.connectionIndex!
+            );
           }
         });
-
-        console.log(`🗑️ 便签 ${noteId} 已从插槽移除`);
       },
 
       clearAllConnections: () => {
         try {
           // 获取当前状态
           const state = get();
-          const noteIds = state.connectedNotes.map(note => note.id);
-          
+          const noteIds = state.connectedNotes.map((note) => note.id);
+
           if (noteIds.length === 0) {
-            console.log('ℹ️ 没有需要清空的连接');
             return;
           }
-
-          console.log('📊 开始清空连接:', {
-            连接数量: state.connectedNotes.length,
-            连接的便签IDs: noteIds
-          });
 
           // 清空所有连接线
           connectionLineManager.clearAllConnections();
@@ -145,10 +139,7 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
             connectedNotes: [], // 清空连接的便签列表
             isVisible: false, // 隐藏插槽容器
           });
-
-          console.log('✅ 已成功清空所有连接');
         } catch (error) {
-          console.error('❌ 清空连接失败:', error);
           // 即使出错也尝试重置状态
           set({
             connectedNotes: [],
@@ -160,7 +151,6 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       // 模式管理
       setConnectionMode: (mode: ConnectionModeType) => {
         set({ connectionMode: mode });
-        console.log(`🔄 连接模式已切换为: ${mode}`);
       },
 
       // 可见性管理
@@ -171,12 +161,12 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       // 工具方法
       isNoteConnected: (noteId: string) => {
         const state = get();
-        return state.connectedNotes.some(note => note.id === noteId);
+        return state.connectedNotes.some((note) => note.id === noteId);
       },
 
       getConnectionIndex: (noteId: string) => {
         const state = get();
-        const note = state.connectedNotes.find(note => note.id === noteId);
+        const note = state.connectedNotes.find((note) => note.id === noteId);
         return note?.connectionIndex || -1;
       },
 
@@ -203,7 +193,7 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
       },
     }),
     {
-      name: 'connection-store', // DevTools中的名称
+      name: "connection-store", // DevTools中的名称
     }
   )
 );
@@ -214,21 +204,31 @@ export const connectionUtils = {
    * 获取连接的便签内容摘要
    */
   getConnectionSummary: (connectedNotes: StickyNote[]): string => {
-    if (connectedNotes.length === 0) return '';
-    
+    if (connectedNotes.length === 0) return "";
+
     return connectedNotes
-      .map((note, index) => `${index + 1}. ${note.title || '无标题'}: ${note.content.substring(0, 100)}`)
-      .join('\n\n');
+      .map(
+        (note, index) =>
+          `${index + 1}. ${note.title || "无标题"}: ${note.content.substring(
+            0,
+            100
+          )}`
+      )
+      .join("\n\n");
   },
 
   /**
    * 生成AI提示词，包含连接的便签内容
    */
-  generateAIPromptWithConnections: (userPrompt: string, connectedNotes: StickyNote[]): string => {
+  generateAIPromptWithConnections: (
+    userPrompt: string,
+    connectedNotes: StickyNote[]
+  ): string => {
     if (connectedNotes.length === 0) return userPrompt;
-    
-    const connectionSummary = connectionUtils.getConnectionSummary(connectedNotes);
-    
+
+    const connectionSummary =
+      connectionUtils.getConnectionSummary(connectedNotes);
+
     return `基于以下已连接的便签内容：
 
 ${connectionSummary}
@@ -242,10 +242,11 @@ ${connectionSummary}
    * 验证连接的便签是否有效
    */
   validateConnections: (connectedNotes: StickyNote[]): boolean => {
-    return connectedNotes.every(note => 
-      note.id && 
-      typeof note.content === 'string' && 
-      typeof note.title === 'string'
+    return connectedNotes.every(
+      (note) =>
+        note.id &&
+        typeof note.content === "string" &&
+        typeof note.title === "string"
     );
   },
 };

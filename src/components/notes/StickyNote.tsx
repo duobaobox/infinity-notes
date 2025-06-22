@@ -40,11 +40,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onConnect,
   isConnected = false,
 }) => {
+  // 状态管理
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isSyncingPosition, setIsSyncingPosition] = useState(false); // 位置同步状态
-  const [isSyncingSize, setIsSyncingSize] = useState(false); // 新增：尺寸同步状态
+  const [isSyncingPosition, setIsSyncingPosition] = useState(false);
+  const [isSyncingSize, setIsSyncingSize] = useState(false);
   const [resizeStart, setResizeStart] = useState({
     x: 0,
     y: 0,
@@ -52,74 +53,53 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     height: 0,
   });
 
-  // 拖动期间的临时位置和尺寸
   const [tempPosition, setTempPosition] = useState({ x: note.x, y: note.y });
   const [tempSize, setTempSize] = useState({
     width: note.width,
     height: note.height,
   });
 
-  // 本地编辑状态管理 - 不通过数据库同步
   const [isEditing, setIsEditing] = useState(note.isEditing);
   const [isTitleEditing, setIsTitleEditing] = useState(note.isTitleEditing);
-
-  // 中文输入法合成状态跟踪
   const [isComposing, setIsComposing] = useState(false);
   const [isTitleComposing, setIsTitleComposing] = useState(false);
-
-  // 本地内容状态，用于在输入期间避免外部更新干扰
   const [localContent, setLocalContent] = useState(note.content);
   const [localTitle, setLocalTitle] = useState(note.title);
 
-  // 光标位置保存状态
-  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
-  const [shouldRestoreCursor, setShouldRestoreCursor] = useState(false);
-
-  // 流式显示相关状态
   const [displayContent, setDisplayContent] = useState(note.content);
   const [showCursor, setShowCursor] = useState(false);
-
-  // 溯源连接线状态
   const [sourceConnectionsVisible, setSourceConnectionsVisible] =
     useState(false);
-
-  // 当前便签是否正在被溯源连接线连接（作为源便签）
   const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
-
-  // 设置菜单状态
   const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
 
+  // Refs 和定时器
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-
-  // 防抖更新的 timer
   const contentUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
   const titleUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
-
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // 连接状态管理
+  // Store hooks
   const {
     updateNoteConnectionLines,
     updateNoteConnectionLinesImmediate,
     removeConnection: removeConnectionFromStore,
   } = useConnectionStore();
 
-  // 获取所有便签数据，用于检查源便签连接状态
   const allNotes = useStickyNotesStore((state) => state.notes);
 
-  // 检查当前便签是否作为其他便签的源便签被引用
+  // 检查当前便签是否作为源便签被引用
   const isSourceConnected = useMemo(() => {
     return allNotes.some((otherNote) => {
-      if (otherNote.id === note.id) return false; // 跳过自己
-      // 检查其他便签是否将当前便签作为源便签
+      if (otherNote.id === note.id) return false;
       return otherNote.sourceNoteIds?.includes(note.id);
     });
   }, [note.id, allNotes]);
 
-  // 检查并更新当前便签是否正在被溯源连接线连接（作为源便签）
+  // 检查并更新源连接状态
   useEffect(() => {
     const checkSourceConnectionStatus = () => {
       const isConnected = connectionLineManager.isNoteBeingSourceConnected(
@@ -128,23 +108,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       setIsBeingSourceConnected(isConnected);
     };
 
-    // 初始检查
     checkSourceConnectionStatus();
 
-    // 设置定时器定期检查（这是一个临时解决方案，更好的方案是事件驱动）
-    const interval = setInterval(checkSourceConnectionStatus, 100);
-
-    // 监听源连接状态变化事件
     const handleSourceConnectionChanged = (event: CustomEvent) => {
       if (event.detail.noteId === note.id) {
-        // 如果事件是针对当前便签的，立即更新状态
-        console.log(`📢 便签 ${note.id} 接收到连接状态变化通知`);
-        const newStatus = connectionLineManager.isNoteBeingSourceConnected(
-          note.id
-        );
-        console.log(
-          `📢 便签 ${note.id} 连接状态变更: ${isBeingSourceConnected} -> ${newStatus}`
-        );
         checkSourceConnectionStatus();
       }
     };
@@ -155,7 +122,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     );
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener(
         "sourceConnectionChanged",
         handleSourceConnectionChanged as EventListener
@@ -174,10 +140,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       return;
     }
 
-    console.log(
-      `🔄 检测到便签 ${note.id} 的 sourceNoteIds 变化，重新创建溯源连接线`
-    );
-
     // 异步重新创建所有有效的溯源连接线
     const recreateSourceConnections = async () => {
       try {
@@ -190,7 +152,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         );
 
         if (validSourceNoteIds.length === 0) {
-          console.warn(`便签 ${note.id} 没有有效的源便签，隐藏溯源连接线`);
           setSourceConnectionsVisible(false);
           return;
         }
@@ -206,8 +167,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             successCount++;
           }
         }
-
-        console.log(`🔗 重新创建了 ${successCount} 个溯源连接线`);
 
         // 如果没有成功创建任何连接线，隐藏溯源连接线状态
         if (successCount === 0) {
@@ -352,12 +311,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     (e: React.CompositionEvent<HTMLTextAreaElement>) => {
       setIsComposing(false);
       const newContent = e.currentTarget.value;
-
-      // 保存光标位置
-      const currentCursorPosition = e.currentTarget.selectionStart;
-      setCursorPosition(currentCursorPosition);
-      setShouldRestoreCursor(true);
-
       setLocalContent(newContent);
       debouncedUpdateContent(newContent);
     },
@@ -383,15 +336,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newContent = e.target.value;
-
-      // 保存当前光标位置
-      const currentCursorPosition = e.target.selectionStart;
-      setCursorPosition(currentCursorPosition);
-      setShouldRestoreCursor(true);
-
       setLocalContent(newContent);
 
-      // 如果不是合成事件期间，则正常更新
       if (!isComposing) {
         debouncedUpdateContent(newContent);
       }
@@ -416,37 +362,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 删除便签
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
-      if (isStreaming) return; // 流式过程中不允许删除
+      if (isStreaming) return;
 
       e.stopPropagation();
-      e.preventDefault(); // 添加阻止默认行为
+      e.preventDefault();
 
-      // 在删除便签之前，清理所有相关的连接线
+      // 清理所有相关的连接线
       try {
-        // 清理普通连接线
         connectionLineManager.removeConnection(note.id);
-
-        // 同时从连接状态管理中移除该便签
         removeConnectionFromStore(note.id);
-
-        // 清理作为目标便签的溯源连接线
         connectionLineManager.removeAllSourceConnectionsToNote(note.id);
-
-        // 清理作为源便签的溯源连接线
         connectionLineManager.removeAllSourceConnectionsFromNote(note.id);
-
-        console.log(`🧹 已清理便签 ${note.id} 的所有连接线和连接状态`);
+        console.log(`已清理便签 ${note.id} 的所有连接线和连接状态`);
       } catch (error) {
         console.error("清理连接线失败:", error);
       }
 
-      // 立即删除便签，不管当前状态如何
-      // 确保删除操作优先于任何其他状态更新
       setTimeout(() => {
         onDelete(note.id);
       }, 0);
 
-      // 如果当前处于编辑状态，将编辑状态设为false，但不保存内容
       if (isEditing || isTitleEditing) {
         setIsEditing(false);
         setIsTitleEditing(false);
@@ -462,36 +397,30 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     ]
   );
 
-  // 处理连接点点击 - 简单的单击连接
+  // 处理连接点点击
   const handleConnectionClick = useCallback(
     (e: React.MouseEvent) => {
-      if (isStreaming) return; // 流式过程中不允许连接
+      if (isStreaming) return;
 
       e.stopPropagation();
       e.preventDefault();
 
-      // 如果有连接回调，调用连接回调
       if (onConnect) {
         onConnect(note);
-      } else if (isSourceConnected) {
-        // 如果是源便签，显示提示或其他处理逻辑
-        console.log("当前便签作为源便签被其他便签引用");
       }
     },
-    [note, onConnect, isStreaming, isSourceConnected]
+    [note, onConnect, isStreaming]
   );
 
   // 处理溯源按钮点击
   const handleSourceButtonClick = useCallback(
     async (e: React.MouseEvent) => {
-      if (isStreaming) return; // 流式过程中不允许操作
+      if (isStreaming) return;
 
       e.stopPropagation();
       e.preventDefault();
 
-      // 检查是否有源便签
       if (!note.sourceNoteIds || note.sourceNoteIds.length === 0) {
-        console.warn("该便签没有源便签，无法显示溯源连接");
         return;
       }
 
@@ -507,22 +436,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       });
 
       if (hasCircularReference) {
-        console.warn(
-          `检测到循环引用：便签 "${note.title}" 与其源便签之间存在相互引用关系`
-        );
-        // 可以选择阻止显示连接线，或者只显示警告
-        // 这里选择显示警告但仍然允许显示连接线
+        // 循环引用警告，但仍允许显示连接线
       }
 
       // 如果有无效的源便签ID，更新便签的溯源信息
       if (validSourceNoteIds.length !== note.sourceNoteIds.length) {
-        const invalidIds = note.sourceNoteIds.filter(
-          (id) => !validSourceNoteIds.includes(id)
-        );
-        console.warn(
-          `发现无效的源便签ID: ${invalidIds.join(", ")}，将自动清理`
-        );
-
         // 更新便签的源便签列表，移除无效的ID
         onUpdate(note.id, {
           sourceNoteIds:
@@ -532,7 +450,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         // 如果没有有效的源便签了，直接返回
         if (validSourceNoteIds.length === 0) {
-          console.warn("没有有效的源便签，无法显示溯源连接");
           return;
         }
       }
@@ -552,13 +469,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         setIsBeingSourceConnected(isConnected);
 
         // 通知所有源便签更新其连接状态
-        // 通过触发一个自定义事件来通知其他便签组件更新状态
         for (const sourceNoteId of note.sourceNoteIds) {
           const event = new CustomEvent("sourceConnectionChanged", {
             detail: { noteId: sourceNoteId },
           });
           window.dispatchEvent(event);
-          console.log(`🔔 通知源便签 ${sourceNoteId} 更新连接状态（移除连接）`);
         }
       } else {
         // 显示溯源连接线 - 只尝试创建有效源便签的连接
@@ -582,12 +497,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               detail: { noteId: sourceNoteId },
             });
             window.dispatchEvent(event);
-            console.log(
-              `🔔 通知源便签 ${sourceNoteId} 更新连接状态（创建连接）`
-            );
           }
         } else {
-          console.warn("🔗 没有成功创建任何溯源连接线");
+          console.warn("没有成功创建任何溯源连接线");
         }
       }
     },
@@ -604,39 +516,32 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 处理设置按钮点击
   const handleSettingsClick = useCallback(
     (e: React.MouseEvent) => {
-      if (isStreaming) return; // 流式过程中不允许操作
+      if (isStreaming) return;
 
       e.stopPropagation();
       e.preventDefault();
-
       setSettingsMenuVisible(!settingsMenuVisible);
     },
     [isStreaming, settingsMenuVisible]
   );
 
-  // 鼠标按下开始拖拽
+  // 开始拖拽
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (isEditing || isTitleEditing || isStreaming) return; // 流式过程中不允许拖拽
+      if (isEditing || isTitleEditing || isStreaming) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      // 计算鼠标在画布坐标系中的位置
       const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
       const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
 
-      // 计算鼠标相对于便签的偏移量
       setDragOffset({
         x: canvasX - note.x,
         y: canvasY - note.y,
       });
-
-      // 初始化临时位置为当前位置
       setTempPosition({ x: note.x, y: note.y });
       setIsDragging(true);
-
-      // 立即执行置顶操作，提升响应性
       onBringToFront(note.id);
     },
     [
@@ -664,20 +569,18 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         width: note.width,
         height: note.height,
       });
-
-      // 初始化临时尺寸为当前尺寸
       setTempSize({ width: note.width, height: note.height });
       setIsResizing(true);
     },
     [note.width, note.height, canvasScale]
   );
 
-  // 节流的连接线更新 - 减少便签拖拽时的连接线更新频率
+  // 节流的连接线更新
   const throttledNoteConnectionUpdate = useMemo(
     () =>
       throttle(() => {
         updateNoteConnectionLinesImmediate(note.id);
-      }, 16), // 60fps
+      }, 16),
     [updateNoteConnectionLinesImmediate, note.id]
   );
 
@@ -692,16 +595,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         // 使用 requestAnimationFrame 优化性能
         rafRef.current = requestAnimationFrame(() => {
-          // 将屏幕坐标转换为画布逻辑坐标
           const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
           const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
           const newX = canvasX - dragOffset.x;
           const newY = canvasY - dragOffset.y;
 
-          // 使用临时状态来更新位置，避免频繁的数据库操作
           setTempPosition({ x: newX, y: newY });
-
-          // 使用节流的连接线更新，减少卡顿
           throttledNoteConnectionUpdate();
         });
       } else if (isResizing) {
@@ -717,7 +616,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           const newWidth = Math.max(200, resizeStart.width + deltaX);
           const newHeight = Math.max(150, resizeStart.height + deltaY);
 
-          // 使用临时状态来更新尺寸，避免频繁的数据库操作
           setTempSize({ width: newWidth, height: newHeight });
         });
       }
@@ -731,25 +629,23 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
 
       if (isDragging) {
-        // 拖动结束时，将临时位置同步到数据库
         onUpdate(note.id, {
           x: tempPosition.x,
           y: tempPosition.y,
           updatedAt: new Date(),
         });
-        setIsDragging(false); // 首先设置 dragging 为 false
-        setIsSyncingPosition(true); // 然后设置 syncing 为 true
+        setIsDragging(false);
+        setIsSyncingPosition(true);
       }
 
       if (isResizing) {
-        // 调整大小结束时，将临时尺寸同步到数据库
         onUpdate(note.id, {
           width: tempSize.width,
           height: tempSize.height,
           updatedAt: new Date(),
         });
-        setIsResizing(false); // 首先设置 resizing 为 false
-        setIsSyncingSize(true); // 然后设置 syncing 为 true
+        setIsResizing(false);
+        setIsSyncingSize(true);
       }
     };
 
@@ -787,7 +683,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     throttledNoteConnectionUpdate,
   ]);
 
-  // 处理位置同步的 Effect
+  // 处理位置同步
   useEffect(() => {
     if (
       isSyncingPosition &&
@@ -795,7 +691,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       note.y === tempPosition.y
     ) {
       setIsSyncingPosition(false);
-      // 位置同步完成后，更新连接线位置
       updateNoteConnectionLines(note.id);
     }
   }, [
@@ -808,7 +703,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     updateNoteConnectionLines,
   ]);
 
-  // 处理尺寸同步的 Effect
+  // 处理尺寸同步
   useEffect(() => {
     if (
       isSyncingSize &&
@@ -819,7 +714,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [note.width, note.height, tempSize.width, tempSize.height, isSyncingSize]);
 
-  // 同步外部 props 到本地状态（仅在非编辑状态下）
+  // 同步外部状态到本地状态
   useEffect(() => {
     if (!isEditing && !isComposing) {
       setLocalContent(note.content);
@@ -831,6 +726,27 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       setLocalTitle(note.title);
     }
   }, [note.title, isTitleEditing, isTitleComposing]);
+
+  useEffect(() => {
+    if (note.isEditing !== isEditing) {
+      setIsEditing(note.isEditing);
+    }
+    if (note.isTitleEditing !== isTitleEditing) {
+      setIsTitleEditing(note.isTitleEditing);
+    }
+  }, [note.isEditing, note.isTitleEditing]);
+
+  useEffect(() => {
+    if (!isDragging && !isSyncingPosition) {
+      setTempPosition({ x: note.x, y: note.y });
+    }
+  }, [note.x, note.y, isDragging, isSyncingPosition]);
+
+  useEffect(() => {
+    if (!isResizing && !isSyncingSize) {
+      setTempSize({ width: note.width, height: note.height });
+    }
+  }, [note.width, note.height, isResizing, isSyncingSize]);
 
   // 清理防抖计时器
   useEffect(() => {
@@ -844,61 +760,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     };
   }, []);
 
-  // 当 note 的位置从 props 更新时，同步 tempPosition (非拖动或同步状态下)
-  useEffect(() => {
-    if (!isDragging && !isSyncingPosition) {
-      setTempPosition({ x: note.x, y: note.y });
-    }
-  }, [note.x, note.y, isDragging, isSyncingPosition]);
-
-  // 当 note 的尺寸从 props 更新时，同步 tempSize (非调整大小或同步状态下)
-  useEffect(() => {
-    if (!isResizing && !isSyncingSize) {
-      setTempSize({ width: note.width, height: note.height });
-    }
-  }, [note.width, note.height, isResizing, isSyncingSize]);
-
-  // 同步数据库中的编辑状态到本地状态（只在组件初始化时）
-  useEffect(() => {
-    if (note.isEditing !== isEditing) {
-      setIsEditing(note.isEditing);
-    }
-    if (note.isTitleEditing !== isTitleEditing) {
-      setIsTitleEditing(note.isTitleEditing);
-    }
-  }, [note.isEditing, note.isTitleEditing]); // 只在数据库状态变化时同步
-
-  // 自动聚焦到文本框 - 仅在进入编辑模式时设置光标到末尾
+  // 自动聚焦
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
-      // 只在首次进入编辑模式时设置光标到末尾
       textareaRef.current.setSelectionRange(
         localContent.length,
         localContent.length
       );
     }
-  }, [isEditing]); // 只依赖编辑状态，不依赖内容长度
+  }, [isEditing]);
 
-  // 恢复光标位置 - 在内容更新后恢复之前保存的光标位置
-  useEffect(() => {
-    if (
-      shouldRestoreCursor &&
-      cursorPosition !== null &&
-      textareaRef.current &&
-      isEditing
-    ) {
-      // 使用setTimeout确保DOM更新完成后再设置光标位置
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.setSelectionRange(cursorPosition, cursorPosition);
-          setShouldRestoreCursor(false);
-        }
-      }, 0);
-    }
-  }, [localContent, shouldRestoreCursor, cursorPosition, isEditing]);
-
-  // 自动聚焦到标题输入框 - 仅在进入标题编辑模式时设置光标到末尾
   useEffect(() => {
     if (isTitleEditing && titleInputRef.current) {
       titleInputRef.current.focus();
@@ -907,7 +779,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         localTitle.length
       );
     }
-  }, [isTitleEditing]); // 只依赖编辑状态，不依赖内容长度
+  }, [isTitleEditing]);
 
   // 处理内容编辑键盘事件
   const handleContentKeyDown = useCallback(
@@ -919,11 +791,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         e.preventDefault();
         stopEditing();
       } else {
-        // 对于其他按键，保存光标位置
-        const target = e.currentTarget;
-        setTimeout(() => {
-          setCursorPosition(target.selectionStart);
-        }, 0);
+        // 对于其他按键，不需要保存光标位置
       }
     },
     [stopEditing]
@@ -973,16 +841,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [stopEditing]
   );
 
-  // 处理文本框点击事件 - 保存光标位置
-  const handleTextareaClick = useCallback(
-    (e: React.MouseEvent<HTMLTextAreaElement>) => {
-      const target = e.currentTarget;
-      setTimeout(() => {
-        setCursorPosition(target.selectionStart);
-      }, 0);
-    },
-    []
-  );
+  // 处理文本框点击事件
+  const handleTextareaClick = useCallback(() => {
+    // 不需要特殊处理
+  }, []);
 
   // 标题失焦时停止编辑
   const handleTitleBlur = useCallback(
@@ -1062,15 +924,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [isEditing, isTitleEditing, stopEditing, stopTitleEditing]);
 
-  // 计算标题背景宽度 - 根据标题文本长度动态调整
+  // 计算标题背景宽度
   const getTitleBackgroundWidth = () => {
     const titleText = localTitle || "便签";
-    // 每个字符平均宽度约为10px（根据字体大小和字符类型调整）
-    // 中文字符和英文字符宽度不同，这里取一个估计值
     const avgCharWidth = 10;
-    // 添加一些额外的padding
     const padding = 10;
-    // 返回估计宽度，但限制最小宽度为60px
     return Math.max(60, titleText.length * avgCharWidth + padding) + "px";
   };
 
@@ -1475,20 +1333,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 isSourceConnected ? "source-connected" : ""
               } ${isBeingSourceConnected ? "being-source-connected" : ""}`}
               onClick={handleConnectionClick}
-              onDoubleClick={(e) => {
-                // 双击连接点的处理逻辑 - 当前只是记录日志，不执行删除
-                e.stopPropagation();
-                e.preventDefault();
-                console.log(`🔍 双击连接点 - 便签ID: ${note.id}, 连接状态:`, {
-                  isConnected,
-                  isSourceConnected,
-                  sourceConnectionsVisible,
-                  isBeingSourceConnected,
-                });
-                console.warn(
-                  "⚠️ 如果溯源连接线被意外删除，请检查这里是否有删除逻辑！"
-                );
-              }}
               title={
                 isConnected
                   ? "已连接到插槽"

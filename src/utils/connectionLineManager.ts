@@ -805,81 +805,10 @@ class ConnectionLineManager {
 
     console.log("🔗 连接线管理器已销毁");
   }
-
-  // 获取所有连接线的调试信息
-  getDebugInfo(): any {
-    const connections = Array.from(this.connections.entries()).map(
-      ([id, connection]) => ({
-        id,
-        type: connection.type,
-        noteId: connection.noteId,
-        slotIndex: connection.slotIndex,
-        targetNoteId: (connection as SourceConnectionLine).targetNoteId,
-        sourceNoteId: (connection as SourceConnectionLine).sourceNoteId,
-      })
-    );
-
-    return {
-      totalConnections: this.connections.size,
-      normalConnections: connections.filter((c) => c.type === "normal").length,
-      sourceConnections: connections.filter((c) => c.type === "source").length,
-      connections,
-    };
-  }
-
-  // 统计特定便签的连接线
-  getNoteConnectionStats(noteId: string): any {
-    const stats = {
-      normalConnections: 0,
-      sourceConnectionsAsSource: 0,
-      sourceConnectionsAsTarget: 0,
-      connections: [] as any[],
-    };
-
-    for (const [id, connection] of this.connections.entries()) {
-      if (
-        connection.noteId === noteId ||
-        (connection as SourceConnectionLine).targetNoteId === noteId
-      ) {
-        stats.connections.push({
-          id,
-          type: connection.type,
-          role: connection.noteId === noteId ? "主体" : "目标",
-        });
-
-        if (connection.type === "normal" && connection.noteId === noteId) {
-          stats.normalConnections++;
-        } else if (connection.type === "source") {
-          if (connection.noteId === noteId) {
-            stats.sourceConnectionsAsSource++;
-          }
-          if ((connection as SourceConnectionLine).targetNoteId === noteId) {
-            stats.sourceConnectionsAsTarget++;
-          }
-        }
-      }
-    }
-
-    return stats;
-  }
 }
 
 // 创建全局连接线管理器实例
 export const connectionLineManager = new ConnectionLineManager();
-
-// 全局调试函数 - 可在浏览器控制台中使用
-(window as any).debugConnections = () => {
-  console.log("🔍 连接线调试信息:", connectionLineManager.getDebugInfo());
-  return connectionLineManager.getDebugInfo();
-};
-
-(window as any).debugNoteConnections = (noteId: string) => {
-  console.log(
-    `🔍 便签 ${noteId} 的连接线统计:`,
-    connectionLineManager.getNoteConnectionStats(noteId)
-  );
-  return connectionLineManager.getNoteConnectionStats(noteId);
-};
 
 // 导出管理器类
 export { ConnectionLineManager, ConnectionType };

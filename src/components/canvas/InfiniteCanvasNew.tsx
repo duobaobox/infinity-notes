@@ -168,9 +168,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   // 处理清空所有连接的函数
   const handleClearAllConnections = useCallback(() => {
     try {
-      console.log("🔄 开始清空所有连接...");
       if (connectedNotes.length === 0) {
-        console.log("ℹ️ 没有需要清空的连接");
         return;
       }
 
@@ -179,10 +177,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
       // 更新画布状态
       updateConnectionLinesImmediate();
-
-      console.log("✅ 清空连接操作完成");
     } catch (error) {
-      console.error("❌ 清空连接失败:", error);
       // 显示错误消息
       message.error("清空连接失败，请重试");
     }
@@ -195,11 +190,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
   // AI服务实例
   const aiService = useMemo(() => {
-    console.log("🔧 更新AI服务配置:", {
-      ...fullAIConfig,
-      apiKey: fullAIConfig.apiKey ? "已设置" : "未设置",
-      systemPrompt: fullAIConfig.systemPrompt ? "已设置" : "未设置",
-    });
     return getAIService(fullAIConfig);
   }, [fullAIConfig]);
 
@@ -267,27 +257,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           updatedAt: new Date(),
         };
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("📝 创建新便签:", newNote.id);
-        }
-
         // 添加到数据库，addNote会返回实际添加的便签
         const addedNote = await addNote(newNote);
-
-        if (process.env.NODE_ENV === "development") {
-          console.log("✅ 便签添加完成:", addedNote.id);
-        }
 
         // 500ms 后移除新建标记
         setTimeout(async () => {
           try {
-            if (process.env.NODE_ENV === "development") {
-              console.log("🔄 移除新建标记:", addedNote.id);
-            }
             await updateStickyNote(addedNote.id, { isNew: false });
-            if (process.env.NODE_ENV === "development") {
-              console.log("✅ 新建标记移除完成:", addedNote.id);
-            }
           } catch (error) {
             console.error("❌ 移除新建标记失败:", error);
           }
@@ -342,11 +318,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
                 connectedNotes
               )
             : prompt;
-
-        console.log("🤖 开始AI生成便签，prompt:", finalPrompt);
-        if (connectedNotes.length > 0) {
-          console.log("🔗 使用了", connectedNotes.length, "个连接的便签");
-        }
 
         // 计算便签创建位置（画布中心附近）
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -408,17 +379,14 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         const result = await aiService.generateStickyNotesStreaming(
           finalPrompt,
           {
-            onNoteStart: (index, title) => {
-              console.log(`📝 便签 ${index} 开始生成:`, title);
+            onNoteStart: (_index, _title) => {
               // AI便签标题保持固定，不需要更新
             },
             onContentChunk: (_index, _chunk, fullContent) => {
               // 更新流式内容
               updateStreamingContent(addedNote.id, fullContent);
             },
-            onNoteComplete: async (index, noteData) => {
-              console.log(`✅ 便签 ${index} 生成完成:`, noteData);
-
+            onNoteComplete: async (_index, noteData) => {
               // 完成流式生成，更新最终内容
               await finishStreamingNote(addedNote.id, noteData.content);
 
@@ -429,29 +397,23 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               });
             },
             onAllComplete: (notes) => {
-              console.log("🎉 所有便签生成完成:", notes.length);
-
               // 处理连接模式
               if (connectedNotes.length > 0) {
                 if (connectionMode === "replace") {
                   // 替换模式：删除原始便签，但保留连接状态
-                  console.log("🔄 替换模式：删除原始连接的便签");
                   connectedNotes.forEach((note) => {
                     deleteNote(note.id);
                   });
                   // 替换模式下清空连接，因为原始便签已被删除
                   clearAllConnections();
-                  console.log("🧹 替换模式：已清空便签连接");
                 } else {
                   // 汇总模式：保留原始便签和连接
-                  console.log("📌 汇总模式：保留便签连接");
                 }
               }
 
               message.success(`AI生成完成！共创建 ${notes.length} 个便签`);
             },
             onError: (error) => {
-              console.error("❌ AI生成失败:", error);
               message.error(`AI生成失败: ${error}`);
 
               // 清理流式状态
@@ -467,7 +429,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           throw new Error(result.error || "AI生成失败");
         }
       } catch (error) {
-        console.error("❌ AI生成过程失败:", error);
         message.error(error instanceof Error ? error.message : "AI生成失败");
       } finally {
         // 结束AI生成状态
