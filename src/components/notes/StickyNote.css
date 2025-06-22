@@ -731,6 +731,16 @@
   opacity: 1; /* 已连接时始终显示 */
 }
 
+/* 作为源便签被连接时的连接点 - 只在悬停时显示，不始终显示 */
+/* .connection-point.source-connected {
+  opacity: 1;
+} */
+
+/* 正在被溯源连接线连接时的连接点 - 始终显示 */
+.connection-point.being-source-connected {
+  opacity: 1; /* 正在被溯源连接线连接时始终显示 */
+}
+
 /* 有溯源连接线激活时的连接点 - 始终显示 */
 .connection-point.source-active {
   opacity: 1; /* 有溯源连接线时始终显示 */

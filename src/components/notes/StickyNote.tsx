@@ -83,6 +83,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [sourceConnectionsVisible, setSourceConnectionsVisible] =
     useState(false);
 
+  // 当前便签是否正在被溯源连接线连接（作为源便签）
+  const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
+
   // 设置菜单状态
   const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
 
@@ -101,8 +104,61 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const { updateNoteConnectionLines, updateNoteConnectionLinesImmediate } =
     useConnectionStore();
 
-  // 获取所有便签数据，用于溯源功能
-  useStickyNotesStore();
+  // 获取所有便签数据，用于检查源便签连接状态
+  const allNotes = useStickyNotesStore((state) => state.notes);
+
+  // 检查当前便签是否作为其他便签的源便签被引用
+  const isSourceConnected = useMemo(() => {
+    return allNotes.some((otherNote) => {
+      if (otherNote.id === note.id) return false; // 跳过自己
+      // 检查其他便签是否将当前便签作为源便签
+      return otherNote.sourceNoteIds?.includes(note.id);
+    });
+  }, [note.id, allNotes]);
+
+  // 检查并更新当前便签是否正在被溯源连接线连接（作为源便签）
+  useEffect(() => {
+    const checkSourceConnectionStatus = () => {
+      const isConnected = connectionLineManager.isNoteBeingSourceConnected(
+        note.id
+      );
+      setIsBeingSourceConnected(isConnected);
+    };
+
+    // 初始检查
+    checkSourceConnectionStatus();
+
+    // 设置定时器定期检查（这是一个临时解决方案，更好的方案是事件驱动）
+    const interval = setInterval(checkSourceConnectionStatus, 100);
+
+    // 监听源连接状态变化事件
+    const handleSourceConnectionChanged = (event: CustomEvent) => {
+      if (event.detail.noteId === note.id) {
+        // 如果事件是针对当前便签的，立即更新状态
+        console.log(`📢 便签 ${note.id} 接收到连接状态变化通知`);
+        const newStatus = connectionLineManager.isNoteBeingSourceConnected(
+          note.id
+        );
+        console.log(
+          `📢 便签 ${note.id} 连接状态变更: ${isBeingSourceConnected} -> ${newStatus}`
+        );
+        checkSourceConnectionStatus();
+      }
+    };
+
+    window.addEventListener(
+      "sourceConnectionChanged",
+      handleSourceConnectionChanged as EventListener
+    );
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(
+        "sourceConnectionChanged",
+        handleSourceConnectionChanged as EventListener
+      );
+    };
+  }, [note.id]);
 
   // 处理流式内容更新
   useEffect(() => {
@@ -290,6 +346,22 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.stopPropagation();
       e.preventDefault(); // 添加阻止默认行为
 
+      // 在删除便签之前，清理所有相关的连接线
+      try {
+        // 清理普通连接线
+        connectionLineManager.removeConnection(note.id);
+
+        // 清理作为目标便签的溯源连接线
+        connectionLineManager.removeAllSourceConnectionsToNote(note.id);
+
+        // 清理作为源便签的溯源连接线
+        connectionLineManager.removeAllSourceConnectionsFromNote(note.id);
+
+        console.log(`🧹 已清理便签 ${note.id} 的所有连接线`);
+      } catch (error) {
+        console.error("清理连接线失败:", error);
+      }
+
       // 立即删除便签，不管当前状态如何
       // 确保删除操作优先于任何其他状态更新
       setTimeout(() => {
@@ -313,12 +385,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.stopPropagation();
       e.preventDefault();
 
-      // 调用连接回调
+      // 如果有连接回调，调用连接回调
       if (onConnect) {
         onConnect(note);
+      } else if (isSourceConnected) {
+        // 如果是源便签，显示提示或其他处理逻辑
+        console.log("当前便签作为源便签被其他便签引用");
       }
     },
-    [note, onConnect, isStreaming]
+    [note, onConnect, isStreaming, isSourceConnected]
   );
 
   // 处理溯源按钮点击
@@ -336,14 +411,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
 
       // 获取当前所有便签，验证源便签是否存在
-      const store = useStickyNotesStore.getState();
       const validSourceNoteIds = note.sourceNoteIds.filter((sourceId) =>
-        store.notes.some((n) => n.id === sourceId)
+        allNotes.some((n) => n.id === sourceId)
       );
 
       // 检查循环引用：如果当前便签被任何源便签引用，就存在循环引用
       const hasCircularReference = validSourceNoteIds.some((sourceId) => {
-        const sourceNote = store.notes.find((n) => n.id === sourceId);
+        const sourceNote = allNotes.find((n) => n.id === sourceId);
         return sourceNote?.sourceNoteIds?.includes(note.id);
       });
 
@@ -384,6 +458,23 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
         }
         setSourceConnectionsVisible(false);
+
+        // 立即检查并更新所有相关便签的连接状态
+        // 更新当前便签的状态
+        const isConnected = connectionLineManager.isNoteBeingSourceConnected(
+          note.id
+        );
+        setIsBeingSourceConnected(isConnected);
+
+        // 通知所有源便签更新其连接状态
+        // 通过触发一个自定义事件来通知其他便签组件更新状态
+        for (const sourceNoteId of note.sourceNoteIds) {
+          const event = new CustomEvent("sourceConnectionChanged", {
+            detail: { noteId: sourceNoteId },
+          });
+          window.dispatchEvent(event);
+          console.log(`🔔 通知源便签 ${sourceNoteId} 更新连接状态（移除连接）`);
+        }
       } else {
         // 显示溯源连接线 - 只尝试创建有效源便签的连接
         let successCount = 0;
@@ -399,12 +490,30 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         if (successCount > 0) {
           setSourceConnectionsVisible(true);
+
+          // 通知所有源便签更新其连接状态
+          for (const sourceNoteId of validSourceNoteIds) {
+            const event = new CustomEvent("sourceConnectionChanged", {
+              detail: { noteId: sourceNoteId },
+            });
+            window.dispatchEvent(event);
+            console.log(
+              `🔔 通知源便签 ${sourceNoteId} 更新连接状态（创建连接）`
+            );
+          }
         } else {
           console.warn("🔗 没有成功创建任何溯源连接线");
         }
       }
     },
-    [note.id, note.sourceNoteIds, isStreaming, sourceConnectionsVisible]
+    [
+      note.id,
+      note.sourceNoteIds,
+      isStreaming,
+      sourceConnectionsVisible,
+      allNotes,
+      onUpdate,
+    ]
   );
 
   // 处理设置按钮点击
@@ -1269,19 +1378,29 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         )}
 
         {/* 连接点 - 只在非编辑和非流式状态下显示 */}
-        {!isEditing && !isStreaming && onConnect && (
-          <div
-            className={`connection-point ${isConnected ? "connected" : ""} ${
-              note.sourceNoteIds && note.sourceNoteIds.length > 0
-                ? "has-source"
-                : ""
-            } ${sourceConnectionsVisible ? "source-active" : ""}`}
-            onClick={handleConnectionClick}
-            title={isConnected ? "已连接到插槽" : "点击连接到插槽"}
-          >
-            <div className="connection-dot"></div>
-          </div>
-        )}
+        {!isEditing &&
+          !isStreaming &&
+          (onConnect || sourceConnectionsVisible || isBeingSourceConnected) && (
+            <div
+              className={`connection-point ${isConnected ? "connected" : ""} ${
+                note.sourceNoteIds && note.sourceNoteIds.length > 0
+                  ? "has-source"
+                  : ""
+              } ${sourceConnectionsVisible ? "source-active" : ""} ${
+                isSourceConnected ? "source-connected" : ""
+              } ${isBeingSourceConnected ? "being-source-connected" : ""}`}
+              onClick={handleConnectionClick}
+              title={
+                isConnected
+                  ? "已连接到插槽"
+                  : isSourceConnected
+                  ? "作为源便签被其他便签引用"
+                  : "点击连接到插槽"
+              }
+            >
+              <div className="connection-dot"></div>
+            </div>
+          )}
       </div>
     </>
   );

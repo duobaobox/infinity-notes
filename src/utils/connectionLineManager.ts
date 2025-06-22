@@ -639,6 +639,46 @@ class ConnectionLineManager {
     return this.connections.has(connectionId);
   }
 
+  // 检查便签是否正在被溯源连接线连接（作为源便签）
+  isNoteBeingSourceConnected(noteId: string): boolean {
+    for (const connection of this.connections.values()) {
+      if (
+        connection.type === ConnectionType.SOURCE &&
+        connection.noteId === noteId
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 移除便签的所有溯源连接线（作为源便签）
+  removeAllSourceConnectionsFromNote(sourceNoteId: string): boolean {
+    try {
+      let removed = false;
+      for (const [connectionId, connection] of this.connections.entries()) {
+        if (
+          connection.type === ConnectionType.SOURCE &&
+          connection.noteId === sourceNoteId
+        ) {
+          connection.line.remove();
+          this.connections.delete(connectionId);
+          removed = true;
+        }
+      }
+
+      if (removed) {
+        console.log(`🗑️ 已移除源便签 ${sourceNoteId} 的所有溯源连接线`);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("移除源便签溯源连接线失败:", error);
+      return false;
+    }
+  }
+
   // 获取便签的溯源连接线数量（作为目标便签）
   getSourceConnectionCount(targetNoteId: string): number {
     let count = 0;
