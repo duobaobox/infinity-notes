@@ -4,7 +4,7 @@ import { ClockCircleOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { SourceNoteContent } from "../types";
 import "./SourceNotesModal.css";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface SourceNotesModalProps {
   open: boolean; // 弹窗是否打开
