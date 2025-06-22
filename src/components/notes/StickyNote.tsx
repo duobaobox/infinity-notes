@@ -101,8 +101,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const previewRef = useRef<HTMLDivElement>(null);
 
   // 连接状态管理
-  const { updateNoteConnectionLines, updateNoteConnectionLinesImmediate } =
-    useConnectionStore();
+  const {
+    updateNoteConnectionLines,
+    updateNoteConnectionLinesImmediate,
+    removeConnection: removeConnectionFromStore,
+  } = useConnectionStore();
 
   // 获取所有便签数据，用于检查源便签连接状态
   const allNotes = useStickyNotesStore((state) => state.notes);
@@ -159,6 +162,78 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       );
     };
   }, [note.id]);
+
+  // 监听 sourceNoteIds 变化，在源便签被删除时重新创建连接线
+  useEffect(() => {
+    // 只有在溯源连接线已经显示的情况下才需要重新创建
+    if (
+      !sourceConnectionsVisible ||
+      !note.sourceNoteIds ||
+      note.sourceNoteIds.length === 0
+    ) {
+      return;
+    }
+
+    console.log(
+      `🔄 检测到便签 ${note.id} 的 sourceNoteIds 变化，重新创建溯源连接线`
+    );
+
+    // 异步重新创建所有有效的溯源连接线
+    const recreateSourceConnections = async () => {
+      try {
+        // 先清除所有现有的溯源连接线
+        connectionLineManager.removeAllSourceConnectionsToNote(note.id);
+
+        // 获取当前所有便签，验证源便签是否存在
+        const validSourceNoteIds = note.sourceNoteIds!.filter((sourceId) =>
+          allNotes.some((n) => n.id === sourceId)
+        );
+
+        if (validSourceNoteIds.length === 0) {
+          console.warn(`便签 ${note.id} 没有有效的源便签，隐藏溯源连接线`);
+          setSourceConnectionsVisible(false);
+          return;
+        }
+
+        // 重新创建有效源便签的连接线
+        let successCount = 0;
+        for (const sourceNoteId of validSourceNoteIds) {
+          const success = await connectionLineManager.createSourceConnection(
+            sourceNoteId,
+            note.id
+          );
+          if (success) {
+            successCount++;
+          }
+        }
+
+        console.log(`🔗 重新创建了 ${successCount} 个溯源连接线`);
+
+        // 如果没有成功创建任何连接线，隐藏溯源连接线状态
+        if (successCount === 0) {
+          setSourceConnectionsVisible(false);
+        }
+
+        // 通知所有源便签更新其连接状态
+        for (const sourceNoteId of validSourceNoteIds) {
+          const event = new CustomEvent("sourceConnectionChanged", {
+            detail: { noteId: sourceNoteId },
+          });
+          window.dispatchEvent(event);
+        }
+      } catch (error) {
+        console.error(`重新创建溯源连接线失败:`, error);
+        setSourceConnectionsVisible(false);
+      }
+    };
+
+    // 使用 setTimeout 延迟执行，确保 DOM 更新完成
+    const timeoutId = setTimeout(recreateSourceConnections, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [note.sourceNoteIds, sourceConnectionsVisible, note.id, allNotes]);
 
   // 处理流式内容更新
   useEffect(() => {
@@ -351,13 +426,16 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         // 清理普通连接线
         connectionLineManager.removeConnection(note.id);
 
+        // 同时从连接状态管理中移除该便签
+        removeConnectionFromStore(note.id);
+
         // 清理作为目标便签的溯源连接线
         connectionLineManager.removeAllSourceConnectionsToNote(note.id);
 
         // 清理作为源便签的溯源连接线
         connectionLineManager.removeAllSourceConnectionsFromNote(note.id);
 
-        console.log(`🧹 已清理便签 ${note.id} 的所有连接线`);
+        console.log(`🧹 已清理便签 ${note.id} 的所有连接线和连接状态`);
       } catch (error) {
         console.error("清理连接线失败:", error);
       }
@@ -374,7 +452,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         setIsTitleEditing(false);
       }
     },
-    [note.id, isEditing, isTitleEditing, onDelete, isStreaming]
+    [
+      note.id,
+      isEditing,
+      isTitleEditing,
+      onDelete,
+      isStreaming,
+      removeConnectionFromStore,
+    ]
   );
 
   // 处理连接点点击 - 简单的单击连接
@@ -1390,6 +1475,20 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 isSourceConnected ? "source-connected" : ""
               } ${isBeingSourceConnected ? "being-source-connected" : ""}`}
               onClick={handleConnectionClick}
+              onDoubleClick={(e) => {
+                // 双击连接点的处理逻辑 - 当前只是记录日志，不执行删除
+                e.stopPropagation();
+                e.preventDefault();
+                console.log(`🔍 双击连接点 - 便签ID: ${note.id}, 连接状态:`, {
+                  isConnected,
+                  isSourceConnected,
+                  sourceConnectionsVisible,
+                  isBeingSourceConnected,
+                });
+                console.warn(
+                  "⚠️ 如果溯源连接线被意外删除，请检查这里是否有删除逻辑！"
+                );
+              }}
               title={
                 isConnected
                   ? "已连接到插槽"

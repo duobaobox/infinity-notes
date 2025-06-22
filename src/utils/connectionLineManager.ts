@@ -61,16 +61,16 @@ const loadLeaderLine = async (): Promise<typeof LeaderLineClass> => {
   return loadPromise;
 };
 
-// 连接线类型枚举
-enum ConnectionType {
-  NORMAL = "normal", // 普通连接线（便签到插槽）
-  SOURCE = "source", // 溯源连接线（源便签到汇总便签）
-}
+// 连接线类型常量
+const ConnectionType = {
+  NORMAL: "normal",
+  SOURCE: "source",
+} as const;
 
 // 连接线实例接口
 interface ConnectionLine {
   id: string; // 连接线唯一标识
-  type: ConnectionType; // 连接线类型
+  type: "normal" | "source"; // 连接线类型
   noteId: string; // 便签ID
   slotIndex?: number; // 插槽索引（普通连接线使用）
   targetNoteId?: string; // 目标便签ID（溯源连接线使用）
@@ -81,7 +81,7 @@ interface ConnectionLine {
 
 // 溯源连接线实例接口
 interface SourceConnectionLine extends ConnectionLine {
-  type: ConnectionType.SOURCE;
+  type: "source";
   targetNoteId: string; // 目标便签ID（汇总便签）
   sourceNoteId: string; // 源便签ID
 }
@@ -202,7 +202,7 @@ class ConnectionLineManager {
       // 创建连接线记录
       const connection: ConnectionLine = {
         id: connectionId,
-        type: ConnectionType.NORMAL,
+        type: "normal",
         noteId: note.id,
         slotIndex,
         line,
@@ -227,21 +227,50 @@ class ConnectionLineManager {
   removeConnection(noteId: string, slotIndex?: number): boolean {
     try {
       if (slotIndex !== undefined) {
-        // 移除特定连接线
+        // 移除特定普通连接线（不影响溯源连接线）
         const connectionId = this.getConnectionId(noteId, slotIndex);
         const connection = this.connections.get(connectionId);
 
-        if (connection) {
+        if (connection && connection.type === "normal") {
           connection.line.remove();
           this.connections.delete(connectionId);
-          console.log(`🗑️ 已移除连接线: ${noteId} -> 插槽${slotIndex}`);
+          console.log(`🗑️ 已移除普通连接线: ${noteId} -> 插槽${slotIndex}`);
           return true;
+        } else if (connection && connection.type === "source") {
+          console.warn(
+            `⚠️ 尝试通过插槽索引删除溯源连接线被阻止: ${connectionId}`
+          );
+          return false;
         }
       } else {
-        // 移除便签的所有连接线
+        // 移除便签的所有普通连接线（不包括溯源连接线）
+        console.log(
+          `🔍 准备删除便签 ${noteId} 的普通连接线，当前连接总数: ${this.connections.size}`
+        );
+
+        // 先统计当前连接线类型
+        const normalConnections = [];
+        const sourceConnections = [];
+        for (const [id, connection] of this.connections.entries()) {
+          if (connection.noteId === noteId) {
+            if (connection.type === "normal") {
+              normalConnections.push(id);
+            } else if (connection.type === "source") {
+              sourceConnections.push(id);
+            }
+          }
+        }
+
+        console.log(
+          `📊 便签 ${noteId} 的连接线统计: 普通连接 ${normalConnections.length} 个, 溯源连接 ${sourceConnections.length} 个`
+        );
+        console.log(`📊 普通连接线IDs: ${normalConnections.join(", ")}`);
+        console.log(`📊 溯源连接线IDs: ${sourceConnections.join(", ")}`);
+
         let removed = false;
         for (const [connectionId, connection] of this.connections.entries()) {
-          if (connection.noteId === noteId) {
+          if (connection.noteId === noteId && connection.type === "normal") {
+            console.log(`🗑️ 删除普通连接线: ${connectionId}`);
             connection.line.remove();
             this.connections.delete(connectionId);
             removed = true;
@@ -249,7 +278,19 @@ class ConnectionLineManager {
         }
 
         if (removed) {
-          console.log(`🗑️ 已移除便签 ${noteId} 的所有连接线`);
+          console.log(`✅ 已移除便签 ${noteId} 的所有普通连接线`);
+
+          // 再次统计剩余连接线
+          const remainingConnections = [];
+          for (const [id, connection] of this.connections.entries()) {
+            if (connection.noteId === noteId) {
+              remainingConnections.push(`${id} (${connection.type})`);
+            }
+          }
+          console.log(
+            `📊 便签 ${noteId} 的剩余连接线: ${remainingConnections.join(", ")}`
+          );
+
           return true;
         }
       }
@@ -260,30 +301,45 @@ class ConnectionLineManager {
       return false;
     }
   }
-  // 清空所有连接线
+  // 清空所有普通连接线（不包括溯源连接）
   clearAllConnections(): void {
     try {
-      console.log("🔍 开始清空连接线，当前连接数:", this.connections.size);
+      console.log("🔍 开始清空普通连接线，当前连接数:", this.connections.size);
 
-      // 逐个移除连接线
+      const connectionsToRemove: string[] = [];
+
+      // 找到所有普通连接线
       for (const [id, connection] of this.connections.entries()) {
+        if (connection.type === "normal") {
+          connectionsToRemove.push(id);
+        }
+      }
+
+      console.log(`📌 找到 ${connectionsToRemove.length} 个普通连接线需要移除`);
+
+      // 逐个移除普通连接线
+      for (const id of connectionsToRemove) {
         try {
-          console.log(`📌 正在移除连接线: ${id}`);
-          connection.line.remove();
-          this.connections.delete(id);
+          const connection = this.connections.get(id);
+          if (connection) {
+            console.log(`📌 正在移除普通连接线: ${id}`);
+            connection.line.remove();
+            this.connections.delete(id);
+          }
         } catch (lineError) {
           console.error(`❌ 移除连接线 ${id} 失败:`, lineError);
         }
       }
 
-      // 确保完全清空
-      this.connections.clear();
+      const sourceConnectionCount = Array.from(
+        this.connections.values()
+      ).filter((conn) => conn.type === "source").length;
 
-      console.log("🧹 已清空所有连接线");
+      console.log(
+        `🧹 已清空所有普通连接线，保留 ${sourceConnectionCount} 个溯源连接线`
+      );
     } catch (error) {
-      console.error("❌ 清空连接线失败:", error);
-      // 出错时也要尝试强制清空
-      this.connections.clear();
+      console.error("❌ 清空普通连接线失败:", error);
       throw error; // 抛出错误以便上层处理
     }
   }
@@ -563,7 +619,7 @@ class ConnectionLineManager {
       // 创建溯源连接线记录
       const connection: SourceConnectionLine = {
         id: connectionId,
-        type: ConnectionType.SOURCE,
+        type: "source",
         noteId: sourceNoteId,
         targetNoteId: targetNoteId,
         sourceNoteId: sourceNoteId,
@@ -592,13 +648,20 @@ class ConnectionLineManager {
       );
       const connection = this.connections.get(connectionId);
 
-      if (connection) {
+      if (connection && connection.type === "source") {
+        console.log(`🗑️ 删除溯源连接线: ${connectionId}`);
         connection.line.remove();
         this.connections.delete(connectionId);
-        console.log(`🗑️ 已移除溯源连接线: ${sourceNoteId} -> ${targetNoteId}`);
+        console.log(`✅ 已移除溯源连接线: ${sourceNoteId} -> ${targetNoteId}`);
         return true;
+      } else if (connection && connection.type !== "source") {
+        console.warn(
+          `⚠️ 尝试删除非溯源连接线被阻止: ${connectionId} (类型: ${connection.type})`
+        );
+        return false;
       }
 
+      console.warn(`⚠️ 未找到溯源连接线: ${connectionId}`);
       return false;
     } catch (error) {
       console.error("移除溯源连接线失败:", error);
@@ -612,7 +675,7 @@ class ConnectionLineManager {
       let removed = false;
       for (const [connectionId, connection] of this.connections.entries()) {
         if (
-          connection.type === ConnectionType.SOURCE &&
+          connection.type === "source" &&
           connection.targetNoteId === targetNoteId
         ) {
           connection.line.remove();
@@ -642,10 +705,7 @@ class ConnectionLineManager {
   // 检查便签是否正在被溯源连接线连接（作为源便签）
   isNoteBeingSourceConnected(noteId: string): boolean {
     for (const connection of this.connections.values()) {
-      if (
-        connection.type === ConnectionType.SOURCE &&
-        connection.noteId === noteId
-      ) {
+      if (connection.type === "source" && connection.noteId === noteId) {
         return true;
       }
     }
@@ -658,7 +718,7 @@ class ConnectionLineManager {
       let removed = false;
       for (const [connectionId, connection] of this.connections.entries()) {
         if (
-          connection.type === ConnectionType.SOURCE &&
+          connection.type === "source" &&
           connection.noteId === sourceNoteId
         ) {
           connection.line.remove();
@@ -684,7 +744,7 @@ class ConnectionLineManager {
     let count = 0;
     for (const connection of this.connections.values()) {
       if (
-        connection.type === ConnectionType.SOURCE &&
+        connection.type === "source" &&
         connection.targetNoteId === targetNoteId
       ) {
         count++;
@@ -745,10 +805,81 @@ class ConnectionLineManager {
 
     console.log("🔗 连接线管理器已销毁");
   }
+
+  // 获取所有连接线的调试信息
+  getDebugInfo(): any {
+    const connections = Array.from(this.connections.entries()).map(
+      ([id, connection]) => ({
+        id,
+        type: connection.type,
+        noteId: connection.noteId,
+        slotIndex: connection.slotIndex,
+        targetNoteId: (connection as SourceConnectionLine).targetNoteId,
+        sourceNoteId: (connection as SourceConnectionLine).sourceNoteId,
+      })
+    );
+
+    return {
+      totalConnections: this.connections.size,
+      normalConnections: connections.filter((c) => c.type === "normal").length,
+      sourceConnections: connections.filter((c) => c.type === "source").length,
+      connections,
+    };
+  }
+
+  // 统计特定便签的连接线
+  getNoteConnectionStats(noteId: string): any {
+    const stats = {
+      normalConnections: 0,
+      sourceConnectionsAsSource: 0,
+      sourceConnectionsAsTarget: 0,
+      connections: [] as any[],
+    };
+
+    for (const [id, connection] of this.connections.entries()) {
+      if (
+        connection.noteId === noteId ||
+        (connection as SourceConnectionLine).targetNoteId === noteId
+      ) {
+        stats.connections.push({
+          id,
+          type: connection.type,
+          role: connection.noteId === noteId ? "主体" : "目标",
+        });
+
+        if (connection.type === "normal" && connection.noteId === noteId) {
+          stats.normalConnections++;
+        } else if (connection.type === "source") {
+          if (connection.noteId === noteId) {
+            stats.sourceConnectionsAsSource++;
+          }
+          if ((connection as SourceConnectionLine).targetNoteId === noteId) {
+            stats.sourceConnectionsAsTarget++;
+          }
+        }
+      }
+    }
+
+    return stats;
+  }
 }
 
 // 创建全局连接线管理器实例
 export const connectionLineManager = new ConnectionLineManager();
+
+// 全局调试函数 - 可在浏览器控制台中使用
+(window as any).debugConnections = () => {
+  console.log("🔍 连接线调试信息:", connectionLineManager.getDebugInfo());
+  return connectionLineManager.getDebugInfo();
+};
+
+(window as any).debugNoteConnections = (noteId: string) => {
+  console.log(
+    `🔍 便签 ${noteId} 的连接线统计:`,
+    connectionLineManager.getNoteConnectionStats(noteId)
+  );
+  return connectionLineManager.getNoteConnectionStats(noteId);
+};
 
 // 导出管理器类
 export { ConnectionLineManager, ConnectionType };
