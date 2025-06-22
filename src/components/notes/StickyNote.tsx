@@ -335,16 +335,59 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         return;
       }
 
+      // 获取当前所有便签，验证源便签是否存在
+      const store = useStickyNotesStore.getState();
+      const validSourceNoteIds = note.sourceNoteIds.filter((sourceId) =>
+        store.notes.some((n) => n.id === sourceId)
+      );
+
+      // 检查循环引用：如果当前便签被任何源便签引用，就存在循环引用
+      const hasCircularReference = validSourceNoteIds.some((sourceId) => {
+        const sourceNote = store.notes.find((n) => n.id === sourceId);
+        return sourceNote?.sourceNoteIds?.includes(note.id);
+      });
+
+      if (hasCircularReference) {
+        console.warn(
+          `检测到循环引用：便签 "${note.title}" 与其源便签之间存在相互引用关系`
+        );
+        // 可以选择阻止显示连接线，或者只显示警告
+        // 这里选择显示警告但仍然允许显示连接线
+      }
+
+      // 如果有无效的源便签ID，更新便签的溯源信息
+      if (validSourceNoteIds.length !== note.sourceNoteIds.length) {
+        const invalidIds = note.sourceNoteIds.filter(
+          (id) => !validSourceNoteIds.includes(id)
+        );
+        console.warn(
+          `发现无效的源便签ID: ${invalidIds.join(", ")}，将自动清理`
+        );
+
+        // 更新便签的源便签列表，移除无效的ID
+        onUpdate(note.id, {
+          sourceNoteIds:
+            validSourceNoteIds.length > 0 ? validSourceNoteIds : undefined,
+          updatedAt: new Date(),
+        });
+
+        // 如果没有有效的源便签了，直接返回
+        if (validSourceNoteIds.length === 0) {
+          console.warn("没有有效的源便签，无法显示溯源连接");
+          return;
+        }
+      }
+
       if (sourceConnectionsVisible) {
-        // 隐藏溯源连接线
+        // 隐藏溯源连接线 - 使用原始的sourceNoteIds，因为连接线管理器会自动处理不存在的连接
         for (const sourceNoteId of note.sourceNoteIds) {
           connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
         }
         setSourceConnectionsVisible(false);
       } else {
-        // 显示溯源连接线
+        // 显示溯源连接线 - 只尝试创建有效源便签的连接
         let successCount = 0;
-        for (const sourceNoteId of note.sourceNoteIds) {
+        for (const sourceNoteId of validSourceNoteIds) {
           const success = await connectionLineManager.createSourceConnection(
             sourceNoteId,
             note.id
