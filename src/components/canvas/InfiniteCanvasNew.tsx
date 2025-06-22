@@ -557,33 +557,68 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     [dragState.isDragging, endDrag]
   );
 
-  // 双击创建便签
-  const handleDoubleClick = useCallback(
+  // 三击检测状态
+  const tripleClickStateRef = useRef({
+    clickCount: 0,
+    lastClickTime: 0,
+    lastClickPos: { x: 0, y: 0 },
+  });
+
+  // 三击创建便签
+  const handleTripleClick = useCallback(
     (e: React.MouseEvent) => {
-      // 如果双击的是便签或其他交互元素，不创建新便签
+      // 如果点击的是便签或其他交互元素，不创建新便签
       const target = e.target as HTMLElement;
       if (shouldIgnoreCanvasEvent(target)) {
         return;
       }
 
-      e.preventDefault();
+      const now = Date.now();
+      const clickPos = { x: e.clientX, y: e.clientY };
+      const state = tripleClickStateRef.current;
 
-      // 使用容器的边界来计算坐标
-      const containerElement = e.currentTarget as HTMLElement;
-      const rect = containerElement.getBoundingClientRect();
-      const canvasX = (e.clientX - rect.left - offsetX) / scale;
-      const canvasY = (e.clientY - rect.top - offsetY) / scale;
+      // 检查时间间隔（400ms内）和位置距离（20px内）
+      const timeDiff = now - state.lastClickTime;
+      const posDiff = Math.sqrt(
+        Math.pow(clickPos.x - state.lastClickPos.x, 2) +
+          Math.pow(clickPos.y - state.lastClickPos.y, 2)
+      );
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("🖱️ 双击创建便签", {
-          clientX: e.clientX,
-          clientY: e.clientY,
-          canvasX: canvasX.toFixed(1),
-          canvasY: canvasY.toFixed(1),
-        });
+      if (timeDiff < 400 && posDiff < 20) {
+        // 连续点击
+        state.clickCount++;
+
+        if (state.clickCount === 3) {
+          // 第三次点击，创建便签
+          e.preventDefault();
+
+          // 使用容器的边界来计算坐标
+          const containerElement = e.currentTarget as HTMLElement;
+          const rect = containerElement.getBoundingClientRect();
+          const canvasX = (e.clientX - rect.left - offsetX) / scale;
+          const canvasY = (e.clientY - rect.top - offsetY) / scale;
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("🖱️ 三击创建便签", {
+              clientX: e.clientX,
+              clientY: e.clientY,
+              canvasX: canvasX.toFixed(1),
+              canvasY: canvasY.toFixed(1),
+            });
+          }
+
+          createStickyNote(canvasX, canvasY);
+
+          // 重置状态
+          state.clickCount = 0;
+        }
+      } else {
+        // 重新开始计数
+        state.clickCount = 1;
       }
 
-      createStickyNote(canvasX, canvasY);
+      state.lastClickTime = now;
+      state.lastClickPos = clickPos;
     },
     [offsetX, offsetY, scale, createStickyNote]
   );
@@ -773,7 +808,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         dragState.isDragging ? "dragging" : ""
       }`}
       onMouseDown={handleMouseDown}
-      onDoubleClick={handleDoubleClick}
+      onClick={handleTripleClick}
     >
       {/* 工具栏 */}
       <CanvasToolbar

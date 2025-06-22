@@ -585,8 +585,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     note.id,
     onUpdate,
     canvasScale,
-    canvasOffset.x,
-    canvasOffset.y,
+    canvasOffset,
     tempPosition.x,
     tempPosition.y,
     tempSize.width,
@@ -755,26 +754,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 检查新的焦点目标
       const relatedTarget = e.relatedTarget as HTMLElement;
 
-      // 如果焦点转移到删除按钮，不退出编辑模式
-      if (
-        relatedTarget &&
-        (relatedTarget.classList.contains("delete-button") ||
-          relatedTarget.closest(".delete-button") ||
-          relatedTarget.closest("[class*='delete-button']"))
-      ) {
-        return;
-      }
-
       // 如果焦点转移到当前便签内的其他元素，不退出编辑模式
-      if (
-        relatedTarget &&
-        noteRef.current &&
-        noteRef.current.contains(relatedTarget)
-      ) {
-        return;
+      if (relatedTarget && noteRef.current?.contains(relatedTarget)) {
+        // 但是如果转移到标题输入框，允许
+        if (relatedTarget.classList.contains("sticky-note-title-input")) {
+          return;
+        }
+        // 转移到删除按钮、设置按钮等，不退出编辑模式
+        if (
+          relatedTarget.classList.contains("delete-button") ||
+          relatedTarget.closest(".delete-button") ||
+          relatedTarget.closest("[class*='delete-button']") ||
+          relatedTarget.classList.contains("settings-button") ||
+          relatedTarget.closest(".settings-button") ||
+          relatedTarget.closest(".settings-toolbar")
+        ) {
+          return;
+        }
       }
 
-      // 否则退出编辑模式
+      // 所有其他情况（包括点击便签外部、其他便签等）都退出编辑模式
       stopEditing();
     },
     [stopEditing]
@@ -797,30 +796,77 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 检查新的焦点目标
       const relatedTarget = e.relatedTarget as HTMLElement;
 
-      // 如果焦点转移到删除按钮，不退出编辑模式
-      if (
-        relatedTarget &&
-        (relatedTarget.classList.contains("delete-button") ||
-          relatedTarget.closest(".delete-button") ||
-          relatedTarget.closest("[class*='delete-button']"))
-      ) {
-        return;
-      }
-
       // 如果焦点转移到当前便签内的其他元素，不退出编辑模式
-      if (
-        relatedTarget &&
-        noteRef.current &&
-        noteRef.current.contains(relatedTarget)
-      ) {
-        return;
+      if (relatedTarget && noteRef.current?.contains(relatedTarget)) {
+        // 但是如果转移到内容文本框，允许
+        if (relatedTarget.classList.contains("sticky-note-textarea")) {
+          return;
+        }
+        // 转移到删除按钮、设置按钮等，不退出编辑模式
+        if (
+          relatedTarget.classList.contains("delete-button") ||
+          relatedTarget.closest(".delete-button") ||
+          relatedTarget.closest("[class*='delete-button']") ||
+          relatedTarget.classList.contains("settings-button") ||
+          relatedTarget.closest(".settings-button") ||
+          relatedTarget.closest(".settings-toolbar")
+        ) {
+          return;
+        }
       }
 
-      // 否则退出编辑模式
+      // 所有其他情况（包括点击便签外部、其他便签等）都退出编辑模式
       stopTitleEditing();
     },
     [stopTitleEditing]
   );
+
+  // 焦点变化检测 - 更敏感的失焦检测
+  useEffect(() => {
+    const handleFocusChange = () => {
+      // 只有在编辑模式下才需要检测失焦
+      if (!isEditing && !isTitleEditing) return;
+
+      // 使用 setTimeout 让焦点变化完成后再检查
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+
+        // 如果当前没有任何元素有焦点（例如点击了空白区域）
+        if (!activeElement || activeElement === document.body) {
+          if (isEditing) stopEditing();
+          if (isTitleEditing) stopTitleEditing();
+          return;
+        }
+
+        // 如果焦点不在当前便签内部，退出编辑模式
+        if (
+          noteRef.current &&
+          !noteRef.current.contains(activeElement as HTMLElement)
+        ) {
+          // 检查是否在设置工具栏内部
+          const isInsideToolbar = (activeElement as HTMLElement).closest(
+            ".settings-toolbar"
+          );
+
+          if (!isInsideToolbar) {
+            if (isEditing) stopEditing();
+            if (isTitleEditing) stopTitleEditing();
+          }
+        }
+      }, 10);
+    };
+
+    // 只有在编辑模式下才添加监听器
+    if (isEditing || isTitleEditing) {
+      document.addEventListener("focusin", handleFocusChange);
+      document.addEventListener("focusout", handleFocusChange);
+
+      return () => {
+        document.removeEventListener("focusin", handleFocusChange);
+        document.removeEventListener("focusout", handleFocusChange);
+      };
+    }
+  }, [isEditing, isTitleEditing, stopEditing, stopTitleEditing]);
 
   // 计算标题背景宽度 - 根据标题文本长度动态调整
   const getTitleBackgroundWidth = () => {
@@ -885,6 +931,42 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       };
     }
   }, [settingsMenuVisible]);
+
+  // 便签级别的失焦检测 - 当点击便签外部时退出编辑模式
+  useEffect(() => {
+    const handleGlobalClick = (event: MouseEvent) => {
+      // 只有在编辑模式下才需要检测失焦
+      if (!isEditing && !isTitleEditing) return;
+
+      if (noteRef.current) {
+        const target = event.target as HTMLElement;
+
+        // 检查点击是否在当前便签内部
+        const isInsideNote = noteRef.current.contains(target);
+        // 检查是否在设置工具栏内部
+        const isInsideToolbar = target.closest(".settings-toolbar");
+
+        // 如果点击的不是当前便签内部，也不是设置工具栏，退出编辑模式
+        if (!isInsideNote && !isInsideToolbar) {
+          if (isEditing) stopEditing();
+          if (isTitleEditing) stopTitleEditing();
+        }
+      }
+    };
+
+    // 只有在编辑模式下才添加监听器
+    if (isEditing || isTitleEditing) {
+      // 使用 setTimeout 延迟添加监听器，避免与开始编辑的点击事件冲突
+      const timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleGlobalClick);
+      }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener("click", handleGlobalClick);
+      };
+    }
+  }, [isEditing, isTitleEditing, stopEditing, stopTitleEditing]);
 
   return (
     <>
@@ -996,14 +1078,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           <div
             className="drag-handle"
             onMouseDown={handleMouseDown}
+            onClick={(e) => {
+              // 阻止冒泡，让全局失焦检测处理编辑模式退出
+              e.stopPropagation();
+            }}
             style={{
               flexGrow: 1,
-              cursor: isDragging ? "move" : "move",
+              cursor: isDragging
+                ? "move"
+                : isEditing || isTitleEditing
+                ? "default"
+                : "move",
               minHeight: "20px",
               display: "flex",
               alignItems: "center",
             }}
-            title="拖拽移动便签"
+            title={
+              isEditing || isTitleEditing
+                ? "点击便签外部区域退出编辑模式"
+                : "拖拽移动便签"
+            }
           >
             <div
               style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}
@@ -1028,17 +1122,33 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                     // 阻止父元素的拖拽事件
                     e.stopPropagation();
                   }}
+                  onClick={(e) => {
+                    // 如果正在编辑模式，单击标题退出编辑
+                    if (isEditing || isTitleEditing) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (isEditing) stopEditing();
+                      if (isTitleEditing) stopTitleEditing();
+                    }
+                  }}
                   onDoubleClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    startTitleEditing();
+                    // 如果不在编辑模式，双击开始编辑标题
+                    if (!isEditing && !isTitleEditing) {
+                      startTitleEditing();
+                    }
                   }}
-                  title="双击编辑标题"
+                  title={
+                    isEditing || isTitleEditing
+                      ? "点击退出编辑模式"
+                      : "双击编辑标题"
+                  }
                   style={{
                     backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
                     width: getTitleBackgroundWidth(),
                     display: "inline-block",
-                    cursor: "text",
+                    cursor: isEditing || isTitleEditing ? "pointer" : "text",
                   }}
                 >
                   {localTitle || "便签"}
@@ -1102,14 +1212,27 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 // 阻止父元素的拖拽事件
                 e.stopPropagation();
               }}
+              onClick={(e) => {
+                // 阻止冒泡，让全局失焦检测处理编辑模式退出
+                e.stopPropagation();
+              }}
               onDoubleClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                startEditing();
+                // 如果不在编辑模式，双击开始编辑
+                if (!isEditing && !isTitleEditing) {
+                  startEditing();
+                }
               }}
               style={{
                 backgroundColor: "transparent",
+                cursor: isEditing || isTitleEditing ? "default" : "default",
               }}
+              title={
+                isEditing || isTitleEditing
+                  ? "点击便签外部区域退出编辑模式"
+                  : "双击开始编辑内容"
+              }
             >
               {displayContent.trim() ? (
                 <div className="streaming-content">
