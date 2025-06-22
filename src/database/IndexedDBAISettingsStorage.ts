@@ -95,7 +95,13 @@ export class IndexedDBAISettingsStorage {
       }
 
       // 移除与数据库相关的字段，只保留 AIConfig 相关字段
-      const { id, user_id, updated_at, ...configData } = settings;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const {
+        id: _id,
+        user_id: _userId,
+        updated_at: _updatedAt,
+        ...configData
+      } = settings;
 
       const finalConfig = {
         ...defaultAIConfig,
@@ -136,8 +142,8 @@ export class IndexedDBAISettingsStorage {
     try {
       const db = IndexedDBService.getInstance();
       await db.initialize();
-      await db.deleteItem("ai_settings", "ai-settings");      // 同时清除localStorage中的旧配置
-      localStorage.removeItem('ai-settings');
+      await db.deleteItem("ai_settings", "ai-settings"); // 同时清除localStorage中的旧配置
+      localStorage.removeItem("ai-settings");
     } catch (error) {
       console.error("清除AI配置失败:", error);
     }
@@ -156,16 +162,16 @@ export class IndexedDBAISettingsStorage {
   private static async migrateFromLocalStorage(): Promise<AIConfig> {
     try {
       // 直接从localStorage读取旧配置
-      const savedConfig = localStorage.getItem('ai-settings');
+      const savedConfig = localStorage.getItem("ai-settings");
       if (!savedConfig) {
         console.log("💾 localStorage中没有AI配置，返回默认配置");
         return { ...defaultAIConfig };
       }
 
       const oldConfig = JSON.parse(savedConfig);
-      
+
       // 解密API密钥（使用与旧服务相同的方法）
-      let decryptedApiKey = '';
+      let decryptedApiKey = "";
       if (oldConfig.apiKey) {
         try {
           // 简单的Base64解码（与旧服务保持一致）
@@ -182,21 +188,26 @@ export class IndexedDBAISettingsStorage {
       };
 
       // 检查是否有任何有意义的配置(包括部分配置)
-      const hasApiKey = decodedConfig.apiKey && decodedConfig.apiKey.trim() !== "";
-      const hasApiUrl = decodedConfig.apiUrl && decodedConfig.apiUrl !== defaultAIConfig.apiUrl;
-      const hasCustomModel = decodedConfig.aiModel && decodedConfig.aiModel !== defaultAIConfig.aiModel;
+      const hasApiKey =
+        decodedConfig.apiKey && decodedConfig.apiKey.trim() !== "";
+      const hasApiUrl =
+        decodedConfig.apiUrl && decodedConfig.apiUrl !== defaultAIConfig.apiUrl;
+      const hasCustomModel =
+        decodedConfig.aiModel &&
+        decodedConfig.aiModel !== defaultAIConfig.aiModel;
       const hasAnyCustomConfig = hasApiKey || hasApiUrl || hasCustomModel;
 
       // 如果有任何自定义配置，保存到IndexedDB
-      if (hasAnyCustomConfig) {        await this.saveConfig(decodedConfig);
+      if (hasAnyCustomConfig) {
+        await this.saveConfig(decodedConfig);
         console.log("成功将AI配置从localStorage迁移到IndexedDB，配置内容:", {
           ...decodedConfig,
           apiKey: hasApiKey ? "******" : "",
         });
 
         // 迁移完成后清除localStorage中的旧数据
-        localStorage.removeItem('ai-settings');
-        
+        localStorage.removeItem("ai-settings");
+
         return decodedConfig;
       } else {
         console.log("未发现有效的自定义AI配置，使用默认配置");
@@ -257,7 +268,9 @@ export class IndexedDBAISettingsStorage {
           // Base64编码的"-fallback"
           return atob(encryptedKey).replace("-fallback", "");
         }
-      } catch {}
+      } catch {
+        // 忽略旧版解密失败
+      }
 
       return ""; // 解密完全失败，返回空字符串
     }

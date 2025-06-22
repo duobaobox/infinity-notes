@@ -24,13 +24,15 @@ export interface StickyNoteData {
 // 简化的流式回调接口
 export interface StreamingCallbacks {
   onNoteStart?: (noteIndex: number, title: string) => void;
-  onContentChunk?: (noteIndex: number, chunk: string, fullContent: string) => void;
+  onContentChunk?: (
+    noteIndex: number,
+    chunk: string,
+    fullContent: string
+  ) => void;
   onNoteComplete?: (noteIndex: number, note: StickyNoteData) => void;
   onAllComplete?: (notes: StickyNoteData[]) => void;
   onError?: (error: string) => void;
 }
-
-
 
 export class AIService {
   private config: AIConfig;
@@ -53,7 +55,7 @@ export class AIService {
       oldSystemPrompt: this.config.systemPrompt ? "已设置" : "未设置",
       newSystemPrompt: config.systemPrompt ? "已设置" : "未设置",
       oldSystemPromptLength: this.config.systemPrompt?.length || 0,
-      newSystemPromptLength: config.systemPrompt?.length || 0
+      newSystemPromptLength: config.systemPrompt?.length || 0,
     });
 
     this.config = config;
@@ -102,11 +104,11 @@ export class AIService {
       model: this.config.aiModel,
       messages: [
         { role: "system" as const, content: "预连接测试" },
-        { role: "user" as const, content: "ping" }
+        { role: "user" as const, content: "ping" },
       ],
       max_tokens: 1,
       temperature: 0,
-      stream: false
+      stream: false,
     };
 
     const response = await fetch(apiUrl, {
@@ -116,7 +118,7 @@ export class AIService {
         Authorization: `Bearer ${this.config.apiKey}`,
       },
       body: JSON.stringify(preconnectRequest),
-      signal: this.preconnectController?.signal
+      signal: this.preconnectController?.signal,
     });
 
     if (!response.ok) {
@@ -238,13 +240,16 @@ export class AIService {
       console.log("🎯 AI模式检查:", {
         systemPromptLength: currentSystemPrompt.length,
         isNormalMode: isNormalMode,
-        mode: isNormalMode ? "正常对话模式" : "自定义prompt模式"
+        mode: isNormalMode ? "正常对话模式" : "自定义prompt模式",
       });
 
       // 根据提示词内容决定是否添加系统消息
       if (!isNormalMode) {
         messages.push({ role: "system", content: currentSystemPrompt });
-        console.log("✅ 使用自定义prompt模式，提示词长度:", currentSystemPrompt.length);
+        console.log(
+          "✅ 使用自定义prompt模式，提示词长度:",
+          currentSystemPrompt.length
+        );
       } else {
         console.log("✅ 使用正常对话模式，直接与AI对话");
       }
@@ -260,7 +265,7 @@ export class AIService {
       console.log("🌐 发送API请求:", {
         url: apiUrl,
         model: this.config.aiModel,
-        stream: true
+        stream: true,
       });
 
       // 设置30秒超时
@@ -289,7 +294,8 @@ export class AIService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        const error = errorData.error?.message || `API请求失败 (${response.status})`;
+        const error =
+          errorData.error?.message || `API请求失败 (${response.status})`;
         callbacks.onError?.(error);
         return { success: false, error };
       }
@@ -307,9 +313,9 @@ export class AIService {
       const decoder = new TextDecoder();
 
       // 流式状态管理
-      let currentNoteIndex = 0;      let currentNoteContent = "";
+      const currentNoteIndex = 0;
+      let currentNoteContent = "";
       let isStreamingNote = false;
-      let jsonBuffer = "";
 
       try {
         // 先创建第一个便签开始流式显示
@@ -324,30 +330,36 @@ export class AIService {
           }
 
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          const lines = chunk.split("\n");
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            if (line.startsWith("data: ")) {
               const data = line.slice(6);
-              if (data === '[DONE]') continue;
+              if (data === "[DONE]") continue;
 
               try {
                 const parsed = JSON.parse(data);
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullResponse += content;
-                  jsonBuffer += content;
 
                   // 现在统一使用直接显示原始AI回复的方式
                   // 因为我们使用了简化的系统提示词，AI回复的都是自然语言
-                  if (content && content !== currentNoteContent.slice(-content.length)) {
+                  if (
+                    content &&
+                    content !== currentNoteContent.slice(-content.length)
+                  ) {
                     currentNoteContent += content;
                     if (isStreamingNote) {
-                      callbacks.onContentChunk?.(currentNoteIndex, content, currentNoteContent);
+                      callbacks.onContentChunk?.(
+                        currentNoteIndex,
+                        content,
+                        currentNoteContent
+                      );
                     }
                   }
                 }
-              } catch (e) {
+              } catch {
                 // 忽略解析错误，继续处理下一行
               }
             }
@@ -391,11 +403,11 @@ export class AIService {
                 content += note.content[j];
                 callbacks.onContentChunk?.(i, note.content[j], content);
                 // 较快的显示速度
-                await new Promise(resolve => setTimeout(resolve, 10));
+                await new Promise((resolve) => setTimeout(resolve, 10));
               }
 
               callbacks.onNoteComplete?.(i, note);
-              await new Promise(resolve => setTimeout(resolve, 100));
+              await new Promise((resolve) => setTimeout(resolve, 100));
             }
           }
 
@@ -409,9 +421,11 @@ export class AIService {
           const isNormalMode = currentSystemPrompt === "";
 
           const fallbackNote: StickyNoteData = {
-            title: this.generateTitleFromContent(currentNoteContent || fullResponse),
+            title: this.generateTitleFromContent(
+              currentNoteContent || fullResponse
+            ),
             content: currentNoteContent || fullResponse,
-            color: isNormalMode ? "#e3f2fd" : "#fef3c7" // 正常对话模式使用蓝色，自定义prompt模式使用黄色
+            color: isNormalMode ? "#e3f2fd" : "#fef3c7", // 正常对话模式使用蓝色，自定义prompt模式使用黄色
           };
 
           callbacks.onNoteComplete?.(0, fallbackNote);
@@ -420,9 +434,9 @@ export class AIService {
           }
           return { success: true, notes: [fallbackNote] };
         }
-
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : "流式处理失败";
+        const errorMsg =
+          error instanceof Error ? error.message : "流式处理失败";
         console.error("❌ 流式处理异常:", error);
         callbacks.onError?.(errorMsg);
         return { success: false, error: errorMsg };
@@ -443,7 +457,6 @@ export class AIService {
           console.log("🚫 请求已取消");
         }
       }
-
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "AI请求失败";
       console.error("❌ AI请求异常:", error);
@@ -481,17 +494,22 @@ export class AIService {
 
       console.log("🧠 智能解析AI回复:", {
         length: cleanResponse.length,
-        preview: cleanResponse.substring(0, 100) + (cleanResponse.length > 100 ? '...' : '')
+        preview:
+          cleanResponse.substring(0, 100) +
+          (cleanResponse.length > 100 ? "..." : ""),
       });
 
       // 现在优先使用自然语言解析，因为我们已经简化了所有系统提示词
       // 只有在明确是JSON格式时才尝试JSON解析（兼容旧数据或特殊情况）
-      if ((cleanResponse.startsWith('[') || cleanResponse.startsWith('{')) &&
-          cleanResponse.includes('"title"') && cleanResponse.includes('"content"')) {
+      if (
+        (cleanResponse.startsWith("[") || cleanResponse.startsWith("{")) &&
+        cleanResponse.includes('"title"') &&
+        cleanResponse.includes('"content"')
+      ) {
         try {
           let notes: StickyNoteData[];
 
-          if (cleanResponse.startsWith('[')) {
+          if (cleanResponse.startsWith("[")) {
             notes = JSON.parse(cleanResponse);
           } else {
             const parsed = JSON.parse(cleanResponse);
@@ -510,19 +528,23 @@ export class AIService {
           const defaultColor = isNormalMode ? "#e3f2fd" : "#fef3c7";
 
           const validNotes = notes
-            .filter((note) => typeof note === "object" && note.title && note.content)
+            .filter(
+              (note) => typeof note === "object" && note.title && note.content
+            )
             .map((note) => ({
               title: String(note.title).slice(0, 100),
               content: String(note.content).slice(0, 1000),
               color: note.color || defaultColor, // 根据模式使用不同的默认颜色
-              tags: Array.isArray(note.tags) ? note.tags.slice(0, 5) : undefined,
+              tags: Array.isArray(note.tags)
+                ? note.tags.slice(0, 5)
+                : undefined,
             }));
 
           if (validNotes.length > 0) {
             console.log("✅ JSON解析成功，便签数量:", validNotes.length);
             return { success: true, notes: validNotes };
           }
-        } catch (jsonError) {
+        } catch {
           console.log("❌ JSON解析失败，使用自然语言解析");
         }
       }
@@ -540,7 +562,7 @@ export class AIService {
       console.log("✅ 自然语言解析成功:", {
         title: note.title,
         contentLength: note.content.length,
-        color: note.color
+        color: note.color,
       });
 
       return { success: true, notes: [note] };
@@ -550,7 +572,6 @@ export class AIService {
     }
   }
 
-
   // 从内容生成标题的辅助方法
   private generateTitleFromContent(content: string): string {
     if (!content || content.trim().length === 0) {
@@ -558,22 +579,18 @@ export class AIService {
     }
 
     // 移除Markdown格式符号
-    let cleanContent = content
-      .replace(/[#*`_~\[\]()]/g, '') // 移除Markdown符号
-      .replace(/\n+/g, ' ') // 换行替换为空格
+    const cleanContent = content
+      .replace(/[#*`_~[\]()]/g, "") // 移除Markdown符号
+      .replace(/\n+/g, " ") // 换行替换为空格
       .trim();
 
     // 提取第一行或前30个字符作为标题
-    const firstLine = cleanContent.split('\n')[0] || cleanContent;
-    const title = firstLine.length > 30
-      ? firstLine.substring(0, 30) + '...'
-      : firstLine;
+    const firstLine = cleanContent.split("\n")[0] || cleanContent;
+    const title =
+      firstLine.length > 30 ? firstLine.substring(0, 30) + "..." : firstLine;
 
     return title || "AI便签";
   }
-
-
-
 
   // 智能分析文本并提供建议
   async analyzeText(text: string): Promise<{
@@ -652,16 +669,27 @@ let aiServiceInstance: AIService | null = null;
 const isConfigChanged = (newConfig: AIConfig, oldConfig: AIConfig): boolean => {
   // 比较关键配置字段
   const keyFields: (keyof AIConfig)[] = [
-    'apiUrl', 'apiKey', 'aiModel', 'temperature', 'maxTokens', 'systemPrompt'
+    "apiUrl",
+    "apiKey",
+    "aiModel",
+    "temperature",
+    "maxTokens",
+    "systemPrompt",
   ];
 
-  const changedFields = keyFields.filter(field => newConfig[field] !== oldConfig[field]);
+  const changedFields = keyFields.filter(
+    (field) => newConfig[field] !== oldConfig[field]
+  );
 
   if (changedFields.length > 0) {
     console.log("🔍 配置变化检测:", {
       changedFields,
-      oldSystemPrompt: oldConfig.systemPrompt ? `"${oldConfig.systemPrompt.substring(0, 50)}..."` : "空",
-      newSystemPrompt: newConfig.systemPrompt ? `"${newConfig.systemPrompt.substring(0, 50)}..."` : "空"
+      oldSystemPrompt: oldConfig.systemPrompt
+        ? `"${oldConfig.systemPrompt.substring(0, 50)}..."`
+        : "空",
+      newSystemPrompt: newConfig.systemPrompt
+        ? `"${newConfig.systemPrompt.substring(0, 50)}..."`
+        : "空",
     });
     return true;
   }
@@ -675,10 +703,15 @@ export const getAIService = (config?: AIConfig): AIService => {
   }
 
   // 如果没有实例，或者配置发生了变化，就创建/更新实例
-  if (!aiServiceInstance || isConfigChanged(config, aiServiceInstance.getConfig())) {
+  if (
+    !aiServiceInstance ||
+    isConfigChanged(config, aiServiceInstance.getConfig())
+  ) {
     console.log("🔄 AI服务配置发生变化，更新实例", {
       hasInstance: !!aiServiceInstance,
-      configChanged: aiServiceInstance ? isConfigChanged(config, aiServiceInstance.getConfig()) : true
+      configChanged: aiServiceInstance
+        ? isConfigChanged(config, aiServiceInstance.getConfig())
+        : true,
     });
 
     if (aiServiceInstance) {
@@ -710,12 +743,12 @@ export const systemPromptTemplates = [
   {
     name: "正常对话模式",
     description: "直接与AI对话，获得原始API回复，不添加任何角色设定",
-    prompt: "" // 空字符串表示正常对话模式
+    prompt: "", // 空字符串表示正常对话模式
   },
   {
     name: "默认便签助手",
     description: "通用的便签生成助手，适合各种场景",
-    prompt: defaultSystemPrompt
+    prompt: defaultSystemPrompt,
   },
   {
     name: "工作任务助手",
@@ -728,7 +761,7 @@ export const systemPromptTemplates = [
 - 使用专业的项目管理术语
 - 能够合理拆分复杂任务
 
-请根据用户的工作需求，生成专业的任务管理建议和工作计划。回复要简洁明了，重点突出，包含具体的执行步骤和时间安排。`
+请根据用户的工作需求，生成专业的任务管理建议和工作计划。回复要简洁明了，重点突出，包含具体的执行步骤和时间安排。`,
   },
   {
     name: "学习笔记助手",
@@ -741,7 +774,7 @@ export const systemPromptTemplates = [
 - 添加记忆技巧和助记符
 - 标注难度级别和重要程度
 
-请根据用户的学习内容，生成结构化的学习笔记。回复要条理清晰，重点突出，便于理解和记忆。`
+请根据用户的学习内容，生成结构化的学习笔记。回复要条理清晰，重点突出，便于理解和记忆。`,
   },
   {
     name: "生活规划助手",
@@ -754,7 +787,7 @@ export const systemPromptTemplates = [
 - 包含必要的提醒和注意事项
 - 适当添加生活小贴士
 
-请根据用户的生活需求，生成实用的生活建议和规划。回复要温馨实用，关注生活品质和个人成长。`
+请根据用户的生活需求，生成实用的生活建议和规划。回复要温馨实用，关注生活品质和个人成长。`,
   },
   {
     name: "创意灵感助手",
@@ -767,8 +800,8 @@ export const systemPromptTemplates = [
 - 激发更多相关联想
 - 使用生动有趣的表达方式
 
-请根据用户的想法，生成富有创意的内容和建议。回复要充满想象力，同时保持实用性，帮助用户将创意转化为可行的方案。`
-  }
+请根据用户的想法，生成富有创意的内容和建议。回复要充满想象力，同时保持实用性，帮助用户将创意转化为可行的方案。`,
+  },
 ];
 
 // 默认AI配置

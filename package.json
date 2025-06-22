@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
@@ -16,7 +15,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@types/ws": "^8.18.1",
+    "@ant-design/icons": "^6.0.0",
+    "@eslint/js": "^9.29.0",
     "antd": "^5.25.3",
     "leader-line": "^1.0.8",
     "lodash": "^4.17.21",
@@ -26,14 +26,12 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "uuid": "^11.1.0",
-    "ws": "^8.18.2",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.17",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
-    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.4.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",

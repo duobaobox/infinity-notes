@@ -527,6 +527,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [
       note.id,
       note.sourceNoteIds,
+      note.generationMode,
+      note.sourceNotesContent,
       isStreaming,
       sourceConnectionsVisible,
       allNotes,
@@ -755,7 +757,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     if (note.isTitleEditing !== isTitleEditing) {
       setIsTitleEditing(note.isTitleEditing);
     }
-  }, [note.isEditing, note.isTitleEditing]);
+  }, [note.isEditing, note.isTitleEditing, isEditing, isTitleEditing]);
 
   useEffect(() => {
     if (!isDragging && !isSyncingPosition) {
@@ -790,7 +792,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         localContent.length
       );
     }
-  }, [isEditing]);
+  }, [isEditing, localContent.length]);
 
   useEffect(() => {
     if (isTitleEditing && titleInputRef.current) {
@@ -800,7 +802,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         localTitle.length
       );
     }
-  }, [isTitleEditing]);
+  }, [isTitleEditing, localTitle.length]);
 
   // 处理内容编辑键盘事件
   const handleContentKeyDown = useCallback(

@@ -87,7 +87,7 @@ const convertColorToNoteName = (color?: string): StickyNoteType["color"] => {
 };
 
 // 组件接口
-interface InfiniteCanvasRef {
+export interface InfiniteCanvasRef {
   createNote: () => void;
   focusConsole: () => void;
   saveAllNotes: () => void;
@@ -177,7 +177,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
       // 更新画布状态
       updateConnectionLinesImmediate();
-    } catch (error) {
+    } catch {
       // 显示错误消息
       message.error("清空连接失败，请重试");
     }
@@ -241,7 +241,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             : 0;
 
         const newNote: StickyNoteType = {
-          id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `note-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 11)}`,
           x: positionX,
           y: positionY,
           width: 250,
@@ -372,7 +374,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         const tempNote: StickyNoteType = {
           id: `ai-note-${Date.now()}-${Math.random()
             .toString(36)
-            .substr(2, 9)}`,
+            .substring(2, 11)}`,
           x: logicalX,
           y: logicalY,
           width: 280,
@@ -402,7 +404,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         const result = await aiService.generateStickyNotesStreaming(
           finalPrompt,
           {
-            onNoteStart: (_index, _title) => {
+            onNoteStart: () => {
               // AI便签标题保持固定，不需要更新
             },
             onContentChunk: (_index, _chunk, fullContent) => {

@@ -1,7 +1,9 @@
 import { Layout, Spin } from "antd";
 import { useRef, useEffect, useState } from "react";
 import "./App.css";
-import InfiniteCanvas from "./components/canvas/InfiniteCanvasNew";
+import InfiniteCanvas, {
+  type InfiniteCanvasRef,
+} from "./components/canvas/InfiniteCanvasNew";
 import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
@@ -11,7 +13,7 @@ import { useStickyNotesStore, useAIStore, useUIStore } from "./stores";
 const { Content } = Layout;
 
 function App() {
-  const canvasRef = useRef<any>(null);
+  const canvasRef = useRef<InfiniteCanvasRef>(null);
 
   // 使用全局状态管理
   const {

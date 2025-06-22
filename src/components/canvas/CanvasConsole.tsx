@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { Input, Button, Tooltip, message } from "antd";
+import type { InputRef } from "antd";
 import {
   PlusOutlined,
   RobotOutlined,
@@ -48,7 +49,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [localHasValidConfig, setLocalHasValidConfig] = useState(false);
-    const inputRef = useRef<any>(null);
+    const inputRef = useRef<InputRef>(null);
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // 获取连接状态
@@ -56,11 +57,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const hasConnections = connectedNotes.length > 0;
 
     // 动态placeholder文本
-    const dynamicPlaceholder = placeholder || (
-      hasConnections
+    const dynamicPlaceholder =
+      placeholder ||
+      (hasConnections
         ? ` 请输入指令处理便签（如：总结、分析、整理等）`
-        : " 输入文本AI生成便签，留空创建空白便签..."
-    );
+        : " 输入文本AI生成便签，留空创建空白便签...");
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
 
@@ -133,7 +134,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             console.log("🎮 AI智能处理连接便签");
             await onGenerateWithAI(inputValue);
             setInputValue("");
-          } catch (error) {
+          } catch {
             message.error("AI智能处理失败，请检查配置或稍后重试");
           } finally {
             setIsGenerating(false);
@@ -161,7 +162,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
           console.log("🎮 调用onGenerateWithAI函数");
           await onGenerateWithAI(inputValue);
           setInputValue("");
-        } catch (error) {
+        } catch {
           message.error("AI生成失败，请检查配置或稍后重试");
         } finally {
           setIsGenerating(false);
@@ -183,7 +184,8 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const handleFocus = () => setIsFocused(true);
     const handleBlur = () => setIsFocused(false);
 
-    return (      <div className={`canvas-console`}>
+    return (
+      <div className={`canvas-console`}>
         <div
           className={`console-container ${isFocused ? "focused" : ""} ${
             isCurrentlyGenerating ? "ai-generating" : ""
@@ -191,7 +193,11 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         >
           <div className="console-input-container">
             {/* 连接状态指示器 - 始终存在，通过CSS控制显示 */}
-            <div className={`connection-indicator ${hasConnections ? 'visible' : 'hidden'}`}>
+            <div
+              className={`connection-indicator ${
+                hasConnections ? "visible" : "hidden"
+              }`}
+            >
               <span className="connection-icon">🔗</span>
               <span className="connection-text">{connectedNotes.length}</span>
             </div>
@@ -267,61 +273,63 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
                     type="primary"
                     shape="circle"
                     size="middle"
-                    onClick={onOpenAISettings || (() => message.info("请先配置AI设置"))}
+                    onClick={
+                      onOpenAISettings || (() => message.info("请先配置AI设置"))
+                    }
                     disabled={disabled || !onOpenAISettings}
                     className="external-button ai-smart-process-button requires-input"
                   />
                 </Tooltip>
               )
-            ) : (
-              // 无连接便签时：根据输入状态显示不同按钮
-              inputValue.trim() ? (
-                localHasValidConfig ? (
-                  // 有输入且有AI配置：显示蓝色AI生成按钮
-                  <Tooltip title="AI生成便签 (Enter)" placement="top">
-                    <Button
-                      icon={
-                        isCurrentlyGenerating ? (
-                          <LoadingOutlined />
-                        ) : (
-                          <RobotOutlined />
-                        )
-                      }
-                      type="primary"
-                      shape="circle"
-                      size="middle"
-                      onClick={handleSend}
-                      disabled={disabled || isCurrentlyGenerating}
-                      className="external-button ai-external-button"
-                    />
-                  </Tooltip>
-                ) : (
-                  // 有输入但无AI配置：显示AI设置按钮
-                  <Tooltip title="点击进行AI设置" placement="top">
-                    <Button
-                      icon={<RobotOutlined />}
-                      type="primary"
-                      shape="circle"
-                      size="middle"
-                      onClick={onOpenAISettings || (() => message.info("请先配置AI设置"))}
-                      disabled={disabled || !onOpenAISettings}
-                      className="external-button ai-external-button"
-                    />
-                  </Tooltip>
-                )
-              ) : (
-                // 无输入：显示蓝色手动添加按钮
-                <Tooltip title="创建空白便签 (Enter)" placement="top">
+            ) : // 无连接便签时：根据输入状态显示不同按钮
+            inputValue.trim() ? (
+              localHasValidConfig ? (
+                // 有输入且有AI配置：显示蓝色AI生成按钮
+                <Tooltip title="AI生成便签 (Enter)" placement="top">
                   <Button
-                    icon={<PlusOutlined />}
+                    icon={
+                      isCurrentlyGenerating ? (
+                        <LoadingOutlined />
+                      ) : (
+                        <RobotOutlined />
+                      )
+                    }
                     type="primary"
                     shape="circle"
                     size="middle"
                     onClick={handleSend}
-                    className="external-button add-external-button"
+                    disabled={disabled || isCurrentlyGenerating}
+                    className="external-button ai-external-button"
+                  />
+                </Tooltip>
+              ) : (
+                // 有输入但无AI配置：显示AI设置按钮
+                <Tooltip title="点击进行AI设置" placement="top">
+                  <Button
+                    icon={<RobotOutlined />}
+                    type="primary"
+                    shape="circle"
+                    size="middle"
+                    onClick={
+                      onOpenAISettings || (() => message.info("请先配置AI设置"))
+                    }
+                    disabled={disabled || !onOpenAISettings}
+                    className="external-button ai-external-button"
                   />
                 </Tooltip>
               )
+            ) : (
+              // 无输入：显示蓝色手动添加按钮
+              <Tooltip title="创建空白便签 (Enter)" placement="top">
+                <Button
+                  icon={<PlusOutlined />}
+                  type="primary"
+                  shape="circle"
+                  size="middle"
+                  onClick={handleSend}
+                  className="external-button add-external-button"
+                />
+              </Tooltip>
             )}
           </div>
         </div>
