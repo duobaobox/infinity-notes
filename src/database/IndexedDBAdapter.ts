@@ -57,8 +57,8 @@ export class IndexedDBAdapter {
       createdAt: new Date(dbNote.created_at),
       updatedAt: new Date(dbNote.updated_at),
       // 处理溯源便签ID列表
-      sourceNoteIds: (dbNote as any).source_note_ids
-        ? JSON.parse((dbNote as any).source_note_ids)
+      sourceNoteIds: dbNote.source_note_ids
+        ? JSON.parse(dbNote.source_note_ids)
         : undefined,
     };
   }

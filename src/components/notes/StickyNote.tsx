@@ -315,7 +315,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
       // 调用连接回调
       if (onConnect) {
-        console.log("🔗 单击连接点，执行连接功能");
         onConnect(note);
       }
     },
@@ -846,36 +845,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   return (
     <>
-      {/* 外部溯源按钮 - 位于便签左上角外侧 */}
-      {note.sourceNoteIds && note.sourceNoteIds.length > 0 && (
-        <div
-          className={`external-source-button ${
-            sourceConnectionsVisible ? "active" : ""
-          }`}
-          style={{
-            left: actualX - 20, // 位于便签左侧外20px
-            top: actualY - 10, // 位于便签上方外10px
-            zIndex: note.zIndex + 1, // 确保在便签之上
-          }}
-          onClick={(e) => {
-            handleSourceButtonClick(e);
-            // 如果设置工具栏是打开的，也关闭它
-            if (settingsMenuVisible) {
-              setSettingsMenuVisible(false);
-            }
-          }}
-          title={
-            sourceConnectionsVisible
-              ? `隐藏 ${note.sourceNoteIds.length} 个源便签的连接线`
-              : `查看 ${note.sourceNoteIds.length} 个源便签的连接关系`
-          }
-        >
-          <span className="external-source-count">
-            {note.sourceNoteIds.length}
-          </span>
-        </div>
-      )}
-
       {/* 设置工具栏 - 位于便签头部上方 */}
       {settingsMenuVisible && (
         <div

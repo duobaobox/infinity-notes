@@ -99,7 +99,7 @@ export class IndexedDBService {
       noteStore.createIndex("updated_at", "updated_at", { unique: false });
       noteStore.createIndex("title", "title", { unique: false });
       noteStore.createIndex("content", "content", { unique: false });
-    }    // 标签表
+    } // 标签表
     if (!db.objectStoreNames.contains("tags")) {
       const tagStore = db.createObjectStore("tags", { keyPath: "id" });
       tagStore.createIndex("user_id", "user_id", { unique: false });
@@ -112,8 +112,12 @@ export class IndexedDBService {
         keyPath: "id",
       });
       uiSettingsStore.createIndex("user_id", "user_id", { unique: false });
-      uiSettingsStore.createIndex("setting_type", "setting_type", { unique: false });
-      uiSettingsStore.createIndex("updated_at", "updated_at", { unique: false });
+      uiSettingsStore.createIndex("setting_type", "setting_type", {
+        unique: false,
+      });
+      uiSettingsStore.createIndex("updated_at", "updated_at", {
+        unique: false,
+      });
     }
   }
 
@@ -205,13 +209,19 @@ export class IndexedDBService {
           try {
             resolve(request.result || []);
           } catch (error) {
-            console.error(`处理查询结果时出错 (${storeName}.${indexName}):`, error);
+            console.error(
+              `处理查询结果时出错 (${storeName}.${indexName}):`,
+              error
+            );
             reject(error);
           }
         };
 
         request.onerror = () => {
-          console.error(`查询操作失败 (${storeName}.${indexName}):`, request.error);
+          console.error(
+            `查询操作失败 (${storeName}.${indexName}):`,
+            request.error
+          );
           reject(request.error);
         };
       } catch (error) {

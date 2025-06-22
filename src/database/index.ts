@@ -53,6 +53,7 @@ export interface DbStickyNote {
   color: string;
   font_size?: number;
   z_index?: number;
+  source_note_ids?: string; // 新增：存储源便签ID列表，JSON字符串格式
   created_at: string;
   updated_at: string;
 }

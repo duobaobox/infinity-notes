@@ -249,54 +249,6 @@
   transform: rotate(90deg); /* 将横向三点转为竖向 */
 }
 
-/* 外部溯源按钮 - 位于便签外左上角 */
-.external-source-button {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fa8c16; /* 橙色背景 */
-  border: 2px solid rgba(255, 255, 255, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.external-source-button:hover {
-  background: #1677ff; /* 悬浮时变为主题蓝色 */
-  transform: scale(1.1);
-  box-shadow: 0 3px 8px rgba(22, 119, 255, 0.4); /* 蓝色阴影 */
-}
-
-.external-source-button.active {
-  background: #d46b08;
-  animation: externalSourcePulse 2s ease-in-out infinite;
-}
-
-/* 外部溯源按钮数字 */
-.external-source-count {
-  color: white;
-  font-size: 10px;
-  font-weight: bold;
-  line-height: 1;
-  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.4);
-}
-
-/* 外部溯源按钮激活动画 */
-@keyframes externalSourcePulse {
-  0%,
-  100% {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(212, 107, 8, 0.6);
-  }
-  50% {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2), 0 0 0 4px rgba(212, 107, 8, 0.3);
-  }
-}
-
 /* 便签工具栏样式 - 位于便签头部上方，极简设计 */
 .settings-toolbar {
   position: absolute;
