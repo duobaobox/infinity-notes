@@ -17,7 +17,7 @@ import StickyNote from "../notes/StickyNote";
 import SearchModal from "../modals/SearchModal";
 import SettingsModal from "../modals/SettingsModal";
 import { CANVAS_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
-import type { StickyNote as StickyNoteType } from "../types";
+import type { StickyNote as StickyNoteType, SourceNoteContent } from "../types";
 import "./InfiniteCanvas.css";
 
 // 全局状态管理导入
@@ -345,6 +345,30 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             ? Math.max(...stickyNotes.map((note) => note.zIndex))
             : 0;
 
+        // 准备溯源数据
+        let sourceNoteIds: string[] | undefined;
+        let sourceNotesContent: SourceNoteContent[] | undefined;
+        let generationMode: "summary" | "replace" | undefined;
+
+        if (connectedNotes.length > 0) {
+          generationMode = connectionMode;
+
+          if (connectionMode === "summary") {
+            // 汇总模式：只记录源便签ID
+            sourceNoteIds = connectedNotes.map((note) => note.id);
+          } else if (connectionMode === "replace") {
+            // 替换模式：保存完整的原始便签内容
+            sourceNotesContent = connectedNotes.map((note) => ({
+              id: note.id,
+              title: note.title,
+              content: note.content,
+              color: note.color,
+              createdAt: note.createdAt,
+              deletedAt: new Date(), // 记录删除时间
+            }));
+          }
+        }
+
         const tempNote: StickyNoteType = {
           id: `ai-note-${Date.now()}-${Math.random()
             .toString(36)
@@ -362,11 +386,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           isTitleEditing: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-          // 汇总模式下记录源便签ID，用于溯源功能
-          sourceNoteIds:
-            connectedNotes.length > 0 && connectionMode === "summary"
-              ? connectedNotes.map((note) => note.id)
-              : undefined,
+          // 溯源相关属性
+          sourceNoteIds,
+          sourceNotesContent,
+          generationMode,
         };
 
         // 添加临时便签到数据库

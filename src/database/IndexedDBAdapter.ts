@@ -60,6 +60,19 @@ export class IndexedDBAdapter {
       sourceNoteIds: dbNote.source_note_ids
         ? JSON.parse(dbNote.source_note_ids)
         : undefined,
+      // 处理原始便签内容（替换模式溯源用）
+      sourceNotesContent: dbNote.source_notes_content
+        ? JSON.parse(dbNote.source_notes_content).map((source: any) => ({
+            ...source,
+            createdAt: new Date(source.createdAt),
+            deletedAt: new Date(source.deletedAt),
+          }))
+        : undefined,
+      // 处理便签生成模式
+      generationMode: dbNote.generation_mode as
+        | "summary"
+        | "replace"
+        | undefined,
     };
   }
 
@@ -90,6 +103,16 @@ export class IndexedDBAdapter {
     // 处理溯源便签ID列表
     if (note.sourceNoteIds && note.sourceNoteIds.length > 0) {
       dbNote.source_note_ids = JSON.stringify(note.sourceNoteIds);
+    }
+
+    // 处理原始便签内容（替换模式溯源用）
+    if (note.sourceNotesContent && note.sourceNotesContent.length > 0) {
+      dbNote.source_notes_content = JSON.stringify(note.sourceNotesContent);
+    }
+
+    // 处理便签生成模式
+    if (note.generationMode) {
+      dbNote.generation_mode = note.generationMode;
     }
 
     return dbNote;

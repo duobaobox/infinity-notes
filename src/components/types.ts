@@ -1,3 +1,13 @@
+// 源便签内容类型定义（用于替换模式溯源）
+export interface SourceNoteContent {
+  id: string; // 原始便签ID
+  title: string; // 原始便签标题
+  content: string; // 原始便签内容
+  color: "yellow" | "blue" | "green" | "pink" | "purple"; // 原始便签颜色
+  createdAt: Date; // 原始便签创建时间
+  deletedAt: Date; // 便签被删除的时间（替换时间）
+}
+
 // 便签数据类型定义
 export interface StickyNote {
   id: string;
@@ -19,6 +29,9 @@ export interface StickyNote {
   connectionIndex?: number; // 在插槽中的连接索引
   // 汇总溯源相关属性
   sourceNoteIds?: string[]; // 汇总生成便签的源便签ID列表，用于溯源功能
+  // 替换模式溯源相关属性
+  sourceNotesContent?: SourceNoteContent[]; // 替换模式下保存的原始便签内容，用于溯源查看
+  generationMode?: "summary" | "replace"; // 便签生成模式：汇总模式或替换模式
 }
 
 // 便签属性接口

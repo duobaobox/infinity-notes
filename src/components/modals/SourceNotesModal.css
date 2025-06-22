@@ -1,0 +1,193 @@
+/* 源便签查看弹窗样式 */
+.source-notes-modal .ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.source-notes-modal .ant-modal-body {
+  padding: 20px 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* 弹窗内容容器 */
+.source-notes-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 说明文本样式 */
+.modal-description {
+  background: #f6f8fa;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 3px solid #1890ff;
+}
+
+/* 源便签列表容器 */
+.source-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 空状态样式 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8c8c8c;
+}
+
+/* 源便签卡片样式 */
+.source-note-card {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.source-note-card:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+/* 卡片头部样式 */
+.source-note-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 16px;
+  min-height: auto;
+}
+
+.source-note-card .ant-card-head-title {
+  padding: 0;
+  font-size: 14px;
+}
+
+.source-note-card .ant-card-extra {
+  padding: 0;
+  font-size: 12px;
+}
+
+/* 便签索引号样式 */
+.note-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #1890ff;
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+/* 便签标题样式 */
+.note-title {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* 时间信息样式 */
+.note-times {
+  text-align: right;
+}
+
+.time-text {
+  font-size: 11px;
+  color: #8c8c8c;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-text .anticon {
+  font-size: 10px;
+}
+
+/* 便签内容样式 */
+.note-content {
+  padding: 12px 16px;
+}
+
+.content-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #595959;
+  background: #fafafa;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #f0f0f0;
+}
+
+/* 底部信息样式 */
+.modal-footer-info {
+  text-align: center;
+  padding: 8px 0;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .source-notes-modal {
+    width: 95% !important;
+    margin: 10px auto;
+  }
+  
+  .source-notes-modal .ant-modal-body {
+    padding: 16px;
+    max-height: 80vh;
+  }
+  
+  .source-note-card .ant-card-head {
+    padding: 8px 12px;
+  }
+  
+  .source-note-card .ant-card-extra {
+    display: none; /* 在小屏幕上隐藏时间信息 */
+  }
+  
+  .note-content {
+    padding: 8px 12px;
+  }
+}
+
+/* 滚动条样式优化 */
+.source-notes-modal .ant-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.source-notes-modal .ant-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.source-notes-modal .ant-modal-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.source-notes-modal .ant-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.content-text::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content-text::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.content-text::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 2px;
+}
+
+.content-text::-webkit-scrollbar-thumb:hover {
+  background: #b8b8b8;
+}

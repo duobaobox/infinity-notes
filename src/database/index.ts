@@ -54,6 +54,8 @@ export interface DbStickyNote {
   font_size?: number;
   z_index?: number;
   source_note_ids?: string; // 新增：存储源便签ID列表，JSON字符串格式
+  source_notes_content?: string; // 新增：存储原始便签内容，JSON字符串格式（替换模式溯源用）
+  generation_mode?: string; // 新增：便签生成模式（summary/replace）
   created_at: string;
   updated_at: string;
 }

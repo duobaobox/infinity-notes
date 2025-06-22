@@ -17,6 +17,7 @@ import {
   DeleteOutlined,
   LoadingOutlined,
   LinkOutlined,
+  HistoryOutlined,
   BarChartOutlined,
   TagOutlined,
   FileTextOutlined,
@@ -24,6 +25,7 @@ import {
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
+import SourceNotesModal from "../modals/SourceNotesModal";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -72,6 +74,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     useState(false);
   const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
   const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
+  const [sourceNotesModalVisible, setSourceNotesModalVisible] = useState(false);
 
   // Refs 和定时器
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -420,12 +423,30 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.stopPropagation();
       e.preventDefault();
 
-      if (!note.sourceNoteIds || note.sourceNoteIds.length === 0) {
+      // 检查是否有溯源数据
+      const hasSourceNoteIds =
+        note.sourceNoteIds && note.sourceNoteIds.length > 0;
+      const hasSourceNotesContent =
+        note.sourceNotesContent && note.sourceNotesContent.length > 0;
+
+      if (!hasSourceNoteIds && !hasSourceNotesContent) {
+        return;
+      }
+
+      // 根据便签生成模式决定行为
+      if (note.generationMode === "replace" && hasSourceNotesContent) {
+        // 替换模式：打开源便签查看弹窗
+        setSourceNotesModalVisible(true);
+        return;
+      }
+
+      // 汇总模式或没有生成模式标识：显示/隐藏连接线
+      if (!hasSourceNoteIds) {
         return;
       }
 
       // 获取当前所有便签，验证源便签是否存在
-      const validSourceNoteIds = note.sourceNoteIds.filter((sourceId) =>
+      const validSourceNoteIds = note.sourceNoteIds!.filter((sourceId) =>
         allNotes.some((n) => n.id === sourceId)
       );
 
@@ -440,7 +461,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
 
       // 如果有无效的源便签ID，更新便签的溯源信息
-      if (validSourceNoteIds.length !== note.sourceNoteIds.length) {
+      if (validSourceNoteIds.length !== note.sourceNoteIds!.length) {
         // 更新便签的源便签列表，移除无效的ID
         onUpdate(note.id, {
           sourceNoteIds:
@@ -456,7 +477,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
       if (sourceConnectionsVisible) {
         // 隐藏溯源连接线 - 使用原始的sourceNoteIds，因为连接线管理器会自动处理不存在的连接
-        for (const sourceNoteId of note.sourceNoteIds) {
+        for (const sourceNoteId of note.sourceNoteIds!) {
           connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
         }
         setSourceConnectionsVisible(false);
@@ -469,7 +490,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         setIsBeingSourceConnected(isConnected);
 
         // 通知所有源便签更新其连接状态
-        for (const sourceNoteId of note.sourceNoteIds) {
+        for (const sourceNoteId of note.sourceNoteIds!) {
           const event = new CustomEvent("sourceConnectionChanged", {
             detail: { noteId: sourceNoteId },
           });
@@ -1039,37 +1060,65 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           {/* 溯源连接按钮 */}
           <Button
             className={`settings-toolbar-button ${
-              !note.sourceNoteIds || note.sourceNoteIds.length === 0
+              (!note.sourceNoteIds || note.sourceNoteIds.length === 0) &&
+              (!note.sourceNotesContent || note.sourceNotesContent.length === 0)
                 ? "disabled"
                 : sourceConnectionsVisible
                 ? "active"
                 : ""
             }`}
-            icon={<LinkOutlined />}
+            icon={
+              note.generationMode === "replace" &&
+              note.sourceNotesContent &&
+              note.sourceNotesContent.length > 0 ? (
+                <HistoryOutlined />
+              ) : (
+                <LinkOutlined />
+              )
+            }
             size="small"
             type="text"
-            disabled={!note.sourceNoteIds || note.sourceNoteIds.length === 0}
+            disabled={
+              (!note.sourceNoteIds || note.sourceNoteIds.length === 0) &&
+              (!note.sourceNotesContent || note.sourceNotesContent.length === 0)
+            }
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
 
               // 检查按钮是否被禁用
-              if (!note.sourceNoteIds || note.sourceNoteIds.length === 0) {
+              const hasSourceNoteIds =
+                note.sourceNoteIds && note.sourceNoteIds.length > 0;
+              const hasSourceNotesContent =
+                note.sourceNotesContent && note.sourceNotesContent.length > 0;
+
+              if (!hasSourceNoteIds && !hasSourceNotesContent) {
                 return;
               }
 
               handleSourceButtonClick(e);
             }}
             title={
-              note.sourceNoteIds && note.sourceNoteIds.length > 0
+              note.generationMode === "replace" &&
+              note.sourceNotesContent &&
+              note.sourceNotesContent.length > 0
+                ? `查看历史便签：${note.sourceNotesContent.length} 个被替换的原始便签内容`
+                : note.sourceNoteIds && note.sourceNoteIds.length > 0
                 ? sourceConnectionsVisible
-                  ? `隐藏 ${note.sourceNoteIds.length} 个源便签的连接线`
-                  : `显示 ${note.sourceNoteIds.length} 个源便签的连接关系`
+                  ? `隐藏连接线：${note.sourceNoteIds.length} 个源便签的连接关系`
+                  : `显示连接线：${note.sourceNoteIds.length} 个源便签的连接关系`
                 : "此便签没有源便签"
             }
           >
-            {note.sourceNoteIds && note.sourceNoteIds.length > 0 && (
-              <span className="toolbar-badge">{note.sourceNoteIds.length}</span>
+            {/* 显示溯源数量徽章 */}
+            {((note.sourceNoteIds && note.sourceNoteIds.length > 0) ||
+              (note.sourceNotesContent &&
+                note.sourceNotesContent.length > 0)) && (
+              <span className="toolbar-badge">
+                {note.generationMode === "replace" && note.sourceNotesContent
+                  ? note.sourceNotesContent.length
+                  : note.sourceNoteIds?.length || 0}
+              </span>
             )}
           </Button>
 
@@ -1345,6 +1394,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             </div>
           )}
       </div>
+
+      {/* 源便签查看弹窗 - 替换模式溯源功能 */}
+      <SourceNotesModal
+        open={sourceNotesModalVisible}
+        onClose={() => setSourceNotesModalVisible(false)}
+        sourceNotes={note.sourceNotesContent || []}
+        currentNoteTitle={note.title}
+      />
     </>
   );
 };
