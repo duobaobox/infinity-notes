@@ -316,6 +316,7 @@ export class AIService {
       const currentNoteIndex = 0;
       let currentNoteContent = "";
       let isStreamingNote = false;
+      let jsonBuffer = "";
 
       try {
         // 先创建第一个便签开始流式显示
@@ -342,6 +343,7 @@ export class AIService {
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   fullResponse += content;
+                  jsonBuffer += content;
 
                   // 现在统一使用直接显示原始AI回复的方式
                   // 因为我们使用了简化的系统提示词，AI回复的都是自然语言
@@ -359,7 +361,7 @@ export class AIService {
                     }
                   }
                 }
-              } catch {
+              } catch (e) {
                 // 忽略解析错误，继续处理下一行
               }
             }
@@ -544,7 +546,7 @@ export class AIService {
             console.log("✅ JSON解析成功，便签数量:", validNotes.length);
             return { success: true, notes: validNotes };
           }
-        } catch {
+        } catch (jsonError) {
           console.log("❌ JSON解析失败，使用自然语言解析");
         }
       }
@@ -580,7 +582,7 @@ export class AIService {
 
     // 移除Markdown格式符号
     const cleanContent = content
-      .replace(/[#*`_~[\]()]/g, "") // 移除Markdown符号
+      .replace(/[#*`_~\[\]()]/g, "") // 移除Markdown符号
       .replace(/\n+/g, " ") // 换行替换为空格
       .trim();
 

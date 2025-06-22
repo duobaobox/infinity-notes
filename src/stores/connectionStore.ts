@@ -139,7 +139,7 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
             connectedNotes: [], // 清空连接的便签列表
             isVisible: false, // 隐藏插槽容器
           });
-        } catch {
+        } catch (error) {
           // 即使出错也尝试重置状态
           set({
             connectedNotes: [],

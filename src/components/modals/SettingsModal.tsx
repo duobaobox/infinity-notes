@@ -5,6 +5,7 @@ import {
   type TabsProps,
   Form,
   Switch,
+  Select,
   Slider,
   ColorPicker,
   Divider,
@@ -43,6 +44,7 @@ import { useDatabase } from "../../database";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 interface SettingsModalProps {
   open: boolean;
@@ -96,8 +98,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     canConfigurePrompt,
   } = useAIPromptSettings(hasValidConfig);
 
-  // 加载数据统计信息 - 使用useCallback避免无限循环
-  const loadDataStats = React.useCallback(async () => {
+  // 加载数据统计信息
+  const loadDataStats = async () => {
     try {
       setLoadingStats(true);
       const [stats, storageInfo] = await Promise.all([
@@ -117,10 +119,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     } finally {
       setLoadingStats(false);
     }
-  }, [getStats, getStorageInfo]);
+  };
 
-  // 导出数据 - 使用useCallback优化性能
-  const handleExportData = React.useCallback(async () => {
+  // 导出数据
+  const handleExportData = async () => {
     try {
       setExportLoading(true);
       await exportData();
@@ -131,45 +133,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     } finally {
       setExportLoading(false);
     }
-  }, [exportData]);
+  };
 
-  // 导入数据 - 使用useCallback优化性能
-  const handleImportData = React.useCallback(
-    async (file: File) => {
-      try {
-        setImportLoading(true);
+  // 导入数据
+  const handleImportData = async (file: File) => {
+    try {
+      setImportLoading(true);
 
-        // 验证文件类型
-        if (!file.name.endsWith(".json")) {
-          throw new Error("请选择JSON格式的文件");
-        }
-
-        // 验证文件大小（限制为10MB）
-        if (file.size > 10 * 1024 * 1024) {
-          throw new Error("文件大小不能超过10MB");
-        }
-
-        await importData(file);
-        message.success("数据导入成功！页面将自动刷新以显示最新数据。");
-
-        // 重新加载统计信息
-        await loadDataStats();
-      } catch (error) {
-        console.error("导入数据失败:", error);
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "导入数据失败，请检查文件格式";
-        message.error(errorMessage);
-      } finally {
-        setImportLoading(false);
+      // 验证文件类型
+      if (!file.name.endsWith(".json")) {
+        throw new Error("请选择JSON格式的文件");
       }
-    },
-    [importData, loadDataStats]
-  );
 
-  // 清空所有数据 - 使用useCallback优化性能
-  const handleClearAllData = React.useCallback(async () => {
+      // 验证文件大小（限制为10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("文件大小不能超过10MB");
+      }
+
+      await importData(file);
+      message.success("数据导入成功！页面将自动刷新以显示最新数据。");
+
+      // 重新加载统计信息
+      await loadDataStats();
+    } catch (error) {
+      console.error("导入数据失败:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "导入数据失败，请检查文件格式";
+      message.error(errorMessage);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  // 清空所有数据
+  const handleClearAllData = async () => {
     try {
       await clearDatabase();
       message.success("所有数据已清空！");
@@ -179,14 +176,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       console.error("清空数据失败:", error);
       message.error("清空数据失败");
     }
-  }, [clearDatabase, loadDataStats]);
+  };
 
   // 当模态框打开时加载数据统计
   useEffect(() => {
     if (open) {
       loadDataStats();
     }
-  }, [open, loadDataStats]);
+  }, [open]);
 
   // 当aiConfig变化时，更新AI基础配置表单的值（只在模态框打开时）
   React.useEffect(() => {
@@ -196,35 +193,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         aiConfig.apiKey || aiConfig.aiModel || aiConfig.apiUrl;
 
       if (hasValidData) {
-        // 使用 requestAnimationFrame 确保 DOM 更新完成后再设置表单值
-        const frameId = requestAnimationFrame(() => {
-          try {
-            // 更严格的检查表单实例是否已连接
-            if (
-              aiForm &&
-              typeof aiForm.setFieldsValue === "function" &&
-              typeof aiForm.getFieldsValue === "function"
-            ) {
-              // 先尝试获取字段值来验证表单是否已连接
-              aiForm.getFieldsValue();
-
-              // 只设置基础AI配置，不包括systemPrompt
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              const { systemPrompt: _systemPrompt, ...basicAIConfig } =
-                aiConfig;
-              aiForm.setFieldsValue(basicAIConfig);
-            }
-          } catch (error) {
-            // 忽略表单未连接的警告，这是正常的
-            const errorMessage =
-              error instanceof Error ? error.message : String(error);
-            if (!errorMessage.includes("not connected to any Form element")) {
-              console.warn("更新AI表单值失败", error);
-            }
-          }
-        });
-
-        return () => cancelAnimationFrame(frameId);
+        try {
+          // 只设置基础AI配置，不包括systemPrompt
+          const { systemPrompt, ...basicAIConfig } = aiConfig;
+          aiForm.setFieldsValue(basicAIConfig);
+        } catch (error) {
+          console.warn("更新AI表单值失败", error);
+        }
       }
     }
   }, [aiConfig, open, aiForm]);
@@ -232,66 +207,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   // 当promptConfig变化时，更新提示词表单的值（只在模态框打开时）
   React.useEffect(() => {
     if (open && promptConfig && canConfigurePrompt) {
-      // 使用 requestAnimationFrame 确保 DOM 更新完成后再设置表单值
-      const frameId = requestAnimationFrame(() => {
-        try {
-          // 更严格的检查表单实例是否已连接
-          if (
-            promptForm &&
-            typeof promptForm.setFieldsValue === "function" &&
-            typeof promptForm.getFieldsValue === "function"
-          ) {
-            // 先尝试获取字段值来验证表单是否已连接
-            promptForm.getFieldsValue();
-            promptForm.setFieldsValue(promptConfig);
-          }
-        } catch (error) {
-          // 忽略表单未连接的警告，这是正常的
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          if (!errorMessage.includes("not connected to any Form element")) {
-            console.warn("更新提示词表单值失败", error);
-          }
-        }
-      });
-
-      return () => cancelAnimationFrame(frameId);
+      try {
+        promptForm.setFieldsValue(promptConfig);
+      } catch (error) {
+        console.warn("更新提示词表单值失败", error);
+      }
     }
   }, [promptConfig, open, promptForm, canConfigurePrompt]);
 
   // 当模态框打开或状态变化时，同步表单值
   React.useEffect(() => {
     if (open) {
-      // 使用 requestAnimationFrame 确保 DOM 更新完成后再设置表单值
-      const frameId = requestAnimationFrame(() => {
-        try {
-          // 更严格的检查表单实例是否已连接
-          if (
-            appearanceForm &&
-            typeof appearanceForm.setFieldsValue === "function" &&
-            typeof appearanceForm.getFieldsValue === "function"
-          ) {
-            // 先尝试获取字段值来验证表单是否已连接
-            appearanceForm.getFieldsValue();
-            // 同步外观设置表单
-            appearanceForm.setFieldsValue(appearance);
-          }
-        } catch (error) {
-          // 忽略表单未连接的警告，这是正常的
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          if (!errorMessage.includes("not connected to any Form element")) {
-            console.warn("更新外观表单值失败", error);
-          }
-        }
-      });
-
-      return () => cancelAnimationFrame(frameId);
+      // 同步外观设置表单
+      appearanceForm.setFieldsValue(appearance);
     }
   }, [open, appearance, appearanceForm]);
 
-  // 测试AI连接 - 使用useCallback优化性能
-  const handleTestConnection = React.useCallback(async () => {
+  // 测试AI连接
+  const handleTestConnection = async () => {
     try {
       setTestingConnection(true);
       await aiForm.validateFields();
@@ -303,15 +236,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       } else {
         message.error(`连接测试失败: ${result.error}`);
       }
-    } catch {
+    } catch (error) {
       message.error("请先完善配置信息");
     } finally {
       setTestingConnection(false);
     }
-  }, [aiForm, testConnection]);
+  };
 
-  // 保存AI提示词配置 - 使用useCallback优化性能
-  const handleSavePromptConfig = React.useCallback(async () => {
+  // 保存AI提示词配置
+  const handleSavePromptConfig = async () => {
     try {
       const values = await promptForm.validateFields();
       const success = await savePromptConfig(values);
@@ -319,51 +252,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       if (success) {
         message.success("AI设置保存成功！");
       }
-    } catch {
+    } catch (error) {
       message.error("请检查配置信息");
     }
-  }, [promptForm, savePromptConfig]);
+  };
 
-  // 重置提示词为正常对话模式 - 使用useCallback优化性能
-  const handleResetPromptToDefault = React.useCallback(async () => {
+  // 重置提示词为正常对话模式
+  const handleResetPromptToDefault = async () => {
+    // 直接设置为空字符串（正常对话模式）
+    promptForm.setFieldsValue({ systemPrompt: "" });
+
+    // 保存配置
     try {
-      // 更严格的检查表单实例是否已连接
-      if (
-        promptForm &&
-        typeof promptForm.setFieldsValue === "function" &&
-        typeof promptForm.getFieldsValue === "function"
-      ) {
-        try {
-          // 先尝试获取字段值来验证表单是否已连接
-          promptForm.getFieldsValue();
-          // 直接设置为空字符串（正常对话模式）
-          promptForm.setFieldsValue({ systemPrompt: "" });
-        } catch (formError) {
-          // 如果表单未连接，跳过设置表单值
-          const errorMessage =
-            formError instanceof Error ? formError.message : String(formError);
-          if (errorMessage.includes("not connected to any Form element")) {
-            console.warn("表单未连接，跳过设置表单值");
-          } else {
-            throw formError;
-          }
-        }
-      }
-
-      // 保存配置
       const success = await savePromptConfig({ systemPrompt: "" });
       if (success) {
         message.success("已重置为正常对话模式");
       } else {
         message.error("重置失败");
       }
-    } catch {
+    } catch (error) {
       message.error("重置失败");
     }
-  }, [promptForm, savePromptConfig]);
+  };
 
-  // 保存AI基础配置（不包括systemPrompt）- 使用useCallback优化性能
-  const handleSaveAIConfig = React.useCallback(async () => {
+  // 保存AI基础配置（不包括systemPrompt）
+  const handleSaveAIConfig = async () => {
     try {
       const values = await aiForm.validateFields();
 
@@ -380,13 +293,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       if (success) {
         message.success("AI配置保存成功！现在可以配置AI提示词了。");
       }
-    } catch {
+    } catch (error) {
       message.error("请检查AI配置信息");
     }
-  }, [aiForm, aiConfig, saveAIConfig]);
+  };
 
   // 处理颜色值转换的辅助函数
-  const convertColorValue = React.useCallback((colorValue: unknown): string => {
+  const convertColorValue = React.useCallback((colorValue: any): string => {
     if (!colorValue) return "#000000";
 
     // 如果是字符串，直接返回
@@ -395,28 +308,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
 
     // 如果是对象（ColorPicker的Color对象）
-    if (typeof colorValue === "object" && colorValue !== null) {
+    if (typeof colorValue === "object") {
       try {
-        const colorObj = colorValue as Record<string, unknown>;
         // 尝试调用toHexString方法
-        if (typeof colorObj.toHexString === "function") {
-          return (colorObj.toHexString as () => string)();
+        if (typeof colorValue.toHexString === "function") {
+          return colorValue.toHexString();
         }
         // 尝试调用toHex方法
-        if (typeof colorObj.toHex === "function") {
-          return (colorObj.toHex as () => string)();
+        if (typeof colorValue.toHex === "function") {
+          return colorValue.toHex();
         }
         // 如果有hex属性
-        if (typeof colorObj.hex === "string") {
-          return colorObj.hex;
+        if (colorValue.hex) {
+          return colorValue.hex;
         }
         // 如果有value属性
-        if (typeof colorObj.value === "string") {
-          return colorObj.value;
+        if (colorValue.value) {
+          return colorValue.value;
         }
-      } catch {
-        // 忽略颜色转换错误
-      }
+      } catch (error) {}
     }
 
     return "#000000";
@@ -424,7 +334,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 处理外观设置变化
   const handleAppearanceChange = React.useCallback(
-    (_changedFields: unknown, allFields: Record<string, unknown>) => {
+    (_changedFields: any, allFields: any) => {
       // 处理ColorPicker的值转换
       const processedFields = { ...allFields };
 
@@ -453,7 +363,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       try {
         applyPresetTheme(themeId);
         message.success(`已应用 ${themeName} 主题`);
-      } catch {
+      } catch (error) {
         message.error(`应用主题失败`);
       }
     },
@@ -641,6 +551,47 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       },
                     ]}
                   />
+                </Form.Item>
+              </Card>
+
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  便签样式
+                </Title>
+                <Form.Item label="默认便签颜色" name="noteDefaultColor">
+                  <ColorPicker
+                    presets={[
+                      {
+                        label: "常用颜色",
+                        colors: [
+                          "#fef3c7", // yellow
+                          "#dbeafe", // blue
+                          "#d1fae5", // green
+                          "#fce7f3", // pink
+                          "#e9d5ff", // purple
+                        ],
+                      },
+                    ]}
+                    showText
+                  />
+                </Form.Item>
+
+                <Form.Item label="字体大小" name="fontSize">
+                  <InputNumber
+                    min={12}
+                    max={24}
+                    suffix="px"
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+
+                <Form.Item label="字体系列" name="fontFamily">
+                  <Select>
+                    <Option value="system-ui">系统默认</Option>
+                    <Option value="Arial">Arial</Option>
+                    <Option value="Microsoft YaHei">微软雅黑</Option>
+                    <Option value="PingFang SC">苹方</Option>
+                  </Select>
                 </Form.Item>
               </Card>
             </Form>
@@ -1036,19 +987,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 应用信息
               </Title>
               <p>
-                <strong>无限便签</strong>{" "}
+                <strong>便签画布</strong>{" "}
                 是一款创新的无限画布便签应用，让您自由组织思路和灵感。
               </p>
-              <p>版本: RC1.0.0</p>
+              <p>版本: 1.0.0</p>
               <Divider />
               <p>
-                <strong>开发者:</strong> duobao
+                <strong>开发者:</strong> 便签画布团队
               </p>
               <p>
-                <strong>联系我们:</strong> 2385563331@qq.com
+                <strong>联系我们:</strong> support@notes-canvas-app.example.com
               </p>
               <Divider />
-              <p>© 2025 无限便签. 保留所有权利.</p>
+              <p>© 2023 便签画布. 保留所有权利.</p>
             </Card>
           </div>
         ),
@@ -1062,15 +1013,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     aiError,
     hasValidConfig,
     aiConfig,
-    aiForm,
     handleSaveAIConfig,
     testingConnection,
     handleTestConnection,
     promptLoading,
     promptError,
     canConfigurePrompt,
-    promptConfig, // 使用整个 promptConfig 对象而不是单个属性
-    promptForm,
     handleSavePromptConfig,
     handleResetPromptToDefault,
     // 数据管理相关依赖
@@ -1081,7 +1029,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     handleExportData,
     handleImportData,
     handleClearAllData,
-    appearanceForm,
   ]);
   return (
     <Modal

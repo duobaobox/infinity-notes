@@ -95,13 +95,7 @@ export class IndexedDBAISettingsStorage {
       }
 
       // 移除与数据库相关的字段，只保留 AIConfig 相关字段
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const {
-        id: _id,
-        user_id: _userId,
-        updated_at: _updatedAt,
-        ...configData
-      } = settings;
+      const { id, user_id, updated_at, ...configData } = settings;
 
       const finalConfig = {
         ...defaultAIConfig,
@@ -268,9 +262,7 @@ export class IndexedDBAISettingsStorage {
           // Base64编码的"-fallback"
           return atob(encryptedKey).replace("-fallback", "");
         }
-      } catch {
-        // 忽略旧版解密失败
-      }
+      } catch {}
 
       return ""; // 解密完全失败，返回空字符串
     }

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",

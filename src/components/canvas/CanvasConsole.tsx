@@ -6,7 +6,6 @@ import React, {
   useEffect,
 } from "react";
 import { Input, Button, Tooltip, message } from "antd";
-import type { InputRef } from "antd";
 import {
   PlusOutlined,
   RobotOutlined,
@@ -49,7 +48,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [localHasValidConfig, setLocalHasValidConfig] = useState(false);
-    const inputRef = useRef<InputRef>(null);
+    const inputRef = useRef<any>(null);
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // 获取连接状态
@@ -134,7 +133,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             console.log("🎮 AI智能处理连接便签");
             await onGenerateWithAI(inputValue);
             setInputValue("");
-          } catch {
+          } catch (error) {
             message.error("AI智能处理失败，请检查配置或稍后重试");
           } finally {
             setIsGenerating(false);
@@ -162,7 +161,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
           console.log("🎮 调用onGenerateWithAI函数");
           await onGenerateWithAI(inputValue);
           setInputValue("");
-        } catch {
+        } catch (error) {
           message.error("AI生成失败，请检查配置或稍后重试");
         } finally {
           setIsGenerating(false);
