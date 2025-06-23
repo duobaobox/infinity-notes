@@ -984,22 +984,56 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="settings-modal-content">
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                应用信息
+                智能便签 - 思维整理的AI工作空间
               </Title>
               <p>
-                <strong>便签画布</strong>{" "}
-                是一款创新的无限画布便签应用，让您自由组织思路和灵感。
+                <strong>智能便签</strong>{" "}
+                是一款创新的无限画布便签应用，支持AI智能汇总、连接线可视化和溯源追踪，让您自由组织思路和灵感。
               </p>
               <p>版本: 1.0.0</p>
               <Divider />
               <p>
-                <strong>开发者:</strong> 便签画布团队
+                <strong>核心功能:</strong>
+              </p>
+              <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
+                <li>🎨 无限画布 - 自由创作空间</li>
+                <li>🤖 AI智能汇总 - 自动整理要点</li>
+                <li>🔗 可视化连接 - 构建知识网络</li>
+                <li>🎯 溯源追踪 - 了解想法演化</li>
+                <li>💾 本地存储 - 保护隐私安全</li>
+              </ul>
+              <Divider />
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={() => window.open("./landing.html", "_blank")}
+                  style={{ width: "100%" }}
+                >
+                  🌐 访问官网了解更多
+                </Button>
+                <Button
+                  type="default"
+                  onClick={() => window.open("./app.html", "_blank")}
+                  style={{ width: "100%" }}
+                >
+                  🚀 在新窗口打开应用
+                </Button>
+              </Space>
+              <Divider />
+              <p>
+                <strong>开发者:</strong> 智能便签团队
               </p>
               <p>
-                <strong>联系我们:</strong> support@notes-canvas-app.example.com
+                <strong>技术栈:</strong> React + TypeScript + Vite + Ant Design
+              </p>
+              <p>
+                <strong>数据存储:</strong> 本地 IndexedDB（保护隐私）
               </p>
               <Divider />
-              <p>© 2023 便签画布. 保留所有权利.</p>
+              <p style={{ textAlign: "center", color: "#666" }}>
+                © 2024 智能便签. 专注于思维整理的创新工具.
+              </p>
             </Card>
           </div>
         ),

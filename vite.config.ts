@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -19,6 +20,12 @@ export default defineConfig({
     sourcemap: false, // 生产环境不生成 sourcemap
     minify: "esbuild", // 使用 esbuild 压缩
     rollupOptions: {
+      // 多页面应用配置
+      input: {
+        main: resolve(__dirname, "index.html"),
+        app: resolve(__dirname, "app.html"),
+        landing: resolve(__dirname, "landing.html"),
+      },
       output: {
         // 分包策略，优化加载性能
         manualChunks: {

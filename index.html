@@ -1,16 +1,73 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/icon.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>无限便签</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能便签 - 无限画布上的思维整理工具</title>
+  <link rel="icon" type="image/png" href="./public/icon.png">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f7f6f3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .loading {
+      text-align: center;
+      color: #37352f;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e9e9e7;
+      border-top: 3px solid #2383e2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+  <div class="loading">
+    <div class="spinner"></div>
+    <p>正在加载...</p>
+  </div>
+
+  <script>
+    // 路由分发逻辑
+    function routeToCorrectPage() {
+      const hasVisitedLanding = localStorage.getItem('hasVisitedLanding');
+
+      // 如果是首次访问，跳转到官网
+      if (!hasVisitedLanding) {
+        window.location.href = './landing.html';
+      } else {
+        // 否则跳转到应用
+        window.location.href = './app.html';
+      }
+    }
+
+    // 页面加载完成后立即执行路由
+    document.addEventListener('DOMContentLoaded', routeToCorrectPage);
+  </script>
 </body>
 
 </html>

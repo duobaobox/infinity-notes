@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能便签 - 无限画布上的思维整理工具</title>
+    <meta name="description" content="在无限画布上创建、连接和整理你的想法。支持AI智能汇总，让思维可视化变得简单高效。">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="./public/icon.png">
+
+    <!-- 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #37352f;
+            background: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(55, 53, 47, 0.06);
+            z-index: 1000;
+            padding: 0 24px;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #37352f;
+            text-decoration: none;
+        }
+
+        .logo img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #37352f;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: #2383e2;
+        }
+
+        .cta-button {
+            background: #2383e2;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .cta-button:hover {
+            background: #1a6bb8;
+            transform: translateY(-1px);
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            margin-top: 64px;
+        }
+
+        /* 英雄区域 */
+        .hero {
+            padding: 120px 24px 60px;
+            text-align: center;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: #37352f;
+            letter-spacing: -0.02em;
+        }
+
+        .hero .subtitle {
+            font-size: 28px;
+            color: #6b6b6b;
+            margin-bottom: 48px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 80px;
+        }
+
+        .hero-image {
+            margin-top: 60px;
+            position: relative;
+        }
+
+        .hero-image img {
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(55, 53, 47, 0.06);
+        }
+
+        .primary-button {
+            background: #2383e2;
+            color: white;
+            padding: 16px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .primary-button:hover {
+            background: #1a6bb8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(35, 131, 226, 0.3);
+        }
+
+        .secondary-button {
+            background: transparent;
+            color: #37352f;
+            padding: 16px 32px;
+            border: 2px solid #e9e9e7;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .secondary-button:hover {
+            border-color: #2383e2;
+            color: #2383e2;
+            transform: translateY(-2px);
+        }
+
+        /* 信任标识 */
+        .trusted-by {
+            padding: 60px 24px;
+            background: #f7f6f3;
+            text-align: center;
+        }
+
+        .trusted-by h3 {
+            font-size: 16px;
+            color: #6b6b6b;
+            margin-bottom: 32px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trusted-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 48px;
+            flex-wrap: wrap;
+            opacity: 0.6;
+        }
+
+        .trusted-logos span {
+            font-size: 18px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        /* 功能展示区域 */
+        .features-showcase {
+            padding: 120px 24px;
+            background: #ffffff;
+        }
+
+        .features-showcase-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-showcase h2 {
+            text-align: center;
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #37352f;
+            letter-spacing: -0.02em;
+        }
+
+        .features-showcase .subtitle {
+            text-align: center;
+            font-size: 24px;
+            color: #6b6b6b;
+            margin-bottom: 80px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .feature-section {
+            margin-bottom: 120px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .feature-section:nth-child(even) .feature-content {
+            order: 2;
+        }
+
+        .feature-section:nth-child(even) .feature-image {
+            order: 1;
+        }
+
+        .feature-content h3 {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #37352f;
+            line-height: 1.2;
+        }
+
+        .feature-content p {
+            font-size: 20px;
+            color: #6b6b6b;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .feature-highlights {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-highlights li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 18px;
+            color: #37352f;
+        }
+
+        .feature-highlights li::before {
+            content: "✓";
+            color: #2383e2;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 20px;
+        }
+
+        .feature-image {
+            position: relative;
+        }
+
+        .feature-image img {
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(55, 53, 47, 0.06);
+        }
+
+        .feature-badge {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #2383e2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(35, 131, 226, 0.3);
+        }
+
+        /* 用户评价和统计 */
+        .testimonials {
+            padding: 120px 24px;
+            background: #f7f6f3;
+            text-align: center;
+        }
+
+        .testimonials-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonials h2 {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 60px;
+            color: #37352f;
+            letter-spacing: -0.02em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #2383e2;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            color: #6b6b6b;
+            font-weight: 500;
+        }
+
+        .testimonial-card {
+            background: white;
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .testimonial-content p {
+            font-size: 24px;
+            line-height: 1.6;
+            color: #37352f;
+            margin-bottom: 32px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .author-info {
+            flex: 1;
+        }
+
+        .author-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #37352f;
+            margin-bottom: 4px;
+        }
+
+        .author-title {
+            font-size: 16px;
+            color: #6b6b6b;
+        }
+
+        /* 底部区域 */
+        .footer {
+            background: #37352f;
+            color: #ffffff;
+            padding: 60px 24px 40px;
+            text-align: center;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer h3 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .footer p {
+            color: #a0a0a0;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+
+        .footer-button {
+            background: #2383e2;
+            color: white;
+            padding: 16px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 18px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .footer-button:hover {
+            background: #1a6bb8;
+            transform: translateY(-2px);
+        }
+
+        .footer-bottom {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #4a4a4a;
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 40px;
+            }
+
+            .hero p {
+                font-size: 18px;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .features h2 {
+                font-size: 32px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <img src="./public/icon.png" alt="智能便签">
+                智能便签
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">功能特色</a></li>
+                <li><a href="#about">关于我们</a></li>
+                <li><a href="#contact">联系我们</a></li>
+            </ul>
+            <a href="./app.html" class="cta-button">立即体验</a>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="main-content">
+        <!-- 英雄区域 -->
+        <section class="hero">
+            <div class="hero-container fade-in-up">
+                <h1>思维整理的AI工作空间</h1>
+                <p class="subtitle">在无限画布上创建便签，用连接线构建思维导图，让AI帮你汇总整理想法。一个工具，无限可能。</p>
+                <div class="hero-buttons">
+                    <a href="./app.html" class="primary-button">免费开始使用</a>
+                    <a href="#demo" class="secondary-button">观看演示</a>
+                </div>
+                <div class="hero-image">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwMCIgaGVpZ2h0PSI2MDAiIHZpZXdCb3g9IjAgMCAxMDAwIDYwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEwMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjdGNkYzIi8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjkwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNFOUU5RTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjEyIi8+CjxyZWN0IHg9IjEwMCIgeT0iMTAwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI0ZGRjJDQyIgc3Ryb2tlPSIjRkZEODAwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI4Ii8+CjxyZWN0IHg9IjM1MCIgeT0iMTIwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI0RCRUFGRSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI4Ii8+CjxyZWN0IHg9IjYwMCIgeT0iODAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRkNFN0Y2IiBzdHJva2U9IiNFRDY4QTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPHJlY3QgeD0iMTUwIiB5PSIzMDAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjBGREY0IiBzdHJva2U9IiMxNkE4NEEiIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPHJlY3QgeD0iNDUwIiB5PSIzNDAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRkVGM0Y0IiBzdHJva2U9IiNGOTI2NjAiIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPGxpbmUgeDE9IjMwMCIgeTE9IjE3NSIgeDI9IjM1MCIgeTI9IjE5NSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPGxpbmUgeDE9IjU1MCIgeTE9IjE5NSIgeDI9IjYwMCIgeTI9IjE1NSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPGxpbmUgeDE9IjIwMCIgeTE9IjI1MCIgeDI9IjI1MCIgeTI9IjMwMCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPGxpbmUgeDE9IjQ1MCIgeTE9IjI3MCIgeDI9IjQ1MCIgeTI9IjM0MCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPHRleHQgeD0iNTAwIiB5PSI1MzAiIGZvbnQtZmFtaWx5PSJJbnRlciIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzM3MzUyRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+5peg6ZmQ55S75biD5LiK55qE5oCd57u05pW05LiOPC90ZXh0Pgo8L3N2Zz4K"
+                        alt="智能便签产品截图" />
+                </div>
+            </div>
+        </section>
+
+        <!-- 信任标识 -->
+        <section class="trusted-by">
+            <div class="fade-in-up">
+                <h3>受到创新团队的信赖</h3>
+                <div class="trusted-logos">
+                    <span>创业公司</span>
+                    <span>设计团队</span>
+                    <span>产品经理</span>
+                    <span>研究人员</span>
+                    <span>学生群体</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能展示 -->
+        <section class="features-showcase" id="features">
+            <div class="features-showcase-container">
+                <h2 class="fade-in-up">一个工具，解决所有思维整理需求</h2>
+                <p class="subtitle fade-in-up">从想法捕捉到知识管理，从头脑风暴到项目规划</p>
+
+                <!-- 无限画布功能 -->
+                <div class="feature-section fade-in-up">
+                    <div class="feature-content">
+                        <h3>无限画布，无限可能</h3>
+                        <p>在无边界的画布上自由创作，就像在真实的白板上一样自然。支持无限缩放和平移，让你的思维空间不受任何限制。</p>
+                        <ul class="feature-highlights">
+                            <li>无限滚动的画布空间</li>
+                            <li>流畅的缩放和平移体验</li>
+                            <li>网格背景辅助对齐</li>
+                            <li>多种便签颜色和样式</li>
+                        </ul>
+                    </div>
+                    <div class="feature-image">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjdGNkYzIi8+CjxkZWZzPgo8cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPGF0aCBkPSJNIDIwIDAgTCAwIDAgMCAyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTlFOUU3IiBzdHJva2Utd2lkdGg9IjAuNSIvPgo8L3BhdHRlcm4+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZ3JpZCkiLz4KPHJlY3QgeD0iNTAiIHk9IjUwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRkZGMkNDIiBzdHJva2U9IiNGRkQ4MDAiIHN0cm9rZS13aWR0aD0iMiIgcng9IjYiLz4KPHJlY3QgeD0iMjAwIiB5PSI3MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI4MCIgZmlsbD0iI0RCRUFGRSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI2Ii8+CjxyZWN0IHg9IjMzMCIgeT0iNDAiIHdpZHRoPSIxMjAiIGhlaWdodD0iODAiIGZpbGw9IiNGQ0U3RjYiIHN0cm9rZT0iI0VENjhBNyIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNiIvPgo8cmVjdCB4PSIxMDAiIHk9IjE3MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI4MCIgZmlsbD0iI0YwRkRGNCIgc3Ryb2tlPSIjMTZBODRBIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI2Ii8+CjxyZWN0IHg9IjI4MCIgeT0iMTkwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRkVGM0Y0IiBzdHJva2U9IiNGOTI2NjAiIHN0cm9rZS13aWR0aD0iMiIgcng9IjYiLz4KPC9zdmc+Cg=="
+                            alt="无限画布功能展示" />
+                        <div class="feature-badge">NEW</div>
+                    </div>
+                </div>
+
+                <!-- AI智能汇总功能 -->
+                <div class="feature-section fade-in-up">
+                    <div class="feature-content">
+                        <h3>AI智能汇总，思维升华</h3>
+                        <p>选择多个便签，AI自动帮你提取要点、整理思路、生成摘要。让复杂的信息瞬间变得清晰有序，思维整理从未如此高效。</p>
+                        <ul class="feature-highlights">
+                            <li>智能内容汇总和提取</li>
+                            <li>支持汇总模式和替换模式</li>
+                            <li>自动生成结构化摘要</li>
+                            <li>保持原始便签的关联关系</li>
+                        </ul>
+                    </div>
+                    <div class="feature-image">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjdGNkYzIi8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iI0ZGRjJDQyIgc3Ryb2tlPSIjRkZEODAwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI0Ii8+CjxyZWN0IHg9IjUwIiB5PSIxMzAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNEQkVBRkUiIHN0cm9rZT0iIzIzODNFMiIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNCIvPgo8cmVjdCB4PSI1MCIgeT0iMjEwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRkNFN0Y2IiBzdHJva2U9IiNFRDY4QTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjQiLz4KPHJlY3QgeD0iMzAwIiB5PSIxMDAiIHdpZHRoPSIxNTAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjBGREY0IiBzdHJva2U9IiMxNkE4NEEiIHN0cm9rZS13aWR0aD0iMyIgcng9IjgiLz4KPHBhdGggZD0iTTE3MCA4MEM0MTcwIDgwIDE3MCA4MCAyMjAgMTAwQzI3MCA4MCAyNzAgODAgMzAwIDEyMCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTE3MCAyMDBDMTcwIDIwMCAxNzAgMjAwIDIyMCAxODBDMjcwIDIwMCAyNzAgMjAwIDMwMCAxODAiIHN0cm9rZT0iIzIzODNFMiIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIi8+CjxjaXJjbGUgY3g9IjIyNSIgY3k9IjE1MCIgcj0iMjAiIGZpbGw9IiMyMzgzRTIiLz4KPHN2ZyB4PSIyMTUiIHk9IjE0MCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHN0YXIgY3g9IjEyIiBjeT0iMTIiIHI9IjMiLz4KPC9zdmc+CjwvY2lyY2xlPgo8L3N2Zz4K"
+                            alt="AI智能汇总功能展示" />
+                        <div class="feature-badge">AI</div>
+                    </div>
+                </div>
+
+                <!-- 连接线功能 -->
+                <div class="feature-section fade-in-up">
+                    <div class="feature-content">
+                        <h3>可视化连接，构建知识网络</h3>
+                        <p>用连接线将相关便签串联起来，构建清晰的思维脉络。支持溯源追踪，让你轻松了解每个想法的来龙去脉和演化过程。</p>
+                        <ul class="feature-highlights">
+                            <li>直观的连接线可视化</li>
+                            <li>支持多种连接模式</li>
+                            <li>便签溯源和历史追踪</li>
+                            <li>智能连接点自动对齐</li>
+                        </ul>
+                    </div>
+                    <div class="feature-image">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjdGNkYzIi8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iI0ZGRjJDQyIgc3Ryb2tlPSIjRkZEODAwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI0Ii8+CjxyZWN0IHg9IjIwMCIgeT0iNDAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNEQkVBRkUiIHN0cm9rZT0iIzIzODNFMiIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNCIvPgo8cmVjdCB4PSIzNTAiIHk9IjYwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRkNFN0Y2IiBzdHJva2U9IiNFRDY4QTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjQiLz4KPHJlY3QgeD0iMTAwIiB5PSIxNzAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNGMEZERjQiIHN0cm9rZT0iIzE2QTg0QSIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNCIvPgo8cmVjdCB4PSIzMDAiIHk9IjE5MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iI0ZFRjNGNCIgc3Ryb2tlPSIjRjkyNjYwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI0Ii8+CjxwYXRoIGQ9Ik0xNTAgODBMMjAwIDcwIiBzdHJva2U9IiMyMzgzRTIiIHN0cm9rZS13aWR0aD0iMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KPHBhdGggZD0iTTMwMCA3MEM0MzUwIDkwIiBzdHJva2U9IiMyMzgzRTIiIHN0cm9rZS13aWR0aD0iMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KPHBhdGggZD0iTTE1MCAyMDBMMzAwIDIyMCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiIG1hcmtlci1lbmQ9InVybCgjYXJyb3cpIi8+CjxkZWZzPgo8bWFya2VyIGlkPSJhcnJvdyIgbWFya2VyV2lkdGg9IjEwIiBtYXJrZXJIZWlnaHQ9IjEwIiByZWZYPSI5IiByZWZZPSIzIiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJzdHJva2VXaWR0aCI+CjxwYXRoIGQ9Ik0wLDBMOSwzTDAsMCIgZmlsbD0iIzIzODNFMiIvPgo8L21hcmtlcj4KPC9kZWZzPgo8L3N2Zz4K"
+                            alt="连接线功能展示" />
+                        <div class="feature-badge">PRO</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 用户评价和统计 -->
+        <section class="testimonials" id="testimonials">
+            <div class="testimonials-container">
+                <h2 class="fade-in-up">用户怎么说</h2>
+                <div class="stats-grid fade-in-up">
+                    <div class="stat-item">
+                        <div class="stat-number">10,000+</div>
+                        <div class="stat-label">活跃用户</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">50,000+</div>
+                        <div class="stat-label">创建便签</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">用户满意度</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">4.8/5</div>
+                        <div class="stat-label">用户评分</div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card fade-in-up">
+                    <div class="testimonial-content">
+                        <p>"智能便签彻底改变了我的工作方式。无限画布让我可以自由地整理想法，AI汇总功能帮我快速提取要点。这是我用过最好的思维整理工具。"</p>
+                        <div class="testimonial-author">
+                            <div class="author-info">
+                                <div class="author-name">张小明</div>
+                                <div class="author-title">产品经理 @ 创新科技</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部区域 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <h3>准备好开始了吗？</h3>
+            <p>立即体验智能便签，让思维整理变得简单高效</p>
+            <a href="./app.html" class="footer-button">免费开始使用</a>
+            <div class="footer-bottom">
+                <p>&copy; 2024 智能便签. 专注于思维整理的创新工具.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 滚动动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // 观察所有需要动画的元素
+        document.querySelectorAll('.fade-in-up').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        // 标记用户已访问过官网
+        function markLandingVisited() {
+            localStorage.setItem('hasVisitedLanding', 'true');
+        }
+
+        // 页面加载完成后标记访问
+        document.addEventListener('DOMContentLoaded', markLandingVisited);
+    </script>
+</body>
+
+</html>
