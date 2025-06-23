@@ -1035,17 +1035,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </Space>
               <Divider />
               <p>
-                <strong>开发者:</strong> 智能便签团队
+                <strong>开发者:</strong> duobao
               </p>
               <p>
-                <strong>技术栈:</strong> React + TypeScript + Vite + Ant Design
+                <strong> 联系方式:</strong> 2385561331@qq.com
               </p>
               <p>
                 <strong>数据存储:</strong> 本地 IndexedDB（保护隐私）
               </p>
               <Divider />
               <p style={{ textAlign: "center", color: "#666" }}>
-                © 2024 智能便签. 专注于思维整理的创新工具.
+                © 2025 智能便签. 专注于思维整理的创新工具.
               </p>
             </Card>
           </div>
