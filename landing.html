@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能便签 - 无限画布上的思维整理工具</title>
-    <meta name="description" content="在无限画布上创建、连接和整理你的想法。支持AI智能汇总，让思维可视化变得简单高效。">
+    <title>智能便签 - 思维整理的新方式</title>
+    <meta name="description" content="在无限画布上创建便签，用连接线构建思维导图，让AI帮你汇总整理想法。简单、直观、高效。">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="./public/icon.png">
@@ -13,7 +13,8 @@
     <!-- 字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <style>
         /* 全局样式重置 */
@@ -24,91 +25,99 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #37352f;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.47059;
+            color: #1d1d1f;
             background: #ffffff;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* 导航栏 */
+        /* 导航栏 - 参考Apple风格 */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(55, 53, 47, 0.06);
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            padding: 0 24px;
+            height: 44px;
         }
 
         .nav-container {
-            max-width: 1200px;
+            max-width: 980px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 64px;
+            height: 100%;
+            padding: 0 22px;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 20px;
+            gap: 8px;
+            font-size: 17px;
             font-weight: 600;
-            color: #37352f;
+            color: #1d1d1f;
             text-decoration: none;
+            letter-spacing: -0.022em;
         }
 
         .logo img {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
         }
 
         .nav-links {
             display: flex;
-            gap: 32px;
+            gap: 40px;
             list-style: none;
         }
 
         .nav-links a {
-            color: #37352f;
+            color: #1d1d1f;
             text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            transition: color 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: #2383e2;
+            color: #0066cc;
         }
 
         .cta-button {
-            background: #2383e2;
+            background: #0071e3;
             color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 4px 11px;
+            border-radius: 18px;
             text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
 
         .cta-button:hover {
-            background: #1a6bb8;
-            transform: translateY(-1px);
+            background: #0077ed;
         }
 
         /* 主要内容区域 */
         .main-content {
-            margin-top: 64px;
+            margin-top: 44px;
         }
 
-        /* 英雄区域 */
+        /* 英雄区域 - Mac风格 */
         .hero {
-            padding: 120px 24px 60px;
+            padding: 60px 22px 100px;
             text-align: center;
             background: #ffffff;
             position: relative;
@@ -116,395 +125,660 @@
         }
 
         .hero-container {
-            max-width: 1200px;
+            max-width: 980px;
             margin: 0 auto;
             position: relative;
             z-index: 2;
         }
 
         .hero h1 {
-            font-size: 72px;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 24px;
-            color: #37352f;
-            letter-spacing: -0.02em;
+            font-size: 56px;
+            font-weight: 600;
+            line-height: 1.07143;
+            margin-bottom: 6px;
+            color: #1d1d1f;
+            letter-spacing: -0.005em;
         }
 
         .hero .subtitle {
-            font-size: 28px;
-            color: #6b6b6b;
-            margin-bottom: 48px;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
+            font-size: 27px;
+            color: #86868b;
+            margin-bottom: 19px;
             font-weight: 400;
-            line-height: 1.4;
+            line-height: 1.14815;
+            letter-spacing: 0.007em;
         }
 
-        .hero-buttons {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 80px;
-        }
-
-        .hero-image {
-            margin-top: 60px;
-            position: relative;
-        }
-
-        .hero-image img {
-            width: 100%;
-            max-width: 1000px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(55, 53, 47, 0.06);
-        }
-
-        .primary-button {
-            background: #2383e2;
-            color: white;
-            padding: 16px 32px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            border: none;
-            cursor: pointer;
-        }
-
-        .primary-button:hover {
-            background: #1a6bb8;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(35, 131, 226, 0.3);
-        }
-
-        .secondary-button {
-            background: transparent;
-            color: #37352f;
-            padding: 16px 32px;
-            border: 2px solid #e9e9e7;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.2s ease;
-        }
-
-        .secondary-button:hover {
-            border-color: #2383e2;
-            color: #2383e2;
-            transform: translateY(-2px);
-        }
-
-        /* 信任标识 */
-        .trusted-by {
-            padding: 60px 24px;
-            background: #f7f6f3;
-            text-align: center;
-        }
-
-        .trusted-by h3 {
-            font-size: 16px;
-            color: #6b6b6b;
-            margin-bottom: 32px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .trusted-logos {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 48px;
-            flex-wrap: wrap;
-            opacity: 0.6;
-        }
-
-        .trusted-logos span {
-            font-size: 18px;
-            font-weight: 600;
-            color: #37352f;
-        }
-
-        /* 功能展示区域 */
-        .features-showcase {
-            padding: 120px 24px;
-            background: #ffffff;
-        }
-
-        .features-showcase-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .features-showcase h2 {
-            text-align: center;
-            font-size: 56px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: #37352f;
-            letter-spacing: -0.02em;
-        }
-
-        .features-showcase .subtitle {
-            text-align: center;
-            font-size: 24px;
-            color: #6b6b6b;
-            margin-bottom: 80px;
+        .hero .description {
+            font-size: 19px;
+            color: #1d1d1f;
+            margin-bottom: 40px;
+            font-weight: 400;
+            line-height: 1.42105;
+            letter-spacing: 0.012em;
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
         }
 
-        .feature-section {
-            margin-bottom: 120px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 80px;
-            align-items: center;
-        }
-
-        .feature-section:nth-child(even) .feature-content {
-            order: 2;
-        }
-
-        .feature-section:nth-child(even) .feature-image {
-            order: 1;
-        }
-
-        .feature-content h3 {
-            font-size: 40px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            color: #37352f;
-            line-height: 1.2;
-        }
-
-        .feature-content p {
-            font-size: 20px;
-            color: #6b6b6b;
-            line-height: 1.6;
-            margin-bottom: 32px;
-        }
-
-        .feature-highlights {
-            list-style: none;
-            padding: 0;
-        }
-
-        .feature-highlights li {
+        .hero-buttons {
             display: flex;
-            align-items: center;
-            margin-bottom: 16px;
-            font-size: 18px;
-            color: #37352f;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
         }
 
-        .feature-highlights li::before {
-            content: "✓";
-            color: #2383e2;
-            font-weight: bold;
-            margin-right: 12px;
-            font-size: 20px;
-        }
-
-        .feature-image {
+        .hero-image {
+            margin-top: 40px;
             position: relative;
         }
 
-        .feature-image img {
+        .hero-image img {
             width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(55, 53, 47, 0.06);
+            max-width: 900px;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .feature-badge {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            background: #2383e2;
+        .primary-button {
+            background: #0071e3;
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(35, 131, 226, 0.3);
+            padding: 12px 23px;
+            border-radius: 980px;
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 17px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            letter-spacing: -0.022em;
         }
 
-        /* 用户评价和统计 */
-        .testimonials {
-            padding: 120px 24px;
-            background: #f7f6f3;
-            text-align: center;
+        .primary-button:hover {
+            background: #0077ed;
         }
 
-        .testimonials-container {
-            max-width: 1200px;
+        .secondary-button {
+            background: transparent;
+            color: #0066cc;
+            padding: 12px 23px;
+            border: none;
+            border-radius: 980px;
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 17px;
+            transition: all 0.3s ease;
+            letter-spacing: -0.022em;
+        }
+
+        .secondary-button:hover {
+            text-decoration: underline;
+        }
+
+        /* 功能展示区域 - Mac风格 */
+        .features {
+            padding: 100px 22px;
+            background: #f5f5f7;
+        }
+
+        .features-container {
+            max-width: 980px;
             margin: 0 auto;
         }
 
-        .testimonials h2 {
-            font-size: 56px;
-            font-weight: 700;
-            margin-bottom: 60px;
-            color: #37352f;
-            letter-spacing: -0.02em;
+        .features h2 {
+            text-align: center;
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            letter-spacing: -0.003em;
+            line-height: 1.08349;
         }
 
-        .stats-grid {
+        .features .subtitle {
+            text-align: center;
+            font-size: 21px;
+            color: #86868b;
+            margin-bottom: 60px;
+            font-weight: 400;
+            line-height: 1.381;
+            letter-spacing: 0.011em;
+        }
+
+        .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 40px;
             margin-bottom: 80px;
         }
 
-        .stat-item {
+        .feature-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #0071e3, #005bb5);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1d1d1f;
+            letter-spacing: -0.009em;
+            line-height: 1.16667;
+        }
+
+        .feature-card p {
+            font-size: 17px;
+            color: #86868b;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+        }
+
+        /* 产品展示区域 */
+        .product-showcase {
+            padding: 100px 22px;
+            background: #ffffff;
             text-align: center;
         }
 
-        .stat-number {
-            font-size: 48px;
-            font-weight: 700;
-            color: #2383e2;
-            margin-bottom: 8px;
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 18px;
-            color: #6b6b6b;
-            font-weight: 500;
-        }
-
-        .testimonial-card {
-            background: white;
-            border-radius: 16px;
-            padding: 48px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-            max-width: 800px;
+        .product-showcase-container {
+            max-width: 980px;
             margin: 0 auto;
-            text-align: left;
         }
 
-        .testimonial-content p {
-            font-size: 24px;
-            line-height: 1.6;
-            color: #37352f;
-            margin-bottom: 32px;
+        .product-showcase h2 {
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            letter-spacing: -0.003em;
+            line-height: 1.08349;
+        }
+
+        .product-showcase .subtitle {
+            font-size: 21px;
+            color: #86868b;
+            margin-bottom: 40px;
+            font-weight: 400;
+            line-height: 1.381;
+            letter-spacing: 0.011em;
+        }
+
+        .product-image {
+            margin-top: 40px;
+            position: relative;
+        }
+
+        .product-image img {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 18px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        /* 图片占位符样式 */
+        .image-placeholder {
+            background: #f5f5f7;
+            border: 2px dashed #d1d1d6;
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            color: #86868b;
+            font-size: 17px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .image-placeholder:hover {
+            border-color: #0071e3;
+            background: #f0f8ff;
+        }
+
+        .image-placeholder .placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .image-placeholder .placeholder-text {
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .image-placeholder .placeholder-hint {
+            font-size: 15px;
+            opacity: 0.7;
+        }
+
+        /* 功能详情图片占位符 */
+        .feature-detail-image .image-placeholder {
+            min-height: 250px;
+        }
+
+        /* 英雄区域图片占位符 */
+        .hero-image .image-placeholder {
+            min-height: 400px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 详细功能介绍区域 */
+        .feature-details {
+            padding: 100px 22px;
+            background: #f5f5f7;
+        }
+
+        .feature-details-container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .feature-detail-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            margin-bottom: 120px;
+        }
+
+        .feature-detail-section:nth-child(even) .feature-detail-content {
+            order: 2;
+        }
+
+        .feature-detail-section:nth-child(even) .feature-detail-image {
+            order: 1;
+        }
+
+        .feature-detail-content h3 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1d1d1f;
+            letter-spacing: -0.005em;
+            line-height: 1.125;
+        }
+
+        .feature-detail-content p {
+            font-size: 19px;
+            color: #86868b;
+            line-height: 1.42105;
+            letter-spacing: 0.012em;
+            margin-bottom: 24px;
+        }
+
+        .feature-detail-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-detail-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            font-size: 17px;
+            color: #1d1d1f;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+        }
+
+        .feature-detail-list li::before {
+            content: "✓";
+            color: #0071e3;
+            font-weight: 600;
+            margin-right: 12px;
+            margin-top: 2px;
+            font-size: 16px;
+        }
+
+        .feature-detail-image {
+            position: relative;
+        }
+
+        .feature-detail-image img {
+            width: 100%;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 使用场景区域 */
+        .use-cases {
+            padding: 100px 22px;
+            background: #ffffff;
+        }
+
+        .use-cases-container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .use-cases h2 {
+            text-align: center;
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            letter-spacing: -0.003em;
+            line-height: 1.08349;
+        }
+
+        .use-cases .subtitle {
+            text-align: center;
+            font-size: 21px;
+            color: #86868b;
+            margin-bottom: 60px;
+            font-weight: 400;
+            line-height: 1.381;
+            letter-spacing: 0.011em;
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+        }
+
+        .use-case-card {
+            background: #f5f5f7;
+            border-radius: 18px;
+            padding: 40px 30px;
+            text-align: left;
+            transition: transform 0.3s ease;
+        }
+
+        .use-case-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .use-case-icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #0071e3, #005bb5);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .use-case-card h3 {
+            font-size: 21px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1d1d1f;
+            letter-spacing: -0.016em;
+            line-height: 1.381;
+        }
+
+        .use-case-card p {
+            font-size: 17px;
+            color: #86868b;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+            margin-bottom: 16px;
+        }
+
+        .use-case-example {
+            font-size: 15px;
+            color: #1d1d1f;
+            background: #ffffff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid #0071e3;
             font-style: italic;
         }
 
-        .testimonial-author {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+        /* 开源理念区域 */
+        .open-source {
+            padding: 100px 22px;
+            background: #f5f5f7;
+            text-align: center;
         }
 
-        .author-info {
-            flex: 1;
+        .open-source-container {
+            max-width: 980px;
+            margin: 0 auto;
         }
 
-        .author-name {
-            font-size: 18px;
+        .open-source h2 {
+            font-size: 48px;
             font-weight: 600;
-            color: #37352f;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            letter-spacing: -0.003em;
+            line-height: 1.08349;
         }
 
-        .author-title {
-            font-size: 16px;
-            color: #6b6b6b;
+        .open-source .subtitle {
+            font-size: 21px;
+            color: #86868b;
+            margin-bottom: 40px;
+            font-weight: 400;
+            line-height: 1.381;
+            letter-spacing: 0.011em;
+        }
+
+        .open-source .description {
+            font-size: 17px;
+            color: #1d1d1f;
+            line-height: 1.47059;
+            letter-spacing: -0.022em;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        /* 底部CTA区域 */
+        .cta-section {
+            padding: 100px 22px;
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .cta-container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .cta-section h2 {
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            letter-spacing: -0.003em;
+            line-height: 1.08349;
+        }
+
+        .cta-section .subtitle {
+            font-size: 21px;
+            color: #86868b;
+            margin-bottom: 40px;
+            font-weight: 400;
+            line-height: 1.381;
+            letter-spacing: 0.011em;
         }
 
         /* 底部区域 */
         .footer {
-            background: #37352f;
-            color: #ffffff;
-            padding: 60px 24px 40px;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 40px 22px 20px;
             text-align: center;
         }
 
         .footer-container {
-            max-width: 1200px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
-        .footer h3 {
-            font-size: 32px;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-
         .footer p {
-            color: #a0a0a0;
-            margin-bottom: 40px;
-            font-size: 18px;
+            color: #86868b;
+            font-size: 12px;
+            line-height: 1.33337;
+            letter-spacing: -0.01em;
         }
 
-        .footer-button {
-            background: #2383e2;
-            color: white;
-            padding: 16px 40px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 18px;
-            display: inline-block;
-            transition: all 0.2s ease;
+        /* 响应式设计 - Mac风格 */
+        @media (max-width: 1068px) {
+            .nav-container {
+                padding: 0 22px;
+            }
+
+            .hero,
+            .features,
+            .product-showcase,
+            .open-source,
+            .cta-section {
+                padding-left: 22px;
+                padding-right: 22px;
+            }
         }
 
-        .footer-button:hover {
-            background: #1a6bb8;
-            transform: translateY(-2px);
-        }
-
-        .footer-bottom {
-            margin-top: 60px;
-            padding-top: 40px;
-            border-top: 1px solid #4a4a4a;
-            color: #a0a0a0;
-            font-size: 14px;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
+        @media (max-width: 834px) {
             .nav-links {
                 display: none;
             }
 
             .hero h1 {
                 font-size: 40px;
+                line-height: 1.1;
             }
 
-            .hero p {
-                font-size: 18px;
+            .hero .subtitle {
+                font-size: 21px;
+                line-height: 1.381;
+            }
+
+            .hero .description {
+                font-size: 17px;
+                line-height: 1.47059;
             }
 
             .hero-buttons {
                 flex-direction: column;
                 align-items: center;
+                gap: 12px;
             }
 
-            .features h2 {
+            .features h2,
+            .product-showcase h2,
+            .feature-details h2,
+            .use-cases h2,
+            .open-source h2,
+            .cta-section h2 {
                 font-size: 32px;
+                line-height: 1.125;
             }
 
-            .features-grid {
+            .feature-grid {
                 grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .feature-card {
+                padding: 30px 20px;
+            }
+
+            .feature-detail-section {
+                grid-template-columns: 1fr;
+                gap: 40px;
+                margin-bottom: 80px;
+            }
+
+            .feature-detail-section:nth-child(even) .feature-detail-content {
+                order: 1;
+            }
+
+            .feature-detail-section:nth-child(even) .feature-detail-image {
+                order: 2;
+            }
+
+            .feature-detail-content h3 {
+                font-size: 28px;
+            }
+
+            .use-case-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .use-case-card {
+                padding: 30px 20px;
             }
         }
 
-        /* 动画效果 */
+        @media (max-width: 430px) {
+
+            .hero,
+            .features,
+            .product-showcase,
+            .feature-details,
+            .use-cases,
+            .open-source,
+            .cta-section {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero .subtitle {
+                font-size: 19px;
+            }
+
+            .features h2,
+            .product-showcase h2,
+            .feature-details h2,
+            .use-cases h2,
+            .open-source h2,
+            .cta-section h2 {
+                font-size: 28px;
+            }
+
+            .feature-detail-content h3 {
+                font-size: 24px;
+            }
+
+            .feature-detail-section {
+                margin-bottom: 60px;
+            }
+
+            .use-case-card h3 {
+                font-size: 19px;
+            }
+        }
+
+        /* 动画效果 - Mac风格 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px);
             }
 
             to {
@@ -514,7 +788,19 @@
         }
 
         .fade-in-up {
-            animation: fadeInUp 0.6s ease-out;
+            animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 滚动动画 */
+        .scroll-animate {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .scroll-animate.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -528,11 +814,10 @@
                 智能便签
             </a>
             <ul class="nav-links">
-                <li><a href="#features">功能特色</a></li>
-                <li><a href="#about">关于我们</a></li>
-                <li><a href="#contact">联系我们</a></li>
+                <li><a href="#features">功能</a></li>
+                <li><a href="#open-source">开源</a></li>
             </ul>
-            <a href="./app.html" class="cta-button">立即体验</a>
+            <a href="./app.html" class="cta-button">开始使用</a>
         </div>
     </nav>
 
@@ -540,132 +825,224 @@
     <main class="main-content">
         <!-- 英雄区域 -->
         <section class="hero">
-            <div class="hero-container fade-in-up">
-                <h1>思维整理的AI工作空间</h1>
-                <p class="subtitle">在无限画布上创建便签，用连接线构建思维导图，让AI帮你汇总整理想法。一个工具，无限可能。</p>
+            <div class="hero-container scroll-animate">
+                <h1>智能便签</h1>
+                <p class="subtitle">思维整理的新方式</p>
+                <p class="description">在无限画布上创建便签，用连接线构建思维导图，让AI帮你汇总整理想法。简单、直观、高效。</p>
                 <div class="hero-buttons">
-                    <a href="./app.html" class="primary-button">免费开始使用</a>
-                    <a href="#demo" class="secondary-button">观看演示</a>
+                    <a href="./app.html" class="primary-button">免费使用</a>
+                    <a href="#features" class="secondary-button">了解更多</a>
                 </div>
                 <div class="hero-image">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwMCIgaGVpZ2h0PSI2MDAiIHZpZXdCb3g9IjAgMCAxMDAwIDYwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEwMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjdGNkYzIi8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjkwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNFOUU5RTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjEyIi8+CjxyZWN0IHg9IjEwMCIgeT0iMTAwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI0ZGRjJDQyIgc3Ryb2tlPSIjRkZEODAwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI4Ii8+CjxyZWN0IHg9IjM1MCIgeT0iMTIwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI0RCRUFGRSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI4Ii8+CjxyZWN0IHg9IjYwMCIgeT0iODAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRkNFN0Y2IiBzdHJva2U9IiNFRDY4QTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPHJlY3QgeD0iMTUwIiB5PSIzMDAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjBGREY0IiBzdHJva2U9IiMxNkE4NEEiIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPHJlY3QgeD0iNDUwIiB5PSIzNDAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRkVGM0Y0IiBzdHJva2U9IiNGOTI2NjAiIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPGxpbmUgeDE9IjMwMCIgeTE9IjE3NSIgeDI9IjM1MCIgeTI9IjE5NSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPGxpbmUgeDE9IjU1MCIgeTE9IjE5NSIgeDI9IjYwMCIgeTI9IjE1NSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPGxpbmUgeDE9IjIwMCIgeTE9IjI1MCIgeDI9IjI1MCIgeTI9IjMwMCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPGxpbmUgeDE9IjQ1MCIgeTE9IjI3MCIgeDI9IjQ1MCIgeTI9IjM0MCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiLz4KPHRleHQgeD0iNTAwIiB5PSI1MzAiIGZvbnQtZmFtaWx5PSJJbnRlciIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzM3MzUyRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+5peg6ZmQ55S75biD5LiK55qE5oCd57u05pW05LiOPC90ZXh0Pgo8L3N2Zz4K"
-                        alt="智能便签产品截图" />
-                </div>
-            </div>
-        </section>
-
-        <!-- 信任标识 -->
-        <section class="trusted-by">
-            <div class="fade-in-up">
-                <h3>受到创新团队的信赖</h3>
-                <div class="trusted-logos">
-                    <span>创业公司</span>
-                    <span>设计团队</span>
-                    <span>产品经理</span>
-                    <span>研究人员</span>
-                    <span>学生群体</span>
+                    <!-- 主要产品截图 - 将 hero-main.png 放入 public/images/ 文件夹 -->
+                    <img src="./public/images/001.png" alt="智能便签产品界面" />
                 </div>
             </div>
         </section>
 
         <!-- 功能展示 -->
-        <section class="features-showcase" id="features">
-            <div class="features-showcase-container">
-                <h2 class="fade-in-up">一个工具，解决所有思维整理需求</h2>
-                <p class="subtitle fade-in-up">从想法捕捉到知识管理，从头脑风暴到项目规划</p>
+        <section class="features" id="features">
+            <div class="features-container">
+                <h2 class="scroll-animate">强大功能</h2>
+                <p class="subtitle scroll-animate">专为思维整理而设计</p>
 
-                <!-- 无限画布功能 -->
-                <div class="feature-section fade-in-up">
-                    <div class="feature-content">
-                        <h3>无限画布，无限可能</h3>
-                        <p>在无边界的画布上自由创作，就像在真实的白板上一样自然。支持无限缩放和平移，让你的思维空间不受任何限制。</p>
-                        <ul class="feature-highlights">
-                            <li>无限滚动的画布空间</li>
-                            <li>流畅的缩放和平移体验</li>
-                            <li>网格背景辅助对齐</li>
-                            <li>多种便签颜色和样式</li>
-                        </ul>
+                <div class="feature-grid">
+                    <div class="feature-card scroll-animate">
+                        <div class="feature-icon">📝</div>
+                        <h3>无限画布</h3>
+                        <p>在无边界的画布上自由创作，支持无限缩放和平移，让思维空间不受限制。双击创建便签，拖拽自由移动。</p>
                     </div>
-                    <div class="feature-image">
-                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjdGNkYzIi8+CjxkZWZzPgo8cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPGF0aCBkPSJNIDIwIDAgTCAwIDAgMCAyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTlFOUU3IiBzdHJva2Utd2lkdGg9IjAuNSIvPgo8L3BhdHRlcm4+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZ3JpZCkiLz4KPHJlY3QgeD0iNTAiIHk9IjUwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRkZGMkNDIiBzdHJva2U9IiNGRkQ4MDAiIHN0cm9rZS13aWR0aD0iMiIgcng9IjYiLz4KPHJlY3QgeD0iMjAwIiB5PSI3MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI4MCIgZmlsbD0iI0RCRUFGRSIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI2Ii8+CjxyZWN0IHg9IjMzMCIgeT0iNDAiIHdpZHRoPSIxMjAiIGhlaWdodD0iODAiIGZpbGw9IiNGQ0U3RjYiIHN0cm9rZT0iI0VENjhBNyIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNiIvPgo8cmVjdCB4PSIxMDAiIHk9IjE3MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI4MCIgZmlsbD0iI0YwRkRGNCIgc3Ryb2tlPSIjMTZBODRBIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI2Ii8+CjxyZWN0IHg9IjI4MCIgeT0iMTkwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRkVGM0Y0IiBzdHJva2U9IiNGOTI2NjAiIHN0cm9rZS13aWR0aD0iMiIgcng9IjYiLz4KPC9zdmc+Cg=="
-                            alt="无限画布功能展示" />
-                        <div class="feature-badge">NEW</div>
-                    </div>
-                </div>
 
-                <!-- AI智能汇总功能 -->
-                <div class="feature-section fade-in-up">
-                    <div class="feature-content">
-                        <h3>AI智能汇总，思维升华</h3>
-                        <p>选择多个便签，AI自动帮你提取要点、整理思路、生成摘要。让复杂的信息瞬间变得清晰有序，思维整理从未如此高效。</p>
-                        <ul class="feature-highlights">
-                            <li>智能内容汇总和提取</li>
-                            <li>支持汇总模式和替换模式</li>
-                            <li>自动生成结构化摘要</li>
-                            <li>保持原始便签的关联关系</li>
-                        </ul>
+                    <div class="feature-card scroll-animate">
+                        <div class="feature-icon">🤖</div>
+                        <h3>AI智能汇总</h3>
+                        <p>选择多个便签，AI自动提取要点、整理思路，支持汇总模式和替换模式，让复杂信息瞬间变得清晰有序。</p>
                     </div>
-                    <div class="feature-image">
-                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjdGNkYzIi8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iI0ZGRjJDQyIgc3Ryb2tlPSIjRkZEODAwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI0Ii8+CjxyZWN0IHg9IjUwIiB5PSIxMzAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNEQkVBRkUiIHN0cm9rZT0iIzIzODNFMiIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNCIvPgo8cmVjdCB4PSI1MCIgeT0iMjEwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRkNFN0Y2IiBzdHJva2U9IiNFRDY4QTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjQiLz4KPHJlY3QgeD0iMzAwIiB5PSIxMDAiIHdpZHRoPSIxNTAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjBGREY0IiBzdHJva2U9IiMxNkE4NEEiIHN0cm9rZS13aWR0aD0iMyIgcng9IjgiLz4KPHBhdGggZD0iTTE3MCA4MEM0MTcwIDgwIDE3MCA4MCAyMjAgMTAwQzI3MCA4MCAyNzAgODAgMzAwIDEyMCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTE3MCAyMDBDMTcwIDIwMCAxNzAgMjAwIDIyMCAxODBDMjcwIDIwMCAyNzAgMjAwIDMwMCAxODAiIHN0cm9rZT0iIzIzODNFMiIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIi8+CjxjaXJjbGUgY3g9IjIyNSIgY3k9IjE1MCIgcj0iMjAiIGZpbGw9IiMyMzgzRTIiLz4KPHN2ZyB4PSIyMTUiIHk9IjE0MCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHN0YXIgY3g9IjEyIiBjeT0iMTIiIHI9IjMiLz4KPC9zdmc+CjwvY2lyY2xlPgo8L3N2Zz4K"
-                            alt="AI智能汇总功能展示" />
-                        <div class="feature-badge">AI</div>
-                    </div>
-                </div>
 
-                <!-- 连接线功能 -->
-                <div class="feature-section fade-in-up">
-                    <div class="feature-content">
-                        <h3>可视化连接，构建知识网络</h3>
-                        <p>用连接线将相关便签串联起来，构建清晰的思维脉络。支持溯源追踪，让你轻松了解每个想法的来龙去脉和演化过程。</p>
-                        <ul class="feature-highlights">
-                            <li>直观的连接线可视化</li>
-                            <li>支持多种连接模式</li>
-                            <li>便签溯源和历史追踪</li>
-                            <li>智能连接点自动对齐</li>
-                        </ul>
+                    <div class="feature-card scroll-animate">
+                        <div class="feature-icon">🔗</div>
+                        <h3>可视化连接</h3>
+                        <p>用连接线将相关便签串联，构建清晰的思维脉络，支持溯源追踪，轻松了解想法的演化过程。</p>
                     </div>
-                    <div class="feature-image">
-                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjdGNkYzIi8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iI0ZGRjJDQyIgc3Ryb2tlPSIjRkZEODAwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI0Ii8+CjxyZWN0IHg9IjIwMCIgeT0iNDAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNEQkVBRkUiIHN0cm9rZT0iIzIzODNFMiIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNCIvPgo8cmVjdCB4PSIzNTAiIHk9IjYwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRkNFN0Y2IiBzdHJva2U9IiNFRDY4QTciIHN0cm9rZS13aWR0aD0iMiIgcng9IjQiLz4KPHJlY3QgeD0iMTAwIiB5PSIxNzAiIHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiNGMEZERjQiIHN0cm9rZT0iIzE2QTg0QSIgc3Ryb2tlLXdpZHRoPSIyIiByeD0iNCIvPgo8cmVjdCB4PSIzMDAiIHk9IjE5MCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iI0ZFRjNGNCIgc3Ryb2tlPSIjRjkyNjYwIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSI0Ii8+CjxwYXRoIGQ9Ik0xNTAgODBMMjAwIDcwIiBzdHJva2U9IiMyMzgzRTIiIHN0cm9rZS13aWR0aD0iMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KPHBhdGggZD0iTTMwMCA3MEM0MzUwIDkwIiBzdHJva2U9IiMyMzgzRTIiIHN0cm9rZS13aWR0aD0iMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvdykiLz4KPHBhdGggZD0iTTE1MCAyMDBMMzAwIDIyMCIgc3Ryb2tlPSIjMjM4M0UyIiBzdHJva2Utd2lkdGg9IjMiIG1hcmtlci1lbmQ9InVybCgjYXJyb3cpIi8+CjxkZWZzPgo8bWFya2VyIGlkPSJhcnJvdyIgbWFya2VyV2lkdGg9IjEwIiBtYXJrZXJIZWlnaHQ9IjEwIiByZWZYPSI5IiByZWZZPSIzIiBvcmllbnQ9ImF1dG8iIG1hcmtlclVuaXRzPSJzdHJva2VXaWR0aCI+CjxwYXRoIGQ9Ik0wLDBMOSwzTDAsMCIgZmlsbD0iIzIzODNFMiIvPgo8L21hcmtlcj4KPC9kZWZzPgo8L3N2Zz4K"
-                            alt="连接线功能展示" />
-                        <div class="feature-badge">PRO</div>
+
+                    <div class="feature-card scroll-animate">
+                        <div class="feature-icon">🎨</div>
+                        <h3>多样化样式</h3>
+                        <p>支持多种便签颜色和样式，通过颜色分类管理不同类型的想法，让画布更加直观美观。</p>
+                    </div>
+
+                    <div class="feature-card scroll-animate">
+                        <div class="feature-icon">💾</div>
+                        <h3>本地存储</h3>
+                        <p>所有数据存储在本地浏览器中，无需担心隐私泄露，支持实时保存，永不丢失你的想法。</p>
+                    </div>
+
+                    <div class="feature-card scroll-animate">
+                        <div class="feature-icon">⚡</div>
+                        <h3>快捷操作</h3>
+                        <p>支持丰富的快捷键操作，Ctrl+N创建便签，Ctrl+Z撤销，Ctrl+F搜索，提升操作效率。</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- 用户评价和统计 -->
-        <section class="testimonials" id="testimonials">
-            <div class="testimonials-container">
-                <h2 class="fade-in-up">用户怎么说</h2>
-                <div class="stats-grid fade-in-up">
-                    <div class="stat-item">
-                        <div class="stat-number">10,000+</div>
-                        <div class="stat-label">活跃用户</div>
+        <!-- 产品展示 -->
+        <section class="product-showcase">
+            <div class="product-showcase-container">
+                <h2 class="scroll-animate">简单直观的界面</h2>
+                <p class="subtitle scroll-animate">专注于内容，而非工具本身</p>
+                <div class="product-image">
+                    <!-- 产品界面展示截图 - 将 product-interface.png 放入 public/images/ 文件夹 -->
+                    <img src="./public/images/002.png" alt="产品界面展示" />
+                </div>
+            </div>
+        </section>
+
+        <!-- 详细功能介绍 -->
+        <section class="feature-details">
+            <div class="feature-details-container">
+                <!-- 无限画布详细介绍 -->
+                <div class="feature-detail-section scroll-animate">
+                    <div class="feature-detail-content">
+                        <h3>无限画布，释放创造力</h3>
+                        <p>摆脱传统笔记软件的页面限制，在无边界的画布上自由创作。就像在真实的白板上一样自然，想法可以任意延伸。</p>
+                        <ul class="feature-detail-list">
+                            <li>支持无限缩放，从宏观到细节</li>
+                            <li>流畅的平移操作，探索整个思维空间</li>
+                            <li>网格背景辅助，保持内容整齐对齐</li>
+                            <li>三击任意位置即可创建新便签</li>
+                            <li>拖拽移动，随心所欲调整布局</li>
+                        </ul>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-number">50,000+</div>
-                        <div class="stat-label">创建便签</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">95%</div>
-                        <div class="stat-label">用户满意度</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">4.8/5</div>
-                        <div class="stat-label">用户评分</div>
+                    <div class="feature-detail-image">
+                        <!-- 无限画布功能截图 - 将 infinite-canvas.png 放入 public/images/ 文件夹 -->
+                        <img src="./public/images/003.png" alt="无限画布功能展示" />
                     </div>
                 </div>
 
-                <div class="testimonial-card fade-in-up">
-                    <div class="testimonial-content">
-                        <p>"智能便签彻底改变了我的工作方式。无限画布让我可以自由地整理想法，AI汇总功能帮我快速提取要点。这是我用过最好的思维整理工具。"</p>
-                        <div class="testimonial-author">
-                            <div class="author-info">
-                                <div class="author-name">张小明</div>
-                                <div class="author-title">产品经理 @ 创新科技</div>
-                            </div>
+                <!-- AI智能汇总详细介绍 -->
+                <div class="feature-detail-section scroll-animate">
+                    <div class="feature-detail-content">
+                        <h3>AI智能汇总，思维升华</h3>
+                        <p>选择多个便签，AI自动帮你提取要点、整理思路、生成摘要。让复杂的信息瞬间变得清晰有序，思维整理从未如此高效。</p>
+                        <ul class="feature-detail-list">
+                            <li>智能内容汇总和关键信息提取</li>
+                            <li>支持汇总模式和替换模式两种方式</li>
+                            <li>自动生成结构化摘要和要点</li>
+                            <li>保持原始便签的关联关系</li>
+                            <li>支持多语言内容的智能处理</li>
+                        </ul>
+                    </div>
+                    <div class="feature-detail-image">
+                        <!-- AI智能汇总功能截图 - 将 ai-summary.png 放入 public/images/ 文件夹 -->
+                        <img src="./public/images/001.png" alt="AI智能汇总功能展示" />
+                    </div>
+                </div>
+
+                <!-- 可视化连接详细介绍 -->
+                <div class="feature-detail-section scroll-animate">
+                    <div class="feature-detail-content">
+                        <h3>可视化连接，构建知识网络</h3>
+                        <p>用连接线将相关便签串联起来，构建清晰的思维脉络。支持溯源追踪，让你轻松了解每个想法的来龙去脉和演化过程。</p>
+                        <ul class="feature-detail-list">
+                            <li>直观的连接线可视化展示</li>
+                            <li>支持多种连接模式和样式</li>
+                            <li>便签溯源和历史追踪功能</li>
+                            <li>智能连接点自动对齐</li>
+                            <li>一键显示/隐藏连接关系</li>
+                        </ul>
+                    </div>
+                    <div class="feature-detail-image">
+                        <!-- 可视化连接功能截图 - 将 visual-connections.png 放入 public/images/ 文件夹 -->
+                        <img src="./public/images/005.png" alt="可视化连接功能展示" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使用场景 -->
+        <section class="use-cases">
+            <div class="use-cases-container">
+                <h2 class="scroll-animate">适用场景</h2>
+                <p class="subtitle scroll-animate">无论你是学生、职场人士还是创作者，都能找到适合的使用方式</p>
+
+                <div class="use-case-grid">
+                    <div class="use-case-card scroll-animate">
+                        <div class="use-case-icon">🎓</div>
+                        <h3>学习笔记</h3>
+                        <p>整理课程内容，构建知识体系，用连接线展示概念间的关系，让学习更有条理。</p>
+                        <div class="use-case-example">
+                            "我用它来整理历史课的知识点，把不同朝代的事件用连接线串联起来，复习时一目了然。"
                         </div>
                     </div>
+
+                    <div class="use-case-card scroll-animate">
+                        <div class="use-case-icon">💼</div>
+                        <h3>项目管理</h3>
+                        <p>规划项目流程，分解任务目标，用AI汇总功能生成项目总结和进度报告。</p>
+                        <div class="use-case-example">
+                            "团队头脑风暴时，每个人的想法都记录在便签上，最后用AI汇总出可行的方案。"
+                        </div>
+                    </div>
+
+                    <div class="use-case-card scroll-animate">
+                        <div class="use-case-icon">✍️</div>
+                        <h3>创意写作</h3>
+                        <p>收集灵感片段，构建故事脉络，用可视化连接展示人物关系和情节发展。</p>
+                        <div class="use-case-example">
+                            "写小说时，我把每个角色和情节都做成便签，用连接线理清复杂的故事线。"
+                        </div>
+                    </div>
+
+                    <div class="use-case-card scroll-animate">
+                        <div class="use-case-icon">🔬</div>
+                        <h3>研究分析</h3>
+                        <p>整理文献资料，梳理研究思路，用溯源功能追踪想法的演化过程。</p>
+                        <div class="use-case-example">
+                            "做学术研究时，我把每篇论文的要点记录下来，AI帮我找出研究的关键方向。"
+                        </div>
+                    </div>
+
+                    <div class="use-case-card scroll-animate">
+                        <div class="use-case-icon">🎨</div>
+                        <h3>设计思维</h3>
+                        <p>收集设计灵感，整理用户需求，用画布自由布局，让创意思维无拘无束。</p>
+                        <div class="use-case-example">
+                            "设计产品时，我把用户反馈、竞品分析都放在画布上，一眼就能看出设计重点。"
+                        </div>
+                    </div>
+
+                    <div class="use-case-card scroll-animate">
+                        <div class="use-case-icon">📈</div>
+                        <h3>商业策划</h3>
+                        <p>分析市场机会，制定商业计划，用AI汇总功能快速生成策划方案。</p>
+                        <div class="use-case-example">
+                            "制定营销策略时，我把市场数据、用户画像都整理在画布上，思路特别清晰。"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 开源理念 -->
+        <section class="open-source" id="open-source">
+            <div class="open-source-container">
+                <h2 class="scroll-animate">开源理念</h2>
+                <p class="subtitle scroll-animate">透明、开放、共同进步</p>
+                <p class="description scroll-animate">
+                    我们相信开源的力量。智能便签将完全开源，让每个人都能参与到产品的改进中来。
+                    代码透明，功能可控，数据安全，这是我们对用户的承诺。
+                </p>
+            </div>
+        </section>
+
+        <!-- CTA区域 -->
+        <section class="cta-section">
+            <div class="cta-container">
+                <h2 class="scroll-animate">开始整理你的思维</h2>
+                <p class="subtitle scroll-animate">免费使用，无需注册</p>
+                <div class="hero-buttons">
+                    <a href="./app.html" class="primary-button">立即开始</a>
                 </div>
             </div>
         </section>
@@ -684,7 +1061,7 @@
     </footer>
 
     <script>
-        // 平滑滚动
+        // 平滑滚动 - Mac风格
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -698,26 +1075,22 @@
             });
         });
 
-        // 滚动动画
+        // 滚动动画 - Mac风格
         const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
+            threshold: 0.15,
+            rootMargin: '0px 0px -80px 0px'
         };
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
+                    entry.target.classList.add('visible');
                 }
             });
         }, observerOptions);
 
         // 观察所有需要动画的元素
-        document.querySelectorAll('.fade-in-up').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+        document.querySelectorAll('.scroll-animate').forEach(el => {
             observer.observe(el);
         });
 
@@ -728,6 +1101,22 @@
 
         // 页面加载完成后标记访问
         document.addEventListener('DOMContentLoaded', markLandingVisited);
+
+        // 导航栏滚动效果
+        let lastScrollY = window.scrollY;
+        const navbar = document.querySelector('.navbar');
+
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+
+            if (currentScrollY > 100) {
+                navbar.style.background = 'rgba(255, 255, 255, 0.8)';
+            } else {
+                navbar.style.background = 'rgba(255, 255, 255, 0.72)';
+            }
+
+            lastScrollY = currentScrollY;
+        });
     </script>
 </body>
 
