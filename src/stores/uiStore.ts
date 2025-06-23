@@ -431,7 +431,7 @@ export const useUIStore = create<UIState & UIActions>()(
           gridMajorColor: theme.colors.gridMajorColor,
           noteDefaultColor: theme.colors.noteDefaultColor,
         }; // 直接更新状态，不通过setAppearance避免重复保存
-        set((_state) => ({
+        set(() => ({
           appearance: newAppearance,
         }));
 

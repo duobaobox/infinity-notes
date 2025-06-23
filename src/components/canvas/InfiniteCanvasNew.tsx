@@ -178,6 +178,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 更新画布状态
       updateConnectionLinesImmediate();
     } catch (error) {
+      console.error("清空连接失败:", error);
       // 显示错误消息
       message.error("清空连接失败，请重试");
     }
@@ -402,14 +403,14 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         const result = await aiService.generateStickyNotesStreaming(
           finalPrompt,
           {
-            onNoteStart: (_index, _title) => {
+            onNoteStart: () => {
               // AI便签标题保持固定，不需要更新
             },
-            onContentChunk: (_index, _chunk, fullContent) => {
+            onContentChunk: (_, __, fullContent) => {
               // 更新流式内容
               updateStreamingContent(addedNote.id, fullContent);
             },
-            onNoteComplete: async (_index, noteData) => {
+            onNoteComplete: async (_, noteData) => {
               // 完成流式生成，更新最终内容
               await finishStreamingNote(addedNote.id, noteData.content);
 

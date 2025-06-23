@@ -5,16 +5,16 @@ import type { StickyNote } from "../components/types";
 
 // 创建事件系统来同步数据
 class DatabaseEventEmitter {
-  private listeners: { [key: string]: Function[] } = {};
+  private listeners: { [key: string]: ((...args: unknown[]) => void)[] } = {};
 
-  on(event: string, callback: Function) {
+  on(event: string, callback: (...args: unknown[]) => void) {
     if (!this.listeners[event]) {
       this.listeners[event] = [];
     }
     this.listeners[event].push(callback);
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: (...args: unknown[]) => void) {
     if (this.listeners[event]) {
       this.listeners[event] = this.listeners[event].filter(
         (cb) => cb !== callback
@@ -22,7 +22,7 @@ class DatabaseEventEmitter {
     }
   }
 
-  emit(event: string, ...args: any[]) {
+  emit(event: string, ...args: unknown[]) {
     if (this.listeners[event]) {
       this.listeners[event].forEach((callback) => callback(...args));
     }
@@ -76,7 +76,7 @@ export function isDatabaseInitialized(): boolean {
  */
 export async function initializeDatabase(): Promise<void> {
   const dbService = getDatabaseService();
-  
+
   try {
     await dbService.initialize();
 
@@ -98,7 +98,10 @@ export async function initializeDatabase(): Promise<void> {
         });
       } catch (error) {
         // 如果用户已存在，忽略错误
-        if (!(error instanceof Error) || !error.message.includes("already exists")) {
+        if (
+          !(error instanceof Error) ||
+          !error.message.includes("already exists")
+        ) {
           throw error;
         }
       }

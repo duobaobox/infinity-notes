@@ -186,7 +186,8 @@ const SearchModal: React.FC<SearchModalProps> = ({
             {filteredNotes.length} / {notes.length} 个便签
           </Text>
         </div>
-      }      open={open}
+      }
+      open={open}
       onCancel={onClose}
       footer={null}
       width={700}
@@ -235,7 +236,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
                   onClick={() =>
                     setFilters((prev) => ({
                       ...prev,
-                      dateRange: item.key as any,
+                      dateRange: item.key as "all" | "today" | "week" | "month",
                     }))
                   }
                 >

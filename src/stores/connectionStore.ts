@@ -140,6 +140,7 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
             isVisible: false, // 隐藏插槽容器
           });
         } catch (error) {
+          console.error("清空连接失败:", error);
           // 即使出错也尝试重置状态
           set({
             connectedNotes: [],

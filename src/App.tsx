@@ -11,7 +11,17 @@ import { useStickyNotesStore, useAIStore, useUIStore } from "./stores";
 const { Content } = Layout;
 
 function App() {
-  const canvasRef = useRef<any>(null);
+  const canvasRef = useRef<{
+    createNote: () => void;
+    focusConsole: () => void;
+    saveAllNotes: () => void;
+    undo: () => void;
+    redo: () => void;
+    openSearch: () => void;
+    zoomIn: () => void;
+    zoomOut: () => void;
+    resetZoom: () => void;
+  }>(null);
 
   // 使用全局状态管理
   const {

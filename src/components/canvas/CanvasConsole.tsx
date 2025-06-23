@@ -134,6 +134,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
             await onGenerateWithAI(inputValue);
             setInputValue("");
           } catch (error) {
+            console.error("AI智能处理失败:", error);
             message.error("AI智能处理失败，请检查配置或稍后重试");
           } finally {
             setIsGenerating(false);
@@ -162,6 +163,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
           await onGenerateWithAI(inputValue);
           setInputValue("");
         } catch (error) {
+          console.error("AI生成失败:", error);
           message.error("AI生成失败，请检查配置或稍后重试");
         } finally {
           setIsGenerating(false);

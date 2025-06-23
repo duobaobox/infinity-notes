@@ -183,7 +183,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     if (open) {
       loadDataStats();
     }
-  }, [open]);
+  }, [open, loadDataStats]);
 
   // 当aiConfig变化时，更新AI基础配置表单的值（只在模态框打开时）
   React.useEffect(() => {
@@ -195,7 +195,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       if (hasValidData) {
         try {
           // 只设置基础AI配置，不包括systemPrompt
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { systemPrompt, ...basicAIConfig } = aiConfig;
+          // systemPrompt 被故意忽略，不设置到表单中
           aiForm.setFieldsValue(basicAIConfig);
         } catch (error) {
           console.warn("更新AI表单值失败", error);
@@ -237,6 +239,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         message.error(`连接测试失败: ${result.error}`);
       }
     } catch (error) {
+      console.error("测试连接失败:", error);
       message.error("请先完善配置信息");
     } finally {
       setTestingConnection(false);
@@ -253,6 +256,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         message.success("AI设置保存成功！");
       }
     } catch (error) {
+      console.error("保存提示词配置失败:", error);
       message.error("请检查配置信息");
     }
   };
@@ -271,6 +275,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         message.error("重置失败");
       }
     } catch (error) {
+      console.error("重置提示词失败:", error);
       message.error("重置失败");
     }
   };
@@ -294,12 +299,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         message.success("AI配置保存成功！现在可以配置AI提示词了。");
       }
     } catch (error) {
+      console.error("保存AI配置失败:", error);
       message.error("请检查AI配置信息");
     }
   };
 
   // 处理颜色值转换的辅助函数
-  const convertColorValue = React.useCallback((colorValue: any): string => {
+  const convertColorValue = React.useCallback((colorValue: unknown): string => {
     if (!colorValue) return "#000000";
 
     // 如果是字符串，直接返回
@@ -308,25 +314,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
 
     // 如果是对象（ColorPicker的Color对象）
-    if (typeof colorValue === "object") {
+    if (typeof colorValue === "object" && colorValue !== null) {
       try {
+        const colorObj = colorValue as Record<string, unknown>;
         // 尝试调用toHexString方法
-        if (typeof colorValue.toHexString === "function") {
-          return colorValue.toHexString();
+        if (typeof colorObj.toHexString === "function") {
+          return (colorObj.toHexString as () => string)();
         }
         // 尝试调用toHex方法
-        if (typeof colorValue.toHex === "function") {
-          return colorValue.toHex();
+        if (typeof colorObj.toHex === "function") {
+          return (colorObj.toHex as () => string)();
         }
         // 如果有hex属性
-        if (colorValue.hex) {
-          return colorValue.hex;
+        if (typeof colorObj.hex === "string") {
+          return colorObj.hex;
         }
         // 如果有value属性
-        if (colorValue.value) {
-          return colorValue.value;
+        if (typeof colorObj.value === "string") {
+          return colorObj.value;
         }
-      } catch (error) {}
+      } catch (error) {
+        console.warn("颜色值转换失败:", error);
+      }
     }
 
     return "#000000";
@@ -334,7 +343,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 处理外观设置变化
   const handleAppearanceChange = React.useCallback(
-    (_changedFields: any, allFields: any) => {
+    (
+      _changedFields: Record<string, unknown>,
+      allFields: Record<string, unknown>
+    ) => {
       // 处理ColorPicker的值转换
       const processedFields = { ...allFields };
 
@@ -364,6 +376,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         applyPresetTheme(themeId);
         message.success(`已应用 ${themeName} 主题`);
       } catch (error) {
+        console.error("应用主题失败:", error);
         message.error(`应用主题失败`);
       }
     },
@@ -1063,6 +1076,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     handleExportData,
     handleImportData,
     handleClearAllData,
+    // 表单实例
+    aiForm,
+    promptForm,
+    appearanceForm,
+    // 提示词配置
+    promptConfig.systemPrompt,
   ]);
   return (
     <Modal

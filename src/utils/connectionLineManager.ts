@@ -3,13 +3,40 @@ import type { StickyNote } from "../components/types";
 import { PERFORMANCE_CONSTANTS } from "../components/canvas/CanvasConstants";
 
 // Leader Line类型定义
+interface LeaderLineOptions {
+  color?: string;
+  size?: number;
+  path?: string;
+  startSocket?: string;
+  endSocket?: string;
+  startSocketGravity?: string;
+  endSocketGravity?: string;
+  startPlug?: string;
+  endPlug?: string;
+  outline?: boolean;
+  outlineColor?: string;
+  outlineSize?: number;
+  dash?: {
+    len?: number;
+    gap?: number;
+  };
+  animate?: {
+    duration?: number;
+    timing?: string;
+  };
+}
+
 declare class LeaderLineClass {
-  constructor(start: HTMLElement, end: HTMLElement, options?: any);
+  constructor(
+    start: HTMLElement,
+    end: HTMLElement,
+    options?: LeaderLineOptions
+  );
   position(): void;
   remove(): void;
   show(showEffectName?: string, animOptions?: object): void;
   hide(hideEffectName?: string, animOptions?: object): void;
-  setOptions(options: any): void;
+  setOptions(options: LeaderLineOptions): void;
 }
 
 // 全局Leader Line变量
@@ -29,7 +56,7 @@ const loadLeaderLine = async (): Promise<typeof LeaderLineClass> => {
 
   if (loadPromise) return loadPromise;
 
-  loadPromise = new Promise(async (resolve, reject) => {
+  loadPromise = new Promise((resolve, reject) => {
     try {
       // 检查是否已经在全局作用域中
       if (window.LeaderLine) {
@@ -74,7 +101,7 @@ interface ConnectionLine {
   noteId: string; // 便签ID
   slotIndex?: number; // 插槽索引（普通连接线使用）
   targetNoteId?: string; // 目标便签ID（溯源连接线使用）
-  line: any; // Leader Line实例
+  line: LeaderLineClass; // Leader Line实例
   startElement: HTMLElement; // 起始元素（便签连接点）
   endElement: HTMLElement; // 结束元素（插槽或溯源连接点）
 }
