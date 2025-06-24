@@ -997,10 +997,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="settings-modal-content">
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                智能便签 - 思维整理的AI工作空间
+                无限便签 - 思维整理的AI工作空间
               </Title>
               <p>
-                <strong>智能便签</strong>{" "}
+                <strong>无限便签</strong>{" "}
                 是一款创新的无限画布便签应用，支持AI智能汇总、连接线可视化和溯源追踪，让您自由组织思路和灵感。
               </p>
               <p>版本: 1.0.0</p>
@@ -1045,7 +1045,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </p>
               <Divider />
               <p style={{ textAlign: "center", color: "#666" }}>
-                © 2025 智能便签. 专注于思维整理的创新工具.
+                © 2025 无限便签. 专注于思维整理的创新工具.
               </p>
             </Card>
           </div>
