@@ -421,21 +421,53 @@ export const useStickyNotesStore = create<
 
       switchCanvas: async (canvasId) => {
         try {
-          set({ loading: true, error: null });
+          // 不设置全局loading状态，避免侧边栏闪烁
+          set({ error: null });
 
           const adapter = getDatabaseAdapter();
           adapter.setCurrentCanvas(canvasId);
 
-          // 重新加载便签
-          await get().loadNotes();
+          // 先更新当前画布ID，让UI立即响应
+          set({ currentCanvasId: canvasId });
 
-          set({ currentCanvasId: canvasId, loading: false });
+          // 异步加载便签，使用局部loading状态
+          const loadNotesWithoutGlobalLoading = async () => {
+            try {
+              const loadedNotes = await adapter.getAllNotes();
+
+              // 处理便签数据
+              const processedNotes = loadedNotes.map((note) => ({
+                ...note,
+                connections: note.connections || [],
+                sourceNotes: note.sourceNotes || [],
+              }));
+
+              // 更新便签状态，不影响全局loading
+              set({
+                notes: processedNotes,
+                streamingNotes: new Map(),
+              });
+
+              console.log(
+                `📝 画布 ${canvasId} 便签加载完成:`,
+                processedNotes.length
+              );
+            } catch (error) {
+              console.error("❌ 加载便签失败:", error);
+              // 只在便签加载失败时设置错误，不影响画布切换
+              set({ error: "加载便签失败" });
+            }
+          };
+
+          // 异步执行便签加载，不阻塞画布切换
+          loadNotesWithoutGlobalLoading();
+
           console.log("✅ 画布切换成功:", canvasId);
         } catch (error) {
           const errorMsg =
             error instanceof Error ? error.message : "切换画布失败";
           console.error("❌ 切换画布失败:", error);
-          set({ error: errorMsg, loading: false });
+          set({ error: errorMsg });
           throw error;
         }
       },

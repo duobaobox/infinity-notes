@@ -161,15 +161,28 @@ const Sidebar: React.FC = () => {
       if (canvasId !== selectedCanvas) {
         try {
           console.log("📋 Sidebar: 切换到画布:", canvasId);
+
+          // 立即更新本地选中状态，提供即时反馈
           setSelectedCanvas(canvasId);
-          await switchCanvas(canvasId);
-          // 切换成功后更新便签数量
-          await updateCanvasNotesCount(canvasId);
-          console.log("✅ Sidebar: 画布切换成功");
+
+          // 异步执行画布切换，不阻塞UI
+          switchCanvas(canvasId)
+            .then(() => {
+              // 切换成功后异步更新便签数量
+              updateCanvasNotesCount(canvasId).catch((error) => {
+                console.error("❌ 更新便签数量失败:", error);
+              });
+              console.log("✅ Sidebar: 画布切换成功");
+            })
+            .catch((error) => {
+              console.error("❌ Sidebar: 画布切换失败:", error);
+              message.error("画布切换失败，请稍后重试");
+              // 如果切换失败，恢复之前的选择
+              setSelectedCanvas(selectedCanvas);
+            });
         } catch (error) {
-          console.error("❌ Sidebar: 画布切换失败:", error);
-          message.error("画布切换失败，请稍后重试");
-          // 如果切换失败，恢复之前的选择
+          console.error("❌ Sidebar: 画布选择失败:", error);
+          message.error("画布选择失败");
           setSelectedCanvas(selectedCanvas);
         }
       }
