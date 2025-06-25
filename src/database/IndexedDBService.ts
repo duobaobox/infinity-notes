@@ -493,43 +493,6 @@ export class IndexedDBService {
     }
   }
 
-  async searchNotes(keyword: string, canvasId?: string): Promise<StickyNote[]> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error("数据库未初始化"));
-        return;
-      }
-
-      const transaction = this.db.transaction(["sticky_notes"], "readonly");
-      const store = transaction.objectStore("sticky_notes");
-      const request = store.getAll();
-
-      request.onsuccess = () => {
-        const allNotes: StickyNote[] = request.result;
-        const filteredNotes = allNotes.filter((note) => {
-          const matchesKeyword =
-            note.title.toLowerCase().includes(keyword.toLowerCase()) ||
-            note.content.toLowerCase().includes(keyword.toLowerCase());
-
-          const matchesCanvas = canvasId ? note.canvas_id === canvasId : true;
-
-          return matchesKeyword && matchesCanvas;
-        });
-
-        // 按更新时间排序
-        filteredNotes.sort((a, b) => {
-          const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-          const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-          return dateB - dateA;
-        });
-
-        resolve(filteredNotes);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
-  }
-
   // ===== 数据库管理方法 =====
 
   async reset(): Promise<void> {

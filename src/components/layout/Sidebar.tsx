@@ -29,7 +29,7 @@ const { Title, Text } = Typography;
 const Sidebar: React.FC = () => {
   const siderRef = useRef<HTMLDivElement>(null);
   const [selectedCanvas, setSelectedCanvas] = useState<string>("");
-  const [noteSearchValue, setNoteSearchValue] = useState<string>("");
+
   const [collapsed, setCollapsed] = useState(true);
 
   // 使用全局状态管理获取便签数据和画布数据
@@ -48,15 +48,18 @@ const Sidebar: React.FC = () => {
   const { openSettingsModal, setSidebarCollapsed } = useUIStore();
 
   // 处理侧边栏折叠状态变化
-  const handleCollapseChange = useCallback((value: boolean) => {
-    setCollapsed(value);
-    // 同步更新 UI Store 状态
-    setSidebarCollapsed(value);
-    // 延迟更新连接线位置，等待侧边栏动画完成
-    setTimeout(() => {
-      connectionLineManager.updateConnectionPositionsImmediate();
-    }, 300);
-  }, [setSidebarCollapsed]);
+  const handleCollapseChange = useCallback(
+    (value: boolean) => {
+      setCollapsed(value);
+      // 同步更新 UI Store 状态
+      setSidebarCollapsed(value);
+      // 延迟更新连接线位置，等待侧边栏动画完成
+      setTimeout(() => {
+        connectionLineManager.updateConnectionPositionsImmediate();
+      }, 300);
+    },
+    [setSidebarCollapsed]
+  );
 
   // 切换侧边栏显示状态
   const toggleSidebar = useCallback(() => {
@@ -115,12 +118,8 @@ const Sidebar: React.FC = () => {
   //   };
   // }, [loadCanvases]);
 
-  // 过滤便签数据（根据搜索关键词）
-  const filteredNotes = stickyNotes.filter(
-    (note: { title: string; content: string }) =>
-      note.title.toLowerCase().includes(noteSearchValue.toLowerCase()) ||
-      note.content.toLowerCase().includes(noteSearchValue.toLowerCase())
-  );
+  // 直接使用便签数据，不再过滤
+  const filteredNotes = stickyNotes;
 
   // 颜色映射函数
   const getColorHex = (color: string): string => {
@@ -161,15 +160,20 @@ const Sidebar: React.FC = () => {
   };
 
   // 将便签转换为显示格式
-  const displayNotes = filteredNotes.map((note: { id: string; title: string; color: string; updatedAt: Date }) => ({
-    id: note.id,
-    title: note.title || "无标题便签",
-    color: getColorHex(note.color),
-    lastEdited: formatDate(note.updatedAt.toISOString()),
-  }));
+  const displayNotes = filteredNotes.map(
+    (note: { id: string; title: string; color: string; updatedAt: Date }) => ({
+      id: note.id,
+      title: note.title || "无标题便签",
+      color: getColorHex(note.color),
+      lastEdited: formatDate(note.updatedAt.toISOString()),
+    })
+  );
 
-  const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);  return (
-    <>      {/* 侧边栏触发按钮 - 与侧边栏紧贴，风格统一 */}
+  const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);
+  return (
+    <>
+      {" "}
+      {/* 侧边栏触发按钮 - 与侧边栏紧贴，风格统一 */}
       <div
         onClick={toggleSidebar}
         aria-label={collapsed ? "打开侧边栏" : "关闭侧边栏"}
@@ -189,7 +193,9 @@ const Sidebar: React.FC = () => {
           justifyContent: "center",
           cursor: "pointer",
           transition: "all 0.3s ease",
-          boxShadow: collapsed ? "2px 0 8px rgba(0, 0, 0, 0.08)" : "2px 0 4px rgba(0, 0, 0, 0.04)", // 展开时保持轻微阴影增加层次感
+          boxShadow: collapsed
+            ? "2px 0 8px rgba(0, 0, 0, 0.08)"
+            : "2px 0 4px rgba(0, 0, 0, 0.04)", // 展开时保持轻微阴影增加层次感
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "#f8f9fa";
@@ -200,7 +206,7 @@ const Sidebar: React.FC = () => {
           e.currentTarget.style.borderColor = "#e0e0e0";
         }}
       >
-        <MenuOutlined 
+        <MenuOutlined
           style={{
             fontSize: "14px",
             color: "#666",
@@ -208,7 +214,6 @@ const Sidebar: React.FC = () => {
           }}
         />
       </div>
-
       {/* 悬浮侧边栏 */}
       <div
         style={{
@@ -295,7 +300,7 @@ const Sidebar: React.FC = () => {
                     backgroundColor: "rgba(0, 0, 0, 0.02)",
                   }}
                   onClick={() => {
-                    openSettingsModal('general');
+                    openSettingsModal("general");
                   }}
                 >
                   <span style={{ marginLeft: "8px" }}>设置</span>
@@ -496,20 +501,7 @@ const Sidebar: React.FC = () => {
                     {currentCanvas?.name || ""}中的便签
                   </Title>
                 </div>
-                <Input
-                  placeholder="搜索便签..."
-                  prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-                  value={noteSearchValue}
-                  onChange={(e) => setNoteSearchValue(e.target.value)}
-                  style={{
-                    borderRadius: "6px",
-                    background: "rgba(255,255,255,0.8)", // Slightly transparent input
-                    borderColor: "rgba(0,0,0,0.1)",
-                  }}
-                  size="middle"
-                />
               </div>
-
               <div
                 style={{
                   flex: 1,
@@ -524,11 +516,13 @@ const Sidebar: React.FC = () => {
                   locale={{
                     emptyText: notesError
                       ? `加载失败: ${notesError}`
-                      : noteSearchValue
-                      ? "未找到匹配的便签"
                       : "暂无便签，双击画布或点击工具栏创建",
                   }}
-                  renderItem={(note: { color: string; title: string; lastEdited: string }) => (
+                  renderItem={(note: {
+                    color: string;
+                    title: string;
+                    lastEdited: string;
+                  }) => (
                     <List.Item
                       style={{
                         padding: "6px 12px",
@@ -588,7 +582,8 @@ const Sidebar: React.FC = () => {
                     </List.Item>
                   )}
                 />
-              </div>            </div>
+              </div>{" "}
+            </div>
           </Splitter.Panel>
         </Splitter>
 

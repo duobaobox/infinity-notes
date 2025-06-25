@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   Tabs,
@@ -40,6 +40,7 @@ import {
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import { useUIStore, PRESET_THEMES } from "../../stores/uiStore";
+import { useStickyNotesStore, useAIStore } from "../../stores";
 import { useDatabase } from "../../database";
 import "./SettingsModal.css";
 
@@ -58,8 +59,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   defaultActiveTab = "appearance",
 }) => {
   const [aiForm] = Form.useForm();
-  const [promptForm] = Form.useForm();
   const [appearanceForm] = Form.useForm();
+  // 只有在可以配置提示词时才创建promptForm
+  const [promptForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
 
   // 数据管理相关状态
@@ -89,6 +91,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const { exportData, importData, getStorageInfo, getStats, clearDatabase } =
     useDatabase();
 
+  // 便签状态管理
+  const { loadNotes } = useStickyNotesStore();
+
+  // AI状态管理
+  const {
+    saveConfig: saveAIStoreConfig,
+    savePromptConfig: saveAIStorePromptConfig,
+  } = useAIStore();
+
   // AI提示词设置Hook
   const {
     promptConfig,
@@ -99,7 +110,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   } = useAIPromptSettings(hasValidConfig);
 
   // 加载数据统计信息
-  const loadDataStats = async () => {
+  const loadDataStats = useCallback(async () => {
     try {
       setLoadingStats(true);
       const [stats, storageInfo] = await Promise.all([
@@ -119,7 +130,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     } finally {
       setLoadingStats(false);
     }
-  };
+  }, []); // 空依赖数组，因为函数内部没有依赖外部变量
 
   // 导出数据
   const handleExportData = async () => {
@@ -151,7 +162,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       }
 
       await importData(file);
-      message.success("数据导入成功！页面将自动刷新以显示最新数据。");
+
+      // 重新加载便签数据到状态管理中
+      await loadNotes();
+
+      message.success("数据导入成功！便签已更新显示。");
 
       // 重新加载统计信息
       await loadDataStats();
@@ -169,6 +184,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleClearAllData = async () => {
     try {
       await clearDatabase();
+
+      // 重新加载便签数据到状态管理中
+      await loadNotes();
+
       message.success("所有数据已清空！");
       // 重新加载统计信息
       await loadDataStats();
@@ -250,10 +269,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSavePromptConfig = async () => {
     try {
       const values = await promptForm.validateFields();
-      const success = await savePromptConfig(values);
 
-      if (success) {
-        message.success("AI设置保存成功！");
+      // 同时保存到两个状态管理系统
+      const [hookSuccess, storeSuccess] = await Promise.all([
+        savePromptConfig(values),
+        saveAIStorePromptConfig(values),
+      ]);
+
+      if (hookSuccess && storeSuccess) {
+        message.success("AI提示词设置保存成功！现在可以使用自定义提示词了。");
+      } else {
+        throw new Error("配置保存失败");
       }
     } catch (error) {
       console.error("保存提示词配置失败:", error);
@@ -266,10 +292,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     // 直接设置为空字符串（正常对话模式）
     promptForm.setFieldsValue({ systemPrompt: "" });
 
-    // 保存配置
+    // 保存配置到两个状态管理系统
     try {
-      const success = await savePromptConfig({ systemPrompt: "" });
-      if (success) {
+      const [hookSuccess, storeSuccess] = await Promise.all([
+        savePromptConfig({ systemPrompt: "" }),
+        saveAIStorePromptConfig({ systemPrompt: "" }),
+      ]);
+
+      if (hookSuccess && storeSuccess) {
         message.success("已重置为正常对话模式");
       } else {
         message.error("重置失败");
@@ -293,10 +323,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         systemPrompt: aiConfig.systemPrompt, // 保留现有的systemPrompt
       };
 
-      const success = await saveAIConfig(configToSave);
+      // 同时保存到两个状态管理系统
+      const [hookSuccess, storeSuccess] = await Promise.all([
+        saveAIConfig(configToSave),
+        saveAIStoreConfig(configToSave),
+      ]);
 
-      if (success) {
-        message.success("AI配置保存成功！现在可以配置AI提示词了。");
+      if (hookSuccess && storeSuccess) {
+        message.success("AI配置保存成功！现在可以使用AI功能了。");
+      } else {
+        throw new Error("配置保存失败");
       }
     } catch (error) {
       console.error("保存AI配置失败:", error);

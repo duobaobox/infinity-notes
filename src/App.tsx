@@ -17,7 +17,7 @@ function App() {
     saveAllNotes: () => void;
     undo: () => void;
     redo: () => void;
-    openSearch: () => void;
+
     zoomIn: () => void;
     zoomOut: () => void;
     resetZoom: () => void;
@@ -90,9 +90,7 @@ function App() {
     onRedo: () => {
       canvasRef.current?.redo?.();
     },
-    onSearch: () => {
-      canvasRef.current?.openSearch?.();
-    },
+
     onZoomIn: () => {
       canvasRef.current?.zoomIn?.();
     },

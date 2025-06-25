@@ -8,7 +8,7 @@ interface KeyboardShortcuts {
   onUndo?: () => void;
   onRedo?: () => void;
   onSelectAll?: () => void;
-  onSearch?: () => void;
+
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onResetZoom?: () => void;
@@ -94,12 +94,6 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcuts) => {
           }
         },
 
-        // 搜索 - Ctrl/Cmd + F
-        [`${isModifierPressed && key.toLowerCase() === "f"}`]: () => {
-          event.preventDefault();
-          shortcuts.onSearch?.();
-        },
-
         // 缩放
         [`${isModifierPressed && key === "="}`]: () => {
           event.preventDefault();
@@ -145,7 +139,7 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcuts) => {
       undo: `${modifier} + Z`,
       redo: `${modifier} + Shift + Z`,
       selectAll: `${modifier} + A`,
-      search: `${modifier} + F`,
+
       zoomIn: `${modifier} + =`,
       zoomOut: `${modifier} + -`,
       resetZoom: `${modifier} + 0`,

@@ -4,7 +4,6 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
   RedoOutlined,
-  SearchOutlined,
 } from "@ant-design/icons";
 
 interface CanvasToolbarProps {
@@ -13,7 +12,7 @@ interface CanvasToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
-  onSearch?: () => void; // 搜索功能
+
   minScale: number;
   maxScale: number;
 }
@@ -25,20 +24,16 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     onZoomIn,
     onZoomOut,
     onReset,
-    onSearch,
+
     minScale,
     maxScale,
-  }) => {    return (
-      <div className="canvas-toolbar">        <Space size={8} direction="vertical" align="center"> {/* 改为垂直方向 */}          <Tooltip title="搜索便签 (Ctrl/⌘ + F)" placement="left"> {/* 调整tooltip位置为左边 */}
-            <Button
-              icon={<SearchOutlined />}
-              onClick={onSearch}
-              type="text"
-              shape="circle"
-              className="first-button" // 添加特殊样式类
-            />
-          </Tooltip>
-
+  }) => {
+    return (
+      <div className="canvas-toolbar">
+        {" "}
+        <Space size={8} direction="vertical" align="center">
+          {" "}
+          {/* 改为垂直方向 */}{" "}
           <Tooltip title="放大画布 (Ctrl/⌘ +)" placement="left">
             <Button
               icon={<ZoomInOutlined />}
@@ -65,10 +60,9 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
-          
           {/* 分隔线 */}
           <div className="toolbar-divider" />
-            <span
+          <span
             className={`zoom-indicator ${zoomAnimating ? "zoom-change" : ""}`}
           >
             <div>{Math.round(scale * 100)}</div>

@@ -5,21 +5,8 @@ import { IndexedDBUISettingsStorage } from "../database/IndexedDBUISettingsStora
 
 // 模态框状态接口
 export interface ModalState {
-  searchModalOpen: boolean;
   settingsModalOpen: boolean;
   settingsDefaultTab: string;
-}
-
-// 搜索状态接口
-export interface SearchState {
-  searchQuery: string;
-  searchResults: Array<{
-    id: string;
-    title: string;
-    content: string;
-    relevance: number;
-  }>;
-  isSearching: boolean;
 }
 
 // 主题状态接口
@@ -44,9 +31,6 @@ export interface AppearanceState {
 export interface UIState {
   // 模态框状态
   modals: ModalState;
-
-  // 搜索状态
-  search: SearchState;
 
   // 主题状态
   theme: ThemeState;
@@ -73,16 +57,8 @@ export interface UIActions {
   // 应用外观设置到DOM
   applyAppearanceSettings: () => void;
   // 模态框操作
-  openSearchModal: () => void;
-  closeSearchModal: () => void;
   openSettingsModal: (defaultTab?: string) => void;
   closeSettingsModal: () => void;
-
-  // 搜索操作
-  setSearchQuery: (query: string) => void;
-  setSearchResults: (results: SearchState["searchResults"]) => void;
-  setSearching: (isSearching: boolean) => void;
-  clearSearch: () => void;
 
   // 主题操作
   setTheme: (theme: ThemeState["theme"]) => void;
@@ -246,14 +222,8 @@ export const useUIStore = create<UIState & UIActions>()(
     subscribeWithSelector((set, get) => ({
       // 初始状态
       modals: {
-        searchModalOpen: false,
         settingsModalOpen: false,
         settingsDefaultTab: "appearance",
-      },
-      search: {
-        searchQuery: "",
-        searchResults: [],
-        isSearching: false,
       },
       theme: {
         theme: "auto",
@@ -277,19 +247,6 @@ export const useUIStore = create<UIState & UIActions>()(
       shortcutsEnabled: true,
 
       // 模态框操作
-      openSearchModal: () => {
-        set((state) => ({
-          modals: { ...state.modals, searchModalOpen: true },
-        }));
-      },
-
-      closeSearchModal: () => {
-        set((state) => ({
-          modals: { ...state.modals, searchModalOpen: false },
-        }));
-        // 关闭时清空搜索
-        get().clearSearch();
-      },
 
       openSettingsModal: (defaultTab = "appearance") => {
         set((state) => ({
@@ -304,36 +261,6 @@ export const useUIStore = create<UIState & UIActions>()(
       closeSettingsModal: () => {
         set((state) => ({
           modals: { ...state.modals, settingsModalOpen: false },
-        }));
-      },
-
-      // 搜索操作
-      setSearchQuery: (query) => {
-        set((state) => ({
-          search: { ...state.search, searchQuery: query },
-        }));
-      },
-
-      setSearchResults: (results) => {
-        set((state) => ({
-          search: { ...state.search, searchResults: results },
-        }));
-      },
-
-      setSearching: (isSearching) => {
-        set((state) => ({
-          search: { ...state.search, isSearching },
-        }));
-      },
-
-      clearSearch: () => {
-        set((state) => ({
-          search: {
-            ...state.search,
-            searchQuery: "",
-            searchResults: [],
-            isSearching: false,
-          },
         }));
       },
 

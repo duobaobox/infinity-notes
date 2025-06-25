@@ -270,25 +270,6 @@ export class IndexedDBAdapter {
   }
 
   /**
-   * 搜索便签
-   */
-  async searchNotes(keyword: string): Promise<ComponentStickyNote[]> {
-    if (!this.currentCanvasId) {
-      await this.ensureDefaultCanvas();
-    }
-
-    if (!this.currentCanvasId) {
-      return [];
-    }
-
-    const dbNotes = await this.dbService.searchNotes(
-      keyword,
-      this.currentCanvasId
-    );
-    return dbNotes.map((note) => this.dbNoteToComponentNote(note));
-  }
-
-  /**
    * 获取便签统计信息
    */
   async getNotesStats(): Promise<{

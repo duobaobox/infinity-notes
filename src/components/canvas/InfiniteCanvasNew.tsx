@@ -14,7 +14,7 @@ import CanvasGrid from "./CanvasGrid";
 import CanvasConsole from "./CanvasConsole";
 import StickyNoteSlots from "./StickyNoteSlots";
 import StickyNote from "../notes/StickyNote";
-import SearchModal from "../modals/SearchModal";
+
 import SettingsModal from "../modals/SettingsModal";
 import { CANVAS_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
 import type { StickyNote as StickyNoteType, SourceNoteContent } from "../types";
@@ -42,7 +42,6 @@ const shouldIgnoreCanvasEvent = (target: HTMLElement): boolean => {
       target.closest(".canvas-toolbar") ||
       target.closest(".ant-modal") || // Ant Design 模态框
       target.closest(".settings-modal") || // 设置模态框
-      target.closest(".search-modal") || // 搜索模态框
       target.closest(".ant-drawer") || // Ant Design 抽屉
       target.closest(".ant-popover") || // Ant Design 弹出框
       target.closest(".ant-tooltip") || // Ant Design 提示框
@@ -96,7 +95,6 @@ interface InfiniteCanvasRef {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
-  openSearch: () => void;
 }
 
 const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
@@ -144,9 +142,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
   // 全局状态管理 - UI状态
   const {
-    modals: { searchModalOpen, settingsModalOpen, settingsDefaultTab },
-    openSearchModal,
-    closeSearchModal,
+    modals: { settingsModalOpen, settingsDefaultTab },
     openSettingsModal,
     closeSettingsModal,
   } = useUIStore();
@@ -784,7 +780,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     zoomIn: () => zoomIn(),
     zoomOut: () => zoomOut(),
     resetZoom: () => resetView(),
-    openSearch: () => openSearchModal(),
   }));
 
   return (
@@ -810,7 +805,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           zoomOut(center.x, center.y);
         }}
         onReset={resetView}
-        onSearch={openSearchModal}
         minScale={CANVAS_CONSTANTS.MIN_SCALE}
         maxScale={CANVAS_CONSTANTS.MAX_SCALE}
       />
@@ -861,18 +855,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         onGenerateWithAI={handleAIGenerate}
         isAIGenerating={isAIGenerating}
         onOpenAISettings={() => openSettingsModal("ai")}
-      />
-
-      {/* 搜索模态框 */}
-      <SearchModal
-        open={searchModalOpen}
-        onClose={closeSearchModal}
-        notes={stickyNotes}
-        onSelectNote={(note) => {
-          // TODO: 实现便签定位功能
-          message.info(`定位到便签: ${note.title}`);
-          closeSearchModal();
-        }}
       />
 
       {/* 设置模态框 */}
