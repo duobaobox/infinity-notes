@@ -138,11 +138,12 @@
   border-radius: 8px 8px 0 0;
   /* 更新flex布局 */
   flex-wrap: nowrap;
+  gap: 8px; /* 标题区域和按钮区域之间的间距 */
 }
 
 .sticky-note-title {
   margin: 0;
-  font-size: 16px; /* 增大字号 */
+  font-size: 14px; /* 调整为更合适的字号 */
   font-weight: 600;
   color: #374151;
   cursor: pointer;
@@ -152,10 +153,12 @@
   /* transition: background-color 0.2s ease; */
   /* 不再使用flex: 1 */
   min-width: 0;
+  max-width: 100%; /* 允许占满可用空间 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   /* 移除文本居中 */
+  box-sizing: border-box; /* 包含padding */
 }
 
 /* 移除悬停效果，因为背景色现在是永久显示的 */
@@ -169,6 +172,8 @@
   opacity: 0; /* 恢复透明度控制，默认隐藏 */
   /* 移除透明度过渡动画，让控件显示更直接 */
   /* transition: opacity 0.2s ease; */
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  min-width: 56px; /* 减少按钮区域占用空间，给标题更多空间 */
 }
 
 /* 恢复鼠标悬浮才显示控件的规则 */
@@ -650,7 +655,7 @@
 
 .sticky-note-title-input {
   margin: 0;
-  font-size: 16px; /* 增大字号，与标题一致 */
+  font-size: 14px; /* 调整为与标题一致的字号 */
   font-weight: 600;
   color: #374151;
   background: rgba(255, 255, 255, 0.8);
@@ -660,8 +665,10 @@
   outline: none;
   font-family: inherit;
   /* 移除文本居中 */
-  width: auto;
+  width: 100%; /* 占满可用空间 */
   min-width: 100px;
+  max-width: calc(100% - 10px); /* 确保不会超出容器 */
+  box-sizing: border-box; /* 包含padding和border */
 }
 
 .sticky-note-title-input:focus {

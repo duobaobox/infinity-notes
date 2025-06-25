@@ -181,6 +181,79 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
+        /* Mac窗口样式 - 为主要产品截图添加Mac头部 */
+        .mac-window {
+            position: relative;
+            display: inline-block;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            border: 1px solid #e5e5e5;
+        }
+
+        .mac-window-header {
+            background: #f8f8f8;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid #e5e5e5;
+            position: relative;
+        }
+
+        .mac-window-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .mac-control-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mac-control-button.close {
+            background: #ff5f57;
+        }
+
+        .mac-control-button.minimize {
+            background: #ffbd2e;
+        }
+
+        .mac-control-button.maximize {
+            background: #28ca42;
+        }
+
+        .mac-control-button:hover {
+            transform: scale(1.1);
+        }
+
+        /* Mac窗口标题 */
+        .mac-window-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            font-weight: 400;
+            color: #6b6b6b;
+            letter-spacing: -0.01em;
+        }
+
+        .mac-window img {
+            width: 100%;
+            display: block;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
         .primary-button {
             background: #0071e3;
             color: white;
@@ -684,6 +757,21 @@
                 gap: 12px;
             }
 
+            /* Mac窗口在平板设备上的适配 */
+            .mac-window-header {
+                height: 36px;
+                padding: 0 12px;
+            }
+
+            .mac-control-button {
+                width: 10px;
+                height: 10px;
+            }
+
+            .mac-window-title {
+                font-size: 12px;
+            }
+
             .features h2,
             .product-showcase h2,
             .feature-details h2,
@@ -750,6 +838,25 @@
 
             .hero .subtitle {
                 font-size: 19px;
+            }
+
+            /* Mac窗口在手机设备上的适配 */
+            .mac-window-header {
+                height: 32px;
+                padding: 0 10px;
+            }
+
+            .mac-control-button {
+                width: 8px;
+                height: 8px;
+            }
+
+            .mac-window-controls {
+                gap: 6px;
+            }
+
+            .mac-window-title {
+                font-size: 11px;
             }
 
             .features h2,
@@ -834,8 +941,18 @@
                     <a href="#features" class="secondary-button">了解更多</a>
                 </div>
                 <div class="hero-image">
-                    <!-- 主要产品截图 - 将 hero-main.png 放入 public/images/ 文件夹 -->
-                    <img src="./public/images/001.png" alt="无限便签产品界面" />
+                    <!-- 主要产品截图 - Mac窗口样式 -->
+                    <div class="mac-window">
+                        <div class="mac-window-header">
+                            <div class="mac-window-controls">
+                                <div class="mac-control-button close"></div>
+                                <div class="mac-control-button minimize"></div>
+                                <div class="mac-control-button maximize"></div>
+                            </div>
+                            <div class="mac-window-title">无限便签</div>
+                        </div>
+                        <img src="./public/images/001.png" alt="无限便签产品界面" />
+                    </div>
                 </div>
             </div>
         </section>

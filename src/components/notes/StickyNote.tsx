@@ -945,12 +945,19 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [isEditing, isTitleEditing, stopEditing, stopTitleEditing]);
 
-  // 计算标题背景宽度
-  const getTitleBackgroundWidth = () => {
-    const titleText = localTitle || "便签";
-    const avgCharWidth = 10;
-    const padding = 10;
-    return Math.max(60, titleText.length * avgCharWidth + padding) + "px";
+  // 计算标题的最大可用宽度 - 用于限制显示区域
+  const getTitleMaxWidth = () => {
+    const controlsWidth = 56; // 按钮区域宽度
+    const headerPadding = 32; // 头部左右padding (16px * 2)
+    const gap = 8; // 标题和按钮之间的间距
+    const margin = 10; // 额外边距
+
+    // 动态计算最大可用宽度
+    const noteWidth = noteRef.current?.offsetWidth || 200;
+    const maxAvailableWidth =
+      noteWidth - controlsWidth - headerPadding - gap - margin;
+
+    return Math.max(maxAvailableWidth, 80) + "px"; // 至少80px
   };
 
   // 计算实际使用的位置和尺寸（拖动时用临时值，否则用数据库值）
@@ -1201,7 +1208,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }
           >
             <div
-              style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}
+              style={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "flex-start",
+                minWidth: 0, // 允许flex子元素收缩
+                overflow: "hidden", // 防止内容溢出
+              }}
             >
               {isTitleEditing ? (
                 <input
@@ -1215,6 +1228,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   onCompositionEnd={handleTitleCompositionEnd}
                   className="sticky-note-title-input"
                   placeholder="便签标题"
+                  style={{
+                    width: "100%", // 占满可用空间
+                    maxWidth: getTitleMaxWidth(), // 与显示模式保持一致
+                  }}
                 />
               ) : (
                 <h3
@@ -1243,12 +1260,16 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   title={
                     isEditing || isTitleEditing
                       ? "点击退出编辑模式"
-                      : "双击编辑标题"
+                      : `${localTitle || "便签"}${
+                          (localTitle || "便签").length > 15
+                            ? " (双击编辑标题)"
+                            : " - 双击编辑标题"
+                        }`
                   }
                   style={{
                     backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
-                    width: getTitleBackgroundWidth(),
-                    display: "inline-block",
+                    maxWidth: getTitleMaxWidth(), // 使用计算的最大宽度
+                    display: "inline-block", // 恢复为inline-block
                     cursor: isEditing || isTitleEditing ? "pointer" : "text",
                   }}
                 >
