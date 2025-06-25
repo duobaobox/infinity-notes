@@ -516,6 +516,34 @@ export function useCanvas() {
     []
   );
 
+  // 更新画布
+  const updateCanvas = useCallback(
+    async (
+      canvasId: string,
+      updates: { name?: string; description?: string }
+    ) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 检查数据库是否已初始化
+        if (!isDatabaseInitialized()) {
+          throw new Error("数据库未初始化");
+        }
+
+        const adapter = getDatabaseAdapter();
+        await adapter.updateCanvas(canvasId, updates);
+      } catch (err) {
+        console.error("更新画布失败:", err);
+        setError(err instanceof Error ? err.message : "更新画布失败");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   // 切换画布
   const switchCanvas = useCallback(async (canvasId: string) => {
     try {
@@ -540,6 +568,7 @@ export function useCanvas() {
     error,
     getUserCanvases,
     createCanvas,
+    updateCanvas,
     switchCanvas,
   };
 }

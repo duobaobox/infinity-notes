@@ -240,7 +240,7 @@ export const useUIStore = create<UIState & UIActions>()(
         fontFamily: "system-ui",
       },
 
-      sidebarCollapsed: false,
+      sidebarCollapsed: true, // 默认折叠，将从持久化存储中加载
       sidebarVisible: true,
       toolbarVisible: true,
       globalLoading: false,
@@ -447,6 +447,21 @@ export const useUIStore = create<UIState & UIActions>()(
 
       setSidebarCollapsed: (collapsed) => {
         set({ sidebarCollapsed: collapsed });
+
+        // 自动保存UI布局设置
+        if (typeof window !== "undefined") {
+          const currentState = get();
+          const layoutSettings = {
+            sidebarCollapsed: collapsed,
+            sidebarVisible: currentState.sidebarVisible,
+            toolbarVisible: currentState.toolbarVisible,
+          };
+          IndexedDBUISettingsStorage.saveUILayoutSettings(layoutSettings).catch(
+            (error) => {
+              console.error("保存UI布局设置失败:", error);
+            }
+          );
+        }
       },
 
       // 工具栏操作
@@ -497,6 +512,18 @@ export const useUIStore = create<UIState & UIActions>()(
               set((state) => ({
                 appearance: { ...state.appearance, ...savedAppearance },
               }));
+            }
+
+            // 从IndexedDB加载UI布局设置
+            const savedLayout =
+              await IndexedDBUISettingsStorage.loadUILayoutSettings();
+            if (savedLayout) {
+              set((state) => ({
+                sidebarCollapsed: savedLayout.sidebarCollapsed,
+                sidebarVisible: savedLayout.sidebarVisible,
+                toolbarVisible: savedLayout.toolbarVisible,
+              }));
+              console.log("✅ UI布局设置加载成功:", savedLayout);
             }
 
             // 应用外观设置到DOM

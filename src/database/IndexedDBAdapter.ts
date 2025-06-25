@@ -21,6 +21,9 @@ export class IndexedDBAdapter {
    * 设置当前画布
    */
   setCurrentCanvas(canvasId: string): void {
+    console.log(
+      `🎨 IndexedDBAdapter: 设置当前画布 ${this.currentCanvasId} -> ${canvasId}`
+    );
     this.currentCanvasId = canvasId;
     // 更新画布访问时间
     this.dbService.updateCanvasLastAccessed(canvasId);
@@ -123,6 +126,16 @@ export class IndexedDBAdapter {
    */
   async ensureDefaultCanvas(): Promise<string> {
     try {
+      // 如果已经有当前画布，直接返回
+      if (this.currentCanvasId) {
+        console.log(
+          `🎨 IndexedDBAdapter: 已有当前画布 ${this.currentCanvasId}，直接返回`
+        );
+        return this.currentCanvasId;
+      }
+
+      console.log("🎨 IndexedDBAdapter: 没有当前画布，开始确保默认画布存在");
+
       // 尝试获取用户的画布
       const canvases = await this.dbService.getCanvasesByUser(
         this.currentUserId
@@ -185,10 +198,13 @@ export class IndexedDBAdapter {
     await this.ensureDefaultCanvas();
 
     if (!this.currentCanvasId) {
+      console.log("📝 IndexedDBAdapter: 没有当前画布，返回空便签列表");
       return [];
     }
 
+    console.log(`📝 IndexedDBAdapter: 获取画布 ${this.currentCanvasId} 的便签`);
     const dbNotes = await this.dbService.getNotesByCanvas(this.currentCanvasId);
+    console.log(`📝 IndexedDBAdapter: 找到 ${dbNotes.length} 个便签`);
     return dbNotes.map((note) => this.dbNoteToComponentNote(note));
   }
 
@@ -198,7 +214,9 @@ export class IndexedDBAdapter {
   async addNote(note: ComponentStickyNote): Promise<void> {
     await this.ensureDefaultCanvas();
 
+    console.log(`📝 IndexedDBAdapter: 添加便签到画布 ${this.currentCanvasId}`);
     const dbNote = this.componentNoteToDbNote(note);
+    console.log(`📝 IndexedDBAdapter: 便签数据 canvas_id=${dbNote.canvas_id}`);
     await this.dbService.createNote(dbNote);
   }
 
@@ -253,6 +271,16 @@ export class IndexedDBAdapter {
   }
 
   /**
+   * 更新画布信息
+   */
+  async updateCanvas(
+    canvasId: string,
+    updates: { name?: string; description?: string }
+  ): Promise<void> {
+    await this.dbService.updateCanvas(canvasId, updates);
+  }
+
+  /**
    * 删除画布
    */
   async deleteCanvas(canvasId: string): Promise<void> {
@@ -266,6 +294,19 @@ export class IndexedDBAdapter {
     // 如果删除的是当前画布，清除当前画布ID
     if (this.currentCanvasId === canvasId) {
       this.currentCanvasId = null;
+    }
+  }
+
+  /**
+   * 获取指定画布的便签数量
+   */
+  async getCanvasNotesCount(canvasId: string): Promise<number> {
+    try {
+      const notes = await this.dbService.getNotesByCanvas(canvasId);
+      return notes.length;
+    } catch (error) {
+      console.error(`❌ 获取画布 ${canvasId} 便签数量失败:`, error);
+      return 0;
     }
   }
 

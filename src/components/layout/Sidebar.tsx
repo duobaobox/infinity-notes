@@ -8,6 +8,8 @@ import {
   Space,
   Splitter,
   message,
+  Modal,
+  Popconfirm,
 } from "antd";
 import {
   SearchOutlined,
@@ -17,6 +19,7 @@ import {
   ClockCircleOutlined,
   SettingOutlined,
   MenuOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import type { Canvas } from "../../database";
 import { connectionLineManager } from "../../utils/connectionLineManager";
@@ -26,11 +29,47 @@ import { useStickyNotesStore, useUIStore } from "../../stores";
 
 const { Title, Text } = Typography;
 
+// 添加样式到head
+const addCanvasListStyles = () => {
+  const styleId = "canvas-list-styles";
+  if (document.getElementById(styleId)) return;
+
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    .canvas-list-item {
+      transition: background-color 0.2s ease !important;
+    }
+
+    .canvas-list-item:hover {
+      background-color: rgba(0, 0, 0, 0.02) !important;
+    }
+
+    .canvas-list-item.selected:hover {
+      background-color: rgba(22, 119, 255, 0.12) !important;
+    }
+
+    .canvas-list-item:hover .canvas-delete-btn {
+      opacity: 1 !important;
+    }
+
+    .canvas-delete-btn:hover {
+      color: #ff4d4f !important;
+      background-color: rgba(255, 77, 79, 0.1) !important;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
 const Sidebar: React.FC = () => {
   const siderRef = useRef<HTMLDivElement>(null);
   const [selectedCanvas, setSelectedCanvas] = useState<string>("");
-
-  const [collapsed, setCollapsed] = useState(true);
+  const [editingCanvasId, setEditingCanvasId] = useState<string>("");
+  const [editingCanvasName, setEditingCanvasName] = useState<string>("");
+  const editInputRef = useRef<any>(null);
+  const [canvasNotesCounts, setCanvasNotesCounts] = useState<
+    Record<string, number>
+  >({});
 
   // 使用全局状态管理获取便签数据和画布数据
   const {
@@ -42,16 +81,22 @@ const Sidebar: React.FC = () => {
     currentCanvasId,
     switchCanvas,
     createCanvas,
+    updateCanvas,
+    deleteCanvas,
+    getCanvasNotesCount,
   } = useStickyNotesStore();
 
   // 使用UI状态管理
-  const { openSettingsModal, setSidebarCollapsed } = useUIStore();
+  const {
+    openSettingsModal,
+    setSidebarCollapsed,
+    sidebarCollapsed: collapsed,
+  } = useUIStore();
 
   // 处理侧边栏折叠状态变化
   const handleCollapseChange = useCallback(
     (value: boolean) => {
-      setCollapsed(value);
-      // 同步更新 UI Store 状态
+      // 直接更新 UI Store 状态（会自动保存到持久化存储）
       setSidebarCollapsed(value);
       // 延迟更新连接线位置，等待侧边栏动画完成
       setTimeout(() => {
@@ -78,6 +123,38 @@ const Sidebar: React.FC = () => {
     }
   }, [canvasList.length, createCanvas]);
 
+  // 删除画布
+  const handleDeleteCanvas = useCallback(
+    async (canvasId: string, canvasName: string) => {
+      try {
+        await deleteCanvas(canvasId);
+        message.success(`画布"${canvasName}"删除成功`);
+      } catch (error) {
+        console.error("❌ Sidebar: 删除画布失败:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "删除画布失败";
+        message.error(errorMessage);
+      }
+    },
+    [deleteCanvas]
+  );
+
+  // 更新特定画布的便签数量
+  const updateCanvasNotesCount = useCallback(
+    async (canvasId: string) => {
+      try {
+        const count = await getCanvasNotesCount(canvasId);
+        setCanvasNotesCounts((prev) => ({
+          ...prev,
+          [canvasId]: count,
+        }));
+      } catch (error) {
+        console.error(`❌ 更新画布 ${canvasId} 便签数量失败:`, error);
+      }
+    },
+    [getCanvasNotesCount]
+  );
+
   // 处理画布选择
   const handleCanvasSelect = useCallback(
     async (canvasId: string) => {
@@ -86,6 +163,8 @@ const Sidebar: React.FC = () => {
           console.log("📋 Sidebar: 切换到画布:", canvasId);
           setSelectedCanvas(canvasId);
           await switchCanvas(canvasId);
+          // 切换成功后更新便签数量
+          await updateCanvasNotesCount(canvasId);
           console.log("✅ Sidebar: 画布切换成功");
         } catch (error) {
           console.error("❌ Sidebar: 画布切换失败:", error);
@@ -95,8 +174,87 @@ const Sidebar: React.FC = () => {
         }
       }
     },
-    [selectedCanvas, switchCanvas]
+    [selectedCanvas, switchCanvas, updateCanvasNotesCount]
   );
+
+  // 开始编辑画布名称
+  const startEditingCanvasName = useCallback((canvas: Canvas) => {
+    setEditingCanvasId(canvas.id);
+    setEditingCanvasName(canvas.name);
+    // 延迟聚焦，确保输入框已渲染
+    setTimeout(() => {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    }, 0);
+  }, []);
+
+  // 完成编辑画布名称
+  const finishEditingCanvasName = useCallback(async () => {
+    if (editingCanvasId && editingCanvasName.trim()) {
+      try {
+        await updateCanvas(editingCanvasId, { name: editingCanvasName.trim() });
+        message.success("画布名称修改成功");
+      } catch (error) {
+        console.error("❌ Sidebar: 修改画布名称失败:", error);
+        message.error("修改画布名称失败");
+      }
+    }
+    setEditingCanvasId("");
+    setEditingCanvasName("");
+  }, [editingCanvasId, editingCanvasName, updateCanvas]);
+
+  // 取消编辑画布名称
+  const cancelEditingCanvasName = useCallback(() => {
+    setEditingCanvasId("");
+    setEditingCanvasName("");
+  }, []);
+
+  // 处理编辑输入框的键盘事件
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finishEditingCanvasName();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancelEditingCanvasName();
+      }
+    },
+    [finishEditingCanvasName, cancelEditingCanvasName]
+  );
+
+  // 加载所有画布的便签数量
+  useEffect(() => {
+    const loadCanvasNotesCounts = async () => {
+      if (canvasList.length > 0) {
+        const counts: Record<string, number> = {};
+        for (const canvas of canvasList) {
+          try {
+            const count = await getCanvasNotesCount(canvas.id);
+            counts[canvas.id] = count;
+          } catch (error) {
+            console.error(`❌ 获取画布 ${canvas.id} 便签数量失败:`, error);
+            counts[canvas.id] = 0;
+          }
+        }
+        setCanvasNotesCounts(counts);
+      }
+    };
+
+    loadCanvasNotesCounts();
+  }, [canvasList, getCanvasNotesCount]);
+
+  // 监听当前画布便签数量变化
+  useEffect(() => {
+    if (currentCanvasId) {
+      updateCanvasNotesCount(currentCanvasId);
+    }
+  }, [stickyNotes.length, currentCanvasId, updateCanvasNotesCount]);
+
+  // 组件初始化 - 添加样式和设置当前选中的画布
+  useEffect(() => {
+    addCanvasListStyles();
+  }, []);
 
   // 组件初始化 - 设置当前选中的画布
   useEffect(() => {
@@ -154,11 +312,6 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  // 计算每个画布的便签数量
-  const getCanvasNotesCount = (canvasId: string): number => {
-    return canvasId === selectedCanvas ? stickyNotes.length : 0;
-  };
-
   // 将便签转换为显示格式
   const displayNotes = filteredNotes.map(
     (note: { id: string; title: string; color: string; updatedAt: Date }) => ({
@@ -175,6 +328,8 @@ const Sidebar: React.FC = () => {
       {" "}
       {/* 侧边栏触发按钮 - 与侧边栏紧贴，风格统一 */}
       <div
+        className="sidebar-toggle"
+        data-sidebar="true"
         onClick={toggleSidebar}
         aria-label={collapsed ? "打开侧边栏" : "关闭侧边栏"}
         style={{
@@ -216,6 +371,8 @@ const Sidebar: React.FC = () => {
       </div>
       {/* 悬浮侧边栏 */}
       <div
+        className="sidebar"
+        data-sidebar="true"
         style={{
           position: "fixed",
           top: 0,
@@ -368,10 +525,13 @@ const Sidebar: React.FC = () => {
                   }}
                   renderItem={(canvas: Canvas) => {
                     const isSelected = selectedCanvas === canvas.id;
-                    const notesCount = getCanvasNotesCount(canvas.id);
+                    const notesCount = canvasNotesCounts[canvas.id] || 0;
 
                     return (
                       <List.Item
+                        className={`canvas-list-item ${
+                          isSelected ? "selected" : ""
+                        }`}
                         style={{
                           padding: "10px 12px",
                           cursor: "pointer",
@@ -381,7 +541,7 @@ const Sidebar: React.FC = () => {
                           borderRadius: "8px", // Slightly more rounded
                           marginBottom: "4px",
                           border: "none",
-                          transition: "all 0.2s ease",
+                          position: "relative",
                         }}
                         onClick={() => handleCanvasSelect(canvas.id)}
                       >
@@ -407,18 +567,52 @@ const Sidebar: React.FC = () => {
                           <div style={{ flex: 1, overflow: "hidden" }}>
                             {/* 画布名称和星标 */}
                             <div
-                              style={{ display: "flex", alignItems: "center" }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "100%",
+                              }}
                             >
-                              <Text
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: isSelected ? 600 : 500,
-                                  color: "#262626",
-                                }}
-                                ellipsis={{ tooltip: canvas.name }}
-                              >
-                                {canvas.name}
-                              </Text>
+                              {editingCanvasId === canvas.id ? (
+                                <Input
+                                  ref={editInputRef}
+                                  value={editingCanvasName}
+                                  onChange={(e) =>
+                                    setEditingCanvasName(e.target.value)
+                                  }
+                                  onKeyDown={handleEditKeyDown}
+                                  onBlur={finishEditingCanvasName}
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: isSelected ? 600 : 500,
+                                    height: "22px",
+                                    padding: "0 4px",
+                                    border: "1px solid #1677ff",
+                                    borderRadius: "4px",
+                                    flex: 1,
+                                  }}
+                                  size="small"
+                                />
+                              ) : (
+                                <Text
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: isSelected ? 600 : 500,
+                                    color: "#262626",
+                                    cursor: "pointer",
+                                    flex: 1,
+                                  }}
+                                  ellipsis={{
+                                    tooltip: `${canvas.name} - 双击编辑名称`,
+                                  }}
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditingCanvasName(canvas);
+                                  }}
+                                >
+                                  {canvas.name}
+                                </Text>
+                              )}
                               {canvas.is_default && (
                                 <StarFilled
                                   style={{
@@ -429,6 +623,49 @@ const Sidebar: React.FC = () => {
                                 />
                               )}
                             </div>
+
+                            {/* 悬浮删除按钮 - 绝对定位，只在悬浮时显示 */}
+                            {!canvas.is_default && canvasList.length > 1 && (
+                              <Popconfirm
+                                title="删除画布"
+                                description={`确定要删除画布"${canvas.name}"吗？删除后画布中的所有便签也将被删除，此操作不可恢复。`}
+                                onConfirm={(e) => {
+                                  e?.stopPropagation();
+                                  handleDeleteCanvas(canvas.id, canvas.name);
+                                }}
+                                onCancel={(e) => e?.stopPropagation()}
+                                okText="确定删除"
+                                cancelText="取消"
+                                okType="danger"
+                                placement="topRight"
+                              >
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<CloseOutlined />}
+                                  className="canvas-delete-btn"
+                                  style={{
+                                    position: "absolute",
+                                    top: "8px",
+                                    right: "8px",
+                                    width: "20px",
+                                    height: "20px",
+                                    padding: "0",
+                                    minWidth: "20px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#8c8c8c",
+                                    fontSize: "12px",
+                                    opacity: "0",
+                                    transition: "all 0.2s ease",
+                                    borderRadius: "4px",
+                                    zIndex: 10,
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </Popconfirm>
+                            )}
 
                             {/* 便签数量和时间信息 */}
                             <Text

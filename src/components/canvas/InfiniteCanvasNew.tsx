@@ -36,17 +36,19 @@ import { getAIService } from "../../services/ai/aiService";
 // 检查是否应该忽略画布事件的工具函数
 const shouldIgnoreCanvasEvent = (target: HTMLElement): boolean => {
   return !!(
-    (
-      target.closest(".sticky-note") ||
-      target.closest(".canvas-console") ||
-      target.closest(".canvas-toolbar") ||
-      target.closest(".ant-modal") || // Ant Design 模态框
-      target.closest(".settings-modal") || // 设置模态框
-      target.closest(".ant-drawer") || // Ant Design 抽屉
-      target.closest(".ant-popover") || // Ant Design 弹出框
-      target.closest(".ant-tooltip") || // Ant Design 提示框
-      target.closest(".ant-dropdown")
-    ) // Ant Design 下拉菜单
+    target.closest(".sticky-note") ||
+    target.closest(".canvas-console") ||
+    target.closest(".canvas-toolbar") ||
+    target.closest(".ant-modal") || // Ant Design 模态框
+    target.closest(".settings-modal") || // 设置模态框
+    target.closest(".ant-drawer") || // Ant Design 抽屉
+    target.closest(".ant-popover") || // Ant Design 弹出框
+    target.closest(".ant-tooltip") || // Ant Design 提示框
+    target.closest(".ant-dropdown") || // Ant Design 下拉菜单
+    target.closest(".sidebar") || // 侧边栏
+    target.closest("[data-sidebar]") || // 侧边栏数据属性
+    // 检查是否在侧边栏的固定位置范围内（左侧220px）
+    (target.getBoundingClientRect && target.getBoundingClientRect().left < 220)
   );
 };
 

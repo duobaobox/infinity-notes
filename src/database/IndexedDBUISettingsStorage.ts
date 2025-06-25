@@ -18,12 +18,18 @@ export interface AppearanceSettings {
   fontFamily: string;
 }
 
+export interface UILayoutSettings {
+  sidebarCollapsed: boolean;
+  sidebarVisible: boolean;
+  toolbarVisible: boolean;
+}
+
 // 定义存储在 IndexedDB 中的 UI 设置结构
 interface StoredUISettings {
   id: string;
   user_id: string;
-  setting_type: "theme" | "appearance";
-  settings: ThemeSettings | AppearanceSettings;
+  setting_type: "theme" | "appearance" | "layout";
+  settings: ThemeSettings | AppearanceSettings | UILayoutSettings;
   updated_at: string;
 }
 
@@ -132,6 +138,56 @@ export class IndexedDBUISettingsStorage {
     }
   }
 
+  // 保存UI布局设置
+  static async saveUILayoutSettings(settings: UILayoutSettings): Promise<void> {
+    console.log("💾 IndexedDBUISettingsStorage: 保存UI布局设置", settings);
+
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const settingsToSave: StoredUISettings = {
+        id: "ui-layout",
+        user_id: this.DEFAULT_USER_ID,
+        setting_type: "layout",
+        settings,
+        updated_at: new Date().toISOString(),
+      };
+
+      await db.putItem("ui_settings", settingsToSave);
+      console.log("💾 IndexedDBUISettingsStorage: UI布局设置保存成功");
+    } catch (error) {
+      console.error("保存UI布局设置失败:", error);
+      throw new Error("保存UI布局设置失败");
+    }
+  }
+
+  // 加载UI布局设置
+  static async loadUILayoutSettings(): Promise<UILayoutSettings | null> {
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const result = await db.getItem<StoredUISettings>(
+        "ui_settings",
+        "ui-layout"
+      );
+
+      if (result && result.setting_type === "layout") {
+        console.log(
+          "💾 IndexedDBUISettingsStorage: UI布局设置加载成功",
+          result.settings
+        );
+        return result.settings as UILayoutSettings;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("加载UI布局设置失败:", error);
+      return null;
+    }
+  }
+
   // 清除所有UI设置
   static async clearAllSettings(): Promise<void> {
     try {
@@ -141,6 +197,7 @@ export class IndexedDBUISettingsStorage {
       await Promise.all([
         db.deleteItem("ui_settings", "ui-theme"),
         db.deleteItem("ui_settings", "ui-appearance"),
+        db.deleteItem("ui_settings", "ui-layout"),
       ]);
 
       console.log("💾 IndexedDBUISettingsStorage: 所有UI设置已清除");

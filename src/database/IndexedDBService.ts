@@ -317,6 +317,33 @@ export class IndexedDBService {
     }
   }
 
+  /**
+   * 更新画布信息
+   * @param id 画布ID
+   * @param updates 要更新的画布数据
+   * @returns 更新后的画布对象，如果画布不存在则返回null
+   */
+  async updateCanvas(
+    id: string,
+    updates: Partial<Omit<Canvas, "id" | "created_at" | "updated_at">>
+  ): Promise<Canvas | null> {
+    const existingCanvas = await this.getCanvasById(id);
+    if (!existingCanvas) {
+      return null;
+    }
+
+    const updatedCanvas: Canvas = {
+      ...existingCanvas,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    await this.performTransaction("canvases", "readwrite", (store) =>
+      store.put(updatedCanvas)
+    );
+    return updatedCanvas;
+  }
+
   async deleteCanvas(id: string): Promise<boolean> {
     try {
       // 先删除画布下的所有便签

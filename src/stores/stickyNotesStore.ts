@@ -54,11 +54,19 @@ export interface StickyNotesActions {
   loadCanvases: () => Promise<void>;
   switchCanvas: (canvasId: string) => Promise<void>;
   createCanvas: (name: string, description?: string) => Promise<string>;
+  updateCanvas: (
+    canvasId: string,
+    updates: { name?: string; description?: string }
+  ) => Promise<void>;
+  deleteCanvas: (canvasId: string) => Promise<void>;
 
   // 状态管理
   setLoading: (loading: boolean) => void;
   setOperationLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+
+  // 便签统计
+  getCanvasNotesCount: (canvasId: string) => Promise<number>;
 
   // 初始化
   initialize: () => Promise<void>;
@@ -421,7 +429,7 @@ export const useStickyNotesStore = create<
           // 重新加载便签
           await get().loadNotes();
 
-          set({ currentCanvasId: canvasId });
+          set({ currentCanvasId: canvasId, loading: false });
           console.log("✅ 画布切换成功:", canvasId);
         } catch (error) {
           const errorMsg =
@@ -453,10 +461,87 @@ export const useStickyNotesStore = create<
         }
       },
 
+      updateCanvas: async (canvasId, updates) => {
+        try {
+          set({ canvasLoading: true, error: null });
+
+          const adapter = getDatabaseAdapter();
+          await adapter.updateCanvas(canvasId, updates);
+
+          // 重新加载画布列表以更新UI
+          await get().loadCanvases();
+
+          console.log("✅ 画布更新成功:", canvasId, updates);
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : "更新画布失败";
+          console.error("❌ 更新画布失败:", error);
+          set({ error: errorMsg, canvasLoading: false });
+          throw error;
+        } finally {
+          set({ canvasLoading: false });
+        }
+      },
+
+      deleteCanvas: async (canvasId) => {
+        try {
+          set({ canvasLoading: true, error: null });
+
+          const adapter = getDatabaseAdapter();
+          const canvases = get().canvases;
+
+          // 检查是否是默认画布
+          const canvasToDelete = canvases.find((c) => c.id === canvasId);
+          if (canvasToDelete?.is_default) {
+            throw new Error("默认画布不能被删除");
+          }
+
+          // 检查是否是最后一个画布
+          if (canvases.length <= 1) {
+            throw new Error("至少需要保留一个画布");
+          }
+
+          await adapter.deleteCanvas(canvasId);
+
+          // 如果删除的是当前画布，切换到第一个可用画布
+          const currentCanvasId = get().currentCanvasId;
+          if (currentCanvasId === canvasId) {
+            const remainingCanvases = canvases.filter((c) => c.id !== canvasId);
+            if (remainingCanvases.length > 0) {
+              await get().switchCanvas(remainingCanvases[0].id);
+            }
+          }
+
+          // 重新加载画布列表
+          await get().loadCanvases();
+
+          console.log("✅ 画布删除成功:", canvasId);
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : "删除画布失败";
+          console.error("❌ 删除画布失败:", error);
+          set({ error: errorMsg, canvasLoading: false });
+          throw error;
+        } finally {
+          set({ canvasLoading: false });
+        }
+      },
+
       // 状态管理
       setLoading: (loading) => set({ loading }),
       setOperationLoading: (operationLoading) => set({ operationLoading }),
       setError: (error) => set({ error }),
+
+      // 便签统计
+      getCanvasNotesCount: async (canvasId) => {
+        try {
+          const adapter = getDatabaseAdapter();
+          return await adapter.getCanvasNotesCount(canvasId);
+        } catch (error) {
+          console.error("❌ 获取画布便签数量失败:", error);
+          return 0;
+        }
+      },
 
       // 初始化
       initialize: async () => {
