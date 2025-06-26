@@ -546,6 +546,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [isStreaming, settingsMenuVisible]
   );
 
+  // 新增：处理便签点击置顶
+  const handleNoteClickToFront = useCallback(() => {
+    // 只有在预览模式（非编辑状态）下才触发置顶
+    if (!isEditing && !isTitleEditing) {
+      onBringToFront(note.id);
+    }
+  }, [isEditing, isTitleEditing, onBringToFront, note.id]);
+
   // 开始拖拽
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -1185,7 +1193,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           {/* 专门的拖拽区域 */}
           <div
             className="drag-handle"
-            onMouseDown={handleMouseDown}
+            onMouseDown={(e) => {
+              e.stopPropagation(); // 阻止冒泡，避免触发容器的置顶事件
+              handleMouseDown(e);
+            }}
             onClick={(e) => {
               // 阻止冒泡，让全局失焦检测处理编辑模式退出
               e.stopPropagation();
@@ -1236,10 +1247,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               ) : (
                 <h3
                   className="sticky-note-title"
-                  onMouseDown={(e) => {
-                    // 阻止父元素的拖拽事件
-                    e.stopPropagation();
-                  }}
+                  onMouseDown={handleNoteClickToFront}
                   onClick={(e) => {
                     // 如果正在编辑模式，单击标题退出编辑
                     if (isEditing || isTitleEditing) {
@@ -1330,10 +1338,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             <div
               ref={previewRef}
               className="sticky-note-preview"
-              onMouseDown={(e) => {
-                // 阻止父元素的拖拽事件
-                e.stopPropagation();
-              }}
+              onMouseDown={handleNoteClickToFront}
               onClick={(e) => {
                 // 阻止冒泡，让全局失焦检测处理编辑模式退出
                 e.stopPropagation();

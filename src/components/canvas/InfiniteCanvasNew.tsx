@@ -48,7 +48,9 @@ const shouldIgnoreCanvasEvent = (target: HTMLElement): boolean => {
     target.closest(".sidebar") || // 侧边栏
     target.closest("[data-sidebar]") || // 侧边栏数据属性
     // 检查是否在侧边栏的固定位置范围内（左侧220px）
-    (target.getBoundingClientRect && target.getBoundingClientRect().left < 220)
+    (target.getBoundingClientRect &&
+      target.getBoundingClientRect().left < 220 &&
+      !target.classList.contains("infinite-canvas-container"))
   );
 };
 
