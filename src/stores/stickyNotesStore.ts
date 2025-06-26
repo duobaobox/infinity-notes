@@ -4,6 +4,7 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import type { StickyNote } from "../components/types";
 import type { Canvas } from "../database";
 import { getDatabaseAdapter, initializeDatabase } from "../database";
+import { useConnectionStore } from "./connectionStore";
 
 // 便签状态接口
 export interface StickyNotesState {
@@ -168,6 +169,9 @@ export const useStickyNotesStore = create<
       deleteNote: async (id) => {
         try {
           set({ operationLoading: true, error: null });
+
+          // 从连接中移除该便签
+          useConnectionStore.getState().removeConnection(id);
 
           // 在删除之前，先查找所有引用这个便签作为源便签的其他便签
           const currentNotes = get().notes;
@@ -438,8 +442,6 @@ export const useStickyNotesStore = create<
               // 处理便签数据
               const processedNotes = loadedNotes.map((note) => ({
                 ...note,
-                connections: note.connections || [],
-                sourceNotes: note.sourceNotes || [],
               }));
 
               // 更新便签状态，不影响全局loading

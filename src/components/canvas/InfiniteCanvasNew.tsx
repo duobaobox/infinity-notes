@@ -367,6 +367,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               createdAt: note.createdAt,
               deletedAt: new Date(), // 记录删除时间
             }));
+            // 立即删除旧便签并清空连接，防止新便签继承状态
+            connectedNotes.forEach((note) => deleteNote(note.id));
+            clearAllConnections();
           }
         }
 
@@ -421,20 +424,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               });
             },
             onAllComplete: (notes) => {
-              // 处理连接模式
-              if (connectedNotes.length > 0) {
-                if (connectionMode === "replace") {
-                  // 替换模式：删除原始便签，但保留连接状态
-                  connectedNotes.forEach((note) => {
-                    deleteNote(note.id);
-                  });
-                  // 替换模式下清空连接，因为原始便签已被删除
-                  clearAllConnections();
-                } else {
-                  // 汇总模式：保留原始便签和连接
-                }
-              }
-
               message.success(`AI生成完成！共创建 ${notes.length} 个便签`);
             },
             onError: (error) => {
