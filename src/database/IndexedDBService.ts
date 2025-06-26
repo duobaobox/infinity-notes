@@ -1,4 +1,14 @@
-import type { User, Canvas, DbStickyNote as StickyNote, Tag } from "./index";
+import type {
+  User,
+  Canvas,
+  DbStickyNote as StickyNote,
+  Tag,
+  Workspace,
+  CanvasTemplate,
+  CanvasSnapshot,
+} from "./index";
+import { performanceMonitor } from "./PerformanceMonitor";
+import { cacheManager, CacheManager } from "./CacheManager";
 
 /**
  * IndexedDB 数据库服务类
@@ -9,7 +19,7 @@ export class IndexedDBService {
   private static instance: IndexedDBService;
   private initialized = false;
   private readonly dbName = "StickyNotesDB";
-  private readonly dbVersion = 3; // 增加版本号，确保新表被创建
+  private readonly dbVersion = 5; // 多画布优化：新增工作区、模板、快照表
 
   private constructor() {
     // 私有构造函数，确保单例模式
@@ -64,24 +74,32 @@ export class IndexedDBService {
 
   /**
    * 创建数据库架构
+   * 优化索引设计，提升查询性能
    */
   private createSchema(db: IDBDatabase): void {
-    // 用户表
+    // 用户表 - 优化索引设计
     if (!db.objectStoreNames.contains("users")) {
       const userStore = db.createObjectStore("users", { keyPath: "id" });
       userStore.createIndex("username", "username", { unique: true });
       userStore.createIndex("email", "email", { unique: false });
+      userStore.createIndex("created_at", "created_at", { unique: false }); // 新增：按创建时间查询
     }
 
-    // 画布表
+    // 画布表 - 优化索引，支持复合查询
     if (!db.objectStoreNames.contains("canvases")) {
       const canvasStore = db.createObjectStore("canvases", { keyPath: "id" });
       canvasStore.createIndex("user_id", "user_id", { unique: false });
       canvasStore.createIndex("is_default", "is_default", { unique: false });
       canvasStore.createIndex("updated_at", "updated_at", { unique: false });
+      canvasStore.createIndex("last_accessed", "last_accessed", {
+        unique: false,
+      }); // 新增：最近访问时间索引
+      canvasStore.createIndex("user_updated", ["user_id", "updated_at"], {
+        unique: false,
+      }); // 新增：复合索引，提升用户画布查询性能
     }
 
-    // AI设置表
+    // AI设置表 - 优化用户设置查询
     if (!db.objectStoreNames.contains("ai_settings")) {
       const aiSettingsStore = db.createObjectStore("ai_settings", {
         keyPath: "id",
@@ -92,21 +110,33 @@ export class IndexedDBService {
       });
     }
 
-    // 便签表
+    // 便签表 - 优化索引，支持全文搜索和性能查询
     if (!db.objectStoreNames.contains("sticky_notes")) {
       const noteStore = db.createObjectStore("sticky_notes", { keyPath: "id" });
       noteStore.createIndex("canvas_id", "canvas_id", { unique: false });
       noteStore.createIndex("updated_at", "updated_at", { unique: false });
+      noteStore.createIndex("created_at", "created_at", { unique: false }); // 新增：创建时间索引
       noteStore.createIndex("title", "title", { unique: false });
       noteStore.createIndex("content", "content", { unique: false });
-    } // 标签表
+      noteStore.createIndex("color", "color", { unique: false }); // 新增：按颜色分类查询
+      noteStore.createIndex("z_index", "z_index", { unique: false }); // 新增：层级索引
+      noteStore.createIndex("canvas_updated", ["canvas_id", "updated_at"], {
+        unique: false,
+      }); // 新增：复合索引，提升画布便签查询性能
+      noteStore.createIndex("position_x", "position_x", { unique: false }); // 新增：位置索引，支持空间查询
+      noteStore.createIndex("position_y", "position_y", { unique: false }); // 新增：位置索引，支持空间查询
+    }
+
+    // 标签表 - 优化标签管理
     if (!db.objectStoreNames.contains("tags")) {
       const tagStore = db.createObjectStore("tags", { keyPath: "id" });
       tagStore.createIndex("user_id", "user_id", { unique: false });
       tagStore.createIndex("name", "name", { unique: false });
+      tagStore.createIndex("color", "color", { unique: false }); // 新增：按颜色分类
+      tagStore.createIndex("user_name", ["user_id", "name"], { unique: true }); // 新增：确保用户内标签名唯一
     }
 
-    // UI设置表
+    // UI设置表 - 优化设置查询
     if (!db.objectStoreNames.contains("ui_settings")) {
       const uiSettingsStore = db.createObjectStore("ui_settings", {
         keyPath: "id",
@@ -118,6 +148,82 @@ export class IndexedDBService {
       uiSettingsStore.createIndex("updated_at", "updated_at", {
         unique: false,
       });
+      uiSettingsStore.createIndex("user_setting", ["user_id", "setting_type"], {
+        unique: true,
+      }); // 新增：确保用户设置类型唯一
+    }
+
+    // 新增：便签连接关系表 - 支持便签之间的连接关系
+    if (!db.objectStoreNames.contains("note_connections")) {
+      const connectionStore = db.createObjectStore("note_connections", {
+        keyPath: "id",
+      });
+      connectionStore.createIndex("source_note_id", "source_note_id", {
+        unique: false,
+      });
+      connectionStore.createIndex("target_note_id", "target_note_id", {
+        unique: false,
+      });
+      connectionStore.createIndex("canvas_id", "canvas_id", { unique: false });
+      connectionStore.createIndex("connection_type", "connection_type", {
+        unique: false,
+      }); // 连接类型：line, arrow等
+      connectionStore.createIndex("created_at", "created_at", {
+        unique: false,
+      });
+    }
+
+    // 新增：便签历史版本表 - 支持版本控制和回滚
+    if (!db.objectStoreNames.contains("note_versions")) {
+      const versionStore = db.createObjectStore("note_versions", {
+        keyPath: "id",
+      });
+      versionStore.createIndex("note_id", "note_id", { unique: false });
+      versionStore.createIndex("version_number", "version_number", {
+        unique: false,
+      });
+      versionStore.createIndex("created_at", "created_at", { unique: false });
+      versionStore.createIndex("note_version", ["note_id", "version_number"], {
+        unique: true,
+      }); // 确保便签版本号唯一
+    }
+
+    // 新增：工作区表 - 组织多个相关画布
+    if (!db.objectStoreNames.contains("workspaces")) {
+      const workspaceStore = db.createObjectStore("workspaces", {
+        keyPath: "id",
+      });
+      workspaceStore.createIndex("user_id", "user_id", { unique: false });
+      workspaceStore.createIndex("is_default", "is_default", { unique: false });
+      workspaceStore.createIndex("updated_at", "updated_at", { unique: false });
+      workspaceStore.createIndex("last_accessed", "last_accessed", {
+        unique: false,
+      });
+    }
+
+    // 新增：画布模板表 - 预定义的画布布局
+    if (!db.objectStoreNames.contains("canvas_templates")) {
+      const templateStore = db.createObjectStore("canvas_templates", {
+        keyPath: "id",
+      });
+      templateStore.createIndex("category", "category", { unique: false });
+      templateStore.createIndex("is_public", "is_public", { unique: false });
+      templateStore.createIndex("creator_id", "creator_id", { unique: false });
+      templateStore.createIndex("usage_count", "usage_count", {
+        unique: false,
+      });
+      templateStore.createIndex("rating", "rating", { unique: false });
+      templateStore.createIndex("created_at", "created_at", { unique: false });
+    }
+
+    // 新增：画布快照表 - 用于备份和恢复
+    if (!db.objectStoreNames.contains("canvas_snapshots")) {
+      const snapshotStore = db.createObjectStore("canvas_snapshots", {
+        keyPath: "id",
+      });
+      snapshotStore.createIndex("canvas_id", "canvas_id", { unique: false });
+      snapshotStore.createIndex("created_by", "created_by", { unique: false });
+      snapshotStore.createIndex("created_at", "created_at", { unique: false });
     }
   }
 
@@ -454,37 +560,63 @@ export class IndexedDBService {
   }
 
   async getNotesByCanvas(canvasId: string): Promise<StickyNote[]> {
-    const notes = await this.queryByIndex<StickyNote>(
-      "sticky_notes",
-      "canvas_id",
-      canvasId
+    // 尝试从缓存获取
+    const cacheKey = CacheManager.generateKey("notes_by_canvas", canvasId);
+    const cached = cacheManager.get<StickyNote[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // 使用性能监控
+    const notes = await performanceMonitor.monitor(
+      "getNotesByCanvas",
+      async () => {
+        const result = await this.queryByIndex<StickyNote>(
+          "sticky_notes",
+          "canvas_id",
+          canvasId
+        );
+        return result.sort((a, b) => {
+          const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+          const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+          return dateB - dateA;
+        });
+      }
     );
-    return notes.sort((a, b) => {
-      const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return dateB - dateA;
-    });
+
+    // 缓存结果（2分钟过期）
+    cacheManager.set(cacheKey, notes, 2 * 60 * 1000);
+    return notes;
   }
 
   async updateNote(
     id: string,
     updates: Partial<StickyNote>
   ): Promise<StickyNote | null> {
-    const existingNote = await this.getNoteById(id);
-    if (!existingNote) {
-      return null;
-    }
+    const result = await performanceMonitor.monitor("updateNote", async () => {
+      const existingNote = await this.getNoteById(id);
+      if (!existingNote) {
+        return null;
+      }
 
-    const updatedNote: StickyNote = {
-      ...existingNote,
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
+      const updatedNote: StickyNote = {
+        ...existingNote,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
 
-    await this.performTransaction("sticky_notes", "readwrite", (store) =>
-      store.put(updatedNote)
-    );
-    return updatedNote;
+      await this.performTransaction("sticky_notes", "readwrite", (store) =>
+        store.put(updatedNote)
+      );
+
+      // 清除相关缓存
+      cacheManager.deleteByPrefix("notes_by_canvas");
+      cacheManager.delete(CacheManager.generateKey("note_by_id", id));
+
+      return updatedNote;
+    });
+
+    return result;
   }
 
   async deleteNote(noteId: string): Promise<boolean> {
@@ -696,5 +828,154 @@ export class IndexedDBService {
         // 继续等待，通常会自动解决
       };
     });
+  }
+
+  // ===== 高级查询方法 =====
+
+  /**
+   * 按颜色查询便签
+   */
+  async getNotesByColor(
+    canvasId: string,
+    color: string
+  ): Promise<StickyNote[]> {
+    const allNotes = await this.getNotesByCanvas(canvasId);
+    return allNotes.filter((note) => note.color === color);
+  }
+
+  /**
+   * 按时间范围查询便签
+   */
+  async getNotesByDateRange(
+    canvasId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<StickyNote[]> {
+    const allNotes = await this.getNotesByCanvas(canvasId);
+    return allNotes.filter((note) => {
+      const noteDate = note.updated_at || note.created_at;
+      return noteDate >= startDate && noteDate <= endDate;
+    });
+  }
+
+  /**
+   * 空间查询：获取指定区域内的便签
+   */
+  async getNotesInRegion(
+    canvasId: string,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+  ): Promise<StickyNote[]> {
+    const allNotes = await this.getNotesByCanvas(canvasId);
+    return allNotes.filter((note) => {
+      return (
+        note.position_x >= Math.min(x1, x2) &&
+        note.position_x <= Math.max(x1, x2) &&
+        note.position_y >= Math.min(y1, y2) &&
+        note.position_y <= Math.max(y1, y2)
+      );
+    });
+  }
+
+  /**
+   * 全文搜索便签（标题和内容）
+   */
+  async searchNotes(
+    canvasId: string,
+    searchTerm: string
+  ): Promise<StickyNote[]> {
+    const allNotes = await this.getNotesByCanvas(canvasId);
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
+    return allNotes.filter((note) => {
+      const titleMatch = note.title.toLowerCase().includes(lowerSearchTerm);
+      const contentMatch = note.content.toLowerCase().includes(lowerSearchTerm);
+      return titleMatch || contentMatch;
+    });
+  }
+
+  /**
+   * 获取便签统计信息
+   */
+  async getNotesStats(canvasId: string): Promise<{
+    total: number;
+    byColor: Record<string, number>;
+    byDate: Record<string, number>;
+    averageSize: { width: number; height: number };
+  }> {
+    const notes = await this.getNotesByCanvas(canvasId);
+
+    const byColor: Record<string, number> = {};
+    const byDate: Record<string, number> = {};
+    let totalWidth = 0;
+    let totalHeight = 0;
+
+    notes.forEach((note) => {
+      // 按颜色统计
+      byColor[note.color] = (byColor[note.color] || 0) + 1;
+
+      // 按日期统计（按天）
+      const date = new Date(note.created_at).toISOString().split("T")[0];
+      byDate[date] = (byDate[date] || 0) + 1;
+
+      // 尺寸统计
+      totalWidth += note.width;
+      totalHeight += note.height;
+    });
+
+    return {
+      total: notes.length,
+      byColor,
+      byDate,
+      averageSize: {
+        width: notes.length > 0 ? totalWidth / notes.length : 0,
+        height: notes.length > 0 ? totalHeight / notes.length : 0,
+      },
+    };
+  }
+
+  /**
+   * 批量操作：批量更新便签位置（性能优化）
+   */
+  async batchUpdateNotePositions(
+    updates: Array<{
+      id: string;
+      position_x: number;
+      position_y: number;
+    }>
+  ): Promise<void> {
+    if (!this.db) {
+      throw new Error("数据库未初始化");
+    }
+
+    const transaction = this.db.transaction(["sticky_notes"], "readwrite");
+    const store = transaction.objectStore("sticky_notes");
+
+    const promises = updates.map((update) => {
+      return new Promise<void>((resolve, reject) => {
+        const getRequest = store.get(update.id);
+
+        getRequest.onsuccess = () => {
+          const note = getRequest.result;
+          if (note) {
+            note.position_x = update.position_x;
+            note.position_y = update.position_y;
+            note.updated_at = new Date().toISOString();
+
+            const putRequest = store.put(note);
+            putRequest.onsuccess = () => resolve();
+            putRequest.onerror = () => reject(putRequest.error);
+          } else {
+            resolve(); // 便签不存在，跳过
+          }
+        };
+
+        getRequest.onerror = () => reject(getRequest.error);
+      });
+    });
+
+    await Promise.all(promises);
   }
 }
