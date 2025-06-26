@@ -5,6 +5,9 @@ import type { StickyNote } from "../components/types";
 import type { Canvas } from "../database";
 import { getDatabaseAdapter, initializeDatabase } from "../database";
 import { useConnectionStore } from "./connectionStore";
+import { cacheManager } from "../database/CacheManager";
+import { connectionLineManager } from "../utils/connectionLineManager";
+import { useCanvasStore } from "./canvasStore";
 
 // 便签状态接口
 export interface StickyNotesState {
@@ -431,6 +434,24 @@ export const useStickyNotesStore = create<
           const adapter = getDatabaseAdapter();
           adapter.setCurrentCanvas(canvasId);
 
+          // 清除所有连接线（包括普通连接线和溯源连接线）
+          connectionLineManager.clearAllConnectionsIncludingSource();
+          console.log("🔗 已清除所有连接线");
+
+          // 清除连接状态
+          const connectionStore = useConnectionStore.getState();
+          connectionStore.clearAllConnections();
+          console.log("🔗 已清除连接状态");
+
+          // 重置画布视图状态（缩放、偏移等）
+          const canvasStore = useCanvasStore.getState();
+          canvasStore.resetView();
+          console.log("🎨 已重置画布视图状态");
+
+          // 清除相关缓存，确保加载最新数据
+          cacheManager.deleteByPrefix("notes_by_canvas");
+          console.log("🧹 已清除画布便签缓存");
+
           // 先更新当前画布ID，让UI立即响应
           set({ currentCanvasId: canvasId });
 
@@ -484,7 +505,10 @@ export const useStickyNotesStore = create<
           // 重新加载画布列表
           await get().loadCanvases();
 
-          console.log("✅ 画布创建成功:", canvasId);
+          // 自动切换到新创建的画布
+          await get().switchCanvas(canvasId);
+
+          console.log("✅ 画布创建成功并已切换:", canvasId);
           return canvasId;
         } catch (error) {
           const errorMsg =
@@ -492,6 +516,8 @@ export const useStickyNotesStore = create<
           console.error("❌ 创建画布失败:", error);
           set({ error: errorMsg, canvasLoading: false });
           throw error;
+        } finally {
+          set({ canvasLoading: false });
         }
       },
 

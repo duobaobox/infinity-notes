@@ -358,6 +358,42 @@ class ConnectionLineManager {
         }
       }
 
+      console.log(
+        `✅ 普通连接线清空完成，剩余连接数: ${this.connections.size}`
+      );
+    } catch (error) {
+      console.error("❌ 清空普通连接线失败:", error);
+    }
+  }
+
+  // 清空所有连接线（包括普通连接线和溯源连接线）
+  clearAllConnectionsIncludingSource(): void {
+    try {
+      console.log("🔍 开始清空所有连接线，当前连接数:", this.connections.size);
+
+      const connectionsToRemove: string[] = [];
+
+      // 找到所有连接线
+      for (const [id] of this.connections.entries()) {
+        connectionsToRemove.push(id);
+      }
+
+      console.log(`📌 找到 ${connectionsToRemove.length} 个连接线需要移除`);
+
+      // 逐个移除所有连接线
+      for (const id of connectionsToRemove) {
+        try {
+          const connection = this.connections.get(id);
+          if (connection) {
+            console.log(`📌 正在移除连接线: ${id} (类型: ${connection.type})`);
+            connection.line.remove();
+            this.connections.delete(id);
+          }
+        } catch (lineError) {
+          console.error(`❌ 移除连接线 ${id} 失败:`, lineError);
+        }
+      }
+
       const sourceConnectionCount = Array.from(
         this.connections.values()
       ).filter((conn) => conn.type === "source").length;

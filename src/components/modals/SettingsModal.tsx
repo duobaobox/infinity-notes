@@ -387,12 +387,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       const processedFields = { ...allFields };
 
       // 转换所有颜色字段
-      const colorFields = [
-        "canvasBackground",
-        "gridColor",
-        "gridMajorColor",
-        "noteDefaultColor",
-      ];
+      const colorFields = ["canvasBackground", "gridColor", "gridMajorColor"];
       colorFields.forEach((field) => {
         if (processedFields[field]) {
           processedFields[field] = convertColorValue(processedFields[field]);
@@ -600,47 +595,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       },
                     ]}
                   />
-                </Form.Item>
-              </Card>
-
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  便签样式
-                </Title>
-                <Form.Item label="默认便签颜色" name="noteDefaultColor">
-                  <ColorPicker
-                    presets={[
-                      {
-                        label: "常用颜色",
-                        colors: [
-                          "#fef3c7", // yellow
-                          "#dbeafe", // blue
-                          "#d1fae5", // green
-                          "#fce7f3", // pink
-                          "#e9d5ff", // purple
-                        ],
-                      },
-                    ]}
-                    showText
-                  />
-                </Form.Item>
-
-                <Form.Item label="字体大小" name="fontSize">
-                  <InputNumber
-                    min={12}
-                    max={24}
-                    suffix="px"
-                    style={{ width: "100%" }}
-                  />
-                </Form.Item>
-
-                <Form.Item label="字体系列" name="fontFamily">
-                  <Select>
-                    <Option value="system-ui">系统默认</Option>
-                    <Option value="Arial">Arial</Option>
-                    <Option value="Microsoft YaHei">微软雅黑</Option>
-                    <Option value="PingFang SC">苹方</Option>
-                  </Select>
                 </Form.Item>
               </Card>
             </Form>

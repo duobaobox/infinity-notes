@@ -22,9 +22,6 @@ export interface AppearanceState {
   gridSize: number;
   gridColor: string;
   gridMajorColor: string;
-  noteDefaultColor: string;
-  fontSize: number;
-  fontFamily: string;
 }
 
 // UI状态接口
@@ -69,9 +66,7 @@ export interface UIActions {
   updateCanvasBackground: (color: string) => void;
   toggleGrid: () => void;
   setGridSize: (size: number) => void;
-  setNoteDefaultColor: (color: string) => void;
-  setFontSize: (size: number) => void;
-  setFontFamily: (family: string) => void;
+
   applyPresetTheme: (themeId: string) => void;
 
   // 侧边栏操作
@@ -103,7 +98,6 @@ export interface PresetTheme {
     canvasBackground: string;
     gridColor: string;
     gridMajorColor: string;
-    noteDefaultColor: string;
   };
 }
 
@@ -117,7 +111,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#ffffff",
       gridColor: "#f5f5f5",
       gridMajorColor: "#ebebeb",
-      noteDefaultColor: "#fffbf0",
     },
   },
   {
@@ -129,7 +122,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#f5f6f7",
       gridColor: "#eaebec",
       gridMajorColor: "#e0e1e2",
-      noteDefaultColor: "#f8f9fa",
     },
   },
   {
@@ -141,7 +133,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#f8f9fa",
       gridColor: "#eef0f2",
       gridMajorColor: "#e4e6e8",
-      noteDefaultColor: "#f0f2f5",
     },
   },
   {
@@ -153,7 +144,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#f6f9f7",
       gridColor: "#e8efe9",
       gridMajorColor: "#dae6db",
-      noteDefaultColor: "#f0f7f1",
     },
   },
   {
@@ -165,7 +155,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#f7fafd",
       gridColor: "#e9f2f7",
       gridMajorColor: "#dbe9f3",
-      noteDefaultColor: "#edf5fc",
     },
   },
   {
@@ -177,7 +166,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#fcf9f3",
       gridColor: "#f3e9d7",
       gridMajorColor: "#ead6b9",
-      noteDefaultColor: "#fff5e6",
     },
   },
   {
@@ -189,7 +177,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#1a1f2b",
       gridColor: "#252b39",
       gridMajorColor: "#2f374a",
-      noteDefaultColor: "#f0f2f5",
     },
   },
   {
@@ -201,7 +188,6 @@ export const PRESET_THEMES: PresetTheme[] = [
       canvasBackground: "#fdfbf7",
       gridColor: "#f5f2ea",
       gridMajorColor: "#ece7db",
-      noteDefaultColor: "#fffbf0",
     },
   },
 ];
@@ -235,9 +221,6 @@ export const useUIStore = create<UIState & UIActions>()(
         gridSize: 10,
         gridColor: "#f5f2ea",
         gridMajorColor: "#ece7db",
-        noteDefaultColor: "#fffbf0",
-        fontSize: 14,
-        fontFamily: "system-ui",
       },
 
       sidebarCollapsed: true, // 默认折叠，将从持久化存储中加载
@@ -327,18 +310,6 @@ export const useUIStore = create<UIState & UIActions>()(
         get().setAppearance({ gridSize: size });
       },
 
-      setNoteDefaultColor: (color) => {
-        get().setAppearance({ noteDefaultColor: color });
-      },
-
-      setFontSize: (size) => {
-        get().setAppearance({ fontSize: size });
-      },
-
-      setFontFamily: (family) => {
-        get().setAppearance({ fontFamily: family });
-      },
-
       // 应用预制主题
       applyPresetTheme: (themeId) => {
         const theme = PRESET_THEMES.find((t) => t.id === themeId);
@@ -356,7 +327,6 @@ export const useUIStore = create<UIState & UIActions>()(
           canvasBackground: theme.colors.canvasBackground,
           gridColor: theme.colors.gridColor,
           gridMajorColor: theme.colors.gridMajorColor,
-          noteDefaultColor: theme.colors.noteDefaultColor,
         }; // 直接更新状态，不通过setAppearance避免重复保存
         set(() => ({
           appearance: newAppearance,
@@ -416,20 +386,6 @@ export const useUIStore = create<UIState & UIActions>()(
           container.style.setProperty(
             "--large-grid-color",
             appearance.gridMajorColor
-          );
-
-          // 应用字体设置
-          document.documentElement.style.setProperty(
-            "--note-font-size",
-            `${appearance.fontSize}px`
-          );
-          document.documentElement.style.setProperty(
-            "--note-font-family",
-            appearance.fontFamily
-          );
-          document.documentElement.style.setProperty(
-            "--note-default-color",
-            appearance.noteDefaultColor
           );
         }
       },

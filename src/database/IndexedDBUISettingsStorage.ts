@@ -13,9 +13,6 @@ export interface AppearanceSettings {
   gridSize: number;
   gridColor: string;
   gridMajorColor: string;
-  noteDefaultColor: string;
-  fontSize: number;
-  fontFamily: string;
 }
 
 export interface UILayoutSettings {

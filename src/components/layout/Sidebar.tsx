@@ -86,6 +86,14 @@ const Sidebar: React.FC = () => {
     getCanvasNotesCount,
   } = useStickyNotesStore();
 
+  // 确保本地选中状态与全局状态同步
+  useEffect(() => {
+    if (currentCanvasId && currentCanvasId !== selectedCanvas) {
+      setSelectedCanvas(currentCanvasId);
+      console.log("📋 Sidebar: 同步选中画布状态:", currentCanvasId);
+    }
+  }, [currentCanvasId, selectedCanvas]);
+
   // 使用UI状态管理
   const {
     openSettingsModal,
@@ -115,8 +123,11 @@ const Sidebar: React.FC = () => {
   const handleCreateCanvas = useCallback(async () => {
     try {
       const canvasId = await createCanvas(`画布 ${canvasList.length + 1}`);
+
+      // createCanvas 方法已经会自动切换到新画布，这里只需要更新本地状态
       setSelectedCanvas(canvasId);
-      message.success("画布创建成功，点击画布名称切换到新画布");
+
+      message.success("画布创建成功并已切换");
     } catch (error) {
       console.error("❌ Sidebar: 创建画布失败:", error);
       message.error("创建画布失败");
@@ -766,7 +777,7 @@ const Sidebar: React.FC = () => {
                   locale={{
                     emptyText: notesError
                       ? `加载失败: ${notesError}`
-                      : "暂无便签，双击画布或点击工具栏创建",
+                      : "暂无便签，三击画布或点击工具栏的 + 创建",
                   }}
                   renderItem={(note: {
                     color: string;
