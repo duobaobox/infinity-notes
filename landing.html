@@ -1,1240 +1,1484 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>无限便签 - 思维整理的新方式</title>
-    <meta name="description" content="在无限画布上创建便签，用连接线构建思维导图，让AI帮你汇总整理想法。简单、直观、高效。">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>无限便签 - 让思维自由流淌，让想法自然连接</title>
+        <meta name="description" content="重新定义思维整理的方式。在无限画布上自由创作，用AI智能汇总复杂信息，用连接线构建知识网络。开源、透明、隐私优先的思维工具。">
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="./public/icon.png">
+
+        <!-- 字体 -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
+
+        <style>
+            /* 全局样式重置 */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.47059;
+                color: #1d1d1f;
+                background: #ffffff;
+                overflow-x: hidden;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+
+            /* 导航栏 - 参考Apple风格 */
+            .navbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.72);
+                backdrop-filter: saturate(180%) blur(20px);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                height: 44px;
+            }
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="./public/icon.png">
-
-    <!-- 字体 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-    <style>
-        /* 全局样式重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.47059;
-            color: #1d1d1f;
-            background: #ffffff;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* 导航栏 - 参考Apple风格 */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.72);
-            backdrop-filter: saturate(180%) blur(20px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            height: 44px;
-        }
-
-        .nav-container {
-            max-width: 980px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 100%;
-            padding: 0 22px;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 17px;
-            font-weight: 600;
-            color: #1d1d1f;
-            text-decoration: none;
-            letter-spacing: -0.022em;
-        }
-
-        .logo img {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 40px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: #1d1d1f;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            transition: color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: #0066cc;
-        }
-
-        .cta-button {
-            background: #0071e3;
-            color: white;
-            padding: 4px 11px;
-            border-radius: 18px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 400;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-
-        .cta-button:hover {
-            background: #0077ed;
-        }
-
-        /* 主要内容区域 */
-        .main-content {
-            margin-top: 44px;
-        }
-
-        /* 英雄区域 - Mac风格 */
-        .hero {
-            padding: 60px 22px 100px;
-            text-align: center;
-            background: #ffffff;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-container {
-            max-width: 980px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero h1 {
-            font-size: 56px;
-            font-weight: 600;
-            line-height: 1.07143;
-            margin-bottom: 6px;
-            color: #1d1d1f;
-            letter-spacing: -0.005em;
-        }
-
-        .hero .subtitle {
-            font-size: 27px;
-            color: #86868b;
-            margin-bottom: 19px;
-            font-weight: 400;
-            line-height: 1.14815;
-            letter-spacing: 0.007em;
-        }
-
-        .hero .description {
-            font-size: 19px;
-            color: #1d1d1f;
-            margin-bottom: 40px;
-            font-weight: 400;
-            line-height: 1.42105;
-            letter-spacing: 0.012em;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 60px;
-        }
-
-        .hero-image {
-            margin-top: 40px;
-            position: relative;
-        }
-
-        .hero-image img {
-            width: 100%;
-            max-width: 900px;
-            border-radius: 18px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Mac窗口样式 - 为主要产品截图添加Mac头部 */
-        .mac-window {
-            position: relative;
-            display: inline-block;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            max-width: 900px;
-            width: 100%;
-            border: 1px solid #e5e5e5;
-        }
-
-        .mac-window-header {
-            background: #f8f8f8;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            border-bottom: 1px solid #e5e5e5;
-            position: relative;
-        }
-
-        .mac-window-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .mac-control-button {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: none;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .mac-control-button.close {
-            background: #ff5f57;
-        }
-
-        .mac-control-button.minimize {
-            background: #ffbd2e;
-        }
-
-        .mac-control-button.maximize {
-            background: #28ca42;
-        }
-
-        .mac-control-button:hover {
-            transform: scale(1.1);
-        }
-
-        /* Mac窗口标题 */
-        .mac-window-title {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 13px;
-            font-weight: 400;
-            color: #6b6b6b;
-            letter-spacing: -0.01em;
-        }
-
-        .mac-window img {
-            width: 100%;
-            display: block;
-            border-radius: 0;
-            box-shadow: none;
-        }
-
-        .primary-button {
-            background: #0071e3;
-            color: white;
-            padding: 12px 23px;
-            border-radius: 980px;
-            text-decoration: none;
-            font-weight: 400;
-            font-size: 17px;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            letter-spacing: -0.022em;
-        }
-
-        .primary-button:hover {
-            background: #0077ed;
-        }
-
-        .secondary-button {
-            background: transparent;
-            color: #0066cc;
-            padding: 12px 23px;
-            border: none;
-            border-radius: 980px;
-            text-decoration: none;
-            font-weight: 400;
-            font-size: 17px;
-            transition: all 0.3s ease;
-            letter-spacing: -0.022em;
-        }
-
-        .secondary-button:hover {
-            text-decoration: underline;
-        }
-
-        /* 功能展示区域 - Mac风格 */
-        .features {
-            padding: 100px 22px;
-            background: #f5f5f7;
-        }
-
-        .features-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .features h2 {
-            text-align: center;
-            font-size: 48px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #1d1d1f;
-            letter-spacing: -0.003em;
-            line-height: 1.08349;
-        }
-
-        .features .subtitle {
-            text-align: center;
-            font-size: 21px;
-            color: #86868b;
-            margin-bottom: 60px;
-            font-weight: 400;
-            line-height: 1.381;
-            letter-spacing: 0.011em;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            margin-bottom: 80px;
-        }
-
-        .feature-card {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 20px;
-            background: linear-gradient(135deg, #0071e3, #005bb5);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-        }
-
-        .feature-card h3 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #1d1d1f;
-            letter-spacing: -0.009em;
-            line-height: 1.16667;
-        }
-
-        .feature-card p {
-            font-size: 17px;
-            color: #86868b;
-            line-height: 1.47059;
-            letter-spacing: -0.022em;
-        }
-
-        /* 产品展示区域 */
-        .product-showcase {
-            padding: 100px 22px;
-            background: #ffffff;
-            text-align: center;
-        }
-
-        .product-showcase-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .product-showcase h2 {
-            font-size: 48px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #1d1d1f;
-            letter-spacing: -0.003em;
-            line-height: 1.08349;
-        }
-
-        .product-showcase .subtitle {
-            font-size: 21px;
-            color: #86868b;
-            margin-bottom: 40px;
-            font-weight: 400;
-            line-height: 1.381;
-            letter-spacing: 0.011em;
-        }
-
-        .product-image {
-            margin-top: 40px;
-            position: relative;
-        }
-
-        .product-image img {
-            width: 100%;
-            max-width: 800px;
-            border-radius: 18px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
-        }
-
-        /* 图片占位符样式 */
-        .image-placeholder {
-            background: #f5f5f7;
-            border: 2px dashed #d1d1d6;
-            border-radius: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 300px;
-            color: #86868b;
-            font-size: 17px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .image-placeholder:hover {
-            border-color: #0071e3;
-            background: #f0f8ff;
-        }
-
-        .image-placeholder .placeholder-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.6;
-        }
-
-        .image-placeholder .placeholder-text {
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        .image-placeholder .placeholder-hint {
-            font-size: 15px;
-            opacity: 0.7;
-        }
-
-        /* 功能详情图片占位符 */
-        .feature-detail-image .image-placeholder {
-            min-height: 250px;
-        }
-
-        /* 英雄区域图片占位符 */
-        .hero-image .image-placeholder {
-            min-height: 400px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        /* 详细功能介绍区域 */
-        .feature-details {
-            padding: 100px 22px;
-            background: #f5f5f7;
-        }
-
-        .feature-details-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .feature-detail-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 80px;
-            align-items: center;
-            margin-bottom: 120px;
-        }
-
-        .feature-detail-section:nth-child(even) .feature-detail-content {
-            order: 2;
-        }
-
-        .feature-detail-section:nth-child(even) .feature-detail-image {
-            order: 1;
-        }
-
-        .feature-detail-content h3 {
-            font-size: 32px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #1d1d1f;
-            letter-spacing: -0.005em;
-            line-height: 1.125;
-        }
-
-        .feature-detail-content p {
-            font-size: 19px;
-            color: #86868b;
-            line-height: 1.42105;
-            letter-spacing: 0.012em;
-            margin-bottom: 24px;
-        }
-
-        .feature-detail-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .feature-detail-list li {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            font-size: 17px;
-            color: #1d1d1f;
-            line-height: 1.47059;
-            letter-spacing: -0.022em;
-        }
-
-        .feature-detail-list li::before {
-            content: "✓";
-            color: #0071e3;
-            font-weight: 600;
-            margin-right: 12px;
-            margin-top: 2px;
-            font-size: 16px;
-        }
-
-        .feature-detail-image {
-            position: relative;
-        }
-
-        .feature-detail-image img {
-            width: 100%;
-            border-radius: 18px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        /* 使用场景区域 */
-        .use-cases {
-            padding: 100px 22px;
-            background: #ffffff;
-        }
-
-        .use-cases-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .use-cases h2 {
-            text-align: center;
-            font-size: 48px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #1d1d1f;
-            letter-spacing: -0.003em;
-            line-height: 1.08349;
-        }
-
-        .use-cases .subtitle {
-            text-align: center;
-            font-size: 21px;
-            color: #86868b;
-            margin-bottom: 60px;
-            font-weight: 400;
-            line-height: 1.381;
-            letter-spacing: 0.011em;
-        }
-
-        .use-case-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 40px;
-        }
-
-        .use-case-card {
-            background: #f5f5f7;
-            border-radius: 18px;
-            padding: 40px 30px;
-            text-align: left;
-            transition: transform 0.3s ease;
-        }
-
-        .use-case-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .use-case-icon {
-            width: 50px;
-            height: 50px;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #0071e3, #005bb5);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .use-case-card h3 {
-            font-size: 21px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #1d1d1f;
-            letter-spacing: -0.016em;
-            line-height: 1.381;
-        }
-
-        .use-case-card p {
-            font-size: 17px;
-            color: #86868b;
-            line-height: 1.47059;
-            letter-spacing: -0.022em;
-            margin-bottom: 16px;
-        }
-
-        .use-case-example {
-            font-size: 15px;
-            color: #1d1d1f;
-            background: #ffffff;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border-left: 3px solid #0071e3;
-            font-style: italic;
-        }
-
-        /* 开源理念区域 */
-        .open-source {
-            padding: 100px 22px;
-            background: #f5f5f7;
-            text-align: center;
-        }
-
-        .open-source-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .open-source h2 {
-            font-size: 48px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #1d1d1f;
-            letter-spacing: -0.003em;
-            line-height: 1.08349;
-        }
-
-        .open-source .subtitle {
-            font-size: 21px;
-            color: #86868b;
-            margin-bottom: 40px;
-            font-weight: 400;
-            line-height: 1.381;
-            letter-spacing: 0.011em;
-        }
-
-        .open-source .description {
-            font-size: 17px;
-            color: #1d1d1f;
-            line-height: 1.47059;
-            letter-spacing: -0.022em;
-            max-width: 600px;
-            margin: 0 auto 40px;
-        }
-
-        /* 底部CTA区域 */
-        .cta-section {
-            padding: 100px 22px;
-            background: #ffffff;
-            text-align: center;
-        }
-
-        .cta-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .cta-section h2 {
-            font-size: 48px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #1d1d1f;
-            letter-spacing: -0.003em;
-            line-height: 1.08349;
-        }
-
-        .cta-section .subtitle {
-            font-size: 21px;
-            color: #86868b;
-            margin-bottom: 40px;
-            font-weight: 400;
-            line-height: 1.381;
-            letter-spacing: 0.011em;
-        }
-
-        /* 底部区域 */
-        .footer {
-            background: #1d1d1f;
-            color: #f5f5f7;
-            padding: 40px 22px 20px;
-            text-align: center;
-        }
-
-        .footer-container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-
-        .footer p {
-            color: #86868b;
-            font-size: 12px;
-            line-height: 1.33337;
-            letter-spacing: -0.01em;
-        }
-
-        /* 响应式设计 - Mac风格 */
-        @media (max-width: 1068px) {
             .nav-container {
+                max-width: 980px;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                height: 100%;
                 padding: 0 22px;
             }
 
-            .hero,
-            .features,
-            .product-showcase,
-            .open-source,
-            .cta-section {
-                padding-left: 22px;
-                padding-right: 22px;
+            .logo {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 17px;
+                font-weight: 600;
+                color: #1d1d1f;
+                text-decoration: none;
+                letter-spacing: -0.022em;
             }
-        }
 
-        @media (max-width: 834px) {
+            .logo img {
+                width: 24px;
+                height: 24px;
+                border-radius: 4px;
+            }
+
             .nav-links {
-                display: none;
+                display: flex;
+                gap: 40px;
+                list-style: none;
+            }
+
+            .nav-links a {
+                color: #1d1d1f;
+                text-decoration: none;
+                font-size: 12px;
+                font-weight: 400;
+                letter-spacing: -0.01em;
+                transition: color 0.3s ease;
+            }
+
+            .nav-links a:hover {
+                color: #0066cc;
+            }
+
+            .cta-button {
+                background: #0071e3;
+                color: white;
+                padding: 4px 11px;
+                border-radius: 18px;
+                text-decoration: none;
+                font-size: 12px;
+                font-weight: 400;
+                transition: all 0.3s ease;
+                border: none;
+                cursor: pointer;
+            }
+
+            .cta-button:hover {
+                background: #0077ed;
+            }
+
+            /* 主要内容区域 */
+            .main-content {
+                margin-top: 44px;
+            }
+
+            /* 英雄区域 - Mac风格 */
+            .hero {
+                padding: 60px 22px 100px;
+                text-align: center;
+                background: #ffffff;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .hero-container {
+                max-width: 980px;
+                margin: 0 auto;
+                position: relative;
+                z-index: 2;
             }
 
             .hero h1 {
-                font-size: 40px;
-                line-height: 1.1;
+                font-size: 56px;
+                font-weight: 600;
+                line-height: 1.07143;
+                margin-bottom: 6px;
+                color: #1d1d1f;
+                letter-spacing: -0.005em;
             }
 
             .hero .subtitle {
-                font-size: 21px;
-                line-height: 1.381;
+                font-size: 27px;
+                color: #86868b;
+                margin-bottom: 19px;
+                font-weight: 400;
+                line-height: 1.14815;
+                letter-spacing: 0.007em;
             }
 
             .hero .description {
-                font-size: 17px;
-                line-height: 1.47059;
+                font-size: 19px;
+                color: #1d1d1f;
+                margin-bottom: 40px;
+                font-weight: 400;
+                line-height: 1.42105;
+                letter-spacing: 0.012em;
+                max-width: 600px;
+                margin-left: auto;
+                margin-right: auto;
             }
 
             .hero-buttons {
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-bottom: 60px;
             }
 
-            /* Mac窗口在平板设备上的适配 */
+            .hero-image {
+                margin-top: 40px;
+                position: relative;
+            }
+
+            .hero-image img {
+                width: 100%;
+                max-width: 900px;
+                border-radius: 18px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Mac窗口样式 - 为主要产品截图添加Mac头部 */
+            .mac-window {
+                position: relative;
+                display: inline-block;
+                background: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+                overflow: hidden;
+                max-width: 900px;
+                width: 100%;
+                border: 1px solid #e5e5e5;
+            }
+
             .mac-window-header {
-                height: 36px;
-                padding: 0 12px;
+                background: #f8f8f8;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                border-bottom: 1px solid #e5e5e5;
+                position: relative;
+            }
+
+            .mac-window-controls {
+                display: flex;
+                gap: 8px;
+                align-items: center;
             }
 
             .mac-control-button {
-                width: 10px;
-                height: 10px;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                border: none;
+                position: relative;
+                cursor: pointer;
+                transition: all 0.2s ease;
             }
 
+            .mac-control-button.close {
+                background: #ff5f57;
+            }
+
+            .mac-control-button.minimize {
+                background: #ffbd2e;
+            }
+
+            .mac-control-button.maximize {
+                background: #28ca42;
+            }
+
+            .mac-control-button:hover {
+                transform: scale(1.1);
+            }
+
+            /* Mac窗口标题 */
             .mac-window-title {
-                font-size: 12px;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 13px;
+                font-weight: 400;
+                color: #6b6b6b;
+                letter-spacing: -0.01em;
             }
 
-            .features h2,
-            .product-showcase h2,
-            .feature-details h2,
-            .use-cases h2,
-            .open-source h2,
-            .cta-section h2 {
-                font-size: 32px;
-                line-height: 1.125;
+            .mac-window img {
+                width: 100%;
+                display: block;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .primary-button {
+                background: #0071e3;
+                color: white;
+                padding: 12px 23px;
+                border-radius: 980px;
+                text-decoration: none;
+                font-weight: 400;
+                font-size: 17px;
+                transition: all 0.3s ease;
+                border: none;
+                cursor: pointer;
+                letter-spacing: -0.022em;
+            }
+
+            .primary-button:hover {
+                background: #0077ed;
+            }
+
+            .secondary-button {
+                background: transparent;
+                color: #0066cc;
+                padding: 12px 23px;
+                border: none;
+                border-radius: 980px;
+                text-decoration: none;
+                font-weight: 400;
+                font-size: 17px;
+                transition: all 0.3s ease;
+                letter-spacing: -0.022em;
+            }
+
+            .secondary-button:hover {
+                text-decoration: underline;
+            }
+
+            /* 功能展示区域 - Mac风格 */
+            .features {
+                padding: 100px 22px;
+                background: #f5f5f7;
+            }
+
+            .features-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .features h2 {
+                text-align: center;
+                font-size: 48px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #1d1d1f;
+                letter-spacing: -0.003em;
+                line-height: 1.08349;
+            }
+
+            .features .subtitle {
+                text-align: center;
+                font-size: 21px;
+                color: #86868b;
+                margin-bottom: 60px;
+                font-weight: 400;
+                line-height: 1.381;
+                letter-spacing: 0.011em;
             }
 
             .feature-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .feature-card {
-                padding: 30px 20px;
-            }
-
-            .feature-detail-section {
-                grid-template-columns: 1fr;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                 gap: 40px;
                 margin-bottom: 80px;
             }
 
-            .feature-detail-section:nth-child(even) .feature-detail-content {
-                order: 1;
+            .feature-card {
+                background: #ffffff;
+                border-radius: 18px;
+                padding: 40px 30px;
+                text-align: center;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                transition: transform 0.3s ease;
             }
 
-            .feature-detail-section:nth-child(even) .feature-detail-image {
-                order: 2;
+            .feature-card:hover {
+                transform: translateY(-4px);
             }
 
-            .feature-detail-content h3 {
-                font-size: 28px;
-            }
-
-            .use-case-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .use-case-card {
-                padding: 30px 20px;
-            }
-        }
-
-        @media (max-width: 430px) {
-
-            .hero,
-            .features,
-            .product-showcase,
-            .feature-details,
-            .use-cases,
-            .open-source,
-            .cta-section {
-                padding-left: 16px;
-                padding-right: 16px;
-            }
-
-            .hero h1 {
-                font-size: 32px;
-            }
-
-            .hero .subtitle {
-                font-size: 19px;
-            }
-
-            /* Mac窗口在手机设备上的适配 */
-            .mac-window-header {
-                height: 32px;
-                padding: 0 10px;
-            }
-
-            .mac-control-button {
-                width: 8px;
-                height: 8px;
-            }
-
-            .mac-window-controls {
-                gap: 6px;
-            }
-
-            .mac-window-title {
-                font-size: 11px;
-            }
-
-            .features h2,
-            .product-showcase h2,
-            .feature-details h2,
-            .use-cases h2,
-            .open-source h2,
-            .cta-section h2 {
-                font-size: 28px;
-            }
-
-            .feature-detail-content h3 {
+            .feature-icon {
+                width: 60px;
+                height: 60px;
+                margin: 0 auto 20px;
+                background: linear-gradient(135deg, #0071e3, #005bb5);
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 font-size: 24px;
+                color: white;
+            }
+
+            .feature-card h3 {
+                font-size: 24px;
+                font-weight: 600;
+                margin-bottom: 12px;
+                color: #1d1d1f;
+                letter-spacing: -0.009em;
+                line-height: 1.16667;
+            }
+
+            .feature-card p {
+                font-size: 17px;
+                color: #86868b;
+                line-height: 1.47059;
+                letter-spacing: -0.022em;
+            }
+
+            /* 产品展示区域 */
+            .product-showcase {
+                padding: 100px 22px;
+                background: #ffffff;
+                text-align: center;
+            }
+
+            .product-showcase-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .product-showcase h2 {
+                font-size: 48px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #1d1d1f;
+                letter-spacing: -0.003em;
+                line-height: 1.08349;
+            }
+
+            .product-showcase .subtitle {
+                font-size: 21px;
+                color: #86868b;
+                margin-bottom: 40px;
+                font-weight: 400;
+                line-height: 1.381;
+                letter-spacing: 0.011em;
+            }
+
+            .product-image {
+                margin-top: 40px;
+                position: relative;
+            }
+
+            .product-image img {
+                width: 100%;
+                max-width: 800px;
+                border-radius: 18px;
+                box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+            }
+
+            /* 图片占位符样式 */
+            .image-placeholder {
+                background: #f5f5f7;
+                border: 2px dashed #d1d1d6;
+                border-radius: 18px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 300px;
+                color: #86868b;
+                font-size: 17px;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+
+            .image-placeholder:hover {
+                border-color: #0071e3;
+                background: #f0f8ff;
+            }
+
+            .image-placeholder .placeholder-icon {
+                font-size: 48px;
+                margin-bottom: 16px;
+                opacity: 0.6;
+            }
+
+            .image-placeholder .placeholder-text {
+                font-weight: 500;
+                margin-bottom: 8px;
+            }
+
+            .image-placeholder .placeholder-hint {
+                font-size: 15px;
+                opacity: 0.7;
+            }
+
+            /* 功能详情图片占位符 */
+            .feature-detail-image .image-placeholder {
+                min-height: 250px;
+            }
+
+            /* 英雄区域图片占位符 */
+            .hero-image .image-placeholder {
+                min-height: 400px;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            /* 详细功能介绍区域 */
+            .feature-details {
+                padding: 100px 22px;
+                background: #f5f5f7;
+            }
+
+            .feature-details-container {
+                max-width: 980px;
+                margin: 0 auto;
             }
 
             .feature-detail-section {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 80px;
+                align-items: center;
+                margin-bottom: 120px;
+            }
+
+            .feature-detail-section:nth-child(even) .feature-detail-content {
+                order: 2;
+            }
+
+            .feature-detail-section:nth-child(even) .feature-detail-image {
+                order: 1;
+            }
+
+            .feature-detail-content h3 {
+                font-size: 32px;
+                font-weight: 600;
+                margin-bottom: 16px;
+                color: #1d1d1f;
+                letter-spacing: -0.005em;
+                line-height: 1.125;
+            }
+
+            .feature-detail-content p {
+                font-size: 19px;
+                color: #86868b;
+                line-height: 1.42105;
+                letter-spacing: 0.012em;
+                margin-bottom: 24px;
+            }
+
+            .feature-detail-list {
+                list-style: none;
+                padding: 0;
+            }
+
+            .feature-detail-list li {
+                display: flex;
+                align-items: flex-start;
+                margin-bottom: 12px;
+                font-size: 17px;
+                color: #1d1d1f;
+                line-height: 1.47059;
+                letter-spacing: -0.022em;
+            }
+
+            .feature-detail-list li::before {
+                content: "✓";
+                color: #0071e3;
+                font-weight: 600;
+                margin-right: 12px;
+                margin-top: 2px;
+                font-size: 16px;
+            }
+
+            .feature-detail-image {
+                position: relative;
+            }
+
+            .feature-detail-image img {
+                width: 100%;
+                border-radius: 18px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+
+            /* 使用场景区域 */
+            .use-cases {
+                padding: 100px 22px;
+                background: #ffffff;
+            }
+
+            .use-cases-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .use-cases h2 {
+                text-align: center;
+                font-size: 48px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #1d1d1f;
+                letter-spacing: -0.003em;
+                line-height: 1.08349;
+            }
+
+            .use-cases .subtitle {
+                text-align: center;
+                font-size: 21px;
+                color: #86868b;
                 margin-bottom: 60px;
+                font-weight: 400;
+                line-height: 1.381;
+                letter-spacing: 0.011em;
+            }
+
+            .use-case-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 40px;
+            }
+
+            .use-case-card {
+                background: #f5f5f7;
+                border-radius: 18px;
+                padding: 40px 30px;
+                text-align: left;
+                transition: transform 0.3s ease;
+            }
+
+            .use-case-card:hover {
+                transform: translateY(-4px);
+            }
+
+            .use-case-icon {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 20px;
+                background: linear-gradient(135deg, #0071e3, #005bb5);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
             }
 
             .use-case-card h3 {
-                font-size: 19px;
+                font-size: 21px;
+                font-weight: 600;
+                margin-bottom: 12px;
+                color: #1d1d1f;
+                letter-spacing: -0.016em;
+                line-height: 1.381;
             }
-        }
 
-        /* 动画效果 - Mac风格 */
-        @keyframes fadeInUp {
-            from {
+            .use-case-card p {
+                font-size: 17px;
+                color: #86868b;
+                line-height: 1.47059;
+                letter-spacing: -0.022em;
+                margin-bottom: 16px;
+            }
+
+            .use-case-example {
+                font-size: 15px;
+                color: #1d1d1f;
+                background: #ffffff;
+                padding: 12px 16px;
+                border-radius: 8px;
+                border-left: 3px solid #0071e3;
+                font-style: italic;
+            }
+
+            /* 开源理念区域 */
+            .open-source {
+                padding: 100px 22px;
+                background: #f5f5f7;
+                text-align: center;
+            }
+
+            .open-source-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .open-source h2 {
+                font-size: 48px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #1d1d1f;
+                letter-spacing: -0.003em;
+                line-height: 1.08349;
+            }
+
+            .open-source .subtitle {
+                font-size: 21px;
+                color: #86868b;
+                margin-bottom: 40px;
+                font-weight: 400;
+                line-height: 1.381;
+                letter-spacing: 0.011em;
+            }
+
+            .open-source .description {
+                font-size: 17px;
+                color: #1d1d1f;
+                line-height: 1.47059;
+                letter-spacing: -0.022em;
+                max-width: 600px;
+                margin: 0 auto 40px;
+            }
+
+            /* 底部CTA区域 */
+            .cta-section {
+                padding: 100px 22px;
+                background: #ffffff;
+                text-align: center;
+            }
+
+            .cta-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .cta-section h2 {
+                font-size: 48px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #1d1d1f;
+                letter-spacing: -0.003em;
+                line-height: 1.08349;
+            }
+
+            .cta-section .subtitle {
+                font-size: 21px;
+                color: #86868b;
+                margin-bottom: 40px;
+                font-weight: 400;
+                line-height: 1.381;
+                letter-spacing: 0.011em;
+            }
+
+            /* 底部区域 */
+            .footer {
+                background: #1d1d1f;
+                color: #f5f5f7;
+                padding: 40px 22px 20px;
+                text-align: center;
+            }
+
+            .footer-container {
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            .footer p {
+                color: #86868b;
+                font-size: 12px;
+                line-height: 1.33337;
+                letter-spacing: -0.01em;
+            }
+
+            .footer h3 {
+                color: #f5f5f7;
+                font-size: 24px;
+                font-weight: 600;
+                margin-bottom: 12px;
+                letter-spacing: -0.009em;
+            }
+
+            .footer .primary-button {
+                background: #0071e3;
+                color: white;
+            }
+
+            .footer .secondary-button {
+                background: transparent;
+                color: #0071e3;
+                border: 1px solid #0071e3;
+            }
+
+            .footer .secondary-button:hover {
+                background: #0071e3;
+                color: white;
+                text-decoration: none;
+            }
+
+            /* 响应式设计 - Mac风格 */
+            @media (max-width: 1068px) {
+                .nav-container {
+                    padding: 0 22px;
+                }
+
+                .hero,
+                .features,
+                .product-showcase,
+                .open-source,
+                .cta-section {
+                    padding-left: 22px;
+                    padding-right: 22px;
+                }
+            }
+
+            @media (max-width: 834px) {
+                .nav-links {
+                    display: none;
+                }
+
+                .hero h1 {
+                    font-size: 40px;
+                    line-height: 1.1;
+                }
+
+                .hero .subtitle {
+                    font-size: 21px;
+                    line-height: 1.381;
+                }
+
+                .hero .description {
+                    font-size: 17px;
+                    line-height: 1.47059;
+                }
+
+                .hero-buttons {
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                /* Mac窗口在平板设备上的适配 */
+                .mac-window-header {
+                    height: 36px;
+                    padding: 0 12px;
+                }
+
+                .mac-control-button {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                .mac-window-title {
+                    font-size: 12px;
+                }
+
+                .features h2,
+                .product-showcase h2,
+                .feature-details h2,
+                .use-cases h2,
+                .open-source h2,
+                .cta-section h2 {
+                    font-size: 32px;
+                    line-height: 1.125;
+                }
+
+                .feature-grid {
+                    grid-template-columns: 1fr;
+                    gap: 30px;
+                }
+
+                .feature-card {
+                    padding: 30px 20px;
+                }
+
+                .feature-detail-section {
+                    grid-template-columns: 1fr;
+                    gap: 40px;
+                    margin-bottom: 80px;
+                }
+
+                .feature-detail-section:nth-child(even) .feature-detail-content {
+                    order: 1;
+                }
+
+                .feature-detail-section:nth-child(even) .feature-detail-image {
+                    order: 2;
+                }
+
+                .feature-detail-content h3 {
+                    font-size: 28px;
+                }
+
+                .use-case-grid {
+                    grid-template-columns: 1fr;
+                    gap: 30px;
+                }
+
+                .use-case-card {
+                    padding: 30px 20px;
+                }
+            }
+
+            @media (max-width: 430px) {
+
+                .hero,
+                .features,
+                .product-showcase,
+                .feature-details,
+                .use-cases,
+                .open-source,
+                .cta-section {
+                    padding-left: 16px;
+                    padding-right: 16px;
+                }
+
+                .hero h1 {
+                    font-size: 32px;
+                }
+
+                .hero .subtitle {
+                    font-size: 19px;
+                }
+
+                /* Mac窗口在手机设备上的适配 */
+                .mac-window-header {
+                    height: 32px;
+                    padding: 0 10px;
+                }
+
+                .mac-control-button {
+                    width: 8px;
+                    height: 8px;
+                }
+
+                .mac-window-controls {
+                    gap: 6px;
+                }
+
+                .mac-window-title {
+                    font-size: 11px;
+                }
+
+                .features h2,
+                .product-showcase h2,
+                .feature-details h2,
+                .use-cases h2,
+                .open-source h2,
+                .cta-section h2 {
+                    font-size: 28px;
+                }
+
+                .feature-detail-content h3 {
+                    font-size: 24px;
+                }
+
+                .feature-detail-section {
+                    margin-bottom: 60px;
+                }
+
+                .use-case-card h3 {
+                    font-size: 19px;
+                }
+            }
+
+            /* 动画效果 - Mac风格 */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .fade-in-up {
+                animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            }
+
+            /* 滚动动画 */
+            .scroll-animate {
                 opacity: 0;
                 transform: translateY(20px);
+                transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             }
 
-            to {
+            .scroll-animate.visible {
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
+        </style>
+    </head>
 
-        .fade-in-up {
-            animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
+    <body>
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="#" class="logo">
+                    <img src="./public/icon.png" alt="无限便签">
+                    无限便签
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#philosophy">设计理念</a></li>
+                    <li><a href="#features">功能</a></li>
+                    <li><a href="#open-source">开源</a></li>
+                </ul>
+                <a href="./app.html" class="cta-button">开始使用</a>
+            </div>
+        </nav>
 
-        /* 滚动动画 */
-        .scroll-animate {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .scroll-animate.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    </style>
-</head>
-
-<body>
-    <!-- 导航栏 -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="#" class="logo">
-                <img src="./public/icon.png" alt="无限便签">
-                无限便签
-            </a>
-            <ul class="nav-links">
-                <li><a href="#features">功能</a></li>
-                <li><a href="#open-source">开源</a></li>
-            </ul>
-            <a href="./app.html" class="cta-button">开始使用</a>
-        </div>
-    </nav>
-
-    <!-- 主要内容 -->
-    <main class="main-content">
-        <!-- 英雄区域 -->
-        <section class="hero">
-            <div class="hero-container scroll-animate">
-                <h1>无限便签</h1>
-                <p class="subtitle">思维整理的新方式</p>
-                <p class="description">在无限画布上创建便签，用连接线构建思维导图，让AI帮你汇总整理想法。简单、直观、高效。</p>
-                <div class="hero-buttons">
-                    <a href="./app.html" class="primary-button">免费使用</a>
-                    <a href="#features" class="secondary-button">了解更多</a>
-                </div>
-                <div class="hero-image">
-                    <!-- 主要产品截图 - Mac窗口样式 -->
-                    <div class="mac-window">
-                        <div class="mac-window-header">
-                            <div class="mac-window-controls">
-                                <div class="mac-control-button close"></div>
-                                <div class="mac-control-button minimize"></div>
-                                <div class="mac-control-button maximize"></div>
+        <!-- 主要内容 -->
+        <main class="main-content">
+            <!-- 英雄区域 -->
+            <section class="hero">
+                <div class="hero-container scroll-animate">
+                    <h1>无限便签</h1>
+                    <p class="subtitle">让思维自由流淌，让想法自然连接</p>
+                    <p class="description">
+                        摆脱传统笔记的束缚，在无边界的画布上自由创作。输入简单想法，AI帮你生成完整便签；定制专属AI角色，让AI按你的风格工作；自由切换不同AI供应商，用你最喜欢的模型；用连接线构建知识网络。这不只是一个工具，而是你的专属思维伙伴。
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="./app.html" class="primary-button">开始思维之旅</a>
+                        <a href="#philosophy" class="secondary-button">了解设计理念</a>
+                    </div>
+                    <div class="hero-image">
+                        <!-- 主要产品截图 - Mac窗口样式 -->
+                        <div class="mac-window">
+                            <div class="mac-window-header">
+                                <div class="mac-window-controls">
+                                    <div class="mac-control-button close"></div>
+                                    <div class="mac-control-button minimize"></div>
+                                    <div class="mac-control-button maximize"></div>
+                                </div>
+                                <div class="mac-window-title">无限便签</div>
                             </div>
-                            <div class="mac-window-title">无限便签</div>
-                        </div>
-                        <img src="./public/images/001.png" alt="无限便签产品界面" />
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 功能展示 -->
-        <section class="features" id="features">
-            <div class="features-container">
-                <h2 class="scroll-animate">强大功能</h2>
-                <p class="subtitle scroll-animate">专为思维整理而设计</p>
-
-                <div class="feature-grid">
-                    <div class="feature-card scroll-animate">
-                        <div class="feature-icon">📝</div>
-                        <h3>无限画布</h3>
-                        <p>在无边界的画布上自由创作，支持无限缩放和平移，让思维空间不受限制。双击创建便签，拖拽自由移动。</p>
-                    </div>
-
-                    <div class="feature-card scroll-animate">
-                        <div class="feature-icon">🤖</div>
-                        <h3>AI智能汇总</h3>
-                        <p>选择多个便签，AI自动提取要点、整理思路，支持汇总模式和替换模式，让复杂信息瞬间变得清晰有序。</p>
-                    </div>
-
-                    <div class="feature-card scroll-animate">
-                        <div class="feature-icon">🔗</div>
-                        <h3>可视化连接</h3>
-                        <p>用连接线将相关便签串联，构建清晰的思维脉络，支持溯源追踪，轻松了解想法的演化过程。</p>
-                    </div>
-
-                    <div class="feature-card scroll-animate">
-                        <div class="feature-icon">🎨</div>
-                        <h3>多样化样式</h3>
-                        <p>支持多种便签颜色和样式，通过颜色分类管理不同类型的想法，让画布更加直观美观。</p>
-                    </div>
-
-                    <div class="feature-card scroll-animate">
-                        <div class="feature-icon">💾</div>
-                        <h3>本地存储</h3>
-                        <p>所有数据存储在本地浏览器中，无需担心隐私泄露，支持实时保存，永不丢失你的想法。</p>
-                    </div>
-
-                    <div class="feature-card scroll-animate">
-                        <div class="feature-icon">⚡</div>
-                        <h3>快捷操作</h3>
-                        <p>支持丰富的快捷键操作，Ctrl+N创建便签，Ctrl+Z撤销，Ctrl+F搜索，提升操作效率。</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 产品展示 -->
-        <section class="product-showcase">
-            <div class="product-showcase-container">
-                <h2 class="scroll-animate">简单直观的界面</h2>
-                <p class="subtitle scroll-animate">专注于内容，而非工具本身</p>
-                <div class="product-image">
-                    <!-- 产品界面展示截图 - 将 product-interface.png 放入 public/images/ 文件夹 -->
-                    <img src="./public/images/002.png" alt="产品界面展示" />
-                </div>
-            </div>
-        </section>
-
-        <!-- 详细功能介绍 -->
-        <section class="feature-details">
-            <div class="feature-details-container">
-                <!-- 无限画布详细介绍 -->
-                <div class="feature-detail-section scroll-animate">
-                    <div class="feature-detail-content">
-                        <h3>无限画布，释放创造力</h3>
-                        <p>摆脱传统笔记软件的页面限制，在无边界的画布上自由创作。就像在真实的白板上一样自然，想法可以任意延伸。</p>
-                        <ul class="feature-detail-list">
-                            <li>支持无限缩放，从宏观到细节</li>
-                            <li>流畅的平移操作，探索整个思维空间</li>
-                            <li>网格背景辅助，保持内容整齐对齐</li>
-                            <li>三击任意位置即可创建新便签</li>
-                            <li>拖拽移动，随心所欲调整布局</li>
-                        </ul>
-                    </div>
-                    <div class="feature-detail-image">
-                        <!-- 无限画布功能截图 - 将 infinite-canvas.png 放入 public/images/ 文件夹 -->
-                        <img src="./public/images/003.png" alt="无限画布功能展示" />
-                    </div>
-                </div>
-
-                <!-- AI智能汇总详细介绍 -->
-                <div class="feature-detail-section scroll-animate">
-                    <div class="feature-detail-content">
-                        <h3>AI智能汇总，思维升华</h3>
-                        <p>选择多个便签，AI自动帮你提取要点、整理思路、生成摘要。让复杂的信息瞬间变得清晰有序，思维整理从未如此高效。</p>
-                        <ul class="feature-detail-list">
-                            <li>智能内容汇总和关键信息提取</li>
-                            <li>支持汇总模式和替换模式两种方式</li>
-                            <li>自动生成结构化摘要和要点</li>
-                            <li>保持原始便签的关联关系</li>
-                            <li>支持多语言内容的智能处理</li>
-                        </ul>
-                    </div>
-                    <div class="feature-detail-image">
-                        <!-- AI智能汇总功能截图 - 将 ai-summary.png 放入 public/images/ 文件夹 -->
-                        <img src="./public/images/001.png" alt="AI智能汇总功能展示" />
-                    </div>
-                </div>
-
-                <!-- 可视化连接详细介绍 -->
-                <div class="feature-detail-section scroll-animate">
-                    <div class="feature-detail-content">
-                        <h3>可视化连接，构建知识网络</h3>
-                        <p>用连接线将相关便签串联起来，构建清晰的思维脉络。支持溯源追踪，让你轻松了解每个想法的来龙去脉和演化过程。</p>
-                        <ul class="feature-detail-list">
-                            <li>直观的连接线可视化展示</li>
-                            <li>支持多种连接模式和样式</li>
-                            <li>便签溯源和历史追踪功能</li>
-                            <li>智能连接点自动对齐</li>
-                            <li>一键显示/隐藏连接关系</li>
-                        </ul>
-                    </div>
-                    <div class="feature-detail-image">
-                        <!-- 可视化连接功能截图 - 将 visual-connections.png 放入 public/images/ 文件夹 -->
-                        <img src="./public/images/005.png" alt="可视化连接功能展示" />
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 使用场景 -->
-        <section class="use-cases">
-            <div class="use-cases-container">
-                <h2 class="scroll-animate">适用场景</h2>
-                <p class="subtitle scroll-animate">无论你是学生、职场人士还是创作者，都能找到适合的使用方式</p>
-
-                <div class="use-case-grid">
-                    <div class="use-case-card scroll-animate">
-                        <div class="use-case-icon">🎓</div>
-                        <h3>学习笔记</h3>
-                        <p>整理课程内容，构建知识体系，用连接线展示概念间的关系，让学习更有条理。</p>
-                        <div class="use-case-example">
-                            "我用它来整理历史课的知识点，把不同朝代的事件用连接线串联起来，复习时一目了然。"
-                        </div>
-                    </div>
-
-                    <div class="use-case-card scroll-animate">
-                        <div class="use-case-icon">💼</div>
-                        <h3>项目管理</h3>
-                        <p>规划项目流程，分解任务目标，用AI汇总功能生成项目总结和进度报告。</p>
-                        <div class="use-case-example">
-                            "团队头脑风暴时，每个人的想法都记录在便签上，最后用AI汇总出可行的方案。"
-                        </div>
-                    </div>
-
-                    <div class="use-case-card scroll-animate">
-                        <div class="use-case-icon">✍️</div>
-                        <h3>创意写作</h3>
-                        <p>收集灵感片段，构建故事脉络，用可视化连接展示人物关系和情节发展。</p>
-                        <div class="use-case-example">
-                            "写小说时，我把每个角色和情节都做成便签，用连接线理清复杂的故事线。"
-                        </div>
-                    </div>
-
-                    <div class="use-case-card scroll-animate">
-                        <div class="use-case-icon">🔬</div>
-                        <h3>研究分析</h3>
-                        <p>整理文献资料，梳理研究思路，用溯源功能追踪想法的演化过程。</p>
-                        <div class="use-case-example">
-                            "做学术研究时，我把每篇论文的要点记录下来，AI帮我找出研究的关键方向。"
-                        </div>
-                    </div>
-
-                    <div class="use-case-card scroll-animate">
-                        <div class="use-case-icon">🎨</div>
-                        <h3>设计思维</h3>
-                        <p>收集设计灵感，整理用户需求，用画布自由布局，让创意思维无拘无束。</p>
-                        <div class="use-case-example">
-                            "设计产品时，我把用户反馈、竞品分析都放在画布上，一眼就能看出设计重点。"
-                        </div>
-                    </div>
-
-                    <div class="use-case-card scroll-animate">
-                        <div class="use-case-icon">📈</div>
-                        <h3>商业策划</h3>
-                        <p>分析市场机会，制定商业计划，用AI汇总功能快速生成策划方案。</p>
-                        <div class="use-case-example">
-                            "制定营销策略时，我把市场数据、用户画像都整理在画布上，思路特别清晰。"
+                            <img src="./public/images/001.png" alt="无限便签产品界面" />
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- 开源理念 -->
-        <section class="open-source" id="open-source">
-            <div class="open-source-container">
-                <h2 class="scroll-animate">开源理念</h2>
-                <p class="subtitle scroll-animate">透明、开放、共同进步</p>
-                <p class="description scroll-animate">
-                    我们相信开源的力量。无限便签将完全开源，让每个人都能参与到产品的改进中来。
-                    代码透明，功能可控，数据安全，这是我们对用户的承诺。
-                </p>
-            </div>
-        </section>
+            <!-- 设计理念 -->
+            <section class="features" id="philosophy">
+                <div class="features-container">
+                    <h2 class="scroll-animate">设计理念</h2>
+                    <p class="subtitle scroll-animate">重新定义思维整理的方式</p>
 
-        <!-- CTA区域 -->
-        <section class="cta-section">
-            <div class="cta-container">
-                <h2 class="scroll-animate">开始整理你的思维</h2>
-                <p class="subtitle scroll-animate">免费使用，无需注册</p>
-                <div class="hero-buttons">
-                    <a href="./app.html" class="primary-button">立即开始</a>
+                    <div class="feature-grid">
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🌊</div>
+                            <h3>思维如水，自由流淌</h3>
+                            <p>传统笔记软件像容器，限制了思维的形状。我们相信思维应该像水一样自由流淌，在无限画布上找到最自然的表达方式。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">�</div>
+                            <h3>模拟大脑的工作方式</h3>
+                            <p>大脑不是线性思考的，而是通过神经网络连接各种概念。我们用连接线模拟这种思维模式，让想法之间的关系一目了然。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🤝</div>
+                            <h3>人机协作，而非替代</h3>
+                            <p>AI不是来替代你的思考，而是作为思维伙伴。你提供想法的种子，AI帮你生长成完整内容；你创造多个便签，AI帮你整理汇总。人负责创造，AI负责扩展和整理。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">�</div>
+                            <h3>专注内容，而非工具</h3>
+                            <p>最好的工具是让人忘记它的存在。我们追求极简的交互设计，让你专注于思考本身，而不是学习如何使用工具。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🎯</div>
+                            <h3>AI自由选择，拒绝绑定</h3>
+                            <p>你应该自由选择最适合的AI，而不是被迫使用某个特定服务。我们支持多种AI供应商，让你用自己的API密钥，真正拥有AI选择权。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">�</div>
+                            <h3>隐私至上，数据自主</h3>
+                            <p>你的想法属于你自己。所有数据存储在本地，你完全掌控自己的信息，无需担心隐私泄露或数据被滥用。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🌱</div>
+                            <h3>开源共建，持续进化</h3>
+                            <p>好的工具需要社区的智慧。我们选择开源，让每个人都能参与改进，让产品在透明中成长，在协作中进化。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 功能价值 -->
+            <section class="features" id="features" style="background: #ffffff;">
+                <div class="features-container">
+                    <h2 class="scroll-animate">核心功能</h2>
+                    <p class="subtitle scroll-animate">每个功能都为解决真实问题而生</p>
+
+                    <div class="feature-grid">
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🌌</div>
+                            <h3>无限画布</h3>
+                            <p><strong>解决问题：</strong>传统笔记的页面限制让思维受束缚<br>
+                                <strong>带来价值：</strong>思维空间无限延伸，想法可以自由生长，就像在真实白板上一样自然
+                            </p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">✨</div>
+                            <h3>AI生成便签</h3>
+                            <p><strong>解决问题：</strong>有想法但不知道如何表达，或者想法太简单需要扩展<br>
+                                <strong>带来价值：</strong>输入简单想法，AI帮你生成完整便签，让思维快速具象化
+                            </p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🎭</div>
+                            <h3>AI角色定制</h3>
+                            <p><strong>解决问题：</strong>不同场景需要不同的AI处理风格和专业度<br>
+                                <strong>带来价值：</strong>自定义AI角色，让AI按你的喜好和需求来处理内容
+                            </p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🔄</div>
+                            <h3>多AI供应商支持</h3>
+                            <p><strong>解决问题：</strong>被单一AI服务商绑定，无法选择最适合的AI<br>
+                                <strong>带来价值：</strong>自由切换OpenAI、Claude、本地模型等，用你最喜欢的AI
+                            </p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🕸️</div>
+                            <h3>可视化连接</h3>
+                            <p><strong>解决问题：</strong>想法之间的关系难以表达和追踪<br>
+                                <strong>带来价值：</strong>构建知识网络，追溯思维轨迹，让复杂关系变得清晰可见
+                            </p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🤖</div>
+                            <h3>AI智能汇总</h3>
+                            <p><strong>解决问题：</strong>信息过载，难以从大量内容中提取要点<br>
+                                <strong>带来价值：</strong>选择多个便签，AI瞬间理清复杂信息，让思维升华到更高层次
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 产品展示 -->
+            <section class="product-showcase">
+                <div class="product-showcase-container">
+                    <h2 class="scroll-animate">简单直观的界面</h2>
+                    <p class="subtitle scroll-animate">专注于内容，而非工具本身</p>
+                    <div class="product-image">
+                        <!-- 产品界面展示截图 - 将 product-interface.png 放入 public/images/ 文件夹 -->
+                        <img src="./public/images/002.png" alt="产品界面展示" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- 详细功能介绍 -->
+            <section class="feature-details">
+                <div class="feature-details-container">
+                    <!-- 无限画布详细介绍 -->
+                    <div class="feature-detail-section scroll-animate">
+                        <div class="feature-detail-content">
+                            <h3>无限画布，释放创造力</h3>
+                            <p>摆脱传统笔记软件的页面限制，在无边界的画布上自由创作。就像在真实的白板上一样自然，想法可以任意延伸。</p>
+                            <ul class="feature-detail-list">
+                                <li>支持无限缩放，从宏观到细节</li>
+                                <li>流畅的平移操作，探索整个思维空间</li>
+                                <li>网格背景辅助，保持内容整齐对齐</li>
+                                <li>三击任意位置即可创建新便签</li>
+                                <li>拖拽移动，随心所欲调整布局</li>
+                            </ul>
+                        </div>
+                        <div class="feature-detail-image">
+                            <!-- 无限画布功能截图 - 将 infinite-canvas.png 放入 public/images/ 文件夹 -->
+                            <img src="./public/images/003.png" alt="无限画布功能展示" />
+                        </div>
+                    </div>
+
+                    <!-- AI生成便签详细介绍 -->
+                    <div class="feature-detail-section scroll-animate">
+                        <div class="feature-detail-content">
+                            <h3>AI生成便签，想法快速具象化</h3>
+                            <p>只需要输入一个简单的想法或关键词，AI就能帮你生成完整的便签内容。让思维的火花瞬间变成具体的内容，再也不用担心想法太简单或表达不清。</p>
+                            <ul class="feature-detail-list">
+                                <li>输入简单想法，AI自动扩展成完整内容</li>
+                                <li>支持多种生成风格：详细说明、要点列表、思维导图</li>
+                                <li>智能理解上下文，生成相关性强的内容</li>
+                                <li>一键生成，随时修改，完全可控</li>
+                                <li>支持中英文混合输入和生成</li>
+                            </ul>
+                        </div>
+                        <div class="feature-detail-image">
+                            <!-- AI生成便签功能截图 -->
+                            <img src="./public/images/002.png" alt="AI生成便签功能展示" />
+                        </div>
+                    </div>
+
+                    <!-- AI角色定制详细介绍 -->
+                    <div class="feature-detail-section scroll-animate">
+                        <div class="feature-detail-content">
+                            <h3>AI角色定制，个性化思维助手</h3>
+                            <p>不同的思维场景需要不同的AI风格。你可以创建专属的AI角色，让AI按照你的喜好和需求来处理内容，真正做到千人千面的个性化体验。</p>
+                            <ul class="feature-detail-list">
+                                <li>预设多种专业角色：学者、创意师、分析师、导师等</li>
+                                <li>自定义AI性格：严谨、活泼、专业、幽默</li>
+                                <li>设置专业领域：技术、商业、艺术、教育</li>
+                                <li>调整输出风格：详细解释、简洁要点、创意发散</li>
+                                <li>保存角色配置，一键切换不同场景</li>
+                            </ul>
+                        </div>
+                        <div class="feature-detail-image">
+                            <!-- AI角色定制功能截图 -->
+                            <img src="./public/images/004.png" alt="AI角色定制功能展示" />
+                        </div>
+                    </div>
+
+                    <!-- 多AI供应商支持详细介绍 -->
+                    <div class="feature-detail-section scroll-animate">
+                        <div class="feature-detail-content">
+                            <h3>多AI供应商，自由选择最佳体验</h3>
+                            <p>不被任何单一AI服务商绑定，你可以自由选择最适合的AI模型。支持主流AI供应商，还可以使用本地模型，完全掌控你的AI体验。</p>
+                            <ul class="feature-detail-list">
+                                <li>支持OpenAI GPT系列模型</li>
+                                <li>支持Anthropic Claude系列模型</li>
+                                <li>支持本地部署的开源模型</li>
+                                <li>一键切换不同供应商和模型</li>
+                                <li>自定义API配置，使用你自己的密钥</li>
+                            </ul>
+                        </div>
+                        <div class="feature-detail-image">
+                            <!-- 多AI供应商功能截图 -->
+                            <img src="./public/images/005.png" alt="多AI供应商功能展示" />
+                        </div>
+                    </div>
+
+                    <!-- AI智能汇总详细介绍 -->
+                    <div class="feature-detail-section scroll-animate">
+                        <div class="feature-detail-content">
+                            <h3>AI智能汇总，思维升华</h3>
+                            <p>当你有了多个便签后，选择相关的便签，AI自动帮你提取要点、整理思路、生成摘要。结合你定制的AI角色，让汇总结果更符合你的需求和风格。</p>
+                            <ul class="feature-detail-list">
+                                <li>智能内容汇总和关键信息提取</li>
+                                <li>支持汇总模式和替换模式两种方式</li>
+                                <li>根据AI角色调整汇总风格和深度</li>
+                                <li>保持原始便签的关联关系和溯源信息</li>
+                                <li>支持多语言内容的智能处理</li>
+                            </ul>
+                        </div>
+                        <div class="feature-detail-image">
+                            <!-- AI智能汇总功能截图 -->
+                            <img src="./public/images/001.png" alt="AI智能汇总功能展示" />
+                        </div>
+                    </div>
+
+                    <!-- 可视化连接详细介绍 -->
+                    <div class="feature-detail-section scroll-animate">
+                        <div class="feature-detail-content">
+                            <h3>可视化连接，构建知识网络</h3>
+                            <p>用连接线将相关便签串联起来，构建清晰的思维脉络。支持溯源追踪，让你轻松了解每个想法的来龙去脉和演化过程。</p>
+                            <ul class="feature-detail-list">
+                                <li>直观的连接线可视化展示</li>
+                                <li>支持多种连接模式和样式</li>
+                                <li>便签溯源和历史追踪功能</li>
+                                <li>智能连接点自动对齐</li>
+                                <li>一键显示/隐藏连接关系</li>
+                            </ul>
+                        </div>
+                        <div class="feature-detail-image">
+                            <!-- 可视化连接功能截图 - 将 visual-connections.png 放入 public/images/ 文件夹 -->
+                            <img src="./public/images/005.png" alt="可视化连接功能展示" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 使用场景 -->
+            <section class="use-cases">
+                <div class="use-cases-container">
+                    <h2 class="scroll-animate">真实使用场景</h2>
+                    <p class="subtitle scroll-animate">看看无限便签如何在不同场景中创造价值</p>
+
+                    <div class="use-case-grid">
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">🎓</div>
+                            <h3>学习笔记：从碎片到体系</h3>
+                            <p><strong>痛点：</strong>知识点零散，记录不完整，难以形成体系<br>
+                                <strong>解决：</strong>输入关键词让AI生成完整笔记，用连接线构建知识网络
+                            </p>
+                            <div class="use-case-example">
+                                "学习'神经网络'时，我只输入这个词，AI就生成了包含定义、原理、应用的完整便签。然后我继续输入相关概念，用连接线把整个知识体系串联起来。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">💼</div>
+                            <h3>项目管理：从想法到计划</h3>
+                            <p><strong>痛点：</strong>项目想法模糊，难以快速形成具体计划<br>
+                                <strong>解决：</strong>输入项目概念，AI生成详细任务，可视化项目全貌
+                            </p>
+                            <div class="use-case-example">
+                                "启动'用户体验优化'项目时，我输入这个想法，AI生成了用户调研、数据分析、设计改进等具体任务便签。然后用连接线规划执行顺序，项目计划一目了然。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">✍️</div>
+                            <h3>创意写作：从灵感到作品</h3>
+                            <p><strong>痛点：</strong>灵感稍纵即逝，想法不完整难以发展<br>
+                                <strong>解决：</strong>快速记录灵感关键词，AI扩展成完整创意
+                            </p>
+                            <div class="use-case-example">
+                                "写小说时突然想到'时间旅行者的困境'，我立即输入这个想法，AI生成了角色设定、情节冲突、解决方案等多个便签。然后用连接线构建故事线，一个完整的故事框架就出来了。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">🎭</div>
+                            <h3>个性化AI：专属思维助手</h3>
+                            <p><strong>痛点：</strong>不同场景需要不同的AI风格和专业度<br>
+                                <strong>解决：</strong>定制多个AI角色，一键切换最适合的助手
+                            </p>
+                            <div class="use-case-example">
+                                "我创建了5个AI角色：学习时用'耐心导师'（详细解释），工作时用'效率专家'（简洁要点），创作时用'灵感伙伴'（发散思维），分析时用'逻辑大师'（严谨推理），聊天时用'幽默朋友'（轻松有趣）。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">🔬</div>
+                            <h3>研究分析：专业AI助手</h3>
+                            <p><strong>痛点：</strong>不同研究领域需要专业的分析视角<br>
+                                <strong>解决：</strong>定制学术研究AI角色，用Claude进行深度分析
+                            </p>
+                            <div class="use-case-example">
+                                "做机器学习研究时，我设置了'AI研究专家'角色，让它用学术语言分析论文。同时切换到Claude模型，因为它的分析更深入。每篇论文的要点都很专业。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">🎨</div>
+                            <h3>设计思维：创意AI伙伴</h3>
+                            <p><strong>痛点：</strong>需要不同风格的创意输出和设计建议<br>
+                                <strong>解决：</strong>定制创意设计师AI角色，激发更多灵感
+                            </p>
+                            <div class="use-case-example">
+                                "设计产品时，我创建了'创意设计师'角色，让AI用活泼、发散的风格生成想法。用户调研用'严谨分析师'，创意发散用'头脑风暴专家'，不同阶段不同AI风格。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">📈</div>
+                            <h3>商业策划：多AI协作</h3>
+                            <p><strong>痛点：</strong>不同商业分析需要不同AI的优势<br>
+                                <strong>解决：</strong>根据任务切换最适合的AI模型和角色
+                            </p>
+                            <div class="use-case-example">
+                                "制定商业计划时，市场分析用GPT-4（数据处理强），创意营销用Claude（创意思维好），财务规划用'商业分析师'角色（专业严谨）。不同任务用最合适的AI。"
+                            </div>
+                        </div>
+
+                        <div class="use-case-card scroll-animate">
+                            <div class="use-case-icon">🔄</div>
+                            <h3>AI自由切换：最佳体验</h3>
+                            <p><strong>痛点：</strong>被单一AI服务商绑定，无法获得最佳体验<br>
+                                <strong>解决：</strong>根据任务特点选择最适合的AI模型
+                            </p>
+                            <div class="use-case-example">
+                                "写代码用GPT-4（编程能力强），写文案用Claude（创意表达好），数据分析用本地模型（隐私安全），翻译用专门的翻译模型。每个任务都用最擅长的AI，效果提升明显。"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 开源理念 -->
+            <section class="open-source" id="open-source">
+                <div class="open-source-container">
+                    <h2 class="scroll-animate">开源理念</h2>
+                    <p class="subtitle scroll-animate">透明、开放、共同进化</p>
+                    <p class="description scroll-animate">
+                        我们相信最好的工具应该属于每个人。无限便签完全开源，不仅是代码的开放，更是理念的分享。
+                        我们希望与社区一起，重新定义思维工具的未来。
+                    </p>
+
+                    <div class="feature-grid" style="margin-top: 60px;">
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🔍</div>
+                            <h3>透明可信</h3>
+                            <p>代码完全开源，算法逻辑透明。你可以清楚地知道工具是如何工作的，数据是如何处理的，没有黑盒，没有秘密。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🛡️</div>
+                            <h3>隐私保护</h3>
+                            <p>你的想法只属于你。所有数据存储在本地，不上传到任何服务器。支持多种AI供应商，你可以选择本地模型，或使用自己的API密钥，确保隐私安全。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🌍</div>
+                            <h3>社区驱动</h3>
+                            <p>产品的发展方向由社区决定。每个人都可以提出建议、贡献代码、参与设计。这不是一个公司的产品，而是大家的工具。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🚀</div>
+                            <h3>持续进化</h3>
+                            <p>开源让产品永远保持活力。即使原团队不再维护，社区也可以继续发展。你的工具永远不会因为商业原因而消失。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🎓</div>
+                            <h3>学习共享</h3>
+                            <p>代码是最好的教材。通过阅读源码，你可以学习到前端开发、AI集成、数据管理等技术，知识在分享中传递。</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🔧</div>
+                            <h3>自由定制</h3>
+                            <p>不喜欢某个功能？想要添加新特性？开源让一切成为可能。你可以根据自己的需求定制专属版本。</p>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 60px;">
+                        <p class="description scroll-animate" style="margin-bottom: 30px;">
+                            <strong>我们的愿景：</strong>让每个人都能拥有最适合自己的思维工具，让好的想法不再因为工具的限制而无法表达。
+                        </p>
+                        <a href="https://github.com/your-username/infinite-notes" class="primary-button"
+                            target="_blank">查看源代码</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA区域 -->
+            <section class="cta-section">
+                <div class="cta-container">
+                    <h2 class="scroll-animate">释放你的思维潜能</h2>
+                    <p class="subtitle scroll-animate">不需要学习复杂的操作，不需要担心数据安全</p>
+                    <p class="description scroll-animate" style="max-width: 700px; margin: 0 auto 40px;">
+                        只需要打开浏览器，输入一个简单的想法，AI就能帮你生成完整的便签内容。
+                        在无限画布上自由创作，让AI成为你的思维伙伴，让连接线展现你的思维脉络。
+                        这一刻，开始重新定义你的思维方式。
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="./app.html" class="primary-button">开始思维之旅</a>
+                    </div>
+                    <p style="margin-top: 20px; color: #86868b; font-size: 15px;">
+                        ✓ 完全免费 ✓ 无需注册 ✓ 数据本地存储 ✓ 开源透明 ✓ AI自由选择 ✓ 角色定制
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部区域 -->
+        <footer class="footer">
+            <div class="footer-container">
+                <h3>思维无界，创意无限</h3>
+                <p>加入我们，一起重新定义思维工具的未来</p>
+                <div style="margin: 30px 0;">
+                    <a href="./app.html" class="primary-button" style="margin-right: 20px;">立即体验</a>
+                    <a href="https://github.com/your-username/infinite-notes" class="secondary-button"
+                        target="_blank">GitHub</a>
+                </div>
+                <div class="footer-bottom">
+                    <p>&copy; 2025 无限便签. 让思维自由流淌，让想法自然连接.</p>
+                    <p style="margin-top: 10px; font-size: 11px; opacity: 0.7;">
+                        开源项目 | MIT许可证 | 社区驱动 | 隐私优先
+                    </p>
                 </div>
             </div>
-        </section>
-    </main>
+        </footer>
 
-    <!-- 底部区域 -->
-    <footer class="footer">
-        <div class="footer-container">
-            <h3>准备好开始了吗？</h3>
-            <p>立即体验无限便签，让思维整理变得简单高效</p>
-            <a href="./app.html" class="footer-button">免费开始使用</a>
-            <div class="footer-bottom">
-                <p>&copy; 2025 无限便签. 专注于思维整理的创新工具.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // 平滑滚动 - Mac风格
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+        <script>
+            // 平滑滚动 - Mac风格
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
             });
-        });
 
-        // 滚动动画 - Mac风格
-        const observerOptions = {
-            threshold: 0.15,
-            rootMargin: '0px 0px -80px 0px'
-        };
+            // 滚动动画 - Mac风格
+            const observerOptions = {
+                threshold: 0.15,
+                rootMargin: '0px 0px -80px 0px'
+            };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
+
+            // 观察所有需要动画的元素
+            document.querySelectorAll('.scroll-animate').forEach(el => {
+                observer.observe(el);
             });
-        }, observerOptions);
 
-        // 观察所有需要动画的元素
-        document.querySelectorAll('.scroll-animate').forEach(el => {
-            observer.observe(el);
-        });
-
-        // 标记用户已访问过官网
-        function markLandingVisited() {
-            localStorage.setItem('hasVisitedLanding', 'true');
-        }
-
-        // 页面加载完成后标记访问
-        document.addEventListener('DOMContentLoaded', markLandingVisited);
-
-        // 导航栏滚动效果
-        let lastScrollY = window.scrollY;
-        const navbar = document.querySelector('.navbar');
-
-        window.addEventListener('scroll', () => {
-            const currentScrollY = window.scrollY;
-
-            if (currentScrollY > 100) {
-                navbar.style.background = 'rgba(255, 255, 255, 0.8)';
-            } else {
-                navbar.style.background = 'rgba(255, 255, 255, 0.72)';
+            // 标记用户已访问过官网
+            function markLandingVisited() {
+                localStorage.setItem('hasVisitedLanding', 'true');
             }
 
-            lastScrollY = currentScrollY;
-        });
-    </script>
-</body>
+            // 页面加载完成后标记访问
+            document.addEventListener('DOMContentLoaded', markLandingVisited);
+
+            // 导航栏滚动效果
+            let lastScrollY = window.scrollY;
+            const navbar = document.querySelector('.navbar');
+
+            window.addEventListener('scroll', () => {
+                const currentScrollY = window.scrollY;
+
+                if (currentScrollY > 100) {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.8)';
+                } else {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.72)';
+                }
+
+                lastScrollY = currentScrollY;
+            });
+        </script>
+    </body>
 
 </html>
