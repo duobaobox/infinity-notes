@@ -8,11 +8,9 @@ import {
   Space,
   Splitter,
   message,
-  Modal,
   Popconfirm,
 } from "antd";
 import {
-  SearchOutlined,
   PlusOutlined,
   FolderOutlined,
   StarFilled,
