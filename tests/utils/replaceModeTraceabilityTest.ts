@@ -3,8 +3,8 @@
  * 用于创建测试数据和验证替换模式下的溯源功能
  */
 
-import { useStickyNotesStore } from "../stores/stickyNotesStore";
-import type { SourceNoteContent } from "../components/types";
+import { useStickyNotesStore } from "../../src/stores/stickyNotesStore";
+import type { SourceNoteContent } from "../../src/components/types";
 
 /**
  * 创建替换模式测试便签用于验证溯源功能
@@ -20,23 +20,26 @@ export async function createReplaceModeTraceabilityTestData() {
       {
         id: "original-note-1",
         title: "原始便签1",
-        content: "这是第一个原始便签的内容\n\n## 重要数据\n- 数据点A：销售额增长15%\n- 数据点B：用户满意度提升\n\n## 分析\n根据Q3数据显示...",
+        content:
+          "这是第一个原始便签的内容\n\n## 重要数据\n- 数据点A：销售额增长15%\n- 数据点B：用户满意度提升\n\n## 分析\n根据Q3数据显示...",
         color: "yellow",
         createdAt: new Date("2024-01-15T10:00:00Z"),
         deletedAt: new Date("2024-01-20T14:30:00Z"),
       },
       {
-        id: "original-note-2", 
+        id: "original-note-2",
         title: "原始便签2",
-        content: "这是第二个原始便签的内容\n\n## 市场调研结果\n- 竞争对手分析\n- 目标用户画像\n- 价格策略建议\n\n## 结论\n建议采用差异化定价策略...",
+        content:
+          "这是第二个原始便签的内容\n\n## 市场调研结果\n- 竞争对手分析\n- 目标用户画像\n- 价格策略建议\n\n## 结论\n建议采用差异化定价策略...",
         color: "blue",
         createdAt: new Date("2024-01-16T09:30:00Z"),
         deletedAt: new Date("2024-01-20T14:30:00Z"),
       },
       {
         id: "original-note-3",
-        title: "原始便签3", 
-        content: "这是第三个原始便签的内容\n\n## 技术方案\n- 架构设计\n- 性能优化\n- 安全考虑\n\n## 实施计划\n分三个阶段进行开发...",
+        title: "原始便签3",
+        content:
+          "这是第三个原始便签的内容\n\n## 技术方案\n- 架构设计\n- 性能优化\n- 安全考虑\n\n## 实施计划\n分三个阶段进行开发...",
         color: "green",
         createdAt: new Date("2024-01-17T11:15:00Z"),
         deletedAt: new Date("2024-01-20T14:30:00Z"),
@@ -120,20 +123,21 @@ export async function verifyReplaceModeTraceabilityPersistence() {
 
     // 查找替换模式生成的便签
     const replaceModeNotes = store.notes.filter(
-      (note) => note.generationMode === "replace" && 
-                note.sourceNotesContent && 
-                note.sourceNotesContent.length > 0
+      (note) =>
+        note.generationMode === "replace" &&
+        note.sourceNotesContent &&
+        note.sourceNotesContent.length > 0
     );
 
     if (replaceModeNotes.length > 0) {
       console.log("✅ 找到替换模式便签:", replaceModeNotes.length, "个");
-      
+
       replaceModeNotes.forEach((note) => {
         console.log(`📋 便签 "${note.title}":`);
         console.log(`   - ID: ${note.id}`);
         console.log(`   - 生成模式: ${note.generationMode}`);
         console.log(`   - 原始便签数量: ${note.sourceNotesContent!.length}`);
-        
+
         note.sourceNotesContent!.forEach((source, index) => {
           console.log(`   ${index + 1}. 原始便签 "${source.title}":`);
           console.log(`      - 原始ID: ${source.id}`);
@@ -188,8 +192,9 @@ export async function cleanupReplaceModeTestData() {
   try {
     // 查找所有替换模式测试便签
     const testNotes = store.notes.filter(
-      (note) => note.generationMode === "replace" && 
-                note.title.includes("AI综合分析报告")
+      (note) =>
+        note.generationMode === "replace" &&
+        note.title.includes("AI综合分析报告")
     );
 
     if (testNotes.length === 0) {

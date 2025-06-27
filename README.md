@@ -40,16 +40,31 @@ npm run preview
 ## 📁 项目结构
 
 ```
-├── index.html          # 路由分发入口
-├── app.html           # 应用主入口
-├── landing.html       # 官网页面
-├── src/
-│   ├── components/    # React 组件
-│   ├── stores/        # 状态管理
-│   ├── database/      # 数据库层
-│   ├── services/      # 服务层
-│   └── utils/         # 工具函数
-└── dist/              # 构建输出
+├── index.html              # 路由分发入口
+├── app.html               # 应用主入口
+├── landing.html           # 官网页面
+├── nginx.conf             # Nginx配置文件模板
+├── scripts/               # 部署和构建脚本
+│   └── deploy.sh          # 自动化部署脚本
+├── tests/                 # 测试文件目录
+│   ├── README.md          # 测试说明文档
+│   └── utils/             # 测试工具
+├── src/                   # 源代码目录
+│   ├── components/        # React组件
+│   │   ├── canvas/        # 画布相关组件
+│   │   ├── notes/         # 便签组件
+│   │   ├── modals/        # 模态框组件
+│   │   ├── layout/        # 布局组件
+│   │   └── utils/         # 组件工具函数
+│   ├── stores/            # Zustand状态管理
+│   ├── database/          # IndexedDB数据层
+│   ├── services/          # 业务逻辑服务
+│   ├── hooks/             # 自定义React Hooks
+│   ├── utils/             # 通用工具函数
+│   ├── types/             # TypeScript类型定义
+│   └── assets/            # 静态资源
+├── public/                # 公共静态资源
+└── dist/                  # 构建输出目录
 ```
 
 ## 🌐 多页面架构
@@ -119,7 +134,38 @@ npm run build        # 生产构建
 npm run preview      # 预览构建
 npm run lint         # 代码检查
 npm run lint:fix     # 自动修复
+npm run type-check   # 类型检查
+npm run clean        # 清理构建文件
 ```
+
+### 快速部署
+
+项目提供了自动化部署脚本，支持一键部署：
+
+```bash
+# 使用部署脚本
+./scripts/deploy.sh dev      # 启动开发服务器
+./scripts/deploy.sh build    # 构建生产版本
+./scripts/deploy.sh serve    # 构建并预览
+./scripts/deploy.sh clean    # 清理构建文件
+```
+
+### 项目特色
+
+- 📂 **模块化架构**: 清晰的目录结构，详细的架构文档说明
+- 🧪 **测试友好**: 独立的测试目录，包含测试工具和说明文档
+- 🚀 **部署简单**: 提供自动化部署脚本和 Nginx 配置模板
+- 📝 **文档完善**: 完整的开发、部署和架构文档
+- 🔧 **开发体验**: 完整的 TypeScript 支持和 ESLint 配置
+
+### 📚 文档导航
+
+- [📖 架构文档](docs/ARCHITECTURE.md) - 详细的项目架构和模块说明
+- [🔧 开发指南](docs/DEVELOPMENT.md) - 开发环境搭建和开发流程
+- [🚀 部署指南](docs/DEPLOYMENT.md) - 生产环境部署和配置
+- [📡 API 文档](docs/API.md) - 接口和数据结构说明
+- [🤝 贡献指南](CONTRIBUTING.md) - 如何参与项目贡献
+- [📋 更新日志](CHANGELOG.md) - 版本更新记录
 
 ## 📄 许可证
 

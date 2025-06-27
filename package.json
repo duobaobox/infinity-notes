@@ -1,8 +1,36 @@
 {
   "name": "infinite-notes",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "0.1.0",
   "type": "module",
+  "description": "无限画布思维整理工具 - 在无限画布上创建、连接和整理想法，支持AI智能汇总功能",
+  "keywords": [
+    "infinite-canvas",
+    "sticky-notes",
+    "mind-mapping",
+    "ai-summary",
+    "react",
+    "typescript",
+    "vite",
+    "indexeddb"
+  ],
+  "homepage": "https://github.com/your-username/infinite-notes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/infinite-notes.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/infinite-notes/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "无限便签项目贡献者",
+    "url": "https://github.com/your-username/infinite-notes/graphs/contributors"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

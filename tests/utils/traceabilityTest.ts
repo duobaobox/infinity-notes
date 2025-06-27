@@ -3,7 +3,7 @@
  * 用于创建测试数据和验证溯源功能
  */
 
-import { useStickyNotesStore } from "../stores/stickyNotesStore";
+import { useStickyNotesStore } from "../../src/stores/stickyNotesStore";
 
 /**
  * 创建测试便签用于验证溯源功能
