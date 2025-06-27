@@ -4,8 +4,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>无限便签 - 让思维自由流淌，让想法自然连接</title>
-        <meta name="description" content="重新定义思维整理的方式。在无限画布上自由创作，用AI智能汇总复杂信息，用连接线构建知识网络。开源、透明、隐私优先的思维工具。">
+        <title>无限便签 - 传统便签遇见AI时代，免费便签工具</title>
+        <meta name="description" content="还是熟悉的便签，但有了AI的加持。AI帮你生成内容、智能汇总整理、个性化角色、多AI自由选择。让每一张便签都更有价值，而且完全免费。">
 
         <!-- Favicon -->
         <link rel="icon" type="image/png" href="./public/icon.png">
@@ -161,6 +161,43 @@
                 margin-right: auto;
             }
 
+            .hero-features {
+                display: flex;
+                justify-content: center;
+                gap: 30px;
+                margin: 30px 0;
+                flex-wrap: wrap;
+            }
+
+            .hero-feature-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 20px;
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 25px;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                transition: all 0.3s ease;
+            }
+
+            .hero-feature-item:hover {
+                background: rgba(0, 0, 0, 0.9);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            }
+
+            .hero-feature-icon {
+                font-size: 18px;
+            }
+
+            .hero-feature-text {
+                color: #f5f5f7;
+                font-size: 14px;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+
             .hero-buttons {
                 display: flex;
                 gap: 20px;
@@ -288,6 +325,8 @@
             .secondary-button:hover {
                 text-decoration: underline;
             }
+
+
 
             /* 功能展示区域 - Mac风格 */
             .features {
@@ -776,6 +815,19 @@
                     line-height: 1.47059;
                 }
 
+                .hero-features {
+                    gap: 15px;
+                    margin: 20px 0;
+                }
+
+                .hero-feature-item {
+                    padding: 8px 16px;
+                }
+
+                .hero-feature-text {
+                    font-size: 12px;
+                }
+
                 .hero-buttons {
                     flex-direction: column;
                     align-items: center;
@@ -842,6 +894,8 @@
                 .use-case-card {
                     padding: 30px 20px;
                 }
+
+
             }
 
             @media (max-width: 430px) {
@@ -904,6 +958,8 @@
                 .use-case-card h3 {
                     font-size: 19px;
                 }
+
+
             }
 
             /* 动画效果 - Mac风格 */
@@ -946,8 +1002,8 @@
                     无限便签
                 </a>
                 <ul class="nav-links">
-                    <li><a href="#philosophy">设计理念</a></li>
                     <li><a href="#features">功能</a></li>
+                    <li><a href="#philosophy">设计理念</a></li>
                     <li><a href="#open-source">开源</a></li>
                 </ul>
                 <a href="./app.html" class="cta-button">开始使用</a>
@@ -959,14 +1015,21 @@
             <!-- 英雄区域 -->
             <section class="hero">
                 <div class="hero-container scroll-animate">
-                    <h1>无限便签</h1>
-                    <p class="subtitle">让思维自由流淌，让想法自然连接</p>
-                    <p class="description">
-                        摆脱传统笔记的束缚，在无边界的画布上自由创作。输入简单想法，AI帮你生成完整便签；定制专属AI角色，让AI按你的风格工作；自由切换不同AI供应商，用你最喜欢的模型；用连接线构建知识网络。这不只是一个工具，而是你的专属思维伙伴。
-                    </p>
+                    <div class="cta-container">
+                        <h1 class="scroll-animate">体验AI时代的便签工具</h1>
+                        <p class="subtitle scroll-animate">熟悉的便签操作，强大的AI功能，完全免费</p>
+                        <p class="description scroll-animate" style="max-width: 700px; margin: 0 auto 40px;">
+                            就像使用传统便签一样简单，但AI让每张便签都更有价值。
+                            输入想法，AI生成内容；多张便签，AI智能汇总；个性化设置，AI按你的风格工作。
+                            这就是便签在AI时代的样子。
+                        </p>
+                        <p style="margin: 32px 0 48px 0; color: #86868b; font-size: 15px; line-height: 1.5;">
+                            ✓ 完全免费 ✓ 无需注册 ✓ 数据本地存储 ✓ 开源透明 ✓ AI自由选择 ✓ 角色定制
+                        </p>
+                    </div>
                     <div class="hero-buttons">
-                        <a href="./app.html" class="primary-button">开始思维之旅</a>
-                        <a href="#philosophy" class="secondary-button">了解设计理念</a>
+                        <a href="./app.html" class="primary-button">免费体验AI便签</a>
+                        <a href="#features" class="secondary-button">核心功能</a>
                     </div>
                     <div class="hero-image">
                         <!-- 主要产品截图 - Mac窗口样式 -->
@@ -985,17 +1048,19 @@
                 </div>
             </section>
 
-            <!-- 设计理念 -->
-            <section class="features" id="philosophy">
+            <!-- 核心功能 -->
+            <section class="features" id="features">
                 <div class="features-container">
-                    <h2 class="scroll-animate">设计理念</h2>
-                    <p class="subtitle scroll-animate">重新定义思维整理的方式</p>
+                    <h2 class="scroll-animate">核心功能</h2>
+                    <p class="subtitle scroll-animate">每个功能都为解决真实问题而生</p>
 
                     <div class="feature-grid">
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🌊</div>
-                            <h3>思维如水，自由流淌</h3>
-                            <p>传统笔记软件像容器，限制了思维的形状。我们相信思维应该像水一样自由流淌，在无限画布上找到最自然的表达方式。</p>
+                            <div class="feature-icon">�</div>
+                            <h3>无限画布</h3>
+                            <p><strong>解决问题：</strong>传统笔记的页面限制让思维受束缚<br>
+                                <strong>带来价值：</strong>思维空间无限延伸，想法可以自由生长，就像在真实白板上一样自然
+                            </p>
                         </div>
 
                         <div class="feature-card scroll-animate">
@@ -1037,11 +1102,11 @@
                 </div>
             </section>
 
-            <!-- 功能价值 -->
-            <section class="features" id="features" style="background: #ffffff;">
+            <!-- 设计理念 -->
+            <section class="features" id="philosophy" style="background: #ffffff;">
                 <div class="features-container">
-                    <h2 class="scroll-animate">核心功能</h2>
-                    <p class="subtitle scroll-animate">每个功能都为解决真实问题而生</p>
+                    <h2 class="scroll-animate">设计理念</h2>
+                    <p class="subtitle scroll-animate">重新定义思维整理的方式</p>
 
                     <div class="feature-grid">
                         <div class="feature-card scroll-animate">
@@ -1095,17 +1160,7 @@
                 </div>
             </section>
 
-            <!-- 产品展示 -->
-            <section class="product-showcase">
-                <div class="product-showcase-container">
-                    <h2 class="scroll-animate">简单直观的界面</h2>
-                    <p class="subtitle scroll-animate">专注于内容，而非工具本身</p>
-                    <div class="product-image">
-                        <!-- 产品界面展示截图 - 将 product-interface.png 放入 public/images/ 文件夹 -->
-                        <img src="./public/images/002.png" alt="产品界面展示" />
-                    </div>
-                </div>
-            </section>
+
 
             <!-- 详细功能介绍 -->
             <section class="feature-details">
@@ -1382,38 +1437,20 @@
                 </div>
             </section>
 
-            <!-- CTA区域 -->
-            <section class="cta-section">
-                <div class="cta-container">
-                    <h2 class="scroll-animate">释放你的思维潜能</h2>
-                    <p class="subtitle scroll-animate">不需要学习复杂的操作，不需要担心数据安全</p>
-                    <p class="description scroll-animate" style="max-width: 700px; margin: 0 auto 40px;">
-                        只需要打开浏览器，输入一个简单的想法，AI就能帮你生成完整的便签内容。
-                        在无限画布上自由创作，让AI成为你的思维伙伴，让连接线展现你的思维脉络。
-                        这一刻，开始重新定义你的思维方式。
-                    </p>
-                    <div class="hero-buttons">
-                        <a href="./app.html" class="primary-button">开始思维之旅</a>
-                    </div>
-                    <p style="margin-top: 20px; color: #86868b; font-size: 15px;">
-                        ✓ 完全免费 ✓ 无需注册 ✓ 数据本地存储 ✓ 开源透明 ✓ AI自由选择 ✓ 角色定制
-                    </p>
-                </div>
-            </section>
         </main>
 
         <!-- 底部区域 -->
         <footer class="footer">
             <div class="footer-container">
-                <h3>思维无界，创意无限</h3>
-                <p>加入我们，一起重新定义思维工具的未来</p>
+                <h3>便签进化，AI赋能</h3>
+                <p>体验传统便签在AI时代的全新可能</p>
                 <div style="margin: 30px 0;">
                     <a href="./app.html" class="primary-button" style="margin-right: 20px;">立即体验</a>
                     <a href="https://github.com/your-username/infinite-notes" class="secondary-button"
                         target="_blank">GitHub</a>
                 </div>
                 <div class="footer-bottom">
-                    <p>&copy; 2025 无限便签. 让思维自由流淌，让想法自然连接.</p>
+                    <p>&copy; 2025 无限便签. 传统便签遇见AI时代，让每张便签都更有价值.</p>
                     <p style="margin-top: 10px; font-size: 11px; opacity: 0.7;">
                         开源项目 | MIT许可证 | 社区驱动 | 隐私优先
                     </p>
