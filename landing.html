@@ -117,11 +117,16 @@
 
             /* 英雄区域 - Mac风格 */
             .hero {
-                padding: 60px 22px 100px;
+                height: 100vh;
+                /* 占满整个屏幕高度 */
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 text-align: center;
                 background: #ffffff;
                 position: relative;
                 overflow: hidden;
+                padding: 0 22px;
             }
 
             .hero-container {
@@ -129,6 +134,13 @@
                 margin: 0 auto;
                 position: relative;
                 z-index: 2;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                min-height: 80vh;
+                /* 确保内容在屏幕中央 */
             }
 
             .hero h1 {
@@ -203,17 +215,25 @@
                 gap: 20px;
                 justify-content: center;
                 flex-wrap: wrap;
-                margin-bottom: 60px;
+                margin: 40px 0;
             }
 
             .hero-image {
-                margin-top: 40px;
+                margin-top: 20px;
                 position: relative;
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                max-height: 50vh;
+                /* 限制图片最大高度 */
             }
 
             .hero-image img {
                 width: 100%;
-                max-width: 900px;
+                max-width: 800px;
+                max-height: 100%;
+                object-fit: contain;
                 border-radius: 18px;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             }
@@ -226,8 +246,9 @@
                 border-radius: 12px;
                 box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
                 overflow: hidden;
-                max-width: 900px;
+                max-width: 800px;
                 width: 100%;
+                max-height: 100%;
                 border: 1px solid #e5e5e5;
             }
 
@@ -800,6 +821,17 @@
                     display: none;
                 }
 
+                .hero {
+                    height: 100vh;
+                    /* 保持全屏高度 */
+                    padding: 0 16px;
+                }
+
+                .hero-container {
+                    min-height: 85vh;
+                    /* 移动设备上稍微调整 */
+                }
+
                 .hero h1 {
                     font-size: 40px;
                     line-height: 1.1;
@@ -813,6 +845,11 @@
                 .hero .description {
                     font-size: 17px;
                     line-height: 1.47059;
+                }
+
+                .hero-image {
+                    max-height: 40vh;
+                    /* 移动设备上减少图片高度 */
                 }
 
                 .hero-features {
@@ -899,16 +936,15 @@
             }
 
             @media (max-width: 430px) {
+                .hero {
+                    height: 100vh;
+                    /* 保持全屏高度 */
+                    padding: 0 16px;
+                }
 
-                .hero,
-                .features,
-                .product-showcase,
-                .feature-details,
-                .use-cases,
-                .open-source,
-                .cta-section {
-                    padding-left: 16px;
-                    padding-right: 16px;
+                .hero-container {
+                    min-height: 90vh;
+                    /* 手机设备上进一步调整 */
                 }
 
                 .hero h1 {
@@ -917,6 +953,21 @@
 
                 .hero .subtitle {
                     font-size: 19px;
+                }
+
+                .hero-image {
+                    max-height: 35vh;
+                    /* 手机设备上进一步减少图片高度 */
+                }
+
+                .features,
+                .product-showcase,
+                .feature-details,
+                .use-cases,
+                .open-source,
+                .cta-section {
+                    padding-left: 16px;
+                    padding-right: 16px;
                 }
 
                 /* Mac窗口在手机设备上的适配 */
@@ -990,6 +1041,145 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+
+            /* 鼠标滚动动效指示器 */
+            .scroll-indicator {
+                position: absolute;
+                bottom: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                cursor: pointer;
+                transition: all 0.5s ease;
+                z-index: 10;
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* 滚动后隐藏指示器 */
+            .scroll-indicator.hidden {
+                opacity: 0;
+                visibility: hidden;
+                transform: translateX(-50%) translateY(20px);
+            }
+
+            .scroll-indicator:hover {
+                transform: translateX(-50%) translateY(-5px);
+            }
+
+            .scroll-indicator:hover .scroll-text {
+                color: #0071e3;
+            }
+
+            .scroll-indicator:hover .mouse {
+                border-color: #0071e3;
+            }
+
+            .scroll-indicator:hover .mouse::before {
+                background-color: #0071e3;
+            }
+
+            .scroll-text {
+                color: #86868b;
+                font-size: 14px;
+                font-weight: 400;
+                letter-spacing: 0.5px;
+                transition: color 0.3s ease;
+                margin-bottom: 5px;
+            }
+
+            /* 鼠标图标 */
+            .mouse {
+                width: 24px;
+                height: 40px;
+                border: 2px solid #86868b;
+                border-radius: 12px;
+                position: relative;
+                transition: border-color 0.3s ease;
+            }
+
+            /* 鼠标滚轮动画 */
+            .mouse::before {
+                content: '';
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 3px;
+                height: 6px;
+                background-color: #86868b;
+                border-radius: 2px;
+                animation: scroll-wheel 2s infinite;
+                transition: background-color 0.3s ease;
+            }
+
+            /* 滚轮滚动动画 */
+            @keyframes scroll-wheel {
+                0% {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(0);
+                }
+
+                50% {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(12px);
+                }
+
+                100% {
+                    opacity: 0;
+                    transform: translateX(-50%) translateY(12px);
+                }
+            }
+
+            /* 滚动指示器在移动设备上的适配 */
+            @media (max-width: 834px) {
+                .scroll-indicator {
+                    bottom: 30px;
+                    gap: 12px;
+                }
+
+                .scroll-text {
+                    font-size: 12px;
+                }
+
+                .mouse {
+                    width: 20px;
+                    height: 32px;
+                    border-radius: 10px;
+                }
+
+                .mouse::before {
+                    width: 2px;
+                    height: 5px;
+                    top: 6px;
+                }
+            }
+
+            @media (max-width: 430px) {
+                .scroll-indicator {
+                    bottom: 25px;
+                    gap: 10px;
+                }
+
+                .scroll-text {
+                    font-size: 11px;
+                }
+
+                .mouse {
+                    width: 18px;
+                    height: 28px;
+                    border-radius: 9px;
+                }
+
+                .mouse::before {
+                    width: 2px;
+                    height: 4px;
+                    top: 5px;
+                }
+            }
         </style>
     </head>
 
@@ -1017,7 +1207,7 @@
                 <div class="hero-container scroll-animate">
                     <div class="cta-container">
                         <h1 class="scroll-animate">体验AI时代的便签工具</h1>
-                        <p class="subtitle scroll-animate">熟悉的便签操作，强大的AI功能，完全免费</p>
+                        <p class="subtitle scroll-animate">熟悉的便签操作，强大的AI驱动</p>
                         <p class="description scroll-animate" style="max-width: 700px; margin: 0 auto 40px;">
                             就像使用传统便签一样简单，但AI让每张便签都更有价值。
                             输入想法，AI生成内容；多张便签，AI智能汇总；个性化设置，AI按你的风格工作。
@@ -1028,7 +1218,7 @@
                         </p>
                     </div>
                     <div class="hero-buttons">
-                        <a href="./app.html" class="primary-button">免费体验AI便签</a>
+                        <a href="./app.html" class="primary-button">免费使用</a>
                         <a href="#features" class="secondary-button">核心功能</a>
                     </div>
                     <div class="hero-image">
@@ -1046,58 +1236,64 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 向下滚动提醒 -->
+                <div class="scroll-indicator" onclick="scrollToFeatures()">
+                    <div class="scroll-text">探索更多功能</div>
+                    <div class="mouse"></div>
+                </div>
             </section>
 
             <!-- 核心功能 -->
             <section class="features" id="features">
                 <div class="features-container">
                     <h2 class="scroll-animate">核心功能</h2>
-                    <p class="subtitle scroll-animate">每个功能都为解决真实问题而生</p>
+                    <p class="subtitle scroll-animate">让每一张便签都更有价值</p>
 
                     <div class="feature-grid">
+
+
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">�</div>
+                            <div class="feature-icon">✨</div>
+                            <h3>AI生成便签</h3>
+                            <p>输入简单想法，AI帮你生成完整便签，让思维快速具象化</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🤖</div>
+                            <h3>AI智能汇总</h3>
+                            <p>选择多个便签，AI瞬间理清复杂信息，让思维升华到更高层次</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🕸️</div>
+                            <h3>可视化连接</h3>
+                            <p>构建知识网络，追溯思维轨迹，让复杂关系变得清晰可见</p>
+                        </div>
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🌌</div>
                             <h3>无限画布</h3>
-                            <p><strong>解决问题：</strong>传统笔记的页面限制让思维受束缚<br>
-                                <strong>带来价值：</strong>思维空间无限延伸，想法可以自由生长，就像在真实白板上一样自然
-                            </p>
+                            <p>思维空间无限延伸，想法可以自由生长，就像在真实白板上一样自然</p>
+                        </div>
+
+
+
+                        <div class="feature-card scroll-animate">
+                            <div class="feature-icon">🎭</div>
+                            <h3>AI角色定制</h3>
+                            <p>自定义AI角色，让AI按你的喜好和需求来处理内容</p>
                         </div>
 
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">�</div>
-                            <h3>模拟大脑的工作方式</h3>
-                            <p>大脑不是线性思考的，而是通过神经网络连接各种概念。我们用连接线模拟这种思维模式，让想法之间的关系一目了然。</p>
+                            <div class="feature-icon">🔄</div>
+                            <h3>多AI供应商支持</h3>
+                            <p>自由切换DeepSeek、通义千问、OpenAI、本地模型等，用你最喜欢的AI</p>
                         </div>
 
-                        <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🤝</div>
-                            <h3>人机协作，而非替代</h3>
-                            <p>AI不是来替代你的思考，而是作为思维伙伴。你提供想法的种子，AI帮你生长成完整内容；你创造多个便签，AI帮你整理汇总。人负责创造，AI负责扩展和整理。</p>
-                        </div>
 
-                        <div class="feature-card scroll-animate">
-                            <div class="feature-icon">�</div>
-                            <h3>专注内容，而非工具</h3>
-                            <p>最好的工具是让人忘记它的存在。我们追求极简的交互设计，让你专注于思考本身，而不是学习如何使用工具。</p>
-                        </div>
 
-                        <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🎯</div>
-                            <h3>AI自由选择，拒绝绑定</h3>
-                            <p>你应该自由选择最适合的AI，而不是被迫使用某个特定服务。我们支持多种AI供应商，让你用自己的API密钥，真正拥有AI选择权。</p>
-                        </div>
 
-                        <div class="feature-card scroll-animate">
-                            <div class="feature-icon">�</div>
-                            <h3>隐私至上，数据自主</h3>
-                            <p>你的想法属于你自己。所有数据存储在本地，你完全掌控自己的信息，无需担心隐私泄露或数据被滥用。</p>
-                        </div>
-
-                        <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🌱</div>
-                            <h3>开源共建，持续进化</h3>
-                            <p>好的工具需要社区的智慧。我们选择开源，让每个人都能参与改进，让产品在透明中成长，在协作中进化。</p>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -1110,51 +1306,39 @@
 
                     <div class="feature-grid">
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🌌</div>
-                            <h3>无限画布</h3>
-                            <p><strong>解决问题：</strong>传统笔记的页面限制让思维受束缚<br>
-                                <strong>带来价值：</strong>思维空间无限延伸，想法可以自由生长，就像在真实白板上一样自然
-                            </p>
+                            <div class="feature-icon">🌊</div>
+                            <h3>思维如水，自由流淌</h3>
+                            <p>传统笔记软件像容器，限制了思维的形状。我们相信思维应该像水一样自由流淌，在无限画布上找到最自然的表达方式。</p>
                         </div>
 
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">✨</div>
-                            <h3>AI生成便签</h3>
-                            <p><strong>解决问题：</strong>有想法但不知道如何表达，或者想法太简单需要扩展<br>
-                                <strong>带来价值：</strong>输入简单想法，AI帮你生成完整便签，让思维快速具象化
-                            </p>
+                            <div class="feature-icon">🤝</div>
+                            <h3>人机协作，而非替代</h3>
+                            <p>AI不是来替代你的思考，而是作为思维伙伴。你提供想法的种子，AI帮你生长成完整内容；你创造多个便签，AI帮你整理汇总。人负责创造，AI负责扩展和整理。</p>
                         </div>
 
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🎭</div>
-                            <h3>AI角色定制</h3>
-                            <p><strong>解决问题：</strong>不同场景需要不同的AI处理风格和专业度<br>
-                                <strong>带来价值：</strong>自定义AI角色，让AI按你的喜好和需求来处理内容
-                            </p>
+                            <div class="feature-icon">💎</div>
+                            <h3>专注内容，而非工具</h3>
+                            <p>最好的工具是让人忘记它的存在。我们追求极简的交互设计，让你专注于思考本身，而不是学习如何使用工具。</p>
                         </div>
 
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🔄</div>
-                            <h3>多AI供应商支持</h3>
-                            <p><strong>解决问题：</strong>被单一AI服务商绑定，无法选择最适合的AI<br>
-                                <strong>带来价值：</strong>自由切换OpenAI、Claude、本地模型等，用你最喜欢的AI
-                            </p>
+                            <div class="feature-icon">🔓</div>
+                            <h3>AI自由选择，拒绝绑定</h3>
+                            <p>你应该自由选择最适合的AI，而不是被迫使用某个特定服务。我们支持多种AI供应商，让你用自己的API密钥，真正拥有AI选择权。</p>
                         </div>
 
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🕸️</div>
-                            <h3>可视化连接</h3>
-                            <p><strong>解决问题：</strong>想法之间的关系难以表达和追踪<br>
-                                <strong>带来价值：</strong>构建知识网络，追溯思维轨迹，让复杂关系变得清晰可见
-                            </p>
+                            <div class="feature-icon">🔒</div>
+                            <h3>隐私至上，数据自主</h3>
+                            <p>你的想法属于你自己。所有数据存储在本地，你完全掌控自己的信息，无需担心隐私泄露或数据被滥用。</p>
                         </div>
 
                         <div class="feature-card scroll-animate">
-                            <div class="feature-icon">🤖</div>
-                            <h3>AI智能汇总</h3>
-                            <p><strong>解决问题：</strong>信息过载，难以从大量内容中提取要点<br>
-                                <strong>带来价值：</strong>选择多个便签，AI瞬间理清复杂信息，让思维升华到更高层次
-                            </p>
+                            <div class="feature-icon">🌱</div>
+                            <h3>开源共建，持续进化</h3>
+                            <p>好的工具需要社区的智慧。我们选择开源，让每个人都能参与改进，让产品在透明中成长，在协作中进化。</p>
                         </div>
                     </div>
                 </div>
@@ -1333,28 +1517,6 @@
                         </div>
 
                         <div class="use-case-card scroll-animate">
-                            <div class="use-case-icon">🔬</div>
-                            <h3>研究分析：专业AI助手</h3>
-                            <p><strong>痛点：</strong>不同研究领域需要专业的分析视角<br>
-                                <strong>解决：</strong>定制学术研究AI角色，用Claude进行深度分析
-                            </p>
-                            <div class="use-case-example">
-                                "做机器学习研究时，我设置了'AI研究专家'角色，让它用学术语言分析论文。同时切换到Claude模型，因为它的分析更深入。每篇论文的要点都很专业。"
-                            </div>
-                        </div>
-
-                        <div class="use-case-card scroll-animate">
-                            <div class="use-case-icon">🎨</div>
-                            <h3>设计思维：创意AI伙伴</h3>
-                            <p><strong>痛点：</strong>需要不同风格的创意输出和设计建议<br>
-                                <strong>解决：</strong>定制创意设计师AI角色，激发更多灵感
-                            </p>
-                            <div class="use-case-example">
-                                "设计产品时，我创建了'创意设计师'角色，让AI用活泼、发散的风格生成想法。用户调研用'严谨分析师'，创意发散用'头脑风暴专家'，不同阶段不同AI风格。"
-                            </div>
-                        </div>
-
-                        <div class="use-case-card scroll-animate">
                             <div class="use-case-icon">📈</div>
                             <h3>商业策划：多AI协作</h3>
                             <p><strong>痛点：</strong>不同商业分析需要不同AI的优势<br>
@@ -1459,6 +1621,40 @@
         </footer>
 
         <script>
+            // 滚动到功能区域的函数
+            function scrollToFeatures() {
+                const featuresSection = document.getElementById('features');
+                if (featuresSection) {
+                    featuresSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+
+            // 监听滚动事件，隐藏滚动指示器
+            let scrollIndicatorHidden = false;
+
+            function handleScroll() {
+                const scrollIndicator = document.querySelector('.scroll-indicator');
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+                // 当用户滚动超过50px时隐藏指示器
+                if (scrollTop > 50 && !scrollIndicatorHidden) {
+                    scrollIndicator.classList.add('hidden');
+                    scrollIndicatorHidden = true;
+                } else if (scrollTop <= 50 && scrollIndicatorHidden) {
+                    // 当用户回到顶部时重新显示指示器
+                    scrollIndicator.classList.remove('hidden');
+                    scrollIndicatorHidden = false;
+                }
+            }
+
+            // 页面加载完成后添加滚动监听
+            document.addEventListener('DOMContentLoaded', function () {
+                window.addEventListener('scroll', handleScroll, { passive: true });
+            });
+
             // 平滑滚动 - Mac风格
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {
