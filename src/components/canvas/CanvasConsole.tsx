@@ -1,17 +1,17 @@
-import React, {
-  useState,
-  useRef,
-  forwardRef,
-  useImperativeHandle,
-  useEffect,
-} from "react";
-import { Input, Button, Tooltip, message } from "antd";
 import {
+  BranchesOutlined,
+  LoadingOutlined,
   PlusOutlined,
   RobotOutlined,
-  LoadingOutlined,
-  BranchesOutlined,
 } from "@ant-design/icons";
+import { Button, Input, Tooltip, message } from "antd";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import { getAIService } from "../../services/ai/aiService";
 import { useConnectionStore } from "../../stores";
@@ -59,7 +59,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const dynamicPlaceholder =
       placeholder ||
       (hasConnections
-        ? ` 请输入指令处理便签（如：总结、分析、整理等）`
+        ? " 请输入指令处理便签（如：总结、分析、整理等）"
         : " 输入文本AI生成便签，留空创建空白便签...");
 
     const { config: aiConfig, hasValidConfig } = useAISettings();
@@ -190,18 +190,9 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
         <div
           className={`console-container ${isFocused ? "focused" : ""} ${
             isCurrentlyGenerating ? "ai-generating" : ""
-          } ${hasConnections ? "has-connections" : ""}`}
+          }`}
         >
           <div className="console-input-container">
-            {/* 连接状态指示器 - 始终存在，通过CSS控制显示 */}
-            <div
-              className={`connection-indicator ${
-                hasConnections ? "visible" : "hidden"
-              }`}
-            >
-              <span className="connection-icon">🔗</span>
-              <span className="connection-text">{connectedNotes.length}</span>
-            </div>
             <Input
               ref={inputRef}
               value={inputValue}
