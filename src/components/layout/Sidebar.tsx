@@ -1,29 +1,29 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Typography,
-  List,
+  ClockCircleOutlined,
+  CloseOutlined,
+  FolderOutlined,
+  MenuOutlined,
+  PlusOutlined,
+  SettingOutlined,
+  StarFilled,
+} from "@ant-design/icons";
+import {
   Avatar,
-  Input,
   Button,
-  Space,
-  Splitter,
+  Input,
+  List,
   message,
   Popconfirm,
+  Space,
+  Splitter,
+  Typography,
 } from "antd";
-import {
-  PlusOutlined,
-  FolderOutlined,
-  StarFilled,
-  ClockCircleOutlined,
-  SettingOutlined,
-  MenuOutlined,
-  CloseOutlined,
-} from "@ant-design/icons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { Canvas } from "../../database";
 import { connectionLineManager } from "../../utils/connectionLineManager";
 
 // 导入全局状态管理
-import { useStickyNotesStore, useUIStore } from "../../stores";
+import { useStickyNotesStore, useUIStore, useUserStore } from "../../stores";
 
 const { Title, Text } = Typography;
 
@@ -98,6 +98,14 @@ const Sidebar: React.FC = () => {
     setSidebarCollapsed,
     sidebarCollapsed: collapsed,
   } = useUIStore();
+
+  // 使用用户状态管理
+  const { currentUser, loading: userLoading, loadCurrentUser } = useUserStore();
+
+  // 组件挂载时加载用户数据
+  useEffect(() => {
+    loadCurrentUser();
+  }, [loadCurrentUser]);
 
   // 处理侧边栏折叠状态变化
   const handleCollapseChange = useCallback(
@@ -444,7 +452,8 @@ const Sidebar: React.FC = () => {
                       boxShadow: "0 2px 4px rgba(24, 144, 255, 0.2)",
                     }}
                   >
-                    U
+                    {/* 显示用户名的首字母，如果没有用户数据则显示默认 U */}
+                    {currentUser?.username?.[0]?.toUpperCase() || "U"}
                   </Avatar>
                   <div>
                     <Text
@@ -455,13 +464,15 @@ const Sidebar: React.FC = () => {
                         fontSize: "14px",
                       }}
                     >
-                      用户名称
+                      {/* 显示用户名，如果没有则显示默认值 */}
+                      {currentUser?.username || "用户名称"}
                     </Text>
                     <Text
                       type="secondary"
                       style={{ fontSize: "12px", lineHeight: "1.2" }}
                     >
-                      user@example.com
+                      {/* 显示用户邮箱，如果没有则显示默认值 */}
+                      {currentUser?.email || "user@example.com"}
                     </Text>
                   </div>
                 </div>

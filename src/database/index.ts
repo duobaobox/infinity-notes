@@ -5,13 +5,13 @@
 // IndexedDB 适配器和钩子 - 新的高性能数据库解决方案
 export { IndexedDBAdapter } from "./IndexedDBAdapter.js";
 export {
-  useDatabase,
-  useCanvas,
-  getDatabaseService,
-  getDatabaseAdapter,
-  resetDatabase,
   databaseEvents,
+  getDatabaseAdapter,
+  getDatabaseService,
   initializeDatabase,
+  resetDatabase,
+  useCanvas,
+  useDatabase,
 } from "./useIndexedDB.js";
 
 // IndexedDB 服务层（用于高级功能）
@@ -23,9 +23,8 @@ export type { StickyNote } from "../components/types";
 // 定义必要的数据库类型
 export interface User {
   id: string;
-  username: string;
+  username: string; // 用户名（唯一标识和显示名称）
   email?: string;
-  display_name?: string;
   created_at?: string;
   updated_at?: string;
 }

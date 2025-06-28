@@ -1,14 +1,6 @@
-import type {
-  User,
-  Canvas,
-  DbStickyNote as StickyNote,
-  Tag,
-  Workspace,
-  CanvasTemplate,
-  CanvasSnapshot,
-} from "./index";
-import { performanceMonitor } from "./PerformanceMonitor";
 import { cacheManager, CacheManager } from "./CacheManager";
+import type { Canvas, DbStickyNote as StickyNote, Tag, User } from "./index";
+import { performanceMonitor } from "./PerformanceMonitor";
 
 /**
  * IndexedDB 数据库服务类
@@ -366,6 +358,18 @@ export class IndexedDBService {
     } catch {
       return null;
     }
+  }
+
+  async updateUser(userData: User): Promise<User> {
+    const updatedUser: User = {
+      ...userData,
+      updated_at: new Date().toISOString(),
+    };
+
+    await this.performTransaction("users", "readwrite", (store) =>
+      store.put(updatedUser)
+    );
+    return updatedUser;
   }
 
   // ===== 画布相关方法 =====

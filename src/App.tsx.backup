@@ -6,12 +6,7 @@ import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 // 导入全局状态管理
-import {
-  initializeUserStore,
-  useAIStore,
-  useStickyNotesStore,
-  useUIStore,
-} from "./stores";
+import { useAIStore, useStickyNotesStore, useUIStore } from "./stores";
 
 const { Content } = Layout;
 
@@ -59,10 +54,7 @@ function App() {
         // 先初始化便签Store（包含数据库初始化）
         await initializeStickyNotes();
 
-        // 然后初始化用户Store
-        await initializeUserStore();
-
-        // 接着初始化AI Store
+        // 然后初始化AI Store
         await initializeAI();
 
         // 最后初始化UI Store（同步操作）

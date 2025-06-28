@@ -1,47 +1,48 @@
-import React, { useState, useEffect, useCallback } from "react";
 import {
-  Modal,
-  Tabs,
-  type TabsProps,
-  Form,
-  Switch,
-  Select,
-  Slider,
-  ColorPicker,
-  Divider,
-  Space,
-  Typography,
-  Card,
-  InputNumber,
-  Button,
-  Input,
-  message,
-  Spin,
-  Alert,
-  Upload,
-  Progress,
-  Statistic,
-  Popconfirm,
-  Row,
-  Col,
-} from "antd";
-import {
-  SkinOutlined,
-  SafetyOutlined,
-  InfoCircleOutlined,
-  RobotOutlined,
-  DownloadOutlined,
-  UploadOutlined,
-  DeleteOutlined,
   DatabaseOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
   FileTextOutlined,
   HddOutlined,
+  InfoCircleOutlined,
+  RobotOutlined,
+  SafetyOutlined,
+  SkinOutlined,
+  UploadOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
-import { useAISettings } from "../../hooks/ai/useAISettings";
-import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
-import { useUIStore, PRESET_THEMES } from "../../stores/uiStore";
-import { useStickyNotesStore, useAIStore } from "../../stores";
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  ColorPicker,
+  Divider,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Modal,
+  Popconfirm,
+  Progress,
+  Row,
+  Select,
+  Slider,
+  Space,
+  Spin,
+  Statistic,
+  Switch,
+  Tabs,
+  Typography,
+  Upload,
+  type TabsProps,
+} from "antd";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDatabase } from "../../database";
+import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
+import { useAISettings } from "../../hooks/ai/useAISettings";
+import { useAIStore, useStickyNotesStore, useUserStore } from "../../stores";
+import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
@@ -60,8 +61,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [aiForm] = Form.useForm();
   const [appearanceForm] = Form.useForm();
-  // 只有在可以配置提示词时才创建promptForm
-  const [promptForm] = Form.useForm();
+  const [userForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
 
   // 数据管理相关状态
@@ -77,6 +77,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 使用UIStore获取和设置外观设置
   const { appearance, setAppearance, applyPresetTheme } = useUIStore();
+
+  // 使用UserStore获取和设置用户信息
+  const {
+    currentUser,
+    loading: userLoading,
+    error: userError,
+    updateUserProfile,
+    loadCurrentUser,
+  } = useUserStore();
 
   const {
     config: aiConfig,
@@ -108,6 +117,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     savePromptConfig,
     canConfigurePrompt,
   } = useAIPromptSettings(hasValidConfig);
+
+  // 总是创建promptForm，但只在canConfigurePrompt为true时使用
+  const [promptForm] = Form.useForm();
 
   // 加载数据统计信息
   const loadDataStats = useCallback(async () => {
@@ -228,11 +240,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   // 当promptConfig变化时，更新提示词表单的值（只在模态框打开时）
   React.useEffect(() => {
     if (open && promptConfig && canConfigurePrompt) {
-      try {
-        promptForm.setFieldsValue(promptConfig);
-      } catch (error) {
-        console.warn("更新提示词表单值失败", error);
-      }
+      // 使用setTimeout确保Form组件已经渲染
+      const timer = setTimeout(() => {
+        try {
+          promptForm.setFieldsValue(promptConfig);
+        } catch (error) {
+          console.warn("更新提示词表单值失败", error);
+        }
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, [promptConfig, open, promptForm, canConfigurePrompt]);
 
@@ -243,6 +260,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       appearanceForm.setFieldsValue(appearance);
     }
   }, [open, appearance, appearanceForm]);
+
+  // 当模态框打开时加载用户信息
+  React.useEffect(() => {
+    if (open) {
+      loadCurrentUser();
+    }
+  }, [open, loadCurrentUser]);
+
+  // 当用户信息变化时，更新用户表单的值
+  React.useEffect(() => {
+    if (open && currentUser) {
+      userForm.setFieldsValue({
+        username: currentUser.username,
+        email: currentUser.email,
+      });
+    }
+  }, [open, currentUser, userForm]);
 
   // 测试AI连接
   const handleTestConnection = async () => {
@@ -414,9 +448,102 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     [applyPresetTheme]
   );
 
+  // 处理用户信息更新
+  const handleUserProfileUpdate = React.useCallback(
+    async (values: any) => {
+      try {
+        await updateUserProfile({
+          username: values.username,
+          email: values.email,
+        });
+        message.success("用户信息更新成功");
+      } catch (error) {
+        console.error("更新用户信息失败:", error);
+        message.error("更新用户信息失败");
+      }
+    },
+    [updateUserProfile]
+  );
+
   // 动态生成标签页项目，根据AI配置状态决定是否显示AI提示词标签页
   const getTabItems = React.useMemo(() => {
     const baseItems = [
+      {
+        key: "user",
+        label: (
+          <span>
+            <UserOutlined />
+            用户设置
+          </span>
+        ),
+        children: (
+          <div className="settings-modal-content">
+            <Form
+              form={userForm}
+              layout="vertical"
+              onFinish={handleUserProfileUpdate}
+              initialValues={{
+                username: currentUser?.username || "",
+                email: currentUser?.email || "",
+              }}
+            >
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  👤 个人信息
+                </Title>
+                <Text
+                  type="secondary"
+                  style={{ display: "block", marginBottom: 16 }}
+                >
+                  管理您的个人资料信息，这些信息将用于个性化您的使用体验
+                </Text>
+
+                <Form.Item
+                  label="用户名"
+                  name="username"
+                  rules={[
+                    { required: true, message: "请输入用户名" },
+                    { min: 2, message: "用户名至少2个字符" },
+                    { max: 20, message: "用户名最多20个字符" },
+                  ]}
+                >
+                  <Input placeholder="请输入用户名" />
+                </Form.Item>
+
+                <Form.Item
+                  label="邮箱地址"
+                  name="email"
+                  rules={[{ type: "email", message: "请输入有效的邮箱地址" }]}
+                >
+                  <Input placeholder="请输入邮箱地址（可选）" />
+                </Form.Item>
+
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={userLoading}
+                    style={{ marginRight: 8 }}
+                  >
+                    保存更改
+                  </Button>
+                  <Button onClick={() => userForm.resetFields()}>重置</Button>
+                </Form.Item>
+
+                {userError && (
+                  <Alert
+                    message="错误"
+                    description={userError}
+                    type="error"
+                    showIcon
+                    style={{ marginTop: 16 }}
+                  />
+                )}
+              </Card>
+            </Form>
+          </div>
+        ),
+      },
       {
         key: "appearance",
         label: (
