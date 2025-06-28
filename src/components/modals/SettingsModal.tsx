@@ -219,20 +219,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   // 当aiConfig变化时，更新AI基础配置表单的值（只在模态框打开时）
   React.useEffect(() => {
     if (open && aiConfig) {
-      // 只有当配置不是默认空配置时才更新表单值
-      const hasValidData =
-        aiConfig.apiKey || aiConfig.aiModel || aiConfig.apiUrl;
-
-      if (hasValidData) {
-        try {
-          // 只设置基础AI配置，不包括systemPrompt
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { systemPrompt, ...basicAIConfig } = aiConfig;
-          // systemPrompt 被故意忽略，不设置到表单中
-          aiForm.setFieldsValue(basicAIConfig);
-        } catch (error) {
-          console.warn("更新AI表单值失败", error);
-        }
+      try {
+        // 只设置基础AI配置，不包括systemPrompt
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { systemPrompt, ...basicAIConfig } = aiConfig;
+        // systemPrompt 被故意忽略，不设置到表单中
+        aiForm.setFieldsValue(basicAIConfig);
+        console.log("🔧 SettingsModal: 更新AI表单值", {
+          ...basicAIConfig,
+          apiKey: basicAIConfig.apiKey ? "******" : "",
+        });
+      } catch (error) {
+        console.warn("更新AI表单值失败", error);
       }
     }
   }, [aiConfig, open, aiForm]);
@@ -244,8 +242,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       const timer = setTimeout(() => {
         try {
           promptForm.setFieldsValue(promptConfig);
+          console.log("🔧 SettingsModal: 更新AI提示词表单值", promptConfig);
         } catch (error) {
-          console.warn("更新提示词表单值失败", error);
+          console.warn("🔧 SettingsModal: 更新提示词表单值失败", error);
         }
       }, 0);
 
@@ -302,52 +301,96 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   // 保存AI提示词配置
   const handleSavePromptConfig = async () => {
     try {
+      console.log("🔧 SettingsModal: 开始保存AI提示词配置");
+
       const values = await promptForm.validateFields();
+      console.log("🔧 SettingsModal: 提示词表单验证通过", values);
 
-      // 同时保存到两个状态管理系统
-      const [hookSuccess, storeSuccess] = await Promise.all([
-        savePromptConfig(values),
-        saveAIStorePromptConfig(values),
-      ]);
+      // 优先使用 useAIPromptSettings Hook 进行保存，它会处理所有必要的状态更新
+      const success = await savePromptConfig(values);
 
-      if (hookSuccess && storeSuccess) {
+      if (success) {
+        // 同步更新 AI Store 的状态（不重复保存到数据库）
+        try {
+          await saveAIStorePromptConfig(values, false); // 传递 false 避免重复保存到数据库
+        } catch (storeError) {
+          console.warn(
+            "🔧 SettingsModal: AI Store 提示词状态同步失败",
+            storeError
+          );
+          // 不阻断主流程，因为主要保存已经成功
+        }
+
         message.success("AI提示词设置保存成功！现在可以使用自定义提示词了。");
+        console.log("🔧 SettingsModal: AI提示词配置保存完成");
       } else {
         throw new Error("配置保存失败");
       }
     } catch (error) {
-      console.error("保存提示词配置失败:", error);
-      message.error("请检查配置信息");
+      console.error("🔧 SettingsModal: 保存提示词配置失败:", error);
+
+      // 提供更具体的错误信息
+      if (error instanceof Error) {
+        message.error(`保存失败：${error.message}`);
+      } else {
+        message.error("保存提示词配置时发生未知错误");
+      }
     }
   };
 
   // 重置提示词为正常对话模式
   const handleResetPromptToDefault = async () => {
-    // 直接设置为空字符串（正常对话模式）
-    promptForm.setFieldsValue({ systemPrompt: "" });
-
-    // 保存配置到两个状态管理系统
     try {
-      const [hookSuccess, storeSuccess] = await Promise.all([
-        savePromptConfig({ systemPrompt: "" }),
-        saveAIStorePromptConfig({ systemPrompt: "" }),
-      ]);
+      console.log("🔧 SettingsModal: 开始重置AI提示词为正常对话模式");
 
-      if (hookSuccess && storeSuccess) {
+      // 直接设置为空字符串（正常对话模式）
+      promptForm.setFieldsValue({ systemPrompt: "" });
+
+      const resetConfig = { systemPrompt: "" };
+
+      // 优先使用 useAIPromptSettings Hook 进行保存
+      const success = await savePromptConfig(resetConfig);
+
+      if (success) {
+        // 同步更新 AI Store 的状态（不重复保存到数据库）
+        try {
+          await saveAIStorePromptConfig(resetConfig, false); // 传递 false 避免重复保存到数据库
+        } catch (storeError) {
+          console.warn(
+            "🔧 SettingsModal: AI Store 重置状态同步失败",
+            storeError
+          );
+          // 不阻断主流程，因为主要保存已经成功
+        }
+
         message.success("已重置为正常对话模式");
+        console.log("🔧 SettingsModal: AI提示词重置完成");
       } else {
-        message.error("重置失败");
+        throw new Error("重置失败");
       }
     } catch (error) {
-      console.error("重置提示词失败:", error);
-      message.error("重置失败");
+      console.error("🔧 SettingsModal: 重置提示词失败:", error);
+
+      // 提供更具体的错误信息
+      if (error instanceof Error) {
+        message.error(`重置失败：${error.message}`);
+      } else {
+        message.error("重置提示词时发生未知错误");
+      }
     }
   };
 
   // 保存AI基础配置（不包括systemPrompt）
   const handleSaveAIConfig = async () => {
     try {
+      console.log("🔧 SettingsModal: 开始保存AI配置");
+
+      // 验证表单字段
       const values = await aiForm.validateFields();
+      console.log("🔧 SettingsModal: 表单验证通过", {
+        ...values,
+        apiKey: values.apiKey ? "******" : "",
+      });
 
       // 保留现有的systemPrompt，只更新基础AI配置
       const configToSave = {
@@ -357,20 +400,43 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         systemPrompt: aiConfig.systemPrompt, // 保留现有的systemPrompt
       };
 
-      // 同时保存到两个状态管理系统
-      const [hookSuccess, storeSuccess] = await Promise.all([
-        saveAIConfig(configToSave),
-        saveAIStoreConfig(configToSave),
-      ]);
+      console.log("🔧 SettingsModal: 准备保存的配置", {
+        ...configToSave,
+        apiKey: configToSave.apiKey ? "******" : "",
+      });
 
-      if (hookSuccess && storeSuccess) {
+      // 优先使用 useAISettings Hook 进行保存，它会处理所有必要的状态更新
+      const success = await saveAIConfig(configToSave);
+
+      if (success) {
+        // 同步更新 AI Store 的状态（不重复保存到数据库）
+        try {
+          await saveAIStoreConfig(configToSave, false); // 传递 false 避免重复保存到数据库
+        } catch (storeError) {
+          console.warn("🔧 SettingsModal: AI Store 状态同步失败", storeError);
+          // 不阻断主流程，因为主要保存已经成功
+        }
+
         message.success("AI配置保存成功！现在可以使用AI功能了。");
+        console.log("🔧 SettingsModal: AI配置保存完成");
       } else {
         throw new Error("配置保存失败");
       }
     } catch (error) {
-      console.error("保存AI配置失败:", error);
-      message.error("请检查AI配置信息");
+      console.error("🔧 SettingsModal: 保存AI配置失败:", error);
+
+      // 提供更具体的错误信息
+      if (error instanceof Error) {
+        if (error.message.includes("请输入")) {
+          message.error(`配置验证失败：${error.message}`);
+        } else if (error.message.includes("URL")) {
+          message.error("API地址格式不正确，请输入有效的URL地址");
+        } else {
+          message.error(`保存失败：${error.message}`);
+        }
+      } else {
+        message.error("保存配置时发生未知错误，请检查配置信息");
+      }
     }
   };
 
@@ -895,13 +961,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 layout="vertical"
                 onFinish={handleSaveAIConfig}
                 preserve={true}
-                initialValues={{
-                  apiUrl: aiConfig.apiUrl || "",
-                  apiKey: aiConfig.apiKey || "",
-                  aiModel: aiConfig.aiModel || "",
-                  temperature: aiConfig.temperature || 0.7,
-                  maxTokens: aiConfig.maxTokens || 1000,
-                }}
               >
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
@@ -1050,9 +1109,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   layout="vertical"
                   onFinish={handleSavePromptConfig}
                   preserve={true}
-                  initialValues={{
-                    systemPrompt: promptConfig.systemPrompt || "",
-                  }}
                 >
                   <Card size="small" style={{ marginBottom: 16 }}>
                     <Title level={5} style={{ margin: "0 0 16px 0" }}>

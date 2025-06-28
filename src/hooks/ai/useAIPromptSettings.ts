@@ -1,8 +1,8 @@
 // AI提示词设置管理Hook
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 import type { AIConfig } from "../../services/ai/aiService";
 import { getAIService } from "../../services/ai/aiService";
-import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 
 export interface AIPromptConfig {
   systemPrompt: string; // 系统提示词（空字符串=无提示词模式，有内容=自定义prompt模式）
@@ -18,7 +18,9 @@ export interface UseAIPromptSettingsReturn {
   canConfigurePrompt: boolean; // 是否可以配置提示词（依赖于AI配置是否有效）
 }
 
-export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSettingsReturn => {
+export const useAIPromptSettings = (
+  hasValidAIConfig: boolean
+): UseAIPromptSettingsReturn => {
   const [promptConfig, setPromptConfig] = useState<AIPromptConfig>({
     systemPrompt: "", // 默认为无提示词模式（空字符串=正常API对话）
   });
@@ -50,7 +52,10 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
       };
 
       setPromptConfig(extractedPromptConfig);
-      console.log("🎯 useAIPromptSettings: 提示词配置设置完成", extractedPromptConfig);
+      console.log(
+        "🎯 useAIPromptSettings: 提示词配置设置完成",
+        extractedPromptConfig
+      );
     } catch (err) {
       console.error("🎯 useAIPromptSettings: 加载提示词配置失败", err);
       setError(err instanceof Error ? err.message : "加载提示词配置失败");
@@ -72,7 +77,10 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
       setLoading(true);
       setError(null);
 
-      console.log("🎯 useAIPromptSettings: 开始保存提示词配置", newPromptConfig);
+      console.log(
+        "🎯 useAIPromptSettings: 开始保存提示词配置",
+        newPromptConfig
+      );
 
       try {
         // 先加载完整的AI配置
@@ -85,7 +93,10 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
           systemPrompt: newPromptConfig.systemPrompt,
         };
 
-        console.log("🎯 useAIPromptSettings: 准备保存的完整配置", updatedConfig);
+        console.log(
+          "🎯 useAIPromptSettings: 准备保存的完整配置",
+          updatedConfig
+        );
 
         // 保存完整配置
         await AISettingsStorage.saveConfig(updatedConfig);
@@ -97,16 +108,24 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
           console.log("🎯 useAIPromptSettings: AI服务配置已更新", {
             systemPrompt: updatedConfig.systemPrompt ? "已设置" : "未设置",
             systemPromptLength: updatedConfig.systemPrompt?.length || 0,
-            aiServiceConfig: aiService.getConfig()
+            aiServiceConfig: aiService.getConfig(),
           });
         } catch (error) {
           console.warn("🎯 useAIPromptSettings: 更新AI服务配置失败", error);
         }
 
+        // 🔧 关键修复：通知其他Hook配置已更新
+        // 触发一个自定义事件，让useAISettings Hook知道配置已更新
+        window.dispatchEvent(
+          new CustomEvent("ai-config-updated", {
+            detail: { config: updatedConfig, source: "prompt-settings" },
+          })
+        );
+
         // 立即更新本地状态，确保UI能立即反映最新配置
         console.log("🎯 useAIPromptSettings: 更新本地状态", {
           oldConfig: promptConfig,
-          newConfig: newPromptConfig
+          newConfig: newPromptConfig,
         });
         setPromptConfig(newPromptConfig);
 
@@ -119,7 +138,10 @@ export const useAIPromptSettings = (hasValidAIConfig: boolean): UseAIPromptSetti
         // 额外的强制更新，确保React能检测到变化
         setTimeout(() => {
           console.log("🎯 useAIPromptSettings: 第二次强制触发状态更新");
-          setPromptConfig(prev => ({ ...prev, systemPrompt: newPromptConfig.systemPrompt }));
+          setPromptConfig((prev) => ({
+            ...prev,
+            systemPrompt: newPromptConfig.systemPrompt,
+          }));
         }, 100);
 
         // 第三次强制更新，确保所有依赖组件都能收到更新

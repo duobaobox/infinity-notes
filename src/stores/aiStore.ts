@@ -1,9 +1,9 @@
 // AI状态管理Store
-import { create } from 'zustand';
-import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import type { AIConfig } from '../services/ai/aiService';
-import { defaultAIConfig, getAIService } from '../services/ai/aiService';
-import { IndexedDBAISettingsStorage as AISettingsStorage } from '../database/IndexedDBAISettingsStorage';
+import { create } from "zustand";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
+import { IndexedDBAISettingsStorage as AISettingsStorage } from "../database/IndexedDBAISettingsStorage";
+import type { AIConfig } from "../services/ai/aiService";
+import { defaultAIConfig, getAIService } from "../services/ai/aiService";
 
 // AI提示词配置接口
 export interface AIPromptConfig {
@@ -15,19 +15,19 @@ export interface AIState {
   // AI配置
   config: AIConfig;
   promptConfig: AIPromptConfig;
-  
+
   // 状态管理
   loading: boolean;
   error: string | null;
-  
+
   // AI生成状态
   isGenerating: boolean;
   generationProgress: number; // 0-100
-  
+
   // 连接状态
   isConnected: boolean;
   lastTestTime: Date | null;
-  
+
   // 配置验证
   hasValidConfig: boolean;
   canConfigurePrompt: boolean;
@@ -36,31 +36,34 @@ export interface AIState {
 // AI操作接口
 export interface AIActions {
   // 配置管理
-  saveConfig: (config: AIConfig) => Promise<boolean>;
+  saveConfig: (config: AIConfig, saveToDatabase?: boolean) => Promise<boolean>;
   loadConfig: () => Promise<void>;
   clearConfig: () => Promise<void>;
-  
+
   // 提示词管理
-  savePromptConfig: (promptConfig: AIPromptConfig) => Promise<boolean>;
+  savePromptConfig: (
+    promptConfig: AIPromptConfig,
+    saveToDatabase?: boolean
+  ) => Promise<boolean>;
   loadPromptConfig: () => Promise<void>;
   resetPromptToDefault: () => Promise<boolean>;
-  
+
   // 连接测试
   testConnection: () => Promise<{ success: boolean; error?: string }>;
-  
+
   // AI生成控制
   startGeneration: () => void;
   updateGenerationProgress: (progress: number) => void;
   finishGeneration: () => void;
   cancelGeneration: () => void;
-  
+
   // 状态管理
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
+
   // 初始化
   initialize: () => Promise<void>;
-  
+
   // 获取完整配置（合并基础配置和提示词配置）
   getFullConfig: () => AIConfig;
 }
@@ -71,7 +74,7 @@ export const useAIStore = create<AIState & AIActions>()(
     subscribeWithSelector((set, get) => ({
       // 初始状态
       config: defaultAIConfig,
-      promptConfig: { systemPrompt: '' },
+      promptConfig: { systemPrompt: "" },
       loading: false,
       error: null,
       isGenerating: false,
@@ -82,39 +85,58 @@ export const useAIStore = create<AIState & AIActions>()(
       canConfigurePrompt: false,
 
       // 配置管理
-      saveConfig: async (newConfig) => {
+      saveConfig: async (newConfig, saveToDatabase = true) => {
         try {
           set({ loading: true, error: null });
-          
+
+          console.log("🏪 AIStore: 开始保存配置", {
+            saveToDatabase,
+            config: { ...newConfig, apiKey: newConfig.apiKey ? "******" : "" },
+          });
+
           // 验证配置
           const validation = AISettingsStorage.validateConfig(newConfig);
           if (!validation.isValid) {
-            const errorMsg = validation.errors.join(', ');
+            const errorMsg = validation.errors.join(", ");
+            console.error("🏪 AIStore: 配置验证失败", validation.errors);
             set({ error: errorMsg, loading: false });
             return false;
           }
-          
-          // 保存配置
-          await AISettingsStorage.saveConfig(newConfig);
-          
+
+          // 只有在需要时才保存到数据库
+          if (saveToDatabase) {
+            console.log("🏪 AIStore: 保存配置到数据库");
+            await AISettingsStorage.saveConfig(newConfig);
+          } else {
+            console.log("🏪 AIStore: 跳过数据库保存，仅更新状态");
+          }
+
           // 更新状态
-          const hasValidConfig = !!(newConfig.apiKey && newConfig.apiUrl && newConfig.aiModel);
-          set({ 
+          const hasValidConfig = !!(
+            newConfig.apiKey &&
+            newConfig.apiUrl &&
+            newConfig.aiModel
+          );
+          set({
             config: newConfig,
             hasValidConfig,
             canConfigurePrompt: hasValidConfig,
-            loading: false 
+            loading: false,
           });
-          
+
           // 更新AI服务配置
           if (hasValidConfig) {
             const fullConfig = get().getFullConfig();
             getAIService(fullConfig);
+            console.log("🏪 AIStore: AI服务配置已更新");
           }
-          
+
+          console.log("🏪 AIStore: 配置保存完成");
           return true;
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : '保存配置失败';
+          const errorMsg =
+            error instanceof Error ? error.message : "保存配置失败";
+          console.error("🏪 AIStore: 保存配置失败", error);
           set({ error: errorMsg, loading: false });
           return false;
         }
@@ -123,24 +145,29 @@ export const useAIStore = create<AIState & AIActions>()(
       loadConfig: async () => {
         try {
           set({ loading: true, error: null });
-          
+
           const loadedConfig = await AISettingsStorage.loadConfig();
-          const hasValidConfig = !!(loadedConfig.apiKey && loadedConfig.apiUrl && loadedConfig.aiModel);
-          
-          set({ 
+          const hasValidConfig = !!(
+            loadedConfig.apiKey &&
+            loadedConfig.apiUrl &&
+            loadedConfig.aiModel
+          );
+
+          set({
             config: loadedConfig,
             hasValidConfig,
             canConfigurePrompt: hasValidConfig,
-            loading: false 
+            loading: false,
           });
-          
+
           // 更新AI服务配置
           if (hasValidConfig) {
             const fullConfig = get().getFullConfig();
             getAIService(fullConfig);
           }
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : '加载配置失败';
+          const errorMsg =
+            error instanceof Error ? error.message : "加载配置失败";
           set({ error: errorMsg, loading: false });
         }
       },
@@ -148,51 +175,79 @@ export const useAIStore = create<AIState & AIActions>()(
       clearConfig: async () => {
         try {
           set({ loading: true, error: null });
-          
+
           await AISettingsStorage.clearConfig();
-          
-          set({ 
+
+          set({
             config: defaultAIConfig,
             hasValidConfig: false,
             canConfigurePrompt: false,
             isConnected: false,
             lastTestTime: null,
-            loading: false 
+            loading: false,
           });
-          
+
           // 重置AI服务
           getAIService(defaultAIConfig);
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : '清除配置失败';
+          const errorMsg =
+            error instanceof Error ? error.message : "清除配置失败";
           set({ error: errorMsg, loading: false });
         }
       },
 
       // 提示词管理
-      savePromptConfig: async (promptConfig) => {
+      savePromptConfig: async (promptConfig, saveToDatabase = true) => {
         try {
           set({ loading: true, error: null });
-          
+
+          console.log("🏪 AIStore: 开始保存提示词配置", {
+            saveToDatabase,
+            promptConfig,
+          });
+
           // 保存提示词配置（通过更新完整配置）
           const currentConfig = get().config;
-          const updatedConfig = { ...currentConfig, systemPrompt: promptConfig.systemPrompt };
-          
-          await AISettingsStorage.saveConfig(updatedConfig);
-          
-          set({ 
+          const updatedConfig = {
+            ...currentConfig,
+            systemPrompt: promptConfig.systemPrompt,
+          };
+
+          // 只有在需要时才保存到数据库
+          if (saveToDatabase) {
+            console.log("🏪 AIStore: 保存提示词配置到数据库");
+            await AISettingsStorage.saveConfig(updatedConfig);
+          } else {
+            console.log("🏪 AIStore: 跳过数据库保存，仅更新状态");
+          }
+
+          set({
             config: updatedConfig,
             promptConfig,
-            loading: false 
+            loading: false,
           });
-          
+
           // 更新AI服务配置
           if (get().hasValidConfig) {
             getAIService(updatedConfig);
+            console.log("🏪 AIStore: AI服务配置已更新");
           }
-          
+
+          // 🔧 关键修复：通知其他Hook配置已更新（仅在实际保存到数据库时触发）
+          if (saveToDatabase) {
+            window.dispatchEvent(
+              new CustomEvent("ai-config-updated", {
+                detail: { config: updatedConfig, source: "ai-store-prompt" },
+              })
+            );
+          }
+
+          console.log("🏪 AIStore: 提示词配置保存完成");
           return true;
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : '保存提示词配置失败';
+          const errorMsg =
+            error instanceof Error ? error.message : "保存提示词配置失败";
+          console.error("🏪 AIStore: 保存提示词配置失败", error);
           set({ error: errorMsg, loading: false });
           return false;
         }
@@ -201,49 +256,52 @@ export const useAIStore = create<AIState & AIActions>()(
       loadPromptConfig: async () => {
         try {
           const config = get().config;
-          set({ 
-            promptConfig: { systemPrompt: config.systemPrompt || '' }
+          set({
+            promptConfig: { systemPrompt: config.systemPrompt || "" },
           });
         } catch (error) {
-          console.error('加载提示词配置失败:', error);
+          console.error("加载提示词配置失败:", error);
         }
       },
 
       resetPromptToDefault: async () => {
-        return await get().savePromptConfig({ systemPrompt: '' });
+        return await get().savePromptConfig({ systemPrompt: "" });
       },
 
       // 连接测试
       testConnection: async () => {
         try {
           set({ loading: true, error: null });
-          
+
           const fullConfig = get().getFullConfig();
-          
+
           // 检查配置完整性
           if (!fullConfig.apiKey || !fullConfig.apiUrl || !fullConfig.aiModel) {
-            throw new Error('AI配置不完整');
+            throw new Error("AI配置不完整");
           }
-          
+
           // 获取AI服务并测试连接
           const aiService = getAIService(fullConfig);
           const testResult = await aiService.testConnection();
-          
-          set({ 
+
+          set({
             isConnected: testResult.success,
             lastTestTime: new Date(),
             loading: false,
-            error: testResult.success ? null : testResult.error || '连接测试失败'
+            error: testResult.success
+              ? null
+              : testResult.error || "连接测试失败",
           });
-          
+
           return testResult;
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : '连接测试失败';
-          set({ 
+          const errorMsg =
+            error instanceof Error ? error.message : "连接测试失败";
+          set({
             isConnected: false,
             lastTestTime: new Date(),
             error: errorMsg,
-            loading: false 
+            loading: false,
           });
           return { success: false, error: errorMsg };
         }
@@ -251,10 +309,10 @@ export const useAIStore = create<AIState & AIActions>()(
 
       // AI生成控制
       startGeneration: () => {
-        set({ 
-          isGenerating: true, 
+        set({
+          isGenerating: true,
           generationProgress: 0,
-          error: null 
+          error: null,
         });
       },
 
@@ -263,11 +321,11 @@ export const useAIStore = create<AIState & AIActions>()(
       },
 
       finishGeneration: () => {
-        set({ 
-          isGenerating: false, 
-          generationProgress: 100 
+        set({
+          isGenerating: false,
+          generationProgress: 100,
         });
-        
+
         // 延迟重置进度
         setTimeout(() => {
           set({ generationProgress: 0 });
@@ -275,10 +333,10 @@ export const useAIStore = create<AIState & AIActions>()(
       },
 
       cancelGeneration: () => {
-        set({ 
-          isGenerating: false, 
+        set({
+          isGenerating: false,
           generationProgress: 0,
-          error: 'AI生成已取消'
+          error: "AI生成已取消",
         });
       },
 
@@ -291,14 +349,14 @@ export const useAIStore = create<AIState & AIActions>()(
         try {
           // 加载AI配置
           await get().loadConfig();
-          
+
           // 加载提示词配置
           await get().loadPromptConfig();
-          
-          console.log('AI Store 初始化完成');
+
+          console.log("AI Store 初始化完成");
         } catch (error) {
-          console.error('AI Store 初始化失败:', error);
-          set({ error: '初始化失败' });
+          console.error("AI Store 初始化失败:", error);
+          set({ error: "初始化失败" });
         }
       },
 
@@ -312,7 +370,7 @@ export const useAIStore = create<AIState & AIActions>()(
       },
     })),
     {
-      name: 'ai-store', // DevTools中的名称
+      name: "ai-store", // DevTools中的名称
     }
   )
 );

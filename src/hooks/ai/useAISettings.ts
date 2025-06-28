@@ -1,8 +1,8 @@
 // AI设置管理Hook
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 import type { AIConfig } from "../../services/ai/aiService";
 import { defaultAIConfig, getAIService } from "../../services/ai/aiService";
-import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 
 export interface UseAISettingsReturn {
   config: AIConfig;
@@ -79,7 +79,7 @@ export const useAISettings = (): UseAISettingsReturn => {
         // 保存配置
         await AISettingsStorage.saveConfig(newConfig);
         console.log("🔧 useAISettings: 配置保存成功，更新状态");
-        
+
         // 立即更新配置和服务
         updateConfigAndService(newConfig);
 
@@ -145,6 +145,34 @@ export const useAISettings = (): UseAISettingsReturn => {
   useEffect(() => {
     loadConfig();
   }, [loadConfig]);
+
+  // 🔧 关键修复：监听其他组件的配置更新事件
+  useEffect(() => {
+    const handleConfigUpdate = (event: CustomEvent) => {
+      const { config: updatedConfig, source } = event.detail;
+      console.log("🔧 useAISettings: 收到配置更新事件", {
+        source,
+        updatedConfig,
+      });
+
+      // 更新本地配置状态，确保hasValidConfig能正确反映最新状态
+      updateConfigAndService(updatedConfig);
+    };
+
+    // 监听配置更新事件
+    window.addEventListener(
+      "ai-config-updated",
+      handleConfigUpdate as EventListener
+    );
+
+    // 清理事件监听器
+    return () => {
+      window.removeEventListener(
+        "ai-config-updated",
+        handleConfigUpdate as EventListener
+      );
+    };
+  }, [updateConfigAndService]);
 
   return {
     config,
