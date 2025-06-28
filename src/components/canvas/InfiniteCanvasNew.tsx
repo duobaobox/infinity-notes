@@ -1,32 +1,32 @@
 // 重构后的无限画布组件 - 使用全局状态管理
+import { message } from "antd";
+import { debounce, throttle } from "lodash";
 import React, {
-  useRef,
+  forwardRef,
   useCallback,
   useEffect,
-  useMemo,
   useImperativeHandle,
-  forwardRef,
+  useMemo,
+  useRef,
 } from "react";
-import { throttle, debounce } from "lodash";
-import { message } from "antd";
-import CanvasToolbar from "./CanvasToolbar";
-import CanvasGrid from "./CanvasGrid";
-import CanvasConsole from "./CanvasConsole";
-import StickyNoteSlots from "./StickyNoteSlots";
 import StickyNote from "../notes/StickyNote";
+import CanvasConsole from "./CanvasConsole";
+import CanvasGrid from "./CanvasGrid";
+import CanvasToolbar from "./CanvasToolbar";
+import StickyNoteSlots from "./StickyNoteSlots";
 
 import SettingsModal from "../modals/SettingsModal";
+import type { SourceNoteContent, StickyNote as StickyNoteType } from "../types";
 import { CANVAS_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
-import type { StickyNote as StickyNoteType, SourceNoteContent } from "../types";
 import "./InfiniteCanvas.css";
 
 // 全局状态管理导入
 import {
-  useStickyNotesStore,
-  useCanvasStore,
   useAIStore,
-  useUIStore,
+  useCanvasStore,
   useConnectionStore,
+  useStickyNotesStore,
+  useUIStore,
 } from "../../stores";
 import { connectionUtils } from "../../stores/connectionStore";
 
@@ -373,6 +373,16 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           }
         }
 
+        // 生成随机颜色
+        const colors: Array<StickyNoteType["color"]> = [
+          "yellow",
+          "blue",
+          "green",
+          "pink",
+          "purple",
+        ];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
         const tempNote: StickyNoteType = {
           id: `ai-note-${Date.now()}-${Math.random()
             .toString(36)
@@ -383,7 +393,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           height: 220,
           content: "",
           title: "AI便签",
-          color: hasValidConfig ? "blue" : "yellow", // 有效配置用蓝色，演示模式用黄色
+          color: randomColor, // 🔧 使用随机颜色
           isNew: false,
           zIndex: maxZ + 1,
           isEditing: false,
@@ -417,9 +427,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               // 完成流式生成，更新最终内容
               await finishStreamingNote(addedNote.id, noteData.content);
 
-              // 更新便签的其他属性（保持AI便签标题不变）
+              // 🔧 修复：保持临时便签的颜色，不使用AI返回的颜色
+              // 这样确保生成过程中和最终的便签颜色保持一致
               await updateStickyNote(addedNote.id, {
-                color: convertColorToNoteName(noteData.color) || tempNote.color,
+                color: tempNote.color, // 保持临时便签的颜色
                 updatedAt: new Date(),
               });
             },

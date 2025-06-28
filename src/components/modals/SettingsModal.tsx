@@ -103,7 +103,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   // 便签状态管理
   const { loadNotes } = useStickyNotesStore();
 
-  // AI状态管理
+  // AI状态管理 - 仅用于状态同步，不用于保存
   const {
     saveConfig: saveAIStoreConfig,
     savePromptConfig: saveAIStorePromptConfig,
@@ -298,7 +298,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 保存AI提示词配置
+  // 保存AI提示词配置 - 简化版本，只使用主要的保存方法
   const handleSavePromptConfig = async () => {
     try {
       console.log("🔧 SettingsModal: 开始保存AI提示词配置");
@@ -306,21 +306,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       const values = await promptForm.validateFields();
       console.log("🔧 SettingsModal: 提示词表单验证通过", values);
 
-      // 优先使用 useAIPromptSettings Hook 进行保存，它会处理所有必要的状态更新
+      // 使用 useAIPromptSettings Hook 进行保存，配置管理器会自动同步所有状态
       const success = await savePromptConfig(values);
 
       if (success) {
-        // 同步更新 AI Store 的状态（不重复保存到数据库）
-        try {
-          await saveAIStorePromptConfig(values, false); // 传递 false 避免重复保存到数据库
-        } catch (storeError) {
-          console.warn(
-            "🔧 SettingsModal: AI Store 提示词状态同步失败",
-            storeError
-          );
-          // 不阻断主流程，因为主要保存已经成功
-        }
-
         message.success("AI提示词设置保存成功！现在可以使用自定义提示词了。");
         console.log("🔧 SettingsModal: AI提示词配置保存完成");
       } else {
@@ -338,7 +327,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 重置提示词为正常对话模式
+  // 重置提示词为正常对话模式 - 简化版本
   const handleResetPromptToDefault = async () => {
     try {
       console.log("🔧 SettingsModal: 开始重置AI提示词为正常对话模式");
@@ -348,21 +337,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
       const resetConfig = { systemPrompt: "" };
 
-      // 优先使用 useAIPromptSettings Hook 进行保存
+      // 使用 useAIPromptSettings Hook 进行保存，配置管理器会自动同步所有状态
       const success = await savePromptConfig(resetConfig);
 
       if (success) {
-        // 同步更新 AI Store 的状态（不重复保存到数据库）
-        try {
-          await saveAIStorePromptConfig(resetConfig, false); // 传递 false 避免重复保存到数据库
-        } catch (storeError) {
-          console.warn(
-            "🔧 SettingsModal: AI Store 重置状态同步失败",
-            storeError
-          );
-          // 不阻断主流程，因为主要保存已经成功
-        }
-
         message.success("已重置为正常对话模式");
         console.log("🔧 SettingsModal: AI提示词重置完成");
       } else {
@@ -405,18 +383,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         apiKey: configToSave.apiKey ? "******" : "",
       });
 
-      // 优先使用 useAISettings Hook 进行保存，它会处理所有必要的状态更新
+      // 使用 useAISettings Hook 进行保存，配置管理器会自动同步所有状态
       const success = await saveAIConfig(configToSave);
 
       if (success) {
-        // 同步更新 AI Store 的状态（不重复保存到数据库）
-        try {
-          await saveAIStoreConfig(configToSave, false); // 传递 false 避免重复保存到数据库
-        } catch (storeError) {
-          console.warn("🔧 SettingsModal: AI Store 状态同步失败", storeError);
-          // 不阻断主流程，因为主要保存已经成功
-        }
-
         message.success("AI配置保存成功！现在可以使用AI功能了。");
         console.log("🔧 SettingsModal: AI配置保存完成");
       } else {

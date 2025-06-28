@@ -1,4 +1,5 @@
 // AI服务模块 - 处理AI API调用和便签生成
+
 export interface AIConfig {
   apiUrl: string;
   apiKey: string;
@@ -423,15 +424,12 @@ export class AIService {
           return { success: true, notes: finalNotes.notes };
         } else {
           // 解析失败，但流式内容已经显示，创建一个便签保存内容
-          const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-          const isNormalMode = currentSystemPrompt === "";
-
           const fallbackNote: StickyNoteData = {
             title: this.generateTitleFromContent(
               currentNoteContent || fullResponse
             ),
             content: currentNoteContent || fullResponse,
-            color: isNormalMode ? "#e3f2fd" : "#fef3c7", // 正常对话模式使用蓝色，自定义prompt模式使用黄色
+            // 🔧 不设置颜色，让前端使用临时便签的颜色
           };
 
           callbacks.onNoteComplete?.(0, fallbackNote);
@@ -529,10 +527,6 @@ export class AIService {
           }
 
           // 验证便签数据格式
-          const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-          const isNormalMode = currentSystemPrompt === "";
-          const defaultColor = isNormalMode ? "#e3f2fd" : "#fef3c7";
-
           const validNotes = notes
             .filter(
               (note) => typeof note === "object" && note.title && note.content
@@ -540,7 +534,7 @@ export class AIService {
             .map((note) => ({
               title: String(note.title).slice(0, 100),
               content: String(note.content).slice(0, 1000),
-              color: note.color || defaultColor, // 根据模式使用不同的默认颜色
+              color: note.color, // 🔧 保持AI返回的颜色，如果没有则为undefined，让前端使用临时便签颜色
               tags: Array.isArray(note.tags)
                 ? note.tags.slice(0, 5)
                 : undefined,
@@ -556,13 +550,10 @@ export class AIService {
       }
 
       // 使用自然语言解析（现在是主要方式）
-      const currentSystemPrompt = (this.config.systemPrompt || "").trim();
-      const isNormalMode = currentSystemPrompt === "";
-
       const note: StickyNoteData = {
         title: this.generateTitleFromContent(cleanResponse),
         content: cleanResponse,
-        color: isNormalMode ? "#e3f2fd" : "#fef3c7", // 正常对话模式使用蓝色，自定义prompt模式使用黄色
+        // 🔧 不设置颜色，让前端使用临时便签的颜色
       };
 
       console.log("✅ 自然语言解析成功:", {

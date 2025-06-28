@@ -3,27 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 import type { AIConfig } from "../../services/ai/aiService";
 import { defaultAIConfig, getAIService } from "../../services/ai/aiService";
-
-export interface UseAISettingsReturn {
-  config: AIConfig;
-  loading: boolean;
-  error: string | null;
-  saveConfig: (newConfig: AIConfig) => Promise<boolean>;
-  loadConfig: () => Promise<void>;
-  testConnection: () => Promise<{ success: boolean; error?: string }>;
-  hasValidConfig: boolean;
-  clearConfig: () => Promise<void>;
-}
+import type { UseAISettingsReturn } from "../../types/ai";
+import { aiConfigManager, AIConfigManager } from "../../utils/aiConfigManager";
 
 export const useAISettings = (): UseAISettingsReturn => {
   const [config, setConfig] = useState<AIConfig>(defaultAIConfig);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 计算是否有有效配置（只检查必要的配置项）
-  const hasValidConfig = Boolean(
-    config.apiKey && config.apiUrl && config.aiModel
-  );
+  // 计算是否有有效配置（使用统一的验证逻辑）
+  const hasValidConfig = AIConfigManager.isValidConfig(config);
 
   // 更新配置和服务的工具函数
   const updateConfigAndService = useCallback((newConfig: AIConfig) => {
@@ -82,6 +71,9 @@ export const useAISettings = (): UseAISettingsReturn => {
 
         // 立即更新配置和服务
         updateConfigAndService(newConfig);
+
+        // 🔧 优化：使用统一的配置管理器通知更新
+        aiConfigManager.notifyConfigUpdate(newConfig, "ai-settings");
 
         console.log("🔧 useAISettings: AI配置保存完成");
         return true;

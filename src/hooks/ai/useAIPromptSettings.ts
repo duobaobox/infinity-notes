@@ -2,21 +2,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 import type { AIConfig } from "../../services/ai/aiService";
-import { getAIService } from "../../services/ai/aiService";
-
-export interface AIPromptConfig {
-  systemPrompt: string; // 系统提示词（空字符串=无提示词模式，有内容=自定义prompt模式）
-}
-
-export interface UseAIPromptSettingsReturn {
-  promptConfig: AIPromptConfig;
-  loading: boolean;
-  error: string | null;
-  savePromptConfig: (promptConfig: AIPromptConfig) => Promise<boolean>;
-  loadPromptConfig: () => Promise<void>;
-  resetToDefault: () => Promise<boolean>;
-  canConfigurePrompt: boolean; // 是否可以配置提示词（依赖于AI配置是否有效）
-}
+import type { AIPromptConfig, UseAIPromptSettingsReturn } from "../../types/ai";
+import { aiConfigManager } from "../../utils/aiConfigManager";
 
 export const useAIPromptSettings = (
   hasValidAIConfig: boolean
@@ -102,53 +89,11 @@ export const useAIPromptSettings = (
         await AISettingsStorage.saveConfig(updatedConfig);
         console.log("🎯 useAIPromptSettings: 提示词配置保存成功");
 
-        // 立即更新AI服务实例的配置，确保下次AI调用使用最新配置
-        try {
-          const aiService = getAIService(updatedConfig);
-          console.log("🎯 useAIPromptSettings: AI服务配置已更新", {
-            systemPrompt: updatedConfig.systemPrompt ? "已设置" : "未设置",
-            systemPromptLength: updatedConfig.systemPrompt?.length || 0,
-            aiServiceConfig: aiService.getConfig(),
-          });
-        } catch (error) {
-          console.warn("🎯 useAIPromptSettings: 更新AI服务配置失败", error);
-        }
-
-        // 🔧 关键修复：通知其他Hook配置已更新
-        // 触发一个自定义事件，让useAISettings Hook知道配置已更新
-        window.dispatchEvent(
-          new CustomEvent("ai-config-updated", {
-            detail: { config: updatedConfig, source: "prompt-settings" },
-          })
-        );
-
-        // 立即更新本地状态，确保UI能立即反映最新配置
-        console.log("🎯 useAIPromptSettings: 更新本地状态", {
-          oldConfig: promptConfig,
-          newConfig: newPromptConfig,
-        });
+        // 立即更新本地状态
         setPromptConfig(newPromptConfig);
 
-        // 强制触发状态更新，确保依赖此配置的组件能立即重新渲染
-        setTimeout(() => {
-          console.log("🎯 useAIPromptSettings: 强制触发状态更新");
-          setPromptConfig({ ...newPromptConfig });
-        }, 50);
-
-        // 额外的强制更新，确保React能检测到变化
-        setTimeout(() => {
-          console.log("🎯 useAIPromptSettings: 第二次强制触发状态更新");
-          setPromptConfig((prev) => ({
-            ...prev,
-            systemPrompt: newPromptConfig.systemPrompt,
-          }));
-        }, 100);
-
-        // 第三次强制更新，确保所有依赖组件都能收到更新
-        setTimeout(() => {
-          console.log("🎯 useAIPromptSettings: 第三次强制触发状态更新");
-          setPromptConfig({ systemPrompt: newPromptConfig.systemPrompt + "" }); // 强制创建新字符串
-        }, 200);
+        // 🔧 优化：使用统一的配置管理器通知更新
+        aiConfigManager.notifyConfigUpdate(updatedConfig, "prompt-settings");
 
         return true;
       } catch (err) {

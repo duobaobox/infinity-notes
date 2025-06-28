@@ -131,6 +131,15 @@ export const useAIStore = create<AIState & AIActions>()(
             console.log("🏪 AIStore: AI服务配置已更新");
           }
 
+          // 🔧 关键修复：通知其他Hook配置已更新（仅在实际保存到数据库时触发）
+          if (saveToDatabase) {
+            window.dispatchEvent(
+              new CustomEvent("ai-config-updated", {
+                detail: { config: newConfig, source: "ai-store-config" },
+              })
+            );
+          }
+
           console.log("🏪 AIStore: 配置保存完成");
           return true;
         } catch (error) {
