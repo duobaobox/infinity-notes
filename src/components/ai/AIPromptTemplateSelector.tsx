@@ -1,5 +1,5 @@
 // AI提示词模板选择组件
-import { Card, Col, Row, Tooltip, Typography } from "antd";
+import { Card, Col, Row, Typography } from "antd";
 import React from "react";
 import type { AIPromptTemplate } from "../../services/ai/aiService";
 import { systemPromptTemplates } from "../../services/ai/aiService";
@@ -9,7 +9,6 @@ const { Text, Title } = Typography;
 
 interface AIPromptTemplateSelectorProps {
   selectedTemplate?: AIPromptTemplate;
-  currentPrompt?: string; // 当前使用的提示词内容
   onTemplateSelect: (template: AIPromptTemplate) => void;
   disabled?: boolean;
 }
@@ -20,130 +19,76 @@ interface AIPromptTemplateSelectorProps {
  */
 export const AIPromptTemplateSelector: React.FC<
   AIPromptTemplateSelectorProps
-> = ({
-  selectedTemplate,
-  currentPrompt = "",
-  onTemplateSelect,
-  disabled = false,
-}) => {
-  /**
-   * 检查是否为当前使用的模板
-   */
-  const isCurrentTemplate = (template: AIPromptTemplate): boolean => {
-    return currentPrompt === template.prompt;
-  };
-
+> = ({ selectedTemplate, onTemplateSelect, disabled = false }) => {
   return (
     <Row gutter={[12, 12]}>
       {systemPromptTemplates.map((template) => {
         const isSelected = selectedTemplate?.id === template.id;
-        const isCurrent = isCurrentTemplate(template);
 
         return (
           <Col xs={24} sm={12} md={8} lg={6} key={template.id}>
-            <div style={{ position: "relative" }}>
-              {/* 当前使用指示器 */}
-              {isCurrent && (
-                <Tooltip title="当前正在使用的AI角色模板">
-                  <div
-                    className="provider-current-indicator"
-                    style={{
-                      position: "absolute",
-                      top: 6,
-                      right: 6,
-                      zIndex: 10,
-                      backgroundColor: "#1890ff",
-                      color: "white",
-                      fontSize: "9px",
-                      padding: "1px 4px",
-                      borderRadius: "8px",
-                      fontWeight: "bold",
-                      boxShadow: "0 1px 3px rgba(24, 144, 255, 0.3)",
-                    }}
-                  >
-                    使用中
-                  </div>
-                </Tooltip>
-              )}
-
-              <Card
-                hoverable
-                className={`provider-card ${
-                  isSelected ? "provider-card-selected" : ""
-                } ${isCurrent ? "provider-card-current" : ""}`}
-                onClick={() => !disabled && onTemplateSelect(template)}
-                styles={{ body: { padding: "16px" } }}
+            <Card
+              hoverable
+              className={`provider-card ${
+                isSelected ? "provider-card-selected" : ""
+              }`}
+              style={{
+                height: "120px",
+                border: isSelected ? "1px solid #1890ff" : "1px solid #f0f0f0",
+                backgroundColor: isSelected ? "#f0f9ff" : "white",
+                cursor: disabled ? "not-allowed" : "pointer",
+                transition: "all 0.2s ease",
+                position: "relative",
+                opacity: disabled ? 0.6 : 1,
+              }}
+              onClick={() => !disabled && onTemplateSelect(template)}
+              styles={{ body: { padding: "16px" } }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textAlign: "center",
+                }}
               >
-                <div
-                  className="provider-card-content"
+                <div style={{ fontSize: "20px", marginBottom: "8px" }}>
+                  {template.icon}
+                </div>
+                <Title
+                  level={5}
                   style={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
+                    margin: 0,
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    lineHeight: "1.2",
+                    color: isSelected ? "#1890ff" : "#333",
+                    marginBottom: "4px",
                   }}
                 >
-                  {/* 模板头部 */}
-                  <div
-                    className="provider-header"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    <div
-                      className="provider-logo"
-                      style={{
-                        fontSize: "18px",
-                        lineHeight: 1,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {template.icon}
-                    </div>
-                    <div
-                      className="provider-info"
-                      style={{ flex: 1, minWidth: 0 }}
-                    >
-                      <Title
-                        level={5}
-                        style={{
-                          margin: 0,
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          lineHeight: "1.3",
-                          color: "#262626",
-                        }}
-                      >
-                        {template.name}
-                      </Title>
-                    </div>
-                  </div>
-
-                  {/* 模板描述 */}
-                  <div style={{ flex: 1 }}>
-                    <Text
-                      type="secondary"
-                      style={{
-                        fontSize: "11px",
-                        lineHeight: "1.4",
-                        color: "#8c8c8c",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {template.description}
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </div>
+                  {template.name}
+                </Title>
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: "10px",
+                    lineHeight: "1.3",
+                    color: "#8c8c8c",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    wordBreak: "break-word",
+                    textAlign: "center",
+                  }}
+                >
+                  {template.description}
+                </Text>
+              </div>
+            </Card>
           </Col>
         );
       })}

@@ -33,6 +33,8 @@ import {
   Statistic,
   Switch,
   Tabs,
+  Tag,
+  Tooltip,
   Typography,
   Upload,
   type TabsProps,
@@ -49,7 +51,6 @@ import { useStickyNotesStore, useUserStore } from "../../stores";
 import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import { AIConfigStatus } from "../ai/AIConfigStatus";
 import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
-import { ProviderStatusIndicator } from "../ai/ProviderStatusIndicator";
 import "./SettingsModal.css";
 
 // 添加供应商卡片的样式
@@ -60,14 +61,8 @@ const providerCardStyles = `
   }
 
   .provider-card.ant-card:hover {
-    border-color: #d9d9d9 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-  }
-
-  .provider-card.selected.ant-card:hover {
-    border-color: #52c41a !important;
-    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+    border-color: #1890ff !important;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
   }
 
   .provider-card .ant-card-body {
@@ -448,6 +443,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     },
     []
   );
+
+  // 获取当前正在使用的AI提示词模板
+  const getCurrentPromptTemplate = () => {
+    const currentPrompt = promptConfig?.systemPrompt || "";
+    if (!currentPrompt) return null;
+
+    // 查找匹配的模板
+    const matchingTemplate = systemPromptTemplates.find(
+      (template) => template.prompt === currentPrompt
+    );
+
+    if (matchingTemplate) {
+      return matchingTemplate;
+    }
+
+    // 如果没有匹配的模板，返回自定义模板信息
+    return {
+      id: "custom",
+      name: "自定义提示词",
+      icon: "✏️",
+      description: "用户自定义的AI角色设定",
+      prompt: currentPrompt,
+      category: "custom",
+    };
+  };
 
   // 根据当前提示词内容自动设置选中的模板
   React.useEffect(() => {
@@ -909,93 +929,119 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               onValuesChange={handleAppearanceChange}
               initialValues={appearance}
             >
-              {/* 预制主题选择器 */}
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  🎨 预制主题
-                </Title>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", marginBottom: 16 }}
-                >
-                  选择一个预制主题快速应用美观的配色方案，点击即可立即应用
-                </Text>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-                    gap: "8px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {PRESET_THEMES.map((theme) => (
+              {/* 当前使用的主题 */}
+              {(() => {
+                const currentTheme = PRESET_THEMES.find(
+                  (theme) =>
+                    theme.colors.canvasBackground ===
+                    appearance.canvasBackground
+                );
+                return currentTheme ? (
+                  <Card
+                    size="small"
+                    style={{
+                      marginBottom: 16,
+                      background:
+                        "linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)",
+                      border: "1px solid #1890ff",
+                    }}
+                  >
                     <div
-                      key={theme.id}
                       style={{
-                        position: "relative",
-                        cursor: "pointer",
-                        padding: "12px 8px",
                         display: "flex",
-                        flexDirection: "column",
                         alignItems: "center",
-                        gap: "6px",
-                        border: "2px solid",
-                        borderColor:
-                          appearance.canvasBackground ===
-                          theme.colors.canvasBackground
-                            ? "#1677ff"
-                            : "#f0f0f0",
-                        borderRadius: "12px",
-                        backgroundColor: "#fafafa",
-                        transition: "border-color 0.2s ease",
-                        textAlign: "center",
-                      }}
-                      onClick={() =>
-                        handleApplyPresetTheme(theme.id, theme.name)
-                      }
-                      onMouseEnter={(e) => {
-                        if (
-                          appearance.canvasBackground !==
-                          theme.colors.canvasBackground
-                        ) {
-                          e.currentTarget.style.borderColor = "#1677ff";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (
-                          appearance.canvasBackground !==
-                          theme.colors.canvasBackground
-                        ) {
-                          e.currentTarget.style.borderColor = "#f0f0f0";
-                        }
+                        gap: "12px",
                       }}
                     >
-                      <span style={{ fontSize: "24px", lineHeight: 1 }}>
-                        {theme.icon}
-                      </span>
+                      <Tag
+                        color="blue"
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        当前使用
+                      </Tag>
                       <div>
+                        <Text strong style={{ color: "#1890ff" }}>
+                          {currentTheme.name}
+                        </Text>
                         <div
                           style={{
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            color: "#262626",
-                          }}
-                        >
-                          {theme.name}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#8c8c8c",
+                            fontSize: "12px",
+                            color: "#666",
                             marginTop: "2px",
                           }}
                         >
-                          {theme.description}
+                          {currentTheme.description}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </Card>
+                ) : null;
+              })()}
+
+              {/* 预制主题选择器 */}
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  🎨 选择预制主题
+                </Title>
+                <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+                  {PRESET_THEMES.map((theme) => {
+                    const isSelected =
+                      appearance.canvasBackground ===
+                      theme.colors.canvasBackground;
+
+                    return (
+                      <Col xs={12} sm={8} md={6} lg={4} key={theme.id}>
+                        <Card
+                          hoverable
+                          size="small"
+                          className={`provider-card ${
+                            isSelected ? "provider-card-selected" : ""
+                          }`}
+                          style={{
+                            height: "70px",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            position: "relative",
+                          }}
+                          styles={{
+                            body: {
+                              padding: "8px",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              textAlign: "center",
+                            },
+                          }}
+                          onClick={() =>
+                            handleApplyPresetTheme(theme.id, theme.name)
+                          }
+                        >
+                          <div
+                            style={{ fontSize: "20px", marginBottom: "4px" }}
+                          >
+                            {theme.icon}
+                          </div>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: "12px",
+                              lineHeight: "1.2",
+                              color: isSelected ? "#1890ff" : "#333",
+                            }}
+                          >
+                            {theme.name}
+                          </Text>
+                        </Card>
+                      </Col>
+                    );
+                  })}
+                </Row>
               </Card>
 
               <Card size="small" style={{ marginBottom: 16 }}>
@@ -1237,20 +1283,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center" }}>
-                      <div
+                      <Tag
+                        color="blue"
                         style={{
-                          background:
-                            "linear-gradient(45deg, #1890ff, #52c41a)",
-                          color: "white",
                           fontSize: "12px",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
                           fontWeight: "bold",
                           marginRight: "12px",
+                          borderRadius: "12px",
                         }}
                       >
                         当前使用
-                      </div>
+                      </Tag>
                       <div>
                         <Text strong style={{ color: "#1890ff" }}>
                           {getCurrentProvider()?.displayName ||
@@ -1268,19 +1311,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             : `模型: ${aiConfig.aiModel}`}
                         </div>
                       </div>
-                    </div>
-                    <div style={{ fontSize: "20px" }}>
-                      {getCurrentProvider()?.id === "custom"
-                        ? "⚙️"
-                        : getCurrentProvider()?.name === "DeepSeek"
-                        ? "🤖"
-                        : getCurrentProvider()?.name === "通义千问"
-                        ? "🧠"
-                        : getCurrentProvider()?.name === "硅基流动"
-                        ? "⚡"
-                        : getCurrentProvider()?.name === "OpenAI"
-                        ? "🚀"
-                        : "🔧"}
                     </div>
                   </div>
                 </Card>
@@ -1311,92 +1341,89 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* AI供应商选择 - 使用Ant Design Card组件 */}
                   <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
-                    {DEFAULT_AI_PROVIDERS.map((provider) => (
-                      <Col xs={12} sm={8} md={6} lg={4} key={provider.id}>
-                        <Card
-                          hoverable
-                          size="small"
-                          className={`provider-card ${
-                            selectedProvider?.id === provider.id
-                              ? "selected"
-                              : ""
-                          }`}
-                          style={{
-                            height: "70px",
-                            border:
-                              selectedProvider?.id === provider.id
-                                ? "2px solid #52c41a"
-                                : "1px solid #e8e8e8",
-                            backgroundColor:
-                              selectedProvider?.id === provider.id
-                                ? "#f6ffed"
-                                : "white",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            position: "relative",
-                          }}
-                          styles={{
-                            body: {
-                              padding: "8px",
-                              height: "100%",
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              textAlign: "center",
-                            },
-                          }}
-                          onClick={() => handleProviderSelect(provider)}
-                        >
-                          <div
-                            style={{ fontSize: "20px", marginBottom: "4px" }}
-                          >
-                            {provider.logo}
-                          </div>
-                          <Text
-                            strong
+                    {DEFAULT_AI_PROVIDERS.map((provider) => {
+                      const isSelected = selectedProvider?.id === provider.id;
+
+                      return (
+                        <Col xs={12} sm={8} md={6} lg={4} key={provider.id}>
+                          <Card
+                            hoverable
+                            size="small"
+                            className={`provider-card ${
+                              isSelected ? "provider-card-selected" : ""
+                            }`}
                             style={{
-                              fontSize: "12px",
-                              lineHeight: "1.2",
-                              color:
-                                selectedProvider?.id === provider.id
-                                  ? "#52c41a"
-                                  : "#333",
+                              height: "70px",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              position: "relative",
                             }}
+                            styles={{
+                              body: {
+                                padding: "8px",
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                textAlign: "center",
+                              },
+                            }}
+                            onClick={() => handleProviderSelect(provider)}
                           >
-                            {provider.displayName}
-                          </Text>
-                          {/* 状态指示器 */}
-                          <ProviderStatusIndicator
-                            isConfigured={
-                              !!(
-                                providerConfigs[provider.id]?.apiKey &&
-                                providerConfigs[provider.id]?.aiModel
-                              )
-                            }
-                            isCurrent={getCurrentProvider()?.id === provider.id}
-                            providerName={provider.displayName}
-                          />
-                        </Card>
-                      </Col>
-                    ))}
+                            <div
+                              style={{ fontSize: "20px", marginBottom: "4px" }}
+                            >
+                              {provider.logo}
+                            </div>
+                            <Text
+                              strong
+                              style={{
+                                fontSize: "12px",
+                                lineHeight: "1.2",
+                                color: isSelected ? "#1890ff" : "#333",
+                              }}
+                            >
+                              {provider.displayName}
+                            </Text>
+                            {/* 配置状态指示器 */}
+                            {providerConfigs[provider.id]?.apiKey &&
+                              providerConfigs[provider.id]?.aiModel && (
+                                <Tooltip
+                                  title={`${provider.displayName} 已配置完成`}
+                                  placement="top"
+                                >
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "4px",
+                                      right: "4px",
+                                      width: "8px",
+                                      height: "8px",
+                                      backgroundColor: "#1890ff",
+                                      borderRadius: "50%",
+                                      border: "1px solid white",
+                                      boxShadow:
+                                        "0 0 4px rgba(24, 144, 255, 0.6)",
+                                    }}
+                                  />
+                                </Tooltip>
+                              )}
+                          </Card>
+                        </Col>
+                      );
+                    })}
                     <Col xs={12} sm={8} md={6} lg={4}>
                       <Card
                         hoverable
                         size="small"
                         className={`provider-card ${
-                          selectedProvider?.id === "custom" ? "selected" : ""
+                          selectedProvider?.id === "custom"
+                            ? "provider-card-selected"
+                            : ""
                         }`}
                         style={{
                           height: "70px",
-                          border:
-                            selectedProvider?.id === "custom"
-                              ? "2px solid #52c41a"
-                              : "1px solid #e8e8e8",
-                          backgroundColor:
-                            selectedProvider?.id === "custom"
-                              ? "#f6ffed"
-                              : "white",
                           cursor: "pointer",
                           transition: "all 0.2s ease",
                           position: "relative",
@@ -1424,23 +1451,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             lineHeight: "1.2",
                             color:
                               selectedProvider?.id === "custom"
-                                ? "#52c41a"
+                                ? "#1890ff"
                                 : "#333",
                           }}
                         >
                           自定义
                         </Text>
-                        {/* 状态指示器 */}
-                        <ProviderStatusIndicator
-                          isConfigured={
-                            !!(
-                              providerConfigs["custom"]?.apiKey &&
-                              providerConfigs["custom"]?.aiModel
-                            )
-                          }
-                          isCurrent={getCurrentProvider()?.id === "custom"}
-                          providerName="自定义配置"
-                        />
+                        {/* 配置状态指示器 */}
+                        {providerConfigs["custom"]?.apiKey &&
+                          providerConfigs["custom"]?.aiModel && (
+                            <Tooltip
+                              title="自定义配置 已配置完成"
+                              placement="top"
+                            >
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "4px",
+                                  right: "4px",
+                                  width: "8px",
+                                  height: "8px",
+                                  backgroundColor: "#1890ff",
+                                  borderRadius: "50%",
+                                  border: "1px solid white",
+                                  boxShadow: "0 0 4px rgba(24, 144, 255, 0.6)",
+                                }}
+                              />
+                            </Tooltip>
+                          )}
                       </Card>
                     </Col>
                   </Row>
@@ -1663,6 +1701,58 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     style={{ marginBottom: 16 }}
                   />
                 )}
+
+                {/* 当前使用的AI提示词模板 */}
+                {getCurrentPromptTemplate() && (
+                  <Card
+                    size="small"
+                    style={{
+                      marginBottom: 16,
+                      background:
+                        "linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)",
+                      border: "1px solid #1890ff",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <Tag
+                        color="blue"
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        当前使用
+                      </Tag>
+                      <div>
+                        <Text strong style={{ color: "#1890ff" }}>
+                          {getCurrentPromptTemplate()?.name}
+                        </Text>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "#666",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {getCurrentPromptTemplate()?.id === "custom"
+                            ? `自定义提示词: ${getCurrentPromptTemplate()?.prompt?.slice(
+                                0,
+                                50
+                              )}...`
+                            : getCurrentPromptTemplate()?.description}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
                 {/* AI提示词模板选择器 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
@@ -1670,7 +1760,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   </Title>
                   <AIPromptTemplateSelector
                     selectedTemplate={selectedTemplate || undefined}
-                    currentPrompt={promptConfig?.systemPrompt || ""}
                     onTemplateSelect={handleTemplateSelect}
                     disabled={promptLoading || testingConnection}
                   />

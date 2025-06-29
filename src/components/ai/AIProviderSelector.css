@@ -17,20 +17,19 @@
 
 .provider-card:hover {
   border-color: #1890ff;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
 }
 
 /* 选中状态的卡片 */
 .provider-card-selected {
   border-color: #1890ff !important;
   background-color: #f0f9ff;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
 }
 
 .provider-card-selected:hover {
   border-color: #1890ff !important;
-  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
 }
 
 /* 当前使用的供应商卡片 */
