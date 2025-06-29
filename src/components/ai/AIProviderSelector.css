@@ -6,7 +6,7 @@
 
 /* 供应商卡片基础样式 */
 .provider-card {
-  border: 2px solid #f0f0f0;
+  border: 1px solid #f0f0f0;
   border-radius: 8px;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -23,14 +23,14 @@
 
 /* 选中状态的卡片 */
 .provider-card-selected {
-  border-color: #52c41a !important;
-  background-color: #f6ffed;
-  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+  border-color: #1890ff !important;
+  background-color: #f0f9ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
 }
 
 .provider-card-selected:hover {
-  border-color: #52c41a !important;
-  box-shadow: 0 6px 16px rgba(82, 196, 26, 0.2);
+  border-color: #1890ff !important;
+  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.2);
 }
 
 /* 当前使用的供应商卡片 */
@@ -48,10 +48,10 @@
 
 /* 当前使用且选中的卡片 */
 .provider-card-current.provider-card-selected {
-  border-color: #52c41a !important;
-  background: linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%);
-  box-shadow: 0 6px 16px rgba(82, 196, 26, 0.2),
-    0 0 0 2px rgba(24, 144, 255, 0.1);
+  border-color: #1890ff !important;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.2),
+    0 0 0 1px rgba(24, 144, 255, 0.1);
 }
 
 /* 卡片内容布局 */

@@ -16,6 +16,11 @@ import {
 const { Content } = Layout;
 
 function App() {
+  // 检查是否为测试模式
+  const isTestMode =
+    new URLSearchParams(window.location.search).get("test") ===
+    "prompt-template";
+
   const canvasRef = useRef<{
     createNote: () => void;
     focusConsole: () => void;
@@ -148,6 +153,12 @@ function App() {
       </div>
     );
   }
+
+  // 如果是测试模式，显示测试页面
+  if (isTestMode) {
+    return <AIPromptTemplateTest />;
+  }
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* 画布占据全屏 */}

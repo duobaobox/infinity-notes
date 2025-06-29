@@ -17,7 +17,7 @@ export class IndexedDBAISettingsStorage {
   static async saveConfig(config: AIConfig): Promise<void> {
     try {
       // 验证配置
-      const validation = this.validateConfig(config);
+      const validation = AIConfigValidator.validateConfig(config);
       if (!validation.isValid) {
         throw new Error(`配置验证失败: ${validation.errors.join(", ")}`);
       }
@@ -224,19 +224,5 @@ export class IndexedDBAISettingsStorage {
 
       return ""; // 解密完全失败，返回空字符串
     }
-  }
-
-  // 验证配置格式（使用统一的验证工具）
-  static validateConfig(config: Partial<AIConfig>): {
-    isValid: boolean;
-    errors: string[];
-    warnings?: string[];
-  } {
-    const result = AIConfigValidator.validateConfig(config);
-    return {
-      isValid: result.isValid,
-      errors: result.errors,
-      warnings: result.warnings,
-    };
   }
 }

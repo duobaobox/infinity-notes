@@ -723,19 +723,44 @@ export const defaultSystemPrompt = `你是一个专业的个人助理，擅长�
 
 请根据用户的需求，提供有用的信息和建议。`;
 
-// 系统提示词预设模板
-export const systemPromptTemplates = [
+/**
+ * AI提示词角色模板接口
+ */
+export interface AIPromptTemplate {
+  id: string; // 模板唯一标识符
+  name: string; // 模板名称
+  description: string; // 模板描述
+  prompt: string; // 提示词内容
+  icon?: string; // 图标
+  category?: string; // 分类
+  popular?: boolean; // 是否为热门模板
+}
+
+/**
+ * 系统提示词预设模板
+ * 提供多种AI角色设定，用户可以快速选择适合的AI助手类型
+ */
+export const systemPromptTemplates: AIPromptTemplate[] = [
   {
+    id: "normal",
     name: "正常对话模式",
     description: "直接与AI对话，获得原始API回复，不添加任何角色设定",
     prompt: "", // 空字符串表示正常对话模式
+    icon: "💬",
+    category: "基础",
+    popular: true,
   },
   {
+    id: "default-assistant",
     name: "默认便签助手",
     description: "通用的便签生成助手，适合各种场景",
     prompt: defaultSystemPrompt,
+    icon: "📝",
+    category: "基础",
+    popular: true,
   },
   {
+    id: "work-assistant",
     name: "工作任务助手",
     description: "专注于工作任务和项目管理的便签生成",
     prompt: `你是一个专业的工作任务管理助手。你的特点是：
@@ -747,8 +772,12 @@ export const systemPromptTemplates = [
 - 能够合理拆分复杂任务
 
 请根据用户的工作需求，生成专业的任务管理建议和工作计划。回复要简洁明了，重点突出，包含具体的执行步骤和时间安排。`,
+    icon: "💼",
+    category: "工作",
+    popular: true,
   },
   {
+    id: "study-assistant",
     name: "学习笔记助手",
     description: "专门用于生成学习笔记和知识整理",
     prompt: `你是一个学习笔记整理专家。你的特点是：
@@ -760,8 +789,12 @@ export const systemPromptTemplates = [
 - 标注难度级别和重要程度
 
 请根据用户的学习内容，生成结构化的学习笔记。回复要条理清晰，重点突出，便于理解和记忆。`,
+    icon: "📚",
+    category: "学习",
+    popular: true,
   },
   {
+    id: "life-assistant",
     name: "生活规划助手",
     description: "帮助整理生活事务和个人规划",
     prompt: `你是一个贴心的生活规划助手。你的特点是：
@@ -773,8 +806,11 @@ export const systemPromptTemplates = [
 - 适当添加生活小贴士
 
 请根据用户的生活需求，生成实用的生活建议和规划。回复要温馨实用，关注生活品质和个人成长。`,
+    icon: "🏠",
+    category: "生活",
   },
   {
+    id: "creative-assistant",
     name: "创意灵感助手",
     description: "激发创意思维，整理创意想法",
     prompt: `你是一个富有创意的灵感助手。你的特点是：
@@ -786,8 +822,42 @@ export const systemPromptTemplates = [
 - 使用生动有趣的表达方式
 
 请根据用户的想法，生成富有创意的内容和建议。回复要充满想象力，同时保持实用性，帮助用户将创意转化为可行的方案。`,
+    icon: "🎨",
+    category: "创意",
   },
 ];
+
+/**
+ * 获取热门提示词模板
+ * @returns 热门提示词模板列表
+ */
+export const getPopularPromptTemplates = (): AIPromptTemplate[] => {
+  return systemPromptTemplates.filter((template) => template.popular);
+};
+
+/**
+ * 根据ID查找提示词模板
+ * @param id 模板ID
+ * @returns 找到的模板或undefined
+ */
+export const findPromptTemplateById = (
+  id: string
+): AIPromptTemplate | undefined => {
+  return systemPromptTemplates.find((template) => template.id === id);
+};
+
+/**
+ * 根据分类获取提示词模板
+ * @param category 分类名称
+ * @returns 该分类下的模板列表
+ */
+export const getPromptTemplatesByCategory = (
+  category: string
+): AIPromptTemplate[] => {
+  return systemPromptTemplates.filter(
+    (template) => template.category === category
+  );
+};
 
 // 默认AI配置
 export const defaultAIConfig: AIConfig = {

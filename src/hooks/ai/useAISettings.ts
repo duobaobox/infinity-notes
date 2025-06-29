@@ -6,6 +6,7 @@ import { defaultAIConfig, getAIService } from "../../services/ai/aiService";
 import type { UseAISettingsReturn } from "../../types/ai";
 import { AIConfigManager } from "../../utils/aiConfigManager";
 import { handleAIError, showAISuccess } from "../../utils/aiErrorHandler";
+import { AIConfigValidator } from "../../utils/aiValidation";
 
 /**
  * AI设置管理Hook
@@ -54,7 +55,7 @@ export const useAISettings = (): UseAISettingsReturn => {
 
       try {
         // 验证配置
-        const validation = AISettingsStorage.validateConfig(newConfig);
+        const validation = AIConfigValidator.validateConfig(newConfig);
         if (!validation.isValid) {
           const errorMessage = validation.errors.join(", ");
           setError(errorMessage);

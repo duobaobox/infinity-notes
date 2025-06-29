@@ -43,9 +43,12 @@ import { IndexedDBAIProviderStorage } from "../../database/IndexedDBAIProviderSt
 import { initializeDatabase } from "../../database/useIndexedDB";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import { useAISettings } from "../../hooks/ai/useAISettings";
-import { useAIStore, useStickyNotesStore, useUserStore } from "../../stores";
+import type { AIPromptTemplate } from "../../services/ai/aiService";
+import { systemPromptTemplates } from "../../services/ai/aiService";
+import { useStickyNotesStore, useUserStore } from "../../stores";
 import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import { AIConfigStatus } from "../ai/AIConfigStatus";
+import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
 import { ProviderStatusIndicator } from "../ai/ProviderStatusIndicator";
 import "./SettingsModal.css";
 
@@ -165,6 +168,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     {}
   ); // 存储各供应商的配置
 
+  // AI提示词模板选择状态
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<AIPromptTemplate | null>(null);
+
   // 加载多供应商配置
   const loadProviderConfigs = useCallback(async () => {
     try {
@@ -237,9 +244,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 便签状态管理
   const { loadNotes } = useStickyNotesStore();
-
-  // AI状态管理 - 仅用于状态同步，不用于保存
-  useAIStore();
 
   // AI提示词设置Hook
   const {
@@ -433,6 +437,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [open, currentUser, userForm]);
 
+  // 根据当前提示词内容确定选中的模板
+  const getCurrentSelectedTemplate = useCallback(
+    (currentPrompt: string): AIPromptTemplate | null => {
+      // 直接在所有模板中查找匹配的提示词内容
+      const matchingTemplate = systemPromptTemplates.find(
+        (template) => template.prompt === currentPrompt
+      );
+      return matchingTemplate || null;
+    },
+    []
+  );
+
+  // 根据当前提示词内容自动设置选中的模板
+  React.useEffect(() => {
+    if (open && promptConfig && canConfigurePrompt) {
+      const currentPrompt = promptConfig.systemPrompt || "";
+
+      // 查找匹配的模板
+      const matchingTemplate = getCurrentSelectedTemplate(currentPrompt);
+      setSelectedTemplate(matchingTemplate);
+    }
+  }, [open, promptConfig, canConfigurePrompt, getCurrentSelectedTemplate]);
+
   // 测试AI连接（简化版本，错误处理已在Hook中完成）
   const handleTestConnection = async () => {
     try {
@@ -445,6 +472,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       setTestingConnection(false);
     }
   };
+
+  // 处理提示词模板选择
+  const handleTemplateSelect = useCallback(
+    (template: AIPromptTemplate) => {
+      console.log("🎯 SettingsModal: 选择提示词模板", template);
+
+      setSelectedTemplate(template);
+
+      // 更新表单值
+      promptForm.setFieldsValue({
+        systemPrompt: template.prompt,
+      });
+    },
+    [promptForm]
+  );
 
   // 保存AI提示词配置 - 简化版本，只使用主要的保存方法
   const handleSavePromptConfig = async () => {
@@ -1621,6 +1663,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     style={{ marginBottom: 16 }}
                   />
                 )}
+                {/* AI提示词模板选择器 */}
+                <Card size="small" style={{ marginBottom: 16 }}>
+                  <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                    🎭 选择AI角色模板
+                  </Title>
+                  <AIPromptTemplateSelector
+                    selectedTemplate={selectedTemplate || undefined}
+                    currentPrompt={promptConfig?.systemPrompt || ""}
+                    onTemplateSelect={handleTemplateSelect}
+                    disabled={promptLoading || testingConnection}
+                  />
+                </Card>
+
                 <Form
                   form={promptForm}
                   layout="vertical"
@@ -1629,17 +1684,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 >
                   <Card size="small" style={{ marginBottom: 16 }}>
                     <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                      AI回复设置
+                      📝 AI角色设定
                     </Title>
 
                     <Form.Item
-                      label="AI角色设定（可选）"
+                      label="AI角色设定"
                       name="systemPrompt"
-                      extra="留空：正常对话 | 填写：自定义AI角色"
+                      extra="选择上方的角色模板，或直接编辑提示词内容"
                     >
                       <Input.TextArea
                         rows={6}
-                        placeholder="留空 = 正常AI对话&#10;填写 = 自定义AI角色&#10;&#10;例如：你是专业的工作助手..."
+                        placeholder="选择上方的角色模板，或直接输入自定义提示词..."
                         style={{
                           fontSize: "14px",
                         }}

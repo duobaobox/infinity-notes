@@ -64,7 +64,7 @@ export class AIConfigManager {
 
     // 更新AI服务
     try {
-      if (this.isValidConfig(config)) {
+      if (AIConfigManager.isValidConfig(config)) {
         getAIService(config);
       }
     } catch (error) {
@@ -93,7 +93,7 @@ export class AIConfigManager {
    * @param config AI配置对象
    * @returns 配置是否有效
    */
-  isValidConfig(config: AIConfig): boolean {
+  static isValidConfig(config: AIConfig): boolean {
     return !!(config.apiKey && config.apiUrl && config.aiModel);
   }
 
@@ -103,24 +103,5 @@ export class AIConfigManager {
    */
   getCurrentConfig(): AIConfig | null {
     return this.currentConfig;
-  }
-
-  /**
-   * 获取配置的显示信息（隐藏敏感信息）
-   * @param config AI配置对象
-   * @returns 隐藏敏感信息的配置对象
-   */
-  getConfigDisplayInfo(config: AIConfig) {
-    return {
-      ...config,
-      apiKey: config.apiKey ? "******" : "",
-    };
-  }
-
-  /**
-   * 静态方法：检查配置是否有效（向后兼容）
-   */
-  static isValidConfig(config: AIConfig): boolean {
-    return !!(config.apiKey && config.apiUrl && config.aiModel);
   }
 }

@@ -1,14 +1,29 @@
-// AI提示词设置管理Hook
+// AI提示词设置管理Hook - 简化版本
 import { useCallback, useEffect, useState } from "react";
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 import type { AIConfig } from "../../services/ai/aiService";
-import type { AIPromptConfig, UseAIPromptSettingsReturn } from "../../types/ai";
 import { AIConfigManager } from "../../utils/aiConfigManager";
+
+// 简化的提示词配置接口
+interface PromptConfig {
+  systemPrompt: string;
+}
+
+// 返回类型接口
+interface UseAIPromptSettingsReturn {
+  promptConfig: PromptConfig;
+  loading: boolean;
+  error: string | null;
+  savePromptConfig: (promptConfig: PromptConfig) => Promise<boolean>;
+  loadPromptConfig: () => Promise<void>;
+  resetToDefault: () => Promise<boolean>;
+  canConfigurePrompt: boolean;
+}
 
 export const useAIPromptSettings = (
   hasValidAIConfig: boolean
 ): UseAIPromptSettingsReturn => {
-  const [promptConfig, setPromptConfig] = useState<AIPromptConfig>({
+  const [promptConfig, setPromptConfig] = useState<PromptConfig>({
     systemPrompt: "", // 默认为无提示词模式（空字符串=正常API对话）
   });
   const [loading, setLoading] = useState(false);
@@ -34,7 +49,7 @@ export const useAIPromptSettings = (
       const fullConfig = await AISettingsStorage.loadConfig();
       console.log("🎯 useAIPromptSettings: 完整配置加载成功", fullConfig);
 
-      const extractedPromptConfig: AIPromptConfig = {
+      const extractedPromptConfig: PromptConfig = {
         systemPrompt: fullConfig.systemPrompt || "", // 默认为空，表示无提示词模式（正常API对话）
       };
 
@@ -55,7 +70,7 @@ export const useAIPromptSettings = (
 
   // 保存提示词配置
   const savePromptConfig = useCallback(
-    async (newPromptConfig: AIPromptConfig): Promise<boolean> => {
+    async (newPromptConfig: PromptConfig): Promise<boolean> => {
       if (!hasValidAIConfig) {
         setError("请先配置AI基础设置");
         return false;
@@ -112,7 +127,7 @@ export const useAIPromptSettings = (
 
   // 重置为无提示词模式
   const resetToDefault = useCallback(async (): Promise<boolean> => {
-    const defaultConfig: AIPromptConfig = {
+    const defaultConfig: PromptConfig = {
       systemPrompt: "", // 重置为无提示词模式（正常API对话）
     };
     return await savePromptConfig(defaultConfig);
