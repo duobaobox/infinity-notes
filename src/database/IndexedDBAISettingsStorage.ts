@@ -1,5 +1,6 @@
-// 使用 IndexedDB 存储 AI 设置
+// 使用 IndexedDB 存储 AI 设置 - 优化版本
 import { type AIConfig, defaultAIConfig } from "../services/ai/aiService";
+import { AIConfigValidator } from "../utils/aiValidation";
 import { IndexedDBService } from "./IndexedDBService";
 
 // 定义存储在 IndexedDB 中的 AI 设置结构
@@ -12,68 +13,40 @@ interface StoredAISettings extends AIConfig {
 export class IndexedDBAISettingsStorage {
   private static readonly DEFAULT_USER_ID = "default";
 
-  // 保存AI配置到IndexedDB，添加自动修正逻辑
+  // 保存AI配置到IndexedDB（优化版本）
   static async saveConfig(config: AIConfig): Promise<void> {
-    console.log("💾 IndexedDBAISettingsStorage: 开始保存配置", config);
-
     try {
-      // 验证配置，并获取可能的修正版本
+      // 验证配置
       const validation = this.validateConfig(config);
-
-      // 如果配置有错误但可以修正，使用修正后的版本
-      let configToUse: AIConfig = { ...config };
-      if (!validation.isValid && validation.correctedConfig) {
-        console.warn("检测到无效的AI配置参数，已自动修正:", validation.errors);
-        // 合并原始配置和修正后的配置
-        configToUse = {
-          ...config,
-          ...(validation.correctedConfig as Partial<AIConfig>),
-        };
+      if (!validation.isValid) {
+        throw new Error(`配置验证失败: ${validation.errors.join(", ")}`);
       }
 
       const db = IndexedDBService.getInstance();
       await db.initialize();
-      console.log("💾 IndexedDBAISettingsStorage: 数据库初始化完成");
 
-      // 加密API密钥
+      // 加密API密钥并准备保存的数据
       const configToSave = {
         id: "ai-settings", // 使用固定ID，方便查询
         user_id: this.DEFAULT_USER_ID, // 将来可支持多用户
-        ...configToUse,
+        ...config,
         // 出于安全考虑，API密钥单独处理
-        apiKey: configToUse.apiKey ? this.encryptKey(configToUse.apiKey) : "",
+        apiKey: config.apiKey ? this.encryptKey(config.apiKey) : "",
         updated_at: new Date().toISOString(),
       };
 
-      console.log("💾 IndexedDBAISettingsStorage: 准备保存到ai_settings表", {
-        ...configToSave,
-        apiKey: configToSave.apiKey ? "******" : "",
-      });
-
       await db.putItem("ai_settings", configToSave);
-      console.log("💾 IndexedDBAISettingsStorage: 配置保存成功");
-
-      // 如果使用了修正后的配置，记录日志
-      if (configToUse !== config) {
-        console.info("已保存修正后的AI配置");
-      }
     } catch (error) {
-      console.error(
-        "💾 IndexedDBAISettingsStorage: 保存AI配置到IndexedDB失败:",
-        error
-      );
-      throw new Error("保存AI配置失败");
+      console.error("保存AI配置到IndexedDB失败:", error);
+      throw error instanceof Error ? error : new Error("保存AI配置失败");
     }
   }
 
-  // 从IndexedDB加载AI配置
+  // 从IndexedDB加载AI配置（优化版本）
   static async loadConfig(): Promise<AIConfig> {
-    console.log("📥 IndexedDBAISettingsStorage: 开始加载AI配置");
-
     try {
       const db = IndexedDBService.getInstance();
       await db.initialize();
-      console.log("📥 IndexedDBAISettingsStorage: 数据库初始化完成");
 
       // 尝试从 IndexedDB 获取配置
       const settings = await db.getItem<StoredAISettings>(
@@ -81,16 +54,8 @@ export class IndexedDBAISettingsStorage {
         "ai-settings"
       );
 
-      console.log(
-        "📥 IndexedDBAISettingsStorage: 从数据库获取的原始数据",
-        settings
-      );
-
       // 如果没有找到配置，尝试从localStorage迁移
       if (!settings) {
-        console.log(
-          "📥 IndexedDBAISettingsStorage: 数据库中无配置，尝试从localStorage迁移"
-        );
         return await this.migrateFromLocalStorage();
       }
 
@@ -105,27 +70,17 @@ export class IndexedDBAISettingsStorage {
         apiKey: configData.apiKey ? this.decryptKey(configData.apiKey) : "",
       };
 
-      console.log("📥 IndexedDBAISettingsStorage: 最终解析的配置", {
-        ...finalConfig,
-        apiKey: finalConfig.apiKey ? "******" : "",
-      });
-
       return finalConfig;
     } catch (error) {
-      console.error(
-        "📥 IndexedDBAISettingsStorage: 从IndexedDB加载AI配置失败:",
-        error
-      );
+      console.error("从IndexedDB加载AI配置失败:", error);
 
       // 如果从 IndexedDB 加载失败，尝试从 localStorage 加载
       try {
         const migratedConfig = await this.migrateFromLocalStorage();
-        // 记录成功迁移的日志
-        console.log("成功从localStorage迁移AI配置", migratedConfig);
+        console.log("成功从localStorage迁移AI配置");
         return migratedConfig;
       } catch (migrationError) {
         console.error("从localStorage迁移配置失败:", migrationError);
-        // 添加更详细的错误日志
         console.warn("使用默认AI配置，请在设置中重新配置AI");
         return { ...defaultAIConfig };
       }
@@ -271,53 +226,17 @@ export class IndexedDBAISettingsStorage {
     }
   }
 
-  // 验证配置格式，添加自动修正功能
+  // 验证配置格式（使用统一的验证工具）
   static validateConfig(config: Partial<AIConfig>): {
     isValid: boolean;
     errors: string[];
-    correctedConfig?: Partial<AIConfig>; // 新增：返回修正后的配置
+    warnings?: string[];
   } {
-    const errors: string[] = [];
-    // 创建修正后的配置副本
-    const correctedConfig: Partial<AIConfig> = { ...config };
-
-    if (!config.aiModel) {
-      errors.push("请选择AI模型");
-    }
-
-    if (!config.apiKey || config.apiKey.trim() === "") {
-      errors.push("请输入API密钥");
-    }
-
-    if (!config.apiUrl || config.apiUrl.trim() === "") {
-      errors.push("请输入API地址");
-    } else {
-      try {
-        new URL(config.apiUrl);
-      } catch {
-        errors.push("API地址格式不正确");
-        // 尝试自动修正URL
-        if (config.apiUrl.startsWith("http")) {
-          try {
-            // 尝试修复常见URL问题，例如缺少/v1等
-            let fixedUrl = config.apiUrl;
-            if (!fixedUrl.endsWith("/v1") && !fixedUrl.endsWith("/")) {
-              fixedUrl += "/v1";
-              new URL(fixedUrl); // 验证修复后的URL
-              correctedConfig.apiUrl = fixedUrl;
-              console.log(`自动修正API地址: ${config.apiUrl} -> ${fixedUrl}`);
-            }
-          } catch {
-            // 如果无法修复，保留原始错误
-          }
-        }
-      }
-    }
-
+    const result = AIConfigValidator.validateConfig(config);
     return {
-      isValid: errors.length === 0,
-      errors,
-      correctedConfig: errors.length > 0 ? correctedConfig : undefined,
+      isValid: result.isValid,
+      errors: result.errors,
+      warnings: result.warnings,
     };
   }
 }

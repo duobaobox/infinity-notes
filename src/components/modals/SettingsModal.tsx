@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import {
   Alert,
+  AutoComplete,
   Button,
   Card,
   Col,
@@ -26,7 +27,6 @@ import {
   Popconfirm,
   Progress,
   Row,
-  Select,
   Slider,
   Space,
   Spin,
@@ -39,13 +39,108 @@ import {
 } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { useDatabase } from "../../database";
+import { IndexedDBAIProviderStorage } from "../../database/IndexedDBAIProviderStorage";
+import { initializeDatabase } from "../../database/useIndexedDB";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import { useAIStore, useStickyNotesStore, useUserStore } from "../../stores";
 import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
+import { AIConfigStatus } from "../ai/AIConfigStatus";
+import { ProviderStatusIndicator } from "../ai/ProviderStatusIndicator";
 import "./SettingsModal.css";
 
+// 添加供应商卡片的样式
+const providerCardStyles = `
+  .provider-card.ant-card {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .provider-card.ant-card:hover {
+    border-color: #d9d9d9 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .provider-card.selected.ant-card:hover {
+    border-color: #52c41a !important;
+    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+  }
+
+  .provider-card .ant-card-body {
+    position: relative;
+  }
+`;
+
+// 动态注入样式
+if (typeof document !== "undefined") {
+  const styleElement = document.createElement("style");
+  styleElement.textContent = providerCardStyles;
+  if (!document.head.querySelector("style[data-provider-cards]")) {
+    styleElement.setAttribute("data-provider-cards", "true");
+    document.head.appendChild(styleElement);
+  }
+}
+
 const { Title, Text } = Typography;
+
+// 固定的4个AI供应商（简化版）
+const DEFAULT_AI_PROVIDERS = [
+  {
+    id: "deepseek",
+    name: "DeepSeek",
+    displayName: "DeepSeek",
+    logo: "🔍",
+    apiUrl: "https://api.deepseek.com/v1",
+    description: "高性价比推理模型",
+    models: [
+      { name: "deepseek-chat", displayName: "DeepSeek Chat" },
+      { name: "deepseek-coder", displayName: "DeepSeek Coder" },
+    ],
+  },
+  {
+    id: "alibaba",
+    name: "Alibaba",
+    displayName: "通义千问",
+    logo: "☁️",
+    apiUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    description: "阿里云智能大模型",
+    models: [
+      { name: "qwen-turbo", displayName: "通义千问 Turbo" },
+      { name: "qwen-plus", displayName: "通义千问 Plus" },
+      { name: "qwen-max", displayName: "通义千问 Max" },
+    ],
+  },
+  {
+    id: "siliconflow",
+    name: "SiliconFlow",
+    displayName: "硅基流动",
+    logo: "⚡",
+    apiUrl: "https://api.siliconflow.cn/v1",
+    description: "高速AI推理平台",
+    models: [
+      { name: "deepseek-chat", displayName: "DeepSeek Chat" },
+      { name: "Qwen/Qwen2.5-7B-Instruct", displayName: "通义千问 2.5-7B" },
+      {
+        name: "meta-llama/Meta-Llama-3.1-8B-Instruct",
+        displayName: "Llama 3.1 8B",
+      },
+    ],
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    displayName: "OpenAI",
+    logo: "🤖",
+    apiUrl: "https://api.openai.com/v1",
+    description: "GPT系列模型创造者",
+    models: [
+      { name: "gpt-4o", displayName: "GPT-4o" },
+      { name: "gpt-4o-mini", displayName: "GPT-4o Mini" },
+      { name: "gpt-3.5-turbo", displayName: "GPT-3.5 Turbo" },
+    ],
+  },
+];
 
 interface SettingsModalProps {
   open: boolean;
@@ -62,6 +157,47 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [appearanceForm] = Form.useForm();
   const [userForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // AI供应商和模型选择状态
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [isProviderAutoDetected, setIsProviderAutoDetected] = useState(false); // 标记是否已自动检测过供应商
+  const [providerConfigs, setProviderConfigs] = useState<Record<string, any>>(
+    {}
+  ); // 存储各供应商的配置
+
+  // 加载多供应商配置
+  const loadProviderConfigs = useCallback(async () => {
+    try {
+      // 确保数据库已初始化
+      await initializeDatabase();
+
+      // 首先尝试从localStorage迁移数据（如果存在）
+      await IndexedDBAIProviderStorage.migrateFromLocalStorage();
+
+      // 从IndexedDB加载所有供应商配置
+      const configs = await IndexedDBAIProviderStorage.loadAllProviderConfigs();
+      setProviderConfigs(configs);
+      console.log(
+        "🔧 SettingsModal: 从IndexedDB加载多供应商配置",
+        Object.keys(configs)
+      );
+    } catch (error) {
+      console.warn("🔧 SettingsModal: 加载多供应商配置失败", error);
+    }
+  }, []);
+
+  // 保存单个供应商配置到IndexedDB
+  const saveProviderConfig = useCallback(
+    async (providerId: string, config: any) => {
+      try {
+        await IndexedDBAIProviderStorage.saveProviderConfig(providerId, config);
+        console.log("🔧 SettingsModal: 保存供应商配置到IndexedDB", providerId);
+      } catch (error) {
+        console.warn("🔧 SettingsModal: 保存供应商配置失败", error);
+      }
+    },
+    []
+  );
 
   // 数据管理相关状态
   const [dataStats, setDataStats] = useState<{
@@ -212,24 +348,48 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [open, loadDataStats]);
 
-  // 当aiConfig变化时，更新AI基础配置表单的值（只在模态框打开时）
+  // 当模态框打开时，加载配置和多供应商数据
   React.useEffect(() => {
-    if (open && aiConfig) {
-      try {
-        // 只设置基础AI配置，不包括systemPrompt
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { systemPrompt, ...basicAIConfig } = aiConfig;
-        // systemPrompt 被故意忽略，不设置到表单中
-        aiForm.setFieldsValue(basicAIConfig);
-        console.log("🔧 SettingsModal: 更新AI表单值", {
-          ...basicAIConfig,
-          apiKey: basicAIConfig.apiKey ? "******" : "",
-        });
-      } catch (error) {
-        console.warn("更新AI表单值失败", error);
+    if (open) {
+      // 加载多供应商配置
+      loadProviderConfigs();
+
+      if (aiConfig) {
+        // 使用setTimeout确保Form组件已经渲染
+        const timer = setTimeout(() => {
+          try {
+            // 只设置基础AI配置，不包括systemPrompt
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { systemPrompt, ...basicAIConfig } = aiConfig;
+            // systemPrompt 被故意忽略，不设置到表单中
+            aiForm.setFieldsValue(basicAIConfig);
+            console.log("🔧 SettingsModal: 更新AI表单值", {
+              ...basicAIConfig,
+              apiKey: basicAIConfig.apiKey ? "******" : "",
+            });
+
+            // 只在初次打开模态框时自动识别供应商，避免保存后重置用户选择
+            if (basicAIConfig.apiUrl && !isProviderAutoDetected) {
+              const matchedProvider = DEFAULT_AI_PROVIDERS.find(
+                (provider) => provider.apiUrl === basicAIConfig.apiUrl
+              );
+              if (matchedProvider) {
+                setSelectedProvider(matchedProvider);
+              } else {
+                // 如果没有匹配的供应商，设置为自定义配置
+                setSelectedProvider({ id: "custom" });
+              }
+              setIsProviderAutoDetected(true); // 标记已完成自动检测
+            }
+          } catch (error) {
+            console.warn("更新AI表单值失败", error);
+          }
+        }, 0);
+
+        return () => clearTimeout(timer);
       }
     }
-  }, [aiConfig, open, aiForm]);
+  }, [aiConfig, open, aiForm, loadProviderConfigs, isProviderAutoDetected]);
 
   // 当promptConfig变化时，更新提示词表单的值（只在模态框打开时）
   React.useEffect(() => {
@@ -273,22 +433,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [open, currentUser, userForm]);
 
-  // 测试AI连接
+  // 测试AI连接（简化版本，错误处理已在Hook中完成）
   const handleTestConnection = async () => {
     try {
       setTestingConnection(true);
       await aiForm.validateFields();
-
-      const result = await testConnection();
-
-      if (result.success) {
-        message.success("连接测试成功！");
-      } else {
-        message.error(`连接测试失败: ${result.error}`);
-      }
+      await testConnection();
     } catch (error) {
       console.error("测试连接失败:", error);
-      message.error("请先完善配置信息");
     } finally {
       setTestingConnection(false);
     }
@@ -354,17 +506,160 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 保存AI基础配置（不包括systemPrompt）
+  // 处理AI供应商选择（简化版本）
+  const handleProviderSelect = async (provider: any) => {
+    // 保存当前供应商的配置（如果有的话）
+    if (selectedProvider && selectedProvider.id !== provider.id) {
+      const currentValues = aiForm.getFieldsValue();
+      if (currentValues.apiKey || currentValues.aiModel) {
+        const configToSave = {
+          apiUrl: currentValues.apiUrl,
+          apiKey: currentValues.apiKey,
+          aiModel: currentValues.aiModel,
+          temperature: currentValues.temperature,
+          maxTokens: currentValues.maxTokens,
+        };
+
+        // 保存到本地状态和IndexedDB
+        await saveProviderConfig(selectedProvider.id, configToSave);
+        setProviderConfigs((prev) => ({
+          ...prev,
+          [selectedProvider.id]: configToSave,
+        }));
+      }
+    }
+
+    setSelectedProvider(provider);
+
+    // 恢复或初始化该供应商的配置
+    const savedConfig = providerConfigs[provider.id];
+    const formValues = {
+      apiUrl: provider.apiUrl,
+      apiKey: savedConfig?.apiKey || "",
+      aiModel: savedConfig?.aiModel || "",
+      temperature: savedConfig?.temperature || 0.7,
+      maxTokens: savedConfig?.maxTokens || 1000,
+    };
+
+    aiForm.setFieldsValue(formValues);
+  };
+
+  // 获取当前正在使用的供应商
+  const getCurrentProvider = () => {
+    // 根据当前AI配置判断使用的是哪个供应商
+    if (!aiConfig.apiUrl) return undefined;
+
+    // 检查是否匹配预制供应商
+    const matchedProvider = DEFAULT_AI_PROVIDERS.find((provider) =>
+      aiConfig.apiUrl?.includes(
+        provider.apiUrl.replace("https://", "").replace("/v1", "")
+      )
+    );
+
+    if (matchedProvider) {
+      return matchedProvider;
+    }
+
+    // 如果不匹配预制供应商，则为自定义配置
+    return {
+      id: "custom",
+      name: "自定义配置",
+      displayName: "自定义配置",
+      apiUrl: aiConfig.apiUrl,
+      models: [],
+      description: "手动配置API地址和模型",
+    };
+  };
+
+  // 处理自定义配置选择（简化版本）
+  const handleCustomSelect = async () => {
+    // 保存当前供应商的配置（如果有的话）
+    if (selectedProvider && selectedProvider.id !== "custom") {
+      const currentValues = aiForm.getFieldsValue();
+      if (currentValues.apiKey || currentValues.aiModel) {
+        const configToSave = {
+          apiUrl: currentValues.apiUrl,
+          apiKey: currentValues.apiKey,
+          aiModel: currentValues.aiModel,
+          temperature: currentValues.temperature,
+          maxTokens: currentValues.maxTokens,
+        };
+
+        await saveProviderConfig(selectedProvider.id, configToSave);
+        setProviderConfigs((prev) => ({
+          ...prev,
+          [selectedProvider.id]: configToSave,
+        }));
+      }
+    }
+
+    // 设置自定义配置供应商
+    const customProvider = {
+      id: "custom",
+      name: "自定义配置",
+      displayName: "自定义配置",
+      apiUrl: "",
+      models: [],
+      description: "手动配置API地址和模型",
+    };
+    setSelectedProvider(customProvider);
+
+    // 恢复或初始化自定义配置
+    const savedConfig = providerConfigs["custom"];
+    const formValues = {
+      apiUrl: savedConfig?.apiUrl || "",
+      apiKey: savedConfig?.apiKey || "",
+      aiModel: savedConfig?.aiModel || "",
+      temperature: savedConfig?.temperature || 0.7,
+      maxTokens: savedConfig?.maxTokens || 1000,
+    };
+
+    aiForm.setFieldsValue(formValues);
+  };
+
+  // 处理AI模型选择
+  const handleModelSelect = (modelName: string) => {
+    // 自动填充模型名称
+    aiForm.setFieldsValue({
+      aiModel: modelName,
+    });
+  };
+
+  // 处理模态框关闭
+  const handleModalClose = async () => {
+    // 保存当前供应商的配置
+    if (selectedProvider) {
+      const currentValues = aiForm.getFieldsValue();
+      if (currentValues.apiKey || currentValues.aiModel) {
+        const newConfig = {
+          apiUrl: currentValues.apiUrl,
+          apiKey: currentValues.apiKey,
+          aiModel: currentValues.aiModel,
+          temperature: currentValues.temperature,
+          maxTokens: currentValues.maxTokens,
+        };
+
+        // 保存到IndexedDB
+        await saveProviderConfig(selectedProvider.id, newConfig);
+
+        // 更新本地状态
+        setProviderConfigs((prev) => ({
+          ...prev,
+          [selectedProvider.id]: newConfig,
+        }));
+      }
+    }
+
+    // 重置供应商自动检测标记，下次打开时可以重新检测
+    setIsProviderAutoDetected(false);
+    onClose();
+  };
+
+  // 保存AI基础配置（简化版本，错误处理已在Hook中完成）
   const handleSaveAIConfig = async () => {
     try {
-      console.log("🔧 SettingsModal: 开始保存AI配置");
-
       // 验证表单字段
       const values = await aiForm.validateFields();
-      console.log("🔧 SettingsModal: 表单验证通过", {
-        ...values,
-        apiKey: values.apiKey ? "******" : "",
-      });
 
       // 保留现有的systemPrompt，只更新基础AI配置
       const configToSave = {
@@ -374,35 +669,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         systemPrompt: aiConfig.systemPrompt, // 保留现有的systemPrompt
       };
 
-      console.log("🔧 SettingsModal: 准备保存的配置", {
-        ...configToSave,
-        apiKey: configToSave.apiKey ? "******" : "",
-      });
-
-      // 使用 useAISettings Hook 进行保存，配置管理器会自动同步所有状态
+      // 使用 useAISettings Hook 进行保存，错误处理已在Hook中完成
       const success = await saveAIConfig(configToSave);
-
-      if (success) {
-        message.success("AI配置保存成功！现在可以使用AI功能了。");
-        console.log("🔧 SettingsModal: AI配置保存完成");
-      } else {
-        throw new Error("配置保存失败");
+      if (!success) {
+        // 如果保存失败，saveAIConfig 内部已经处理了错误显示
+        return;
       }
     } catch (error) {
-      console.error("🔧 SettingsModal: 保存AI配置失败:", error);
-
-      // 提供更具体的错误信息
-      if (error instanceof Error) {
-        if (error.message.includes("请输入")) {
-          message.error(`配置验证失败：${error.message}`);
-        } else if (error.message.includes("URL")) {
-          message.error("API地址格式不正确，请输入有效的URL地址");
-        } else {
-          message.error(`保存失败：${error.message}`);
-        }
-      } else {
-        message.error("保存配置时发生未知错误，请检查配置信息");
-      }
+      console.error("保存AI配置失败:", error);
+      // 错误处理已在Hook中完成，这里只记录日志
     }
   };
 
@@ -892,29 +1167,89 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         children: (
           <div className="settings-modal-content">
             <Spin spinning={aiLoading}>
+              {/* AI配置状态指示器 */}
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <AIConfigStatus
+                  config={aiConfig}
+                  showProgress={true}
+                  showDetails={true}
+                />
+              </Card>
+
+              {/* 当前使用的AI供应商显示 */}
+              {getCurrentProvider() && (
+                <Card
+                  size="small"
+                  style={{
+                    marginBottom: 16,
+                    background:
+                      "linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)",
+                    border: "1px solid #1890ff",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <div
+                        style={{
+                          background:
+                            "linear-gradient(45deg, #1890ff, #52c41a)",
+                          color: "white",
+                          fontSize: "12px",
+                          padding: "4px 8px",
+                          borderRadius: "12px",
+                          fontWeight: "bold",
+                          marginRight: "12px",
+                        }}
+                      >
+                        当前使用
+                      </div>
+                      <div>
+                        <Text strong style={{ color: "#1890ff" }}>
+                          {getCurrentProvider()?.displayName ||
+                            getCurrentProvider()?.name}
+                        </Text>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "#666",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {getCurrentProvider()?.id === "custom"
+                            ? `自定义API: ${aiConfig.apiUrl}`
+                            : `模型: ${aiConfig.aiModel}`}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "20px" }}>
+                      {getCurrentProvider()?.id === "custom"
+                        ? "⚙️"
+                        : getCurrentProvider()?.name === "DeepSeek"
+                        ? "🤖"
+                        : getCurrentProvider()?.name === "通义千问"
+                        ? "🧠"
+                        : getCurrentProvider()?.name === "硅基流动"
+                        ? "⚡"
+                        : getCurrentProvider()?.name === "OpenAI"
+                        ? "🚀"
+                        : "🔧"}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* 错误提示 */}
               {aiError && (
                 <Alert
                   message="配置错误"
                   description={aiError}
                   type="error"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
-              )}
-              {!aiError && !hasValidConfig && (
-                <Alert
-                  message="AI 功能未配置"
-                  description="请填写API地址、API密钥和AI模型名称，配置完成后即可使用AI生成便签等智能功能。"
-                  type="info"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
-              )}
-              {!aiError && hasValidConfig && (
-                <Alert
-                  message="AI 功能已启用"
-                  description="AI配置完整，现在可以使用AI生成便签功能了！"
-                  type="success"
                   showIcon
                   style={{ marginBottom: 16 }}
                 />
@@ -925,33 +1260,239 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 onFinish={handleSaveAIConfig}
                 preserve={true}
               >
+                {/* AI供应商选择卡片 */}
+                <Card size="small" style={{ marginBottom: 16 }}>
+                  <Title level={5} style={{ margin: "0 0 12px 0" }}>
+                    <RobotOutlined style={{ marginRight: 8 }} />
+                    AI供应商
+                  </Title>
+
+                  {/* AI供应商选择 - 使用Ant Design Card组件 */}
+                  <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+                    {DEFAULT_AI_PROVIDERS.map((provider) => (
+                      <Col xs={12} sm={8} md={6} lg={4} key={provider.id}>
+                        <Card
+                          hoverable
+                          size="small"
+                          className={`provider-card ${
+                            selectedProvider?.id === provider.id
+                              ? "selected"
+                              : ""
+                          }`}
+                          style={{
+                            height: "70px",
+                            border:
+                              selectedProvider?.id === provider.id
+                                ? "2px solid #52c41a"
+                                : "1px solid #e8e8e8",
+                            backgroundColor:
+                              selectedProvider?.id === provider.id
+                                ? "#f6ffed"
+                                : "white",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            position: "relative",
+                          }}
+                          styles={{
+                            body: {
+                              padding: "8px",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              textAlign: "center",
+                            },
+                          }}
+                          onClick={() => handleProviderSelect(provider)}
+                        >
+                          <div
+                            style={{ fontSize: "20px", marginBottom: "4px" }}
+                          >
+                            {provider.logo}
+                          </div>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: "12px",
+                              lineHeight: "1.2",
+                              color:
+                                selectedProvider?.id === provider.id
+                                  ? "#52c41a"
+                                  : "#333",
+                            }}
+                          >
+                            {provider.displayName}
+                          </Text>
+                          {/* 状态指示器 */}
+                          <ProviderStatusIndicator
+                            isConfigured={
+                              !!(
+                                providerConfigs[provider.id]?.apiKey &&
+                                providerConfigs[provider.id]?.aiModel
+                              )
+                            }
+                            isCurrent={getCurrentProvider()?.id === provider.id}
+                            providerName={provider.displayName}
+                          />
+                        </Card>
+                      </Col>
+                    ))}
+                    <Col xs={12} sm={8} md={6} lg={4}>
+                      <Card
+                        hoverable
+                        size="small"
+                        className={`provider-card ${
+                          selectedProvider?.id === "custom" ? "selected" : ""
+                        }`}
+                        style={{
+                          height: "70px",
+                          border:
+                            selectedProvider?.id === "custom"
+                              ? "2px solid #52c41a"
+                              : "1px solid #e8e8e8",
+                          backgroundColor:
+                            selectedProvider?.id === "custom"
+                              ? "#f6ffed"
+                              : "white",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          position: "relative",
+                        }}
+                        styles={{
+                          body: {
+                            padding: "8px",
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            textAlign: "center",
+                          },
+                        }}
+                        onClick={handleCustomSelect}
+                      >
+                        <div style={{ fontSize: "20px", marginBottom: "4px" }}>
+                          ⚙️
+                        </div>
+                        <Text
+                          strong
+                          style={{
+                            fontSize: "12px",
+                            lineHeight: "1.2",
+                            color:
+                              selectedProvider?.id === "custom"
+                                ? "#52c41a"
+                                : "#333",
+                          }}
+                        >
+                          自定义
+                        </Text>
+                        {/* 状态指示器 */}
+                        <ProviderStatusIndicator
+                          isConfigured={
+                            !!(
+                              providerConfigs["custom"]?.apiKey &&
+                              providerConfigs["custom"]?.aiModel
+                            )
+                          }
+                          isCurrent={getCurrentProvider()?.id === "custom"}
+                          providerName="自定义配置"
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+                </Card>
+
+                {/* AI配置详情卡片 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                    <RobotOutlined style={{ marginRight: 8 }} />
-                    AI模型配置
+                    配置详情
                   </Title>
-                  <Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 16 }}
-                  >
-                    配置完成后即可使用AI生成便签等智能功能
-                  </Text>
 
+                  {/* AI模型选择 */}
                   <Form.Item
-                    label="API地址"
-                    name="apiUrl"
-                    extra="AI服务的API基础地址，如：https://api.deepseek.com/v1"
-                    rules={[
-                      { required: true, message: "请输入API地址" },
-                      { type: "url", message: "请输入有效的URL地址" },
-                    ]}
+                    label="AI模型"
+                    name="aiModel"
+                    extra={
+                      selectedProvider?.id === "custom"
+                        ? "请输入要使用的AI模型名称"
+                        : selectedProvider
+                        ? "选择预设模型或手动输入模型名称"
+                        : "请先选择AI供应商"
+                    }
+                    rules={[{ required: true, message: "请输入AI模型名称" }]}
                   >
-                    <Input
-                      placeholder="https://api.deepseek.com/v1"
-                      style={{ width: "100%" }}
-                    />
+                    {selectedProvider?.id === "custom" ? (
+                      // 自定义配置：只显示输入框
+                      <Input
+                        placeholder="例如：gpt-4, claude-3-sonnet, deepseek-chat"
+                        style={{ width: "100%" }}
+                      />
+                    ) : selectedProvider ? (
+                      // 默认供应商：使用AutoComplete支持选择和输入
+                      <AutoComplete
+                        placeholder="选择预设模型或输入自定义模型名称"
+                        style={{ width: "100%" }}
+                        onChange={(value) => {
+                          if (value) {
+                            handleModelSelect(value);
+                          }
+                        }}
+                        onSelect={(value) => {
+                          handleModelSelect(value);
+                        }}
+                        filterOption={(inputValue, option) =>
+                          option?.value
+                            ?.toString()
+                            .toUpperCase()
+                            .indexOf(inputValue.toUpperCase()) !== -1
+                        }
+                        options={selectedProvider?.models?.map(
+                          (model: any) => ({
+                            value: model.name,
+                            label: (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <div>
+                                  <Text strong>{model.displayName}</Text>
+                                  <Text
+                                    type="secondary"
+                                    style={{
+                                      fontSize: "11px",
+                                      marginLeft: "8px",
+                                    }}
+                                  >
+                                    推荐
+                                  </Text>
+                                </div>
+                                <Text
+                                  type="secondary"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {model.name}
+                                </Text>
+                              </div>
+                            ),
+                          })
+                        )}
+                      />
+                    ) : (
+                      // 未选择供应商：禁用状态
+                      <Input
+                        placeholder="请先选择AI供应商"
+                        disabled
+                        style={{ width: "100%" }}
+                      />
+                    )}
                   </Form.Item>
 
+                  {/* API密钥输入 */}
                   <Form.Item
                     label="API密钥"
                     name="apiKey"
@@ -967,14 +1508,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </Form.Item>
 
+                  {/* API地址配置 */}
                   <Form.Item
-                    label="AI模型"
-                    name="aiModel"
-                    extra="输入要使用的AI模型名称，如：deepseek-chat、gpt-3.5-turbo、claude-3-haiku等"
-                    rules={[{ required: true, message: "请输入AI模型名称" }]}
+                    label="API地址"
+                    name="apiUrl"
+                    extra={
+                      selectedProvider?.id === "custom"
+                        ? "请输入自定义API基础地址"
+                        : "当前选择供应商的API地址"
+                    }
+                    rules={[
+                      { required: true, message: "请输入API地址" },
+                      { type: "url", message: "请输入有效的URL地址" },
+                    ]}
                   >
                     <Input
-                      placeholder="deepseek-chat"
+                      placeholder={
+                        selectedProvider?.id === "custom"
+                          ? "https://api.example.com/v1"
+                          : "API地址将自动填充"
+                      }
+                      disabled={selectedProvider?.id !== "custom"}
                       style={{ width: "100%" }}
                     />
                   </Form.Item>
@@ -1223,7 +1777,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     <Modal
       title="设置"
       open={open}
-      onCancel={onClose}
+      onCancel={handleModalClose}
       width="70%"
       centered
       styles={{

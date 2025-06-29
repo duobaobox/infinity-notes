@@ -1,0 +1,207 @@
+/* AI供应商选择组件样式 */
+
+.ai-provider-selector {
+  width: 100%;
+}
+
+/* 供应商卡片基础样式 */
+.provider-card {
+  border: 2px solid #f0f0f0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  height: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.provider-card:hover {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 选中状态的卡片 */
+.provider-card-selected {
+  border-color: #52c41a !important;
+  background-color: #f6ffed;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+}
+
+.provider-card-selected:hover {
+  border-color: #52c41a !important;
+  box-shadow: 0 6px 16px rgba(82, 196, 26, 0.2);
+}
+
+/* 当前使用的供应商卡片 */
+.provider-card-current {
+  border-color: #1890ff !important;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+  position: relative;
+}
+
+.provider-card-current:hover {
+  border-color: #1890ff !important;
+  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.2);
+}
+
+/* 当前使用且选中的卡片 */
+.provider-card-current.provider-card-selected {
+  border-color: #52c41a !important;
+  background: linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%);
+  box-shadow: 0 6px 16px rgba(82, 196, 26, 0.2),
+    0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+/* 卡片内容布局 */
+.provider-card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* 供应商头部信息 */
+.provider-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.provider-logo {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.provider-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-info .ant-typography {
+  line-height: 1.2;
+}
+
+/* 选中图标 */
+.provider-selected-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .provider-card {
+    height: 100px;
+  }
+
+  .provider-logo {
+    font-size: 18px;
+  }
+
+  .provider-info .ant-typography {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .provider-card {
+    height: 90px;
+  }
+
+  .provider-logo {
+    font-size: 16px;
+  }
+
+  .provider-card-content {
+    padding: 8px;
+  }
+}
+
+/* 热门标签样式优化 */
+.provider-info .ant-tag {
+  margin-left: 4px;
+  font-size: 10px;
+  padding: 0 4px;
+  line-height: 16px;
+  height: 16px;
+}
+
+/* 快捷链接按钮样式 */
+.provider-card .ant-btn-text {
+  color: #666;
+  font-size: 11px;
+}
+
+.provider-card .ant-btn-text:hover {
+  color: #1890ff;
+}
+
+/* 自定义配置卡片特殊样式 */
+.provider-card:last-child .provider-card-content {
+  text-align: center;
+}
+
+/* 加载状态 */
+.provider-card.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.provider-card.loading:hover {
+  transform: none;
+  border-color: #f0f0f0;
+  box-shadow: none;
+}
+
+/* 动画效果 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 8px rgba(24, 144, 255, 0.3);
+  }
+  to {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 12px rgba(82, 196, 26, 0.4);
+  }
+}
+
+/* 配置状态指示器 */
+.provider-config-indicator {
+  animation: pulse 2s infinite;
+}
+
+/* 当前使用指示器 */
+.provider-current-indicator {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* 响应式设计优化 */
+@media (max-width: 768px) {
+  .provider-current-indicator {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+
+  .provider-config-indicator {
+    width: 10px;
+    height: 10px;
+  }
+}

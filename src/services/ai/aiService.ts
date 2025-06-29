@@ -52,13 +52,6 @@ export class AIService {
 
   // 更新AI配置
   updateConfig(config: AIConfig): void {
-    console.log("🔄 AIService.updateConfig: 更新配置", {
-      oldSystemPrompt: this.config.systemPrompt ? "已设置" : "未设置",
-      newSystemPrompt: config.systemPrompt ? "已设置" : "未设置",
-      oldSystemPromptLength: this.config.systemPrompt?.length || 0,
-      newSystemPromptLength: config.systemPrompt?.length || 0,
-    });
-
     this.config = config;
     // 配置更新后重置预连接状态
     this.resetPreconnection();
@@ -67,16 +60,12 @@ export class AIService {
   // 预连接到AI服务 - 用户输入时调用
   async preconnectToAI(): Promise<void> {
     if (!this.validateConfig()) {
-      console.log("⚠️ AI配置未完成，跳过预连接");
       return;
     }
 
     if (this.isPreconnected || this.preconnectPromise) {
-      console.log("🔗 AI服务已预连接或正在连接中");
       return;
     }
-
-    console.log("🚀 开始预连接到AI服务...");
 
     this.preconnectController = new AbortController();
     this.preconnectPromise = this.performPreconnect();
@@ -84,9 +73,8 @@ export class AIService {
     try {
       await this.preconnectPromise;
       this.isPreconnected = true;
-      console.log("✅ AI服务预连接成功");
     } catch (error) {
-      console.warn("⚠️ AI服务预连接失败:", error);
+      console.warn("AI服务预连接失败:", error);
       this.isPreconnected = false;
     } finally {
       this.preconnectPromise = null;

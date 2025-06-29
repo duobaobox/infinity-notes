@@ -11,7 +11,7 @@ export class IndexedDBService {
   private static instance: IndexedDBService;
   private initialized = false;
   private readonly dbName = "StickyNotesDB";
-  private readonly dbVersion = 5; // 多画布优化：新增工作区、模板、快照表
+  private readonly dbVersion = 6; // AI供应商配置：新增多供应商配置表
 
   private constructor() {
     // 私有构造函数，确保单例模式
@@ -216,6 +216,20 @@ export class IndexedDBService {
       snapshotStore.createIndex("canvas_id", "canvas_id", { unique: false });
       snapshotStore.createIndex("created_by", "created_by", { unique: false });
       snapshotStore.createIndex("created_at", "created_at", { unique: false });
+    }
+
+    // 新增：AI供应商配置表 - 支持多供应商配置管理
+    if (!db.objectStoreNames.contains("ai_provider_configs")) {
+      const providerConfigStore = db.createObjectStore("ai_provider_configs", {
+        keyPath: "id",
+      });
+      providerConfigStore.createIndex("user_id", "user_id", { unique: false });
+      providerConfigStore.createIndex("updated_at", "updated_at", {
+        unique: false,
+      });
+      providerConfigStore.createIndex("created_at", "created_at", {
+        unique: false,
+      });
     }
   }
 

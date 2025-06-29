@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { IndexedDBAISettingsStorage as AISettingsStorage } from "../../database/IndexedDBAISettingsStorage";
 import type { AIConfig } from "../../services/ai/aiService";
 import type { AIPromptConfig, UseAIPromptSettingsReturn } from "../../types/ai";
-import { aiConfigManager } from "../../utils/aiConfigManager";
+import { AIConfigManager } from "../../utils/aiConfigManager";
 
 export const useAIPromptSettings = (
   hasValidAIConfig: boolean
@@ -93,7 +93,10 @@ export const useAIPromptSettings = (
         setPromptConfig(newPromptConfig);
 
         // 🔧 优化：使用统一的配置管理器通知更新
-        aiConfigManager.notifyConfigUpdate(updatedConfig, "prompt-settings");
+        AIConfigManager.getInstance().notifyConfigUpdate(
+          updatedConfig,
+          "prompt-settings"
+        );
 
         return true;
       } catch (err) {

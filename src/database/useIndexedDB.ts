@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { IndexedDBService } from "./IndexedDBService";
-import { IndexedDBAdapter } from "./IndexedDBAdapter";
+import { useCallback, useEffect, useState } from "react";
 import type { StickyNote } from "../components/types";
+import { IndexedDBAdapter } from "./IndexedDBAdapter";
+import { IndexedDBService } from "./IndexedDBService";
 
 // 创建事件系统来同步数据
 class DatabaseEventEmitter {
@@ -259,6 +259,12 @@ export function useDatabase() {
   // 获取统计信息
   const getStats = useCallback(async () => {
     try {
+      // 检查数据库是否已初始化
+      if (!isDatabaseInitialized()) {
+        console.warn("数据库未初始化，正在初始化...");
+        await initializeDatabase();
+      }
+
       const adapter = getDatabaseAdapter();
       return await adapter.getNotesStats();
     } catch (err) {

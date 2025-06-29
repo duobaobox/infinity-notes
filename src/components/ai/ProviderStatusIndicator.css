@@ -1,0 +1,43 @@
+/* 供应商状态指示器动画效果 */
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 8px rgba(24, 144, 255, 0.3);
+  }
+  to {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 12px rgba(82, 196, 26, 0.4);
+  }
+}
+
+/* 配置状态指示器样式 */
+.provider-config-indicator {
+  animation: pulse 2s infinite;
+}
+
+/* 当前使用指示器样式 */
+.provider-current-indicator {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .provider-current-indicator {
+    font-size: 8px !important;
+    padding: 1px 3px !important;
+  }
+}
