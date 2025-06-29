@@ -1,31 +1,31 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  memo,
-  useMemo,
-} from "react";
-import { throttle } from "lodash";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-import type { StickyNoteProps } from "../types";
-import "./StickyNote.css";
-import { Button } from "antd";
 import {
-  DeleteOutlined,
-  LoadingOutlined,
-  LinkOutlined,
-  HistoryOutlined,
   BarChartOutlined,
-  TagOutlined,
+  DeleteOutlined,
   FileTextOutlined,
+  HistoryOutlined,
+  LinkOutlined,
+  LoadingOutlined,
+  TagOutlined,
 } from "@ant-design/icons";
+import { Button } from "antd";
+import { throttle } from "lodash";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
 import SourceNotesModal from "../modals/SourceNotesModal";
+import type { StickyNoteProps } from "../types";
+import "./StickyNote.css";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -1092,7 +1092,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               )
             }
             size="small"
-            type="text"
+            type="default"
             disabled={
               (!note.sourceNoteIds || note.sourceNoteIds.length === 0) &&
               (!note.sourceNotesContent || note.sourceNotesContent.length === 0)
@@ -1142,7 +1142,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             className="settings-toolbar-button disabled"
             icon={<BarChartOutlined />}
             size="small"
-            type="text"
+            type="default"
             disabled
             title="统计信息 - 即将推出"
           />
@@ -1152,7 +1152,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             className="settings-toolbar-button disabled"
             icon={<TagOutlined />}
             size="small"
-            type="text"
+            type="default"
             disabled
             title="标签管理 - 即将推出"
           />
@@ -1162,7 +1162,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             className="settings-toolbar-button disabled"
             icon={<FileTextOutlined />}
             size="small"
-            type="text"
+            type="default"
             disabled
             title="模板应用 - 即将推出"
           />
@@ -1292,11 +1292,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               icon={<span className="settings-icon">⋯</span>}
               onClick={handleSettingsClick}
               title="便签设置"
-              type="text"
+              type="default"
               size="small"
               style={{
-                color: "#666", // 默认灰色图标
-                backgroundColor: "rgba(0, 0, 0, 0.06)", // 与删除按钮背景色一致
                 borderRadius: "4px",
                 marginRight: "4px", // 与删除按钮保持间距
               }}

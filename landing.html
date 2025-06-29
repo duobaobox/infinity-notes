@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>无限便签 - 传统便签遇见AI时代，免费便签工具</title>
+        <title>无限便签</title>
         <meta name="description" content="还是熟悉的便签，但有了AI的加持。AI帮你生成内容、智能汇总整理、个性化角色、多AI自由选择。让每一张便签都更有价值，而且完全免费。">
 
         <!-- Favicon -->
@@ -1041,145 +1041,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-
-            /* 鼠标滚动动效指示器 */
-            .scroll-indicator {
-                position: absolute;
-                bottom: 40px;
-                left: 50%;
-                transform: translateX(-50%);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 15px;
-                cursor: pointer;
-                transition: all 0.5s ease;
-                z-index: 10;
-                opacity: 1;
-                visibility: visible;
-            }
-
-            /* 滚动后隐藏指示器 */
-            .scroll-indicator.hidden {
-                opacity: 0;
-                visibility: hidden;
-                transform: translateX(-50%) translateY(20px);
-            }
-
-            .scroll-indicator:hover {
-                transform: translateX(-50%) translateY(-5px);
-            }
-
-            .scroll-indicator:hover .scroll-text {
-                color: #0071e3;
-            }
-
-            .scroll-indicator:hover .mouse {
-                border-color: #0071e3;
-            }
-
-            .scroll-indicator:hover .mouse::before {
-                background-color: #0071e3;
-            }
-
-            .scroll-text {
-                color: #86868b;
-                font-size: 14px;
-                font-weight: 400;
-                letter-spacing: 0.5px;
-                transition: color 0.3s ease;
-                margin-bottom: 5px;
-            }
-
-            /* 鼠标图标 */
-            .mouse {
-                width: 24px;
-                height: 40px;
-                border: 2px solid #86868b;
-                border-radius: 12px;
-                position: relative;
-                transition: border-color 0.3s ease;
-            }
-
-            /* 鼠标滚轮动画 */
-            .mouse::before {
-                content: '';
-                position: absolute;
-                top: 8px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 3px;
-                height: 6px;
-                background-color: #86868b;
-                border-radius: 2px;
-                animation: scroll-wheel 2s infinite;
-                transition: background-color 0.3s ease;
-            }
-
-            /* 滚轮滚动动画 */
-            @keyframes scroll-wheel {
-                0% {
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(0);
-                }
-
-                50% {
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(12px);
-                }
-
-                100% {
-                    opacity: 0;
-                    transform: translateX(-50%) translateY(12px);
-                }
-            }
-
-            /* 滚动指示器在移动设备上的适配 */
-            @media (max-width: 834px) {
-                .scroll-indicator {
-                    bottom: 30px;
-                    gap: 12px;
-                }
-
-                .scroll-text {
-                    font-size: 12px;
-                }
-
-                .mouse {
-                    width: 20px;
-                    height: 32px;
-                    border-radius: 10px;
-                }
-
-                .mouse::before {
-                    width: 2px;
-                    height: 5px;
-                    top: 6px;
-                }
-            }
-
-            @media (max-width: 430px) {
-                .scroll-indicator {
-                    bottom: 25px;
-                    gap: 10px;
-                }
-
-                .scroll-text {
-                    font-size: 11px;
-                }
-
-                .mouse {
-                    width: 18px;
-                    height: 28px;
-                    border-radius: 9px;
-                }
-
-                .mouse::before {
-                    width: 2px;
-                    height: 4px;
-                    top: 5px;
-                }
-            }
         </style>
     </head>
 
@@ -1206,19 +1067,19 @@
             <section class="hero">
                 <div class="hero-container scroll-animate">
                     <div class="cta-container">
-                        <h1 class="scroll-animate">体验AI时代的便签工具</h1>
-                        <p class="subtitle scroll-animate">熟悉的便签操作，强大的AI驱动</p>
+                        <h1 class="scroll-animate">AI驱动的便签工具</h1>
+                        <p class="subtitle scroll-animate">一样的便签操作，不一样的的AI体验</p>
                         <p class="description scroll-animate" style="max-width: 700px; margin: 0 auto 40px;">
                             就像使用传统便签一样简单，但AI让每张便签都更有价值。
                             输入想法，AI生成内容；多张便签，AI智能汇总；个性化设置，AI按你的风格工作。
-                            这就是便签在AI时代的样子。
+                            这就是便签在AI时代该有的样子。
                         </p>
                         <p style="margin: 32px 0 48px 0; color: #86868b; font-size: 15px; line-height: 1.5;">
-                            ✓ 完全免费 ✓ 无需注册 ✓ 数据本地存储 ✓ 开源透明 ✓ AI自由选择 ✓ 角色定制
+                            ✓ 完全免费 ✓ 开源透明 ✓ 无需注册 ✓ 数据本地存储 ✓ AI自由选择 ✓ 角色定制
                         </p>
                     </div>
                     <div class="hero-buttons">
-                        <a href="./app.html" class="primary-button">免费使用</a>
+                        <a href="./app.html" class="primary-button">开始使用</a>
                         <a href="#features" class="secondary-button">核心功能</a>
                     </div>
                     <div class="hero-image">
@@ -1235,12 +1096,6 @@
                             <img src="./public/images/001.png" alt="无限便签产品界面" />
                         </div>
                     </div>
-                </div>
-
-                <!-- 向下滚动提醒 -->
-                <div class="scroll-indicator" onclick="scrollToFeatures()">
-                    <div class="scroll-text">探索更多功能</div>
-                    <div class="mouse"></div>
                 </div>
             </section>
 
@@ -1621,40 +1476,6 @@
         </footer>
 
         <script>
-            // 滚动到功能区域的函数
-            function scrollToFeatures() {
-                const featuresSection = document.getElementById('features');
-                if (featuresSection) {
-                    featuresSection.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            }
-
-            // 监听滚动事件，隐藏滚动指示器
-            let scrollIndicatorHidden = false;
-
-            function handleScroll() {
-                const scrollIndicator = document.querySelector('.scroll-indicator');
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-                // 当用户滚动超过50px时隐藏指示器
-                if (scrollTop > 50 && !scrollIndicatorHidden) {
-                    scrollIndicator.classList.add('hidden');
-                    scrollIndicatorHidden = true;
-                } else if (scrollTop <= 50 && scrollIndicatorHidden) {
-                    // 当用户回到顶部时重新显示指示器
-                    scrollIndicator.classList.remove('hidden');
-                    scrollIndicatorHidden = false;
-                }
-            }
-
-            // 页面加载完成后添加滚动监听
-            document.addEventListener('DOMContentLoaded', function () {
-                window.addEventListener('scroll', handleScroll, { passive: true });
-            });
-
             // 平滑滚动 - Mac风格
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {

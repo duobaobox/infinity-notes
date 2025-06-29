@@ -479,15 +479,13 @@ const Sidebar: React.FC = () => {
 
                 {/* 设置按钮单独一行 */}
                 <Button
-                  type="text"
+                  type="default"
                   icon={<SettingOutlined />}
                   style={{
                     width: "100%",
                     textAlign: "left",
                     height: "32px",
                     borderRadius: "6px",
-                    color: "#595959",
-                    backgroundColor: "rgba(0, 0, 0, 0.02)",
                   }}
                   onClick={() => {
                     openSettingsModal("general");

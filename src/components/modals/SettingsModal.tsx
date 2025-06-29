@@ -46,7 +46,6 @@ import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import "./SettingsModal.css";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 interface SettingsModalProps {
   open: boolean;
@@ -104,10 +103,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const { loadNotes } = useStickyNotesStore();
 
   // AI状态管理 - 仅用于状态同步，不用于保存
-  const {
-    saveConfig: saveAIStoreConfig,
-    savePromptConfig: saveAIStorePromptConfig,
-  } = useAIStore();
+  useAIStore();
 
   // AI提示词设置Hook
   const {
@@ -831,7 +827,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     icon={<DownloadOutlined />}
                     onClick={handleExportData}
                     loading={exportLoading}
-                    style={{ width: "100%" }}
+                    block
                   >
                     导出所有数据
                   </Button>
@@ -844,11 +840,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       return false; // 阻止自动上传
                     }}
                     disabled={importLoading}
+                    style={{ width: "100%" }}
                   >
                     <Button
                       icon={<UploadOutlined />}
                       loading={importLoading}
-                      style={{ width: "100%" }}
+                      block
                     >
                       导入数据
                     </Button>
@@ -864,11 +861,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     cancelText="取消"
                     okType="danger"
                   >
-                    <Button
-                      danger
-                      icon={<DeleteOutlined />}
-                      style={{ width: "100%" }}
-                    >
+                    <Button danger icon={<DeleteOutlined />} block>
                       清空所有数据
                     </Button>
                   </Popconfirm>
@@ -971,7 +964,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     <Input.Password
                       placeholder="sk-..."
                       style={{ width: "100%" }}
-                      visibilityToggle={false}
                     />
                   </Form.Item>
 
@@ -1030,17 +1022,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="form-actions">
                   <Space>
                     <Button
-                      type="primary"
+                      type="default"
                       onClick={handleTestConnection}
                       loading={testingConnection}
-                      disabled={aiLoading}
+                      disabled={testingConnection}
                     >
                       测试连接
                     </Button>
                     <Button
                       type="primary"
                       onClick={handleSaveAIConfig}
-                      disabled={aiLoading}
+                      disabled={testingConnection}
+                      loading={aiLoading}
                     >
                       保存配置
                     </Button>
@@ -1105,13 +1098,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       <Button
                         type="primary"
                         onClick={handleSavePromptConfig}
-                        disabled={promptLoading}
+                        disabled={promptLoading || testingConnection}
                       >
                         保存设置
                       </Button>
                       <Button
                         onClick={handleResetPromptToDefault}
-                        disabled={promptLoading}
+                        disabled={promptLoading || testingConnection}
                       >
                         清空重置
                       </Button>
@@ -1164,14 +1157,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   type="primary"
                   size="large"
                   onClick={() => window.open("./landing.html", "_blank")}
-                  style={{ width: "100%" }}
+                  block
                 >
                   🌐 访问官网了解更多
                 </Button>
                 <Button
                   type="default"
                   onClick={() => window.open("./app.html", "_blank")}
-                  style={{ width: "100%" }}
+                  block
                 >
                   🚀 在新窗口打开应用
                 </Button>
