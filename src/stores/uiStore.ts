@@ -22,6 +22,11 @@ export interface AppearanceState {
   gridSize: number;
   gridColor: string;
   gridMajorColor: string;
+  // 便签默认尺寸设置
+  manualNoteDefaultWidth: number; // 手动便签默认宽度
+  manualNoteDefaultHeight: number; // 手动便签默认高度
+  aiNoteDefaultWidth: number; // AI便签默认宽度
+  aiNoteDefaultHeight: number; // AI便签默认高度
 }
 
 // 基础设置状态接口
@@ -75,6 +80,16 @@ export interface UIActions {
   toggleGrid: () => void;
   setGridSize: (size: number) => void;
 
+  // 便签尺寸设置操作
+  setNoteDefaultSize: (
+    type: "manual" | "ai",
+    width: number,
+    height: number
+  ) => void;
+  setManualNoteDefaultSize: (width: number, height: number) => void;
+  setAINoteDefaultSize: (width: number, height: number) => void;
+  resetNoteDefaultSizes: () => void; // 重置便签尺寸到默认值
+
   applyPresetTheme: (themeId: string) => void;
 
   // 基础设置操作
@@ -99,6 +114,14 @@ export interface UIActions {
   // 初始化
   initialize: () => Promise<void>;
 }
+
+// 便签默认尺寸常量
+export const DEFAULT_NOTE_SIZES = {
+  manualNoteDefaultWidth: 250, // 手动便签默认宽度
+  manualNoteDefaultHeight: 200, // 手动便签默认高度
+  aiNoteDefaultWidth: 300, // AI便签默认宽度
+  aiNoteDefaultHeight: 250, // AI便签默认高度
+} as const;
 
 // 预制主题配置
 export interface PresetTheme {
@@ -233,6 +256,8 @@ export const useUIStore = create<UIState & UIActions>()(
         gridSize: 10,
         gridColor: "#f5f2ea",
         gridMajorColor: "#ece7db",
+        // 便签默认尺寸设置
+        ...DEFAULT_NOTE_SIZES,
       },
       basicSettings: {
         showThinkingMode: true, // 默认开启思维模式显示
@@ -323,6 +348,41 @@ export const useUIStore = create<UIState & UIActions>()(
 
       setGridSize: (size) => {
         get().setAppearance({ gridSize: size });
+      },
+
+      // 便签尺寸设置操作
+      setNoteDefaultSize: (type, width, height) => {
+        if (type === "manual") {
+          get().setAppearance({
+            manualNoteDefaultWidth: width,
+            manualNoteDefaultHeight: height,
+          });
+        } else {
+          get().setAppearance({
+            aiNoteDefaultWidth: width,
+            aiNoteDefaultHeight: height,
+          });
+        }
+      },
+
+      setManualNoteDefaultSize: (width, height) => {
+        get().setAppearance({
+          manualNoteDefaultWidth: width,
+          manualNoteDefaultHeight: height,
+        });
+      },
+
+      setAINoteDefaultSize: (width, height) => {
+        get().setAppearance({
+          aiNoteDefaultWidth: width,
+          aiNoteDefaultHeight: height,
+        });
+      },
+
+      resetNoteDefaultSizes: () => {
+        get().setAppearance({
+          ...DEFAULT_NOTE_SIZES,
+        });
       },
 
       // 应用预制主题

@@ -13,6 +13,11 @@ export interface AppearanceSettings {
   gridSize: number;
   gridColor: string;
   gridMajorColor: string;
+  // 便签默认尺寸设置
+  manualNoteDefaultWidth: number; // 手动便签默认宽度
+  manualNoteDefaultHeight: number; // 手动便签默认高度
+  aiNoteDefaultWidth: number; // AI便签默认宽度
+  aiNoteDefaultHeight: number; // AI便签默认高度
 }
 
 export interface UILayoutSettings {

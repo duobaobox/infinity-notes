@@ -154,6 +154,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [aiForm] = Form.useForm();
   const [appearanceForm] = Form.useForm();
+  const [noteSettingsForm] = Form.useForm();
   const [userForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
 
@@ -220,7 +221,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     applyPresetTheme,
     basicSettings,
     setBasicSettings,
-    toggleThinkingMode,
+    resetNoteDefaultSizes,
   } = useUIStore();
 
   // 使用UserStore获取和设置用户信息
@@ -805,8 +806,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         }
       });
 
-      // 实时保存外观设置
-      setAppearance(processedFields);
+      // 排除便签尺寸设置字段，这些字段由独立的表单处理
+      const noteSettingsFields = [
+        "manualNoteDefaultWidth",
+        "manualNoteDefaultHeight",
+        "aiNoteDefaultWidth",
+        "aiNoteDefaultHeight",
+      ];
+
+      const filteredFields = { ...processedFields };
+      noteSettingsFields.forEach((field) => {
+        delete filteredFields[field];
+      });
+
+      // 实时保存外观设置（排除便签尺寸设置）
+      setAppearance(filteredFields);
     },
     [convertColorValue, setAppearance]
   );
@@ -824,6 +838,145 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     },
     [applyPresetTheme]
   );
+
+  // 便签设置状态管理
+  const [noteSettingsChanged, setNoteSettingsChanged] = useState(false);
+  const [tempNoteSettings, setTempNoteSettings] = useState({
+    manualNoteDefaultWidth: appearance.manualNoteDefaultWidth,
+    manualNoteDefaultHeight: appearance.manualNoteDefaultHeight,
+    aiNoteDefaultWidth: appearance.aiNoteDefaultWidth,
+    aiNoteDefaultHeight: appearance.aiNoteDefaultHeight,
+  });
+
+  // 处理便签设置变化
+  const handleNoteSettingsChange = React.useCallback(
+    (changedFields: Record<string, unknown>) => {
+      const newSettings = { ...tempNoteSettings, ...changedFields };
+      setTempNoteSettings(newSettings);
+
+      // 检查是否有变化
+      const hasChanges =
+        newSettings.manualNoteDefaultWidth !==
+          appearance.manualNoteDefaultWidth ||
+        newSettings.manualNoteDefaultHeight !==
+          appearance.manualNoteDefaultHeight ||
+        newSettings.aiNoteDefaultWidth !== appearance.aiNoteDefaultWidth ||
+        newSettings.aiNoteDefaultHeight !== appearance.aiNoteDefaultHeight;
+
+      setNoteSettingsChanged(hasChanges);
+    },
+    [tempNoteSettings, appearance]
+  );
+
+  // 保存便签设置
+  const handleSaveNoteSettings = React.useCallback(() => {
+    try {
+      setAppearance(tempNoteSettings);
+      setNoteSettingsChanged(false);
+      message.success("便签设置已保存");
+    } catch (error) {
+      console.error("保存便签设置失败:", error);
+      message.error("保存便签设置失败");
+    }
+  }, [tempNoteSettings, setAppearance]);
+
+  // 重置便签设置
+  const handleResetNoteSettings = React.useCallback(() => {
+    try {
+      resetNoteDefaultSizes();
+      // 更新临时设置为默认值
+      const defaultSettings = {
+        manualNoteDefaultWidth: 250,
+        manualNoteDefaultHeight: 200,
+        aiNoteDefaultWidth: 300,
+        aiNoteDefaultHeight: 250,
+      };
+      setTempNoteSettings(defaultSettings);
+      setNoteSettingsChanged(false);
+      // 同步表单值
+      appearanceForm.setFieldsValue(defaultSettings);
+      message.success("便签设置已重置为默认值");
+    } catch (error) {
+      console.error("重置便签设置失败:", error);
+      message.error("重置便签设置失败");
+    }
+  }, [resetNoteDefaultSizes, appearanceForm]);
+
+  // 同步便签设置表单值
+  React.useEffect(() => {
+    if (open) {
+      const currentSettings = {
+        manualNoteDefaultWidth: appearance.manualNoteDefaultWidth,
+        manualNoteDefaultHeight: appearance.manualNoteDefaultHeight,
+        aiNoteDefaultWidth: appearance.aiNoteDefaultWidth,
+        aiNoteDefaultHeight: appearance.aiNoteDefaultHeight,
+      };
+      setTempNoteSettings(currentSettings);
+      noteSettingsForm.setFieldsValue(currentSettings);
+      setNoteSettingsChanged(false);
+    }
+  }, [open, appearance, noteSettingsForm]);
+
+  // 思维模式设置状态管理
+  const [thinkingModeForm] = Form.useForm();
+  const [thinkingModeChanged, setThinkingModeChanged] = useState(false);
+  const [tempThinkingMode, setTempThinkingMode] = useState({
+    showThinkingMode: basicSettings.showThinkingMode,
+  });
+
+  // 处理思维模式设置变化
+  const handleThinkingModeChange = React.useCallback(
+    (changedFields: Record<string, unknown>) => {
+      const newSettings = { ...tempThinkingMode, ...changedFields };
+      setTempThinkingMode(newSettings);
+
+      // 检查是否有变化
+      const hasChanges =
+        newSettings.showThinkingMode !== basicSettings.showThinkingMode;
+      setThinkingModeChanged(hasChanges);
+    },
+    [tempThinkingMode, basicSettings]
+  );
+
+  // 保存思维模式设置
+  const handleSaveThinkingMode = React.useCallback(() => {
+    try {
+      setBasicSettings(tempThinkingMode);
+      setThinkingModeChanged(false);
+      message.success("思维模式设置已保存");
+    } catch (error) {
+      console.error("保存思维模式设置失败:", error);
+      message.error("保存思维模式设置失败");
+    }
+  }, [tempThinkingMode, setBasicSettings]);
+
+  // 重置思维模式设置
+  const handleResetThinkingMode = React.useCallback(() => {
+    try {
+      const defaultSettings = { showThinkingMode: true };
+      setBasicSettings(defaultSettings);
+      setTempThinkingMode(defaultSettings);
+      setThinkingModeChanged(false);
+      // 同步表单值
+      thinkingModeForm.setFieldsValue(defaultSettings);
+      message.success("思维模式设置已重置为默认值");
+    } catch (error) {
+      console.error("重置思维模式设置失败:", error);
+      message.error("重置思维模式设置失败");
+    }
+  }, [setBasicSettings, thinkingModeForm]);
+
+  // 同步思维模式设置表单值
+  React.useEffect(() => {
+    if (open) {
+      const currentSettings = {
+        showThinkingMode: basicSettings.showThinkingMode,
+      };
+      setTempThinkingMode(currentSettings);
+      thinkingModeForm.setFieldsValue(currentSettings);
+      setThinkingModeChanged(false);
+    }
+  }, [open, basicSettings, thinkingModeForm]);
 
   // 处理用户信息更新
   const handleUserProfileUpdate = React.useCallback(
@@ -1128,6 +1281,141 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Form.Item>
               </Card>
             </Form>
+
+            {/* 便签默认尺寸设置 */}
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                📝 便签默认尺寸
+              </Title>
+
+              <Form
+                form={noteSettingsForm}
+                layout="vertical"
+                onValuesChange={handleNoteSettingsChange}
+                initialValues={tempNoteSettings}
+              >
+                {/* 手动便签尺寸设置 */}
+                <div style={{ marginBottom: 20 }}>
+                  <Text strong style={{ display: "block", marginBottom: 8 }}>
+                    手动便签默认尺寸
+                  </Text>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        label="宽度 (px)"
+                        name="manualNoteDefaultWidth"
+                        style={{ marginBottom: 8 }}
+                      >
+                        <InputNumber
+                          min={200}
+                          max={500}
+                          step={10}
+                          style={{ width: "100%" }}
+                          placeholder="250"
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        label="高度 (px)"
+                        name="manualNoteDefaultHeight"
+                        style={{ marginBottom: 8 }}
+                      >
+                        <InputNumber
+                          min={150}
+                          max={400}
+                          step={10}
+                          style={{ width: "100%" }}
+                          placeholder="200"
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </div>
+
+                {/* AI便签尺寸设置 */}
+                <div style={{ marginBottom: 16 }}>
+                  <Text strong style={{ display: "block", marginBottom: 8 }}>
+                    AI便签默认尺寸
+                  </Text>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        label="宽度 (px)"
+                        name="aiNoteDefaultWidth"
+                        style={{ marginBottom: 8 }}
+                      >
+                        <InputNumber
+                          min={200}
+                          max={500}
+                          step={10}
+                          style={{ width: "100%" }}
+                          placeholder="300"
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        label="高度 (px)"
+                        name="aiNoteDefaultHeight"
+                        style={{ marginBottom: 8 }}
+                      >
+                        <InputNumber
+                          min={150}
+                          max={400}
+                          step={10}
+                          style={{ width: "100%" }}
+                          placeholder="250"
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </div>
+              </Form>
+
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                💡 设置新建便签时的默认尺寸，可以根据使用习惯调整
+              </Text>
+
+              {/* 设置变更状态提示 */}
+              {noteSettingsChanged && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: 8,
+                    backgroundColor: "#fff7e6",
+                    border: "1px solid #ffd591",
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: "12px", color: "#d46b08" }}>
+                    ⚠️ 设置已修改，请点击"保存设置"按钮保存更改
+                  </Text>
+                </div>
+              )}
+
+              {/* 便签设置操作按钮 */}
+              <div
+                style={{
+                  marginTop: 16,
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button onClick={handleResetNoteSettings} size="small">
+                  重置默认值
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={handleSaveNoteSettings}
+                  disabled={!noteSettingsChanged}
+                  size="small"
+                >
+                  保存设置
+                </Button>
+              </div>
+            </Card>
           </div>
         ),
       },
@@ -1262,63 +1550,91 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         ),
         children: (
           <div className="settings-modal-content">
+            {/* 思维模式设置 */}
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                ⚙️ 基础设置
+                🤖 思维模式设置
               </Title>
-              <Text
-                type="secondary"
-                style={{ display: "block", marginBottom: 16 }}
+
+              <Form
+                form={thinkingModeForm}
+                layout="vertical"
+                onValuesChange={handleThinkingModeChange}
+                initialValues={tempThinkingMode}
               >
-                配置应用的基础功能选项，个性化您的使用体验
+                <div style={{ marginBottom: 16 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div>
+                      <Text strong>显示思维模式</Text>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#666",
+                          marginTop: 2,
+                        }}
+                      >
+                        开启后，AI生成便签时会显示思考过程
+                      </div>
+                    </div>
+                    <Form.Item
+                      name="showThinkingMode"
+                      valuePropName="checked"
+                      style={{ margin: 0 }}
+                    >
+                      <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+                    </Form.Item>
+                  </div>
+                </div>
+              </Form>
+
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                💡 控制AI生成便签时是否显示思考过程，帮助您了解AI的推理逻辑
               </Text>
 
-              {/* 思维模式显示开关 */}
-              <div style={{ marginBottom: 24 }}>
+              {/* 设置变更状态提示 */}
+              {thinkingModeChanged && (
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
+                    marginTop: 12,
+                    padding: 8,
+                    backgroundColor: "#fff7e6",
+                    border: "1px solid #ffd591",
+                    borderRadius: 4,
                   }}
                 >
-                  <div>
-                    <Text strong>显示思维模式</Text>
-                    <div
-                      style={{ fontSize: "12px", color: "#666", marginTop: 2 }}
-                    >
-                      开启后，AI生成便签时会显示思考过程
-                    </div>
-                  </div>
-                  <Switch
-                    checked={basicSettings.showThinkingMode}
-                    onChange={(checked) =>
-                      setBasicSettings({ showThinkingMode: checked })
-                    }
-                    checkedChildren="开启"
-                    unCheckedChildren="关闭"
-                  />
+                  <Text style={{ fontSize: "12px", color: "#d46b08" }}>
+                    ⚠️ 设置已修改，请点击"保存设置"按钮保存更改
+                  </Text>
                 </div>
-                <Text type="secondary" style={{ fontSize: "12px" }}>
-                  {basicSettings.showThinkingMode
-                    ? "✅ 便签中将显示AI的思考过程，帮助您了解AI的推理逻辑"
-                    : "❌ 便签中只显示最终结果，不显示思考过程"}
-                </Text>
-              </div>
+              )}
 
-              <Divider />
-
-              {/* 预留其他基础设置 */}
+              {/* 思维模式设置操作按钮 */}
               <div
                 style={{
-                  padding: "16px",
-                  background: "#f5f5f5",
-                  borderRadius: "8px",
-                  textAlign: "center",
+                  marginTop: 16,
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "flex-end",
                 }}
               >
-                <Text type="secondary">更多基础设置功能正在开发中...</Text>
+                <Button onClick={handleResetThinkingMode} size="small">
+                  重置默认值
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={handleSaveThinkingMode}
+                  disabled={!thinkingModeChanged}
+                  size="small"
+                >
+                  保存设置
+                </Button>
               </div>
             </Card>
           </div>

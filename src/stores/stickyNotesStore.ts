@@ -4,10 +4,11 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import type { StickyNote } from "../components/types";
 import type { Canvas } from "../database";
 import { getDatabaseAdapter, initializeDatabase } from "../database";
-import { useConnectionStore } from "./connectionStore";
 import { cacheManager } from "../database/CacheManager";
 import { connectionLineManager } from "../utils/connectionLineManager";
 import { useCanvasStore } from "./canvasStore";
+import { useConnectionStore } from "./connectionStore";
+import { useUIStore } from "./uiStore";
 
 // 便签状态接口
 export interface StickyNotesState {
@@ -38,7 +39,8 @@ export interface StickyNotesActions {
   // 基础CRUD操作
   addNote: (
     note: Partial<Omit<StickyNote, "id" | "createdAt" | "updatedAt">> &
-      Pick<StickyNote, "x" | "y" | "content">
+      Pick<StickyNote, "x" | "y" | "content">,
+    noteType?: "manual" | "ai" // 便签类型，用于确定默认尺寸
   ) => Promise<StickyNote>;
   updateNote: (id: string, updates: Partial<StickyNote>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
@@ -93,15 +95,28 @@ export const useStickyNotesStore = create<
       canvasLoading: false,
 
       // 基础CRUD操作
-      addNote: async (noteData) => {
+      addNote: async (noteData, noteType = "manual") => {
         try {
           set({ operationLoading: true, error: null });
+
+          // 获取便签尺寸设置
+          const { appearance } = useUIStore.getState();
+
+          // 根据便签类型确定默认尺寸
+          const defaultWidth =
+            noteType === "ai"
+              ? appearance.aiNoteDefaultWidth
+              : appearance.manualNoteDefaultWidth;
+          const defaultHeight =
+            noteType === "ai"
+              ? appearance.aiNoteDefaultHeight
+              : appearance.manualNoteDefaultHeight;
 
           // 创建新便签对象，使用默认值和传入的数据
           const newNote: StickyNote = {
             id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            width: 200,
-            height: 200,
+            width: defaultWidth,
+            height: defaultHeight,
             color: "yellow",
             title: "",
             isEditing: false,

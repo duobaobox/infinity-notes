@@ -246,8 +246,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           x: positionX,
           y: positionY,
-          width: 250,
-          height: 200,
+          // 移除硬编码的尺寸，让addNote方法根据设置来确定
           content: "",
           title: "新便签",
           color: randomColor,
@@ -259,8 +258,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           updatedAt: new Date(),
         };
 
-        // 添加到数据库，addNote会返回实际添加的便签
-        const addedNote = await addNote(newNote);
+        // 添加到数据库，指定为手动便签类型
+        const addedNote = await addNote(newNote, "manual");
 
         // 500ms 后移除新建标记
         setTimeout(async () => {
@@ -390,8 +389,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             .substr(2, 9)}`,
           x: logicalX,
           y: logicalY,
-          width: 280,
-          height: 220,
+          // 移除硬编码的尺寸，让addNote方法根据设置来确定
           content: "",
           title: "AI便签",
           color: randomColor, // 🔧 使用随机颜色
@@ -407,8 +405,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           generationMode,
         };
 
-        // 添加临时便签到数据库
-        const addedNote = await addNote(tempNote);
+        // 添加临时便签到数据库，指定为AI便签类型
+        const addedNote = await addNote(tempNote, "ai");
 
         // 开始流式生成
         startStreamingNote(addedNote.id, addedNote);
