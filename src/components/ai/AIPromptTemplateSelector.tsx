@@ -11,6 +11,7 @@ interface AIPromptTemplateSelectorProps {
   selectedTemplate?: AIPromptTemplate;
   onTemplateSelect: (template: AIPromptTemplate) => void;
   disabled?: boolean;
+  currentPrompt?: string;
 }
 
 /**
