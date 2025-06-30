@@ -79,6 +79,9 @@ export interface DbStickyNote {
   source_note_ids?: string; // 新增：存储源便签ID列表，JSON字符串格式
   source_notes_content?: string; // 新增：存储原始便签内容，JSON字符串格式（替换模式溯源用）
   generation_mode?: string; // 新增：便签生成模式（summary/replace）
+  // 思维链相关字段（新增）
+  thinking_chain?: string; // 存储思维链数据，JSON字符串格式
+  has_thinking?: boolean; // 是否包含思维链数据，用于快速判断和查询优化
   created_at: string;
   updated_at: string;
 }

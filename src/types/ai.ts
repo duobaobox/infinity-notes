@@ -19,6 +19,12 @@ export interface UseAISettingsReturn {
   saveConfig: (newConfig: AIConfig) => Promise<boolean>;
   loadConfig: () => Promise<void>;
   testConnection: () => Promise<{ success: boolean; error?: string }>;
+  testThinkingChain: () => Promise<{
+    success: boolean;
+    hasThinking?: boolean;
+    thinkingSteps?: number;
+    error?: string;
+  }>;
   hasValidConfig: boolean;
   clearConfig: () => Promise<void>;
 }

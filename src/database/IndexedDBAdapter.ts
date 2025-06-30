@@ -1,6 +1,6 @@
-import { IndexedDBService } from "./IndexedDBService";
-import type { DbStickyNote, Canvas as DbCanvas } from "./index";
 import type { StickyNote as ComponentStickyNote } from "../components/types";
+import { IndexedDBService } from "./IndexedDBService";
+import type { Canvas as DbCanvas, DbStickyNote } from "./index";
 
 /**
  * IndexedDB 数据库适配器
@@ -76,6 +76,11 @@ export class IndexedDBAdapter {
         | "summary"
         | "replace"
         | undefined,
+      // 处理思维链数据（新增）
+      thinkingChain: dbNote.thinking_chain
+        ? JSON.parse(dbNote.thinking_chain)
+        : undefined,
+      hasThinking: dbNote.has_thinking || false,
     };
   }
 
@@ -116,6 +121,14 @@ export class IndexedDBAdapter {
     // 处理便签生成模式
     if (note.generationMode) {
       dbNote.generation_mode = note.generationMode;
+    }
+
+    // 处理思维链数据（新增）
+    if (note.thinkingChain) {
+      dbNote.thinking_chain = JSON.stringify(note.thinkingChain);
+      dbNote.has_thinking = true;
+    } else {
+      dbNote.has_thinking = false;
     }
 
     return dbNote;

@@ -20,6 +20,22 @@ export interface StickyNoteData {
   content: string;
   color?: string;
   tags?: string[];
+  // 新增：思维链相关数据
+  thinkingChain?: {
+    id: string;
+    prompt: string;
+    steps: Array<{
+      id: string;
+      content: string;
+      stepType: "analysis" | "reasoning" | "conclusion" | "question" | "idea";
+      timestamp: Date;
+      order: number;
+    }>;
+    finalAnswer: string;
+    totalThinkingTime: number;
+    createdAt: Date;
+  };
+  hasThinking?: boolean;
 }
 
 // 简化的流式回调接口
@@ -308,6 +324,11 @@ export class AIService {
       // jsonBuffer 用于调试，当前版本暂时不使用
       // let jsonBuffer = "";
 
+      // 思考过程状态管理
+      let thinkingContent = ""; // 存储思考过程内容
+      let hasStartedThinking = false; // 是否已开始显示思考过程
+      let displayedContent = ""; // 当前显示的完整内容（思考过程 + 答案）
+
       try {
         // 先创建第一个便签开始流式显示
         callbacks.onNoteStart?.(0, "AI正在生成...");
@@ -332,6 +353,10 @@ export class AIService {
               try {
                 const parsed = JSON.parse(data);
                 const content = parsed.choices?.[0]?.delta?.content;
+                // 检查是否有DeepSeek的reasoning_content字段
+                const reasoningContent =
+                  parsed.choices?.[0]?.delta?.reasoning_content;
+
                 if (content) {
                   fullResponse += content;
                   // jsonBuffer 用于调试，但当前未使用
@@ -344,13 +369,92 @@ export class AIService {
                     content !== currentNoteContent.slice(-content.length)
                   ) {
                     currentNoteContent += content;
+
                     if (isStreamingNote) {
-                      callbacks.onContentChunk?.(
-                        currentNoteIndex,
-                        content,
-                        currentNoteContent
+                      // 如果有思考过程，需要在思考过程后显示答案
+                      if (hasStartedThinking) {
+                        // 如果还没有添加分隔线，先添加
+                        if (
+                          !displayedContent.includes("---\n\n## ✨ 最终答案")
+                        ) {
+                          const separator = "\n\n---\n\n## ✨ 最终答案\n\n";
+                          displayedContent += separator;
+                          callbacks.onContentChunk?.(
+                            currentNoteIndex,
+                            separator,
+                            displayedContent
+                          );
+                        }
+
+                        // 添加答案内容
+                        displayedContent += content;
+                        callbacks.onContentChunk?.(
+                          currentNoteIndex,
+                          content,
+                          displayedContent
+                        );
+                      } else {
+                        // 没有思考过程，直接显示内容
+                        displayedContent += content;
+                        callbacks.onContentChunk?.(
+                          currentNoteIndex,
+                          content,
+                          displayedContent
+                        );
+                      }
+                    }
+                  }
+                }
+
+                // 如果有reasoning_content，实时显示思维链内容
+                if (reasoningContent) {
+                  console.log(
+                    "🧠 检测到DeepSeek reasoning_content，长度:",
+                    reasoningContent.length
+                  );
+
+                  // 将reasoning_content添加到完整响应中
+                  if (!fullResponse.includes("<think>")) {
+                    fullResponse =
+                      `<think>${reasoningContent}</think>\n` + fullResponse;
+                  } else {
+                    // 更新现有的thinking标签内容
+                    const thinkingMatch = fullResponse.match(
+                      /<think>([\s\S]*?)<\/think>/
+                    );
+                    if (thinkingMatch) {
+                      const existingThinking = thinkingMatch[1];
+                      fullResponse = fullResponse.replace(
+                        /<think>[\s\S]*?<\/think>/,
+                        `<think>${existingThinking}${reasoningContent}</think>`
                       );
                     }
+                  }
+
+                  // 实时显示思考过程
+                  thinkingContent += reasoningContent;
+
+                  if (!hasStartedThinking && isStreamingNote) {
+                    // 第一次检测到思考内容，显示思考标题
+                    hasStartedThinking = true;
+                    displayedContent = "## 🤔 AI思考过程\n\n";
+                    callbacks.onContentChunk?.(
+                      currentNoteIndex,
+                      displayedContent,
+                      displayedContent
+                    );
+                  }
+
+                  if (isStreamingNote) {
+                    // 实时更新思考内容
+                    const formattedThinking = `💭 ${reasoningContent}`;
+                    displayedContent += formattedThinking;
+
+                    callbacks.onContentChunk?.(
+                      currentNoteIndex,
+                      formattedThinking,
+                      displayedContent
+                    );
                   }
                 }
               } catch (parseError) {
@@ -363,10 +467,17 @@ export class AIService {
 
         // 流式响应完成，解析最终结果
         console.log("🔍 处理完整响应，长度:", fullResponse.length);
+        console.log(
+          "🔍 完整响应内容预览:",
+          fullResponse.substring(0, 500) + "..."
+        );
 
         // 现在统一使用智能解析方式
         // 先尝试JSON解析，失败则使用自然语言解析
-        const finalNotes = this.parseResponseIntelligently(fullResponse);
+        const finalNotes = this.parseResponseIntelligently(
+          fullResponse,
+          prompt
+        );
 
         if (finalNotes.success && finalNotes.notes) {
           console.log("✅ 解析成功，共", finalNotes.notes.length, "个便签");
@@ -374,6 +485,16 @@ export class AIService {
           // 如果只有一个便签，直接完成当前流式便签
           if (finalNotes.notes.length === 1) {
             const note = finalNotes.notes[0];
+
+            // 如果有实时显示的内容，使用实时内容而不是重新解析的内容
+            if (displayedContent && hasStartedThinking) {
+              note.content = displayedContent;
+              console.log(
+                "✅ 使用流式显示的思维链内容，长度:",
+                displayedContent.length
+              );
+            }
+
             // 更新标题
             callbacks.onNoteStart?.(0, note.title);
             // 完成便签
@@ -472,7 +593,10 @@ export class AIService {
   }
 
   // 智能解析AI回复的方法
-  private parseResponseIntelligently(aiResponse: string): {
+  private parseResponseIntelligently(
+    aiResponse: string,
+    originalPrompt: string = ""
+  ): {
     success: boolean;
     notes?: StickyNoteData[];
     error?: string;
@@ -538,16 +662,26 @@ export class AIService {
       }
 
       // 使用自然语言解析（现在是主要方式）
+      // 解析思维链内容
+      const { thinkingChain, cleanContent, contentWithThinking } =
+        this.parseThinkingChain(cleanResponse, originalPrompt);
+
       const note: StickyNoteData = {
-        title: this.generateTitleFromContent(cleanResponse),
-        content: cleanResponse,
+        title: this.generateTitleFromContent(cleanContent),
+        // 使用包含思维链的内容，这样便签会直接显示思考过程
+        content: contentWithThinking,
         // 🔧 不设置颜色，让前端使用临时便签的颜色
+        // 新增：思维链相关数据
+        thinkingChain,
+        hasThinking: !!thinkingChain,
       };
 
       console.log("✅ 自然语言解析成功:", {
         title: note.title,
         contentLength: note.content.length,
         color: note.color,
+        hasThinking: note.hasThinking,
+        thinkingSteps: thinkingChain?.steps.length || 0,
       });
 
       return { success: true, notes: [note] };
@@ -575,6 +709,313 @@ export class AIService {
       firstLine.length > 30 ? firstLine.substring(0, 30) + "..." : firstLine;
 
     return title || "AI便签";
+  }
+
+  // 解析AI响应中的思维链内容并格式化为Markdown
+  private parseThinkingChain(
+    response: string,
+    originalPrompt: string
+  ): {
+    thinkingChain?: StickyNoteData["thinkingChain"];
+    cleanContent: string;
+    contentWithThinking: string; // 新增：包含思维链的完整内容
+  } {
+    try {
+      // 检查响应中是否包含思维链标记
+      // 支持多种格式：<thinking>、<think>（DeepSeek格式）
+      const thinkingPatterns = [
+        /<thinking>([\s\S]*?)<\/thinking>/i, // 通用格式
+        /<think>([\s\S]*?)<\/think>/i, // DeepSeek格式
+      ];
+
+      let thinkingMatch: RegExpMatchArray | null = null;
+      let usedPattern: RegExp | null = null;
+
+      // 尝试匹配不同的思维链格式
+      for (const pattern of thinkingPatterns) {
+        thinkingMatch = response.match(pattern);
+        if (thinkingMatch) {
+          usedPattern = pattern;
+          break;
+        }
+      }
+
+      if (!thinkingMatch || !usedPattern) {
+        // 没有思维链，返回原始内容
+        console.log("🤔 未找到思维链标记，返回原始内容");
+        return { cleanContent: response, contentWithThinking: response };
+      }
+
+      console.log("✅ 找到思维链内容，使用格式:", usedPattern.source);
+
+      const thinkingContent = thinkingMatch[1].trim();
+      const cleanContent = response.replace(usedPattern, "").trim();
+
+      console.log("🧠 思维链原始内容长度:", thinkingContent.length);
+      console.log(
+        "🧠 思维链内容预览:",
+        thinkingContent.substring(0, 200) + "..."
+      );
+
+      console.log("📝 清理后内容长度:", cleanContent.length);
+      console.log("📝 清理后内容预览:", cleanContent.substring(0, 200) + "...");
+
+      // 解析思维链步骤
+      const steps = this.parseThinkingSteps(thinkingContent);
+
+      console.log("🔍 解析出的思维链步骤数量:", steps.length);
+
+      // 如果思维链内容为空或步骤为0，但有<think>标签，说明AI没有进行复杂思考
+      if (steps.length === 0) {
+        if (thinkingContent.trim().length === 0) {
+          console.log("💭 AI没有进行复杂思考，思维链为空");
+        } else {
+          console.warn("⚠️ 思维链步骤解析失败，返回原始内容");
+        }
+        return { cleanContent: response, contentWithThinking: response };
+      }
+
+      // 创建思维链对象
+      const thinkingChain: StickyNoteData["thinkingChain"] = {
+        id: `thinking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        prompt: originalPrompt,
+        steps,
+        finalAnswer: cleanContent,
+        totalThinkingTime: steps.length * 1000, // 估算思考时间
+        createdAt: new Date(),
+      };
+
+      // 生成包含思维链的Markdown内容
+      const contentWithThinking = this.formatThinkingChainAsMarkdown(
+        thinkingChain,
+        cleanContent
+      );
+
+      return { thinkingChain, cleanContent, contentWithThinking };
+    } catch (error) {
+      console.warn("解析思维链失败:", error);
+      return { cleanContent: response, contentWithThinking: response };
+    }
+  }
+
+  // 解析思维链步骤
+  private parseThinkingSteps(thinkingContent: string): Array<{
+    id: string;
+    content: string;
+    stepType: "analysis" | "reasoning" | "conclusion" | "question" | "idea";
+    timestamp: Date;
+    order: number;
+  }> {
+    const steps: Array<{
+      id: string;
+      content: string;
+      stepType: "analysis" | "reasoning" | "conclusion" | "question" | "idea";
+      timestamp: Date;
+      order: number;
+    }> = [];
+
+    // 按段落分割思考内容
+    const paragraphs = thinkingContent
+      .split(/\n\s*\n/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    paragraphs.forEach((paragraph, index) => {
+      // 根据内容特征判断步骤类型
+      let stepType:
+        | "analysis"
+        | "reasoning"
+        | "conclusion"
+        | "question"
+        | "idea" = "reasoning";
+
+      if (
+        paragraph.includes("分析") ||
+        paragraph.includes("观察") ||
+        paragraph.includes("数据")
+      ) {
+        stepType = "analysis";
+      } else if (
+        paragraph.includes("结论") ||
+        paragraph.includes("总结") ||
+        paragraph.includes("因此")
+      ) {
+        stepType = "conclusion";
+      } else if (
+        paragraph.includes("?") ||
+        paragraph.includes("？") ||
+        paragraph.includes("如何") ||
+        paragraph.includes("为什么")
+      ) {
+        stepType = "question";
+      } else if (
+        paragraph.includes("想法") ||
+        paragraph.includes("建议") ||
+        paragraph.includes("可以")
+      ) {
+        stepType = "idea";
+      }
+
+      steps.push({
+        id: `step-${Date.now()}-${index}-${Math.random()
+          .toString(36)
+          .substr(2, 6)}`,
+        content: paragraph,
+        stepType,
+        timestamp: new Date(Date.now() + index * 100), // 模拟时间间隔
+        order: index + 1,
+      });
+    });
+
+    return steps;
+  }
+
+  // 将思维链格式化为Markdown内容
+  private formatThinkingChainAsMarkdown(
+    thinkingChain: StickyNoteData["thinkingChain"],
+    finalAnswer: string
+  ): string {
+    if (!thinkingChain || thinkingChain.steps.length === 0) {
+      return finalAnswer;
+    }
+
+    let markdown = "";
+
+    // 添加思维链标题
+    markdown += "## 🤔 AI思考过程\n\n";
+
+    // 如果有原始提示，添加它
+    if (thinkingChain.prompt) {
+      markdown += `**提示：** ${thinkingChain.prompt}\n\n`;
+    }
+
+    // 添加思考步骤
+    thinkingChain.steps.forEach((step, index) => {
+      const stepIcon = this.getStepIconText(step.stepType);
+      markdown += `### ${stepIcon} 步骤 ${index + 1}: ${this.getStepTypeLabel(
+        step.stepType
+      )}\n\n`;
+      markdown += `${step.content}\n\n`;
+    });
+
+    // 添加分隔线
+    markdown += "---\n\n";
+
+    // 添加最终答案
+    markdown += "## ✨ 最终答案\n\n";
+    markdown += finalAnswer;
+
+    return markdown;
+  }
+
+  // 获取步骤类型的图标文本
+  private getStepIconText(stepType: string): string {
+    switch (stepType) {
+      case "analysis":
+        return "🔍";
+      case "reasoning":
+        return "🧠";
+      case "conclusion":
+        return "🎯";
+      case "question":
+        return "❓";
+      case "idea":
+        return "💡";
+      default:
+        return "🤔";
+    }
+  }
+
+  // 获取步骤类型的中文标签
+  private getStepTypeLabel(stepType: string): string {
+    switch (stepType) {
+      case "analysis":
+        return "分析";
+      case "reasoning":
+        return "推理";
+      case "conclusion":
+        return "结论";
+      case "question":
+        return "疑问";
+      case "idea":
+        return "想法";
+      default:
+        return "思考";
+    }
+  }
+
+  // 测试思维链功能
+  async testThinkingChain(): Promise<{
+    success: boolean;
+    hasThinking?: boolean;
+    thinkingSteps?: number;
+    error?: string;
+  }> {
+    try {
+      if (!this.validateConfig()) {
+        return { success: false, error: "AI配置未完成" };
+      }
+
+      const testPrompt = "请简单分析一下如何提高工作效率，并展示你的思考过程";
+
+      // 直接使用用户配置的API地址，确保URL拼接正确
+      const baseUrl = this.config.apiUrl.endsWith("/")
+        ? this.config.apiUrl.slice(0, -1)
+        : this.config.apiUrl;
+      const apiUrl = `${baseUrl}/chat/completions`;
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.config.aiModel,
+          messages: [{ role: "user", content: testPrompt }],
+          max_tokens: Math.min(this.config.maxTokens || 1000, 500),
+          temperature: Math.min(this.config.temperature || 0.7, 0.5),
+        }),
+      });
+
+      if (!response.ok) {
+        return { success: false, error: "思维链测试请求失败" };
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content || "";
+      const reasoningContent =
+        data.choices?.[0]?.message?.reasoning_content || "";
+
+      console.log("🧪 思维链测试响应:", {
+        contentLength: aiResponse.length,
+        reasoningLength: reasoningContent.length,
+        hasReasoningContent: !!reasoningContent,
+      });
+
+      // 解析思维链内容
+      const { thinkingChain } = this.parseThinkingChain(aiResponse, testPrompt);
+
+      // 如果有reasoning_content但没有解析到思维链，说明是DeepSeek格式
+      if (!thinkingChain && reasoningContent) {
+        return {
+          success: true,
+          hasThinking: true,
+          thinkingSteps: 1, // reasoning_content作为一个整体步骤
+        };
+      }
+
+      return {
+        success: true,
+        hasThinking: !!thinkingChain,
+        thinkingSteps: thinkingChain?.steps.length || 0,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "思维链测试失败",
+      };
+    }
   }
 
   // 智能分析文本并提供建议

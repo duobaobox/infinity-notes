@@ -1,0 +1,273 @@
+/* 思维链容器样式 */
+.thinking-chain-container {
+  margin: 12px 0;
+  border-radius: 8px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+.thinking-chain-container.compact {
+  margin: 8px 0;
+  background: transparent;
+  border: none;
+}
+
+/* 思维链折叠面板样式 */
+.thinking-collapse {
+  background: transparent;
+}
+
+.thinking-collapse .ant-collapse-item {
+  border: none;
+}
+
+.thinking-collapse .ant-collapse-header {
+  padding: 12px 16px !important;
+  background: transparent;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.thinking-collapse .ant-collapse-header:hover {
+  background: #f5f5f5;
+}
+
+.thinking-collapse.compact .ant-collapse-header {
+  padding: 8px 12px !important;
+}
+
+.thinking-collapse .ant-collapse-content {
+  border: none;
+  background: transparent;
+}
+
+.thinking-collapse .ant-collapse-content-box {
+  padding: 0 16px 16px 16px;
+}
+
+.thinking-collapse.compact .ant-collapse-content-box {
+  padding: 0 12px 12px 12px;
+}
+
+/* 思维链头部样式 */
+.thinking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.thinking-title {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.thinking-time {
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+/* 思维链内容样式 */
+.thinking-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 原始提示词卡片样式 */
+.thinking-prompt-card {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 6px;
+}
+
+.thinking-prompt-card .ant-card-body {
+  padding: 12px;
+}
+
+/* 思维链统计信息样式 */
+.thinking-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+.thinking-stats-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.thinking-stats-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* 思维链时间线样式 */
+.thinking-timeline {
+  margin: 16px 0;
+}
+
+.thinking-timeline.compact {
+  margin: 12px 0;
+}
+
+.thinking-timeline .ant-timeline-item {
+  padding-bottom: 16px;
+}
+
+.thinking-timeline.compact .ant-timeline-item {
+  padding-bottom: 12px;
+}
+
+/* 思维链步骤图标样式 */
+.thinking-step-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 思维链步骤内容样式 */
+.thinking-step-content {
+  margin-left: 16px;
+  margin-top: -4px;
+}
+
+.thinking-step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.thinking-step-tag {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 0;
+}
+
+.thinking-step-time {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+}
+
+.thinking-step-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #595959;
+  margin: 0;
+}
+
+/* 最终答案卡片样式 */
+.thinking-final-answer {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+}
+
+.thinking-final-answer .ant-card-body {
+  padding: 12px;
+}
+
+/* 紧凑模式样式调整 */
+.thinking-chain-container.compact .thinking-stats {
+  padding: 8px;
+  gap: 12px;
+}
+
+.thinking-chain-container.compact .thinking-step-content {
+  margin-left: 12px;
+}
+
+.thinking-chain-container.compact .thinking-step-text {
+  font-size: 12px;
+}
+
+.thinking-chain-container.compact .thinking-prompt-card .ant-card-body,
+.thinking-chain-container.compact .thinking-final-answer .ant-card-body {
+  padding: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .thinking-stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .thinking-stats-tags {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+  
+  .thinking-step-content {
+    margin-left: 8px;
+  }
+  
+  .thinking-step-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* 动画效果 */
+.thinking-collapse .ant-collapse-content {
+  transition: all 0.3s ease;
+}
+
+.thinking-step-icon {
+  transition: transform 0.2s ease;
+}
+
+.thinking-step-icon:hover {
+  transform: scale(1.1);
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .thinking-chain-container {
+    background: #1f1f1f;
+    border-color: #303030;
+  }
+  
+  .thinking-collapse .ant-collapse-header:hover {
+    background: #262626;
+  }
+  
+  .thinking-stats {
+    background: #262626;
+    border-color: #303030;
+  }
+  
+  .thinking-prompt-card {
+    background: #111b26;
+    border-color: #1668dc;
+  }
+  
+  .thinking-final-answer {
+    background: #162312;
+    border-color: #389e0d;
+  }
+  
+  .thinking-step-text {
+    color: #d9d9d9;
+  }
+}

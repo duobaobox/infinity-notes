@@ -429,10 +429,19 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
               // 🔧 修复：保持临时便签的颜色，不使用AI返回的颜色
               // 这样确保生成过程中和最终的便签颜色保持一致
-              await updateStickyNote(addedNote.id, {
+              // 新增：同时更新思维链数据
+              const updateData: any = {
                 color: tempNote.color, // 保持临时便签的颜色
                 updatedAt: new Date(),
-              });
+              };
+
+              // 如果有思维链数据，添加到更新中
+              if (noteData.thinkingChain) {
+                updateData.thinkingChain = noteData.thinkingChain;
+                updateData.hasThinking = true;
+              }
+
+              await updateStickyNote(addedNote.id, updateData);
             },
             onAllComplete: (notes) => {
               message.success(`AI生成完成！共创建 ${notes.length} 个便签`);

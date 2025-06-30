@@ -129,6 +129,52 @@ export const useAISettings = (): UseAISettingsReturn => {
     }
   }, [config]);
 
+  // 测试思维链功能
+  const testThinkingChain = useCallback(async (): Promise<{
+    success: boolean;
+    hasThinking?: boolean;
+    thinkingSteps?: number;
+    error?: string;
+  }> => {
+    if (!config.apiKey || !config.apiUrl || !config.aiModel) {
+      const error = "配置信息不完整，请先完善AI配置";
+      handleAIError(new Error(error), "思维链测试");
+      return { success: false, error };
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const aiService = getAIService(config);
+      const result = await aiService.testThinkingChain();
+
+      if (result.success) {
+        if (result.hasThinking) {
+          showAISuccess(
+            `思维链功能正常！检测到 ${result.thinkingSteps} 个思考步骤`
+          );
+        } else {
+          showAISuccess("连接正常，但当前AI模型不支持思维链功能");
+        }
+      } else {
+        const errorMessage = result.error || "思维链测试失败";
+        setError(errorMessage);
+        handleAIError(new Error(errorMessage), "思维链测试");
+      }
+
+      return result;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "思维链测试失败";
+      setError(errorMessage);
+      handleAIError(err, "思维链测试");
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
   // 清除配置
   const clearConfig = useCallback(async () => {
     setLoading(true);
@@ -179,6 +225,7 @@ export const useAISettings = (): UseAISettingsReturn => {
     saveConfig,
     loadConfig,
     testConnection,
+    testThinkingChain,
     hasValidConfig,
     clearConfig,
   };

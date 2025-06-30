@@ -8,6 +8,25 @@ export interface SourceNoteContent {
   deletedAt: Date; // 便签被删除的时间（替换时间）
 }
 
+// AI思维链步骤类型定义
+export interface ThinkingStep {
+  id: string; // 步骤唯一标识
+  content: string; // 思考内容
+  stepType: "analysis" | "reasoning" | "conclusion" | "question" | "idea"; // 思考步骤类型
+  timestamp: Date; // 思考时间戳
+  order: number; // 步骤顺序
+}
+
+// AI思维链数据类型定义
+export interface ThinkingChain {
+  id: string; // 思维链唯一标识
+  prompt: string; // 原始提示词
+  steps: ThinkingStep[]; // 思考步骤列表
+  finalAnswer: string; // 最终答案/结论
+  totalThinkingTime: number; // 总思考时间（毫秒）
+  createdAt: Date; // 创建时间
+}
+
 // 便签数据类型定义
 export interface StickyNote {
   id: string;
@@ -32,6 +51,9 @@ export interface StickyNote {
   // 替换模式溯源相关属性
   sourceNotesContent?: SourceNoteContent[]; // 替换模式下保存的原始便签内容，用于溯源查看
   generationMode?: "summary" | "replace"; // 便签生成模式：汇总模式或替换模式
+  // AI思维链相关属性（新增）
+  thinkingChain?: ThinkingChain; // AI生成时的思维链数据，可选字段确保向后兼容
+  hasThinking?: boolean; // 是否包含思维链数据，用于快速判断和UI显示
 }
 
 // 便签属性接口
