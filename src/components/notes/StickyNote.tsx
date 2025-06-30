@@ -650,6 +650,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           const newHeight = Math.max(150, resizeStart.height + deltaY);
 
           setTempSize({ width: newWidth, height: newHeight });
+          // 调整大小时也需要更新连接线位置，因为连接点位置会改变
+          throttledNoteConnectionUpdate();
         });
       }
     };
@@ -748,8 +750,21 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       note.height === tempSize.height
     ) {
       setIsSyncingSize(false);
+      // 调整大小结束后立即更新连接线位置，确保连接点位置准确
+      // 因为连接点位置相对于便签左下角，大小改变会影响连接点的绝对位置
+      requestAnimationFrame(() => {
+        updateNoteConnectionLinesImmediate(note.id);
+      });
     }
-  }, [note.width, note.height, tempSize.width, tempSize.height, isSyncingSize]);
+  }, [
+    note.width,
+    note.height,
+    tempSize.width,
+    tempSize.height,
+    isSyncingSize,
+    note.id,
+    updateNoteConnectionLinesImmediate,
+  ]);
 
   // 同步外部状态到本地状态
   useEffect(() => {
