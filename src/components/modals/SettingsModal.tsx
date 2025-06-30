@@ -7,6 +7,7 @@ import {
   InfoCircleOutlined,
   RobotOutlined,
   SafetyOutlined,
+  SettingOutlined,
   SkinOutlined,
   UploadOutlined,
   UserOutlined,
@@ -212,8 +213,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [exportLoading, setExportLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
 
-  // 使用UIStore获取和设置外观设置
-  const { appearance, setAppearance, applyPresetTheme } = useUIStore();
+  // 使用UIStore获取和设置外观设置和基础设置
+  const {
+    appearance,
+    setAppearance,
+    applyPresetTheme,
+    basicSettings,
+    setBasicSettings,
+    toggleThinkingMode,
+  } = useUIStore();
 
   // 使用UserStore获取和设置用户信息
   const {
@@ -1241,6 +1249,78 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
               </Card>
             </Spin>
+          </div>
+        ),
+      },
+      {
+        key: "basic",
+        label: (
+          <span>
+            <SettingOutlined />
+            基础设置
+          </span>
+        ),
+        children: (
+          <div className="settings-modal-content">
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                ⚙️ 基础设置
+              </Title>
+              <Text
+                type="secondary"
+                style={{ display: "block", marginBottom: 16 }}
+              >
+                配置应用的基础功能选项，个性化您的使用体验
+              </Text>
+
+              {/* 思维模式显示开关 */}
+              <div style={{ marginBottom: 24 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div>
+                    <Text strong>显示思维模式</Text>
+                    <div
+                      style={{ fontSize: "12px", color: "#666", marginTop: 2 }}
+                    >
+                      开启后，AI生成便签时会显示思考过程
+                    </div>
+                  </div>
+                  <Switch
+                    checked={basicSettings.showThinkingMode}
+                    onChange={(checked) =>
+                      setBasicSettings({ showThinkingMode: checked })
+                    }
+                    checkedChildren="开启"
+                    unCheckedChildren="关闭"
+                  />
+                </div>
+                <Text type="secondary" style={{ fontSize: "12px" }}>
+                  {basicSettings.showThinkingMode
+                    ? "✅ 便签中将显示AI的思考过程，帮助您了解AI的推理逻辑"
+                    : "❌ 便签中只显示最终结果，不显示思考过程"}
+                </Text>
+              </div>
+
+              <Divider />
+
+              {/* 预留其他基础设置 */}
+              <div
+                style={{
+                  padding: "16px",
+                  background: "#f5f5f5",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                }}
+              >
+                <Text type="secondary">更多基础设置功能正在开发中...</Text>
+              </div>
+            </Card>
           </div>
         ),
       },

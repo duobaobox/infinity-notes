@@ -21,12 +21,21 @@ export interface UILayoutSettings {
   toolbarVisible: boolean;
 }
 
+// 基础设置接口
+export interface BasicSettings {
+  showThinkingMode: boolean; // 是否显示思维模式
+}
+
 // 定义存储在 IndexedDB 中的 UI 设置结构
 interface StoredUISettings {
   id: string;
   user_id: string;
-  setting_type: "theme" | "appearance" | "layout";
-  settings: ThemeSettings | AppearanceSettings | UILayoutSettings;
+  setting_type: "theme" | "appearance" | "layout" | "basic";
+  settings:
+    | ThemeSettings
+    | AppearanceSettings
+    | UILayoutSettings
+    | BasicSettings;
   updated_at: string;
 }
 
@@ -181,6 +190,56 @@ export class IndexedDBUISettingsStorage {
       return null;
     } catch (error) {
       console.error("加载UI布局设置失败:", error);
+      return null;
+    }
+  }
+
+  // 保存基础设置
+  static async saveBasicSettings(settings: BasicSettings): Promise<void> {
+    console.log("💾 IndexedDBUISettingsStorage: 保存基础设置", settings);
+
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const settingsToSave: StoredUISettings = {
+        id: "ui-basic",
+        user_id: this.DEFAULT_USER_ID,
+        setting_type: "basic",
+        settings,
+        updated_at: new Date().toISOString(),
+      };
+
+      await db.putItem("ui_settings", settingsToSave);
+      console.log("💾 IndexedDBUISettingsStorage: 基础设置保存成功");
+    } catch (error) {
+      console.error("保存基础设置失败:", error);
+      throw new Error("保存基础设置失败");
+    }
+  }
+
+  // 加载基础设置
+  static async loadBasicSettings(): Promise<BasicSettings | null> {
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const result = await db.getItem<StoredUISettings>(
+        "ui_settings",
+        "ui-basic"
+      );
+
+      if (result && result.setting_type === "basic") {
+        console.log(
+          "💾 IndexedDBUISettingsStorage: 基础设置加载成功",
+          result.settings
+        );
+        return result.settings as BasicSettings;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("加载基础设置失败:", error);
       return null;
     }
   }

@@ -213,7 +213,8 @@ export class AIService {
   // 真实流式生成便签内容 - 实时显示版本
   async generateStickyNotesStreaming(
     prompt: string,
-    callbacks: StreamingCallbacks
+    callbacks: StreamingCallbacks,
+    options?: { showThinkingMode?: boolean } // 新增：选项参数
   ): Promise<{
     success: boolean;
     notes?: StickyNoteData[];
@@ -327,7 +328,9 @@ export class AIService {
       // 思考过程状态管理
       let thinkingContent = ""; // 存储思考过程内容
       let hasStartedThinking = false; // 是否已开始显示思考过程
+      let hasFinishedThinking = false; // 是否已完成思考过程
       let displayedContent = ""; // 当前显示的完整内容（思考过程 + 答案）
+      const showThinkingMode = options?.showThinkingMode ?? true; // 获取思维模式设置
 
       try {
         // 先创建第一个便签开始流式显示
@@ -371,12 +374,11 @@ export class AIService {
                     currentNoteContent += content;
 
                     if (isStreamingNote) {
-                      // 如果有思考过程，需要在思考过程后显示答案
-                      if (hasStartedThinking) {
-                        // 如果还没有添加分隔线，先添加
-                        if (
-                          !displayedContent.includes("---\n\n## ✨ 最终答案")
-                        ) {
+                      // 如果开启了思维模式且有思考过程，需要在思考过程后显示答案
+                      if (showThinkingMode && hasStartedThinking) {
+                        // 如果还没有添加分隔线，说明思考刚完成，添加分隔线
+                        if (!hasFinishedThinking) {
+                          hasFinishedThinking = true;
                           const separator = "\n\n---\n\n## ✨ 最终答案\n\n";
                           displayedContent += separator;
                           callbacks.onContentChunk?.(
@@ -394,7 +396,7 @@ export class AIService {
                           displayedContent
                         );
                       } else {
-                        // 没有思考过程，直接显示内容
+                        // 没有思考过程或关闭了思维模式，直接显示内容
                         displayedContent += content;
                         callbacks.onContentChunk?.(
                           currentNoteIndex,
@@ -406,7 +408,7 @@ export class AIService {
                   }
                 }
 
-                // 如果有reasoning_content，实时显示思维链内容
+                // 如果有reasoning_content，根据思维模式设置决定是否显示
                 if (reasoningContent) {
                   console.log(
                     "🧠 检测到DeepSeek reasoning_content，长度:",
@@ -431,30 +433,30 @@ export class AIService {
                     }
                   }
 
-                  // 实时显示思考过程
-                  thinkingContent += reasoningContent;
+                  // 只有在开启思维模式时才实时流式显示思考过程
+                  if (showThinkingMode) {
+                    thinkingContent += reasoningContent;
 
-                  if (!hasStartedThinking && isStreamingNote) {
-                    // 第一次检测到思考内容，显示思考标题
-                    hasStartedThinking = true;
-                    displayedContent = "## 🤔 AI思考过程\n\n";
-                    callbacks.onContentChunk?.(
-                      currentNoteIndex,
-                      displayedContent,
-                      displayedContent
-                    );
-                  }
+                    if (!hasStartedThinking && isStreamingNote) {
+                      // 第一次检测到思考内容，显示思考标题
+                      hasStartedThinking = true;
+                      displayedContent = "## 🤔 AI思考过程\n\n";
+                      callbacks.onContentChunk?.(
+                        currentNoteIndex,
+                        displayedContent,
+                        displayedContent
+                      );
+                    }
 
-                  if (isStreamingNote) {
-                    // 实时更新思考内容
-                    const formattedThinking = `💭 ${reasoningContent}`;
-                    displayedContent += formattedThinking;
-
-                    callbacks.onContentChunk?.(
-                      currentNoteIndex,
-                      formattedThinking,
-                      displayedContent
-                    );
+                    if (isStreamingNote && hasStartedThinking) {
+                      // 实时追加思考内容，保持自然的流式体验
+                      displayedContent += reasoningContent;
+                      callbacks.onContentChunk?.(
+                        currentNoteIndex,
+                        reasoningContent,
+                        displayedContent
+                      );
+                    }
                   }
                 }
               } catch (parseError) {
@@ -476,7 +478,8 @@ export class AIService {
         // 先尝试JSON解析，失败则使用自然语言解析
         const finalNotes = this.parseResponseIntelligently(
           fullResponse,
-          prompt
+          prompt,
+          showThinkingMode
         );
 
         if (finalNotes.success && finalNotes.notes) {
@@ -595,7 +598,8 @@ export class AIService {
   // 智能解析AI回复的方法
   private parseResponseIntelligently(
     aiResponse: string,
-    originalPrompt: string = ""
+    originalPrompt: string = "",
+    showThinkingMode: boolean = true
   ): {
     success: boolean;
     notes?: StickyNoteData[];
@@ -664,7 +668,11 @@ export class AIService {
       // 使用自然语言解析（现在是主要方式）
       // 解析思维链内容
       const { thinkingChain, cleanContent, contentWithThinking } =
-        this.parseThinkingChain(cleanResponse, originalPrompt);
+        this.parseThinkingChain(
+          cleanResponse,
+          originalPrompt,
+          showThinkingMode
+        );
 
       const note: StickyNoteData = {
         title: this.generateTitleFromContent(cleanContent),
@@ -714,13 +722,28 @@ export class AIService {
   // 解析AI响应中的思维链内容并格式化为Markdown
   private parseThinkingChain(
     response: string,
-    originalPrompt: string
+    originalPrompt: string,
+    showThinkingMode: boolean = true // 新增：是否显示思维模式的参数
   ): {
     thinkingChain?: StickyNoteData["thinkingChain"];
     cleanContent: string;
     contentWithThinking: string; // 新增：包含思维链的完整内容
   } {
     try {
+      // 如果不显示思维模式，直接返回清理后的内容
+      if (!showThinkingMode) {
+        // 移除思维链标记，只保留最终内容
+        let cleanContent = response
+          .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
+          .trim();
+
+        return {
+          cleanContent,
+          contentWithThinking: cleanContent,
+        };
+      }
+
       // 检查响应中是否包含思维链标记
       // 支持多种格式：<thinking>、<think>（DeepSeek格式）
       const thinkingPatterns = [
@@ -994,7 +1017,11 @@ export class AIService {
       });
 
       // 解析思维链内容
-      const { thinkingChain } = this.parseThinkingChain(aiResponse, testPrompt);
+      const { thinkingChain } = this.parseThinkingChain(
+        aiResponse,
+        testPrompt,
+        true
+      );
 
       // 如果有reasoning_content但没有解析到思维链，说明是DeepSeek格式
       if (!thinkingChain && reasoningContent) {

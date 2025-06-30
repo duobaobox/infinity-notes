@@ -24,6 +24,11 @@ export interface AppearanceState {
   gridMajorColor: string;
 }
 
+// 基础设置状态接口
+export interface BasicSettingsState {
+  showThinkingMode: boolean; // 是否显示思维模式
+}
+
 // UI状态接口
 export interface UIState {
   // 模态框状态
@@ -34,6 +39,9 @@ export interface UIState {
 
   // 外观设置状态
   appearance: AppearanceState;
+
+  // 基础设置状态
+  basicSettings: BasicSettingsState;
 
   // 侧边栏状态
   sidebarCollapsed: boolean;
@@ -68,6 +76,10 @@ export interface UIActions {
   setGridSize: (size: number) => void;
 
   applyPresetTheme: (themeId: string) => void;
+
+  // 基础设置操作
+  setBasicSettings: (settings: Partial<BasicSettingsState>) => void;
+  toggleThinkingMode: () => void;
 
   // 侧边栏操作
   toggleSidebar: () => void;
@@ -221,6 +233,9 @@ export const useUIStore = create<UIState & UIActions>()(
         gridSize: 10,
         gridColor: "#f5f2ea",
         gridMajorColor: "#ece7db",
+      },
+      basicSettings: {
+        showThinkingMode: true, // 默认开启思维模式显示
       },
 
       sidebarCollapsed: true, // 默认折叠，将从持久化存储中加载
@@ -390,6 +405,30 @@ export const useUIStore = create<UIState & UIActions>()(
         }
       },
 
+      // 基础设置操作
+      setBasicSettings: (settings) => {
+        set((state) => ({
+          basicSettings: { ...state.basicSettings, ...settings },
+        }));
+
+        // 保存到IndexedDB
+        if (typeof window !== "undefined") {
+          const currentBasicSettings = get().basicSettings;
+          IndexedDBUISettingsStorage.saveBasicSettings(
+            currentBasicSettings
+          ).catch((error) => {
+            console.error("保存基础设置失败:", error);
+          });
+        }
+      },
+
+      toggleThinkingMode: () => {
+        const currentSettings = get().basicSettings;
+        get().setBasicSettings({
+          showThinkingMode: !currentSettings.showThinkingMode,
+        });
+      },
+
       // 侧边栏操作
       toggleSidebar: () => {
         set((state) => ({
@@ -480,6 +519,19 @@ export const useUIStore = create<UIState & UIActions>()(
                 toolbarVisible: savedLayout.toolbarVisible,
               }));
               console.log("✅ UI布局设置加载成功:", savedLayout);
+            }
+
+            // 从IndexedDB加载基础设置
+            const savedBasicSettings =
+              await IndexedDBUISettingsStorage.loadBasicSettings();
+            if (savedBasicSettings) {
+              set((state) => ({
+                basicSettings: {
+                  ...state.basicSettings,
+                  ...savedBasicSettings,
+                },
+              }));
+              console.log("✅ 基础设置加载成功:", savedBasicSettings);
             }
 
             // 应用外观设置到DOM

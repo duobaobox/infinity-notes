@@ -149,6 +149,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     modals: { settingsModalOpen, settingsDefaultTab },
     openSettingsModal,
     closeSettingsModal,
+    basicSettings,
   } = useUIStore();
 
   // 全局状态管理 - 连接状态
@@ -455,6 +456,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               // 删除临时便签
               deleteNote(addedNote.id);
             },
+          },
+          {
+            showThinkingMode: basicSettings.showThinkingMode, // 传入基础设置
           }
         );
 
@@ -487,6 +491,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       connectedNotes,
       connectionMode,
       clearAllConnections,
+      basicSettings.showThinkingMode,
     ]
   );
 
