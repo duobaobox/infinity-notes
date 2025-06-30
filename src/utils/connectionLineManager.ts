@@ -1,6 +1,6 @@
 // 连接线管理器 - 使用Leader Line实现便签到插槽的连接线
-import type { StickyNote } from "../components/types";
 import { PERFORMANCE_CONSTANTS } from "../components/canvas/CanvasConstants";
+import type { StickyNote } from "../components/types";
 
 // Leader Line类型定义
 interface LeaderLineOptions {
@@ -451,7 +451,13 @@ class ConnectionLineManager {
     // 检查该便签是否有连接线
     let hasConnection = false;
     for (const connection of this.connections.values()) {
+      // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
       if (connection.noteId === noteId) {
+        hasConnection = true;
+        break;
+      }
+      // 检查以该便签为终点的溯源连接线（目标便签）
+      if (connection.type === "source" && connection.targetNoteId === noteId) {
         hasConnection = true;
         break;
       }
@@ -483,17 +489,52 @@ class ConnectionLineManager {
       // 检查该便签是否有连接线
       let hasConnection = false;
       const connectionsToUpdate: ConnectionLine[] = [];
+      let normalConnections = 0;
+      let sourceConnections = 0;
 
       for (const connection of this.connections.values()) {
+        // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
         if (connection.noteId === noteId) {
           hasConnection = true;
           connectionsToUpdate.push(connection);
+          if (connection.type === "normal") {
+            normalConnections++;
+          } else if (connection.type === "source") {
+            sourceConnections++;
+          }
+        }
+        // 检查以该便签为终点的溯源连接线（目标便签）
+        else if (
+          connection.type === "source" &&
+          connection.targetNoteId === noteId
+        ) {
+          hasConnection = true;
+          connectionsToUpdate.push(connection);
+          sourceConnections++;
         }
       }
 
       // 如果该便签没有连接线，直接返回
       if (!hasConnection) {
         return;
+      }
+
+      // 输出调试信息（仅在有溯源连接线时）
+      if (sourceConnections > 0) {
+        console.log(
+          `🔄 更新便签 ${noteId} 的连接线: ${normalConnections} 个普通连接线, ${sourceConnections} 个溯源连接线`
+        );
+      }
+
+      // 强制DOM重新计算布局，确保连接点位置是最新的
+      // 这对于拖拽时的实时更新非常重要
+      for (const connection of connectionsToUpdate) {
+        // 强制重新计算连接点的位置 - 多次调用确保位置准确
+        connection.startElement.getBoundingClientRect();
+        connection.endElement.getBoundingClientRect();
+        // 强制触发重排，确保位置计算准确
+        connection.startElement.offsetTop;
+        connection.endElement.offsetTop;
       }
 
       // 批量更新连接线位置
@@ -535,7 +576,15 @@ class ConnectionLineManager {
         // 批量更新所有待更新的便签连接线
         for (const noteId of this.pendingUpdates) {
           for (const connection of this.connections.values()) {
+            // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
             if (connection.noteId === noteId) {
+              connection.line.position();
+            }
+            // 检查以该便签为终点的溯源连接线（目标便签）
+            else if (
+              connection.type === "source" &&
+              connection.targetNoteId === noteId
+            ) {
               connection.line.position();
             }
           }
@@ -557,7 +606,12 @@ class ConnectionLineManager {
   // 检查便签是否有连接线
   hasConnection(noteId: string): boolean {
     for (const connection of this.connections.values()) {
+      // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
       if (connection.noteId === noteId) {
+        return true;
+      }
+      // 检查以该便签为终点的溯源连接线（目标便签）
+      if (connection.type === "source" && connection.targetNoteId === noteId) {
         return true;
       }
     }
@@ -568,7 +622,15 @@ class ConnectionLineManager {
   getNoteConnectionCount(noteId: string): number {
     let count = 0;
     for (const connection of this.connections.values()) {
+      // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
       if (connection.noteId === noteId) {
+        count++;
+      }
+      // 检查以该便签为终点的溯源连接线（目标便签）
+      else if (
+        connection.type === "source" &&
+        connection.targetNoteId === noteId
+      ) {
         count++;
       }
     }

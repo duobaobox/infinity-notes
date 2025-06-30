@@ -604,11 +604,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note.width, note.height, canvasScale]
   );
 
-  // 节流的连接线更新
+  // 节流的连接线更新 - 使用双重 requestAnimationFrame 确保DOM完全更新
   const throttledNoteConnectionUpdate = useMemo(
     () =>
       throttle(() => {
-        updateNoteConnectionLinesImmediate(note.id);
+        // 使用双重 requestAnimationFrame 确保DOM位置完全更新完成后再更新连接线
+        // 第一个 RAF 确保样式更新完成，第二个 RAF 确保布局计算完成
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            updateNoteConnectionLinesImmediate(note.id);
+          });
+        });
       }, 16),
     [updateNoteConnectionLinesImmediate, note.id]
   );
@@ -720,7 +726,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       note.y === tempPosition.y
     ) {
       setIsSyncingPosition(false);
-      updateNoteConnectionLines(note.id);
+      // 拖拽结束后立即更新连接线位置，确保最终位置准确
+      // 使用双重 requestAnimationFrame 确保DOM完全更新后再更新连接线
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          updateNoteConnectionLinesImmediate(note.id);
+        });
+      });
     }
   }, [
     note.x,
@@ -729,7 +741,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempPosition.y,
     isSyncingPosition,
     note.id,
-    updateNoteConnectionLines,
+    updateNoteConnectionLinesImmediate,
   ]);
 
   // 处理尺寸同步
