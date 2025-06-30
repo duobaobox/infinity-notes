@@ -99,10 +99,10 @@ const DEFAULT_AI_PROVIDERS = [
   {
     id: "alibaba",
     name: "Alibaba",
-    displayName: "通义千问",
+    displayName: "阿里云百炼",
     logo: "☁️",
     apiUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    description: "阿里云智能大模型",
+    description: "阿里云百炼智能大模型",
     models: [
       { name: "qwen-turbo", displayName: "通义千问 Turbo" },
       { name: "qwen-plus", displayName: "通义千问 Plus" },
@@ -1306,9 +1306,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             marginTop: "2px",
                           }}
                         >
-                          {getCurrentProvider()?.id === "custom"
-                            ? `自定义API: ${aiConfig.apiUrl}`
-                            : `模型: ${aiConfig.aiModel}`}
+                          模型: {aiConfig.aiModel}
                         </div>
                       </div>
                     </div>

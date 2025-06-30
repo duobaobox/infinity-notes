@@ -151,10 +151,10 @@ export const AI_PROVIDERS: AIProvider[] = [
   {
     id: "alibaba",
     name: "Alibaba",
-    displayName: "阿里云",
+    displayName: "阿里云百炼",
     logo: "☁️",
     apiUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    description: "阿里云通义千问系列模型，中文理解能力强",
+    description: "阿里云百炼通义千问系列模型，中文理解能力强",
     website: "https://tongyi.aliyun.com",
     docUrl: "https://help.aliyun.com/zh/dashscope",
     popular: true,
