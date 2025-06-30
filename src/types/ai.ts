@@ -4,7 +4,11 @@ import type { AIConfig } from "../services/ai/aiService";
 // AI配置更新事件详情
 export interface AIConfigUpdateEvent {
   config: AIConfig;
-  source: 'ai-settings' | 'prompt-settings' | 'ai-store-config' | 'ai-store-prompt';
+  source:
+    | "ai-settings"
+    | "prompt-settings"
+    | "ai-store-config"
+    | "ai-store-prompt";
 }
 
 // AI设置Hook返回类型
