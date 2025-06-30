@@ -476,11 +476,11 @@ class ConnectionLineManager {
       return;
     }
 
-    // 节流处理，避免频繁更新
+    // 节流处理，避免频繁更新 - 使用与便签拖拽相同的频率
     this.updateThrottleTimeout = setTimeout(() => {
       this.performNoteConnectionUpdate();
       this.updateThrottleTimeout = null;
-    }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_THROTTLE_MS);
+    }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS); // 改为16ms，与便签拖拽同步
   }
 
   // 立即更新特定便签的连接线位置 - 用于拖动时的实时同步
@@ -522,19 +522,28 @@ class ConnectionLineManager {
       // 输出调试信息（仅在有溯源连接线时）
       if (sourceConnections > 0) {
         console.log(
-          `🔄 更新便签 ${noteId} 的连接线: ${normalConnections} 个普通连接线, ${sourceConnections} 个溯源连接线`
+          `🔄 立即更新便签 ${noteId} 的连接线: ${normalConnections} 个普通连接线, ${sourceConnections} 个溯源连接线`
         );
       }
 
       // 强制DOM重新计算布局，确保连接点位置是最新的
       // 这对于拖拽时的实时更新非常重要
+      // 使用更强制的方式确保DOM位置同步
       for (const connection of connectionsToUpdate) {
-        // 强制重新计算连接点的位置 - 多次调用确保位置准确
+        // 强制触发重排和重绘，确保CSS left/top属性已应用
+        // 这是关键：便签使用left/top定位，需要强制浏览器应用这些样式
+        connection.startElement.offsetHeight; // 强制重排
+        connection.endElement.offsetHeight; // 强制重排
+
+        // 强制重新计算连接点的位置 - 确保获取到最新的left/top位置
         connection.startElement.getBoundingClientRect();
         connection.endElement.getBoundingClientRect();
-        // 强制触发重排，确保位置计算准确
+
+        // 再次强制重排，确保位置计算准确
         connection.startElement.offsetTop;
         connection.endElement.offsetTop;
+        connection.startElement.offsetLeft;
+        connection.endElement.offsetLeft;
       }
 
       // 批量更新连接线位置
@@ -574,21 +583,46 @@ class ConnectionLineManager {
     this.rafId = requestAnimationFrame(() => {
       try {
         // 批量更新所有待更新的便签连接线
+        const connectionsToUpdate: ConnectionLine[] = [];
+
         for (const noteId of this.pendingUpdates) {
           for (const connection of this.connections.values()) {
             // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
             if (connection.noteId === noteId) {
-              connection.line.position();
+              connectionsToUpdate.push(connection);
             }
             // 检查以该便签为终点的溯源连接线（目标便签）
             else if (
               connection.type === "source" &&
               connection.targetNoteId === noteId
             ) {
-              connection.line.position();
+              connectionsToUpdate.push(connection);
             }
           }
         }
+
+        // 强制DOM位置刷新，确保连接线获取到最新位置
+        for (const connection of connectionsToUpdate) {
+          // 强制重排，确保CSS left/top属性已应用
+          connection.startElement.offsetHeight;
+          connection.endElement.offsetHeight;
+
+          // 获取最新位置
+          connection.startElement.getBoundingClientRect();
+          connection.endElement.getBoundingClientRect();
+
+          // 再次强制重排确保位置准确
+          connection.startElement.offsetTop;
+          connection.endElement.offsetTop;
+          connection.startElement.offsetLeft;
+          connection.endElement.offsetLeft;
+        }
+
+        // 批量更新连接线位置
+        for (const connection of connectionsToUpdate) {
+          connection.line.position();
+        }
+
         // 清空待更新列表
         this.pendingUpdates.clear();
       } catch (error) {
