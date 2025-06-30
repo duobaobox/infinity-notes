@@ -1,14 +1,20 @@
 import {
+  BgColorsOutlined,
+  BulbOutlined,
   DatabaseOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
   FileTextOutlined,
+  GlobalOutlined,
   HddOutlined,
   InfoCircleOutlined,
   RobotOutlined,
   SafetyOutlined,
   SettingOutlined,
   SkinOutlined,
+  TeamOutlined,
   UploadOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -89,7 +95,7 @@ const DEFAULT_AI_PROVIDERS = [
     id: "deepseek",
     name: "DeepSeek",
     displayName: "DeepSeek",
-    logo: "🔍",
+    logo: <DatabaseOutlined />,
     apiUrl: "https://api.deepseek.com/v1",
     description: "高性价比推理模型",
     models: [
@@ -101,7 +107,7 @@ const DEFAULT_AI_PROVIDERS = [
     id: "alibaba",
     name: "Alibaba",
     displayName: "阿里云百炼",
-    logo: "☁️",
+    logo: <BgColorsOutlined />,
     apiUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     description: "阿里云百炼智能大模型",
     models: [
@@ -114,7 +120,7 @@ const DEFAULT_AI_PROVIDERS = [
     id: "siliconflow",
     name: "SiliconFlow",
     displayName: "硅基流动",
-    logo: "⚡",
+    logo: <BulbOutlined />,
     apiUrl: "https://api.siliconflow.cn/v1",
     description: "高速AI推理平台",
     models: [
@@ -130,7 +136,7 @@ const DEFAULT_AI_PROVIDERS = [
     id: "openai",
     name: "OpenAI",
     displayName: "OpenAI",
-    logo: "🤖",
+    logo: <RobotOutlined />,
     apiUrl: "https://api.openai.com/v1",
     description: "GPT系列模型创造者",
     models: [
@@ -471,7 +477,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     return {
       id: "custom",
       name: "自定义提示词",
-      icon: "✏️",
+      icon: "EditOutlined",
       description: "用户自定义的AI角色设定",
       prompt: currentPrompt,
       category: "custom",
@@ -1019,7 +1025,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             >
               <Card size="small" style={{ marginBottom: 16 }}>
                 <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  👤 个人信息
+                  <UserOutlined style={{ marginRight: 8 }} />
+                  个人信息
                 </Title>
                 <Text
                   type="secondary"
@@ -1146,7 +1153,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* 预制主题选择器 */}
               <Card size="small" style={{ marginBottom: 16 }}>
                 <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  🎨 选择预制主题
+                  <BgColorsOutlined style={{ marginRight: 8 }} />
+                  选择预制主题
                 </Title>
                 <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
                   {PRESET_THEMES.map((theme) => {
@@ -1207,6 +1215,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <Card size="small" style={{ marginBottom: 16 }}>
                 <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  <BgColorsOutlined style={{ marginRight: 8 }} />
                   画布设置
                 </Title>
                 <Form.Item label="画布背景色" name="canvasBackground">
@@ -1285,7 +1294,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* 便签默认尺寸设置 */}
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                📝 便签默认尺寸
+                <SettingOutlined style={{ marginRight: 8 }} />
+                便签默认尺寸
               </Title>
 
               <Form
@@ -1374,7 +1384,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </Form>
 
               <Text type="secondary" style={{ fontSize: "12px" }}>
-                💡 设置新建便签时的默认尺寸，可以根据使用习惯调整
+                <BulbOutlined style={{ marginRight: 4 }} />
+                设置新建便签时的默认尺寸，可以根据使用习惯调整
               </Text>
 
               {/* 设置变更状态提示 */}
@@ -1389,7 +1400,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   }}
                 >
                   <Text style={{ fontSize: "12px", color: "#d46b08" }}>
-                    ⚠️ 设置已修改，请点击"保存设置"按钮保存更改
+                    <ExclamationCircleOutlined style={{ marginRight: 4 }} />
+                    设置已修改，请点击"保存设置"按钮保存更改
                   </Text>
                 </div>
               )}
@@ -1474,6 +1486,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* 数据操作 */}
               <Card size="small" style={{ marginBottom: 16 }}>
                 <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                  <DatabaseOutlined style={{ marginRight: 8 }} />
                   数据操作
                 </Title>
                 <Space
@@ -1553,7 +1566,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* 思维模式设置 */}
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                🤖 思维模式设置
+                <RobotOutlined style={{ marginRight: 8 }} />
+                思维模式设置
               </Title>
 
               <Form
@@ -1595,7 +1609,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </Form>
 
               <Text type="secondary" style={{ fontSize: "12px" }}>
-                💡 控制AI生成便签时是否显示思考过程，帮助您了解AI的推理逻辑
+                <BulbOutlined style={{ marginRight: 4 }} />
+                控制AI生成便签时是否显示思考过程，帮助您了解AI的推理逻辑
               </Text>
 
               {/* 设置变更状态提示 */}
@@ -1610,7 +1625,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   }}
                 >
                   <Text style={{ fontSize: "12px", color: "#d46b08" }}>
-                    ⚠️ 设置已修改，请点击"保存设置"按钮保存更改
+                    <ExclamationCircleOutlined style={{ marginRight: 4 }} />
+                    设置已修改，请点击"保存设置"按钮保存更改
                   </Text>
                 </div>
               )}
@@ -1836,7 +1852,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={handleCustomSelect}
                       >
                         <div style={{ fontSize: "20px", marginBottom: "4px" }}>
-                          ⚙️
+                          <SettingOutlined />
                         </div>
                         <Text
                           strong
@@ -1881,6 +1897,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* AI配置详情卡片 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                    <SettingOutlined style={{ marginRight: 8 }} />
                     配置详情
                   </Title>
 
@@ -2010,6 +2027,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
+                    <SettingOutlined style={{ marginRight: 8 }} />
                     高级设置
                   </Title>
 
@@ -2150,7 +2168,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* AI提示词模板选择器 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                    🎭 选择AI角色模板
+                    <TeamOutlined style={{ marginRight: 8 }} />
+                    选择AI角色模板
                   </Title>
                   <AIPromptTemplateSelector
                     selectedTemplate={selectedTemplate || undefined}
@@ -2167,7 +2186,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 >
                   <Card size="small" style={{ marginBottom: 16 }}>
                     <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                      📝 AI角色设定
+                      <EditOutlined style={{ marginRight: 8 }} />
+                      AI角色设定
                     </Title>
 
                     <Form.Item
@@ -2237,11 +2257,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 <strong>核心功能:</strong>
               </p>
               <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-                <li>🎨 无限画布 - 自由创作空间</li>
-                <li>🤖 AI智能汇总 - 自动整理要点</li>
-                <li>🔗 可视化连接 - 构建知识网络</li>
-                <li>🎯 溯源追踪 - 了解想法演化</li>
-                <li>💾 本地存储 - 保护隐私安全</li>
+                <li>
+                  <BgColorsOutlined
+                    style={{ marginRight: 8, color: "#1890ff" }}
+                  />
+                  无限画布 - 自由创作空间
+                </li>
+                <li>
+                  <RobotOutlined style={{ marginRight: 8, color: "#52c41a" }} />
+                  AI智能汇总 - 自动整理要点
+                </li>
+                <li>
+                  <DatabaseOutlined
+                    style={{ marginRight: 8, color: "#722ed1" }}
+                  />
+                  可视化连接 - 构建知识网络
+                </li>
+                <li>
+                  <FileTextOutlined
+                    style={{ marginRight: 8, color: "#fa8c16" }}
+                  />
+                  溯源追踪 - 了解想法演化
+                </li>
+                <li>
+                  <SafetyOutlined
+                    style={{ marginRight: 8, color: "#13c2c2" }}
+                  />
+                  本地存储 - 保护隐私安全
+                </li>
               </ul>
               <Divider />
               <Space direction="vertical" style={{ width: "100%" }}>
@@ -2250,15 +2293,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   size="large"
                   onClick={() => window.open("./landing.html", "_blank")}
                   block
+                  icon={<GlobalOutlined />}
                 >
-                  🌐 访问官网了解更多
+                  访问官网了解更多
                 </Button>
                 <Button
                   type="default"
                   onClick={() => window.open("./app.html", "_blank")}
                   block
+                  icon={<GlobalOutlined />}
                 >
-                  🚀 在新窗口打开应用
+                  在新窗口打开应用
                 </Button>
               </Space>
               <Divider />

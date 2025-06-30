@@ -1,4 +1,12 @@
 // AI提示词模板选择组件
+import {
+  BookOutlined,
+  BulbOutlined,
+  CarryOutOutlined,
+  EditOutlined,
+  HomeOutlined,
+  MessageOutlined,
+} from "@ant-design/icons";
 import { Card, Col, Row, Typography } from "antd";
 import React from "react";
 import type { AIPromptTemplate } from "../../services/ai/aiService";
@@ -6,6 +14,19 @@ import { systemPromptTemplates } from "../../services/ai/aiService";
 import "./AIProviderSelector.css"; // 复用AI厂商选择器的样式
 
 const { Text, Title } = Typography;
+
+// 图标映射函数
+const getIconComponent = (iconName: string) => {
+  const iconMap: Record<string, React.ReactNode> = {
+    MessageOutlined: <MessageOutlined />,
+    EditOutlined: <EditOutlined />,
+    BriefcaseOutlined: <CarryOutOutlined />, // 使用CarryOutOutlined代替BriefcaseOutlined
+    BookOutlined: <BookOutlined />,
+    HomeOutlined: <HomeOutlined />,
+    BulbOutlined: <BulbOutlined />,
+  };
+  return iconMap[iconName] || <EditOutlined />; // 默认使用编辑图标
+};
 
 interface AIPromptTemplateSelectorProps {
   selectedTemplate?: AIPromptTemplate;
@@ -56,7 +77,7 @@ export const AIPromptTemplateSelector: React.FC<
                 }}
               >
                 <div style={{ fontSize: "20px", marginBottom: "8px" }}>
-                  {template.icon}
+                  {getIconComponent(template.icon || "EditOutlined")}
                 </div>
                 <Title
                   level={5}

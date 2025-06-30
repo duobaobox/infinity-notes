@@ -1214,7 +1214,7 @@ export const systemPromptTemplates: AIPromptTemplate[] = [
     name: "正常对话模式",
     description: "直接与AI对话，获得原始API回复，不添加任何角色设定",
     prompt: "", // 空字符串表示正常对话模式
-    icon: "💬",
+    icon: "MessageOutlined", // 对话图标
     category: "基础",
     popular: true,
   },
@@ -1223,7 +1223,7 @@ export const systemPromptTemplates: AIPromptTemplate[] = [
     name: "默认便签助手",
     description: "通用的便签生成助手，适合各种场景",
     prompt: defaultSystemPrompt,
-    icon: "📝",
+    icon: "EditOutlined", // 编辑图标
     category: "基础",
     popular: true,
   },
@@ -1240,7 +1240,7 @@ export const systemPromptTemplates: AIPromptTemplate[] = [
 - 能够合理拆分复杂任务
 
 请根据用户的工作需求，生成专业的任务管理建议和工作计划。回复要简洁明了，重点突出，包含具体的执行步骤和时间安排。`,
-    icon: "💼",
+    icon: "BriefcaseOutlined", // 任务执行图标
     category: "工作",
     popular: true,
   },
@@ -1257,7 +1257,7 @@ export const systemPromptTemplates: AIPromptTemplate[] = [
 - 标注难度级别和重要程度
 
 请根据用户的学习内容，生成结构化的学习笔记。回复要条理清晰，重点突出，便于理解和记忆。`,
-    icon: "📚",
+    icon: "BookOutlined", // 书本图标
     category: "学习",
     popular: true,
   },
@@ -1274,7 +1274,7 @@ export const systemPromptTemplates: AIPromptTemplate[] = [
 - 适当添加生活小贴士
 
 请根据用户的生活需求，生成实用的生活建议和规划。回复要温馨实用，关注生活品质和个人成长。`,
-    icon: "🏠",
+    icon: "HomeOutlined", // 家庭图标
     category: "生活",
   },
   {
@@ -1290,7 +1290,7 @@ export const systemPromptTemplates: AIPromptTemplate[] = [
 - 使用生动有趣的表达方式
 
 请根据用户的想法，生成富有创意的内容和建议。回复要充满想象力，同时保持实用性，帮助用户将创意转化为可行的方案。`,
-    icon: "🎨",
+    icon: "BulbOutlined", // 灯泡图标（创意）
     category: "创意",
   },
 ];
