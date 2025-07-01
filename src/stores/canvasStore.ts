@@ -1,7 +1,7 @@
 // 画布状态管理Store
-import { create } from 'zustand';
-import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import { CANVAS_CONSTANTS } from '../components/canvas/CanvasConstants';
+import { create } from "zustand";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
+import { CANVAS_CONSTANTS } from "../components/canvas/CanvasConstants";
 
 // 拖拽状态接口
 export interface DragState {
@@ -18,17 +18,17 @@ export interface CanvasState {
   scale: number;
   offsetX: number;
   offsetY: number;
-  
+
   // 拖拽状态
   dragState: DragState;
-  
+
   // 动画状态
   zoomAnimating: boolean;
-  
+
   // 画布配置
   minScale: number;
   maxScale: number;
-  
+
   // 网格显示
   showGrid: boolean;
   showAxis: boolean;
@@ -40,36 +40,50 @@ export interface CanvasActions {
   zoomIn: (centerX?: number, centerY?: number) => void;
   zoomOut: (centerX?: number, centerY?: number) => void;
   setScale: (scale: number, centerX?: number, centerY?: number) => void;
-  
+
   // 平移操作
   setOffset: (offsetX: number, offsetY: number) => void;
   panTo: (x: number, y: number) => void;
-  
+
   // 拖拽操作
   startDrag: (startX: number, startY: number) => void;
   updateDrag: (currentX: number, currentY: number) => void;
   endDrag: () => void;
-  
+
   // 重置操作
   resetView: () => void;
-  fitToContent: (notes: Array<{ x: number; y: number; width: number; height: number }>) => void;
-  
+  fitToContent: (
+    notes: Array<{ x: number; y: number; width: number; height: number }>
+  ) => void;
+
   // 坐标转换
-  screenToCanvas: (screenX: number, screenY: number) => { x: number; y: number };
-  canvasToScreen: (canvasX: number, canvasY: number) => { x: number; y: number };
-  
+  screenToCanvas: (
+    screenX: number,
+    screenY: number
+  ) => { x: number; y: number };
+  canvasToScreen: (
+    canvasX: number,
+    canvasY: number
+  ) => { x: number; y: number };
+
   // 动画控制
   setZoomAnimating: (animating: boolean) => void;
-  
+
   // 网格控制
   toggleGrid: () => void;
   toggleAxis: () => void;
-  
+
   // 获取画布中心点
   getCanvasCenter: () => { x: number; y: number };
+
+  // 定位到指定便签
+  centerOnNote: (
+    noteX: number,
+    noteY: number,
+    noteWidth: number,
+    noteHeight: number
+  ) => void;
 }
-
-
 
 // 创建画布Store
 export const useCanvasStore = create<CanvasState & CanvasActions>()(
@@ -95,21 +109,24 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       // 缩放操作
       zoomIn: (centerX = 0, centerY = 0) => {
         const { scale, offsetX, offsetY } = get();
-        const newScale = Math.min(scale + CANVAS_CONSTANTS.ZOOM_STEP, CANVAS_CONSTANTS.MAX_SCALE);
-        
+        const newScale = Math.min(
+          scale + CANVAS_CONSTANTS.ZOOM_STEP,
+          CANVAS_CONSTANTS.MAX_SCALE
+        );
+
         if (newScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
           const scaleFactor = newScale / scale;
           const newOffsetX = centerX - (centerX - offsetX) * scaleFactor;
           const newOffsetY = centerY - (centerY - offsetY) * scaleFactor;
-          
-          set({ 
-            scale: newScale, 
-            offsetX: newOffsetX, 
+
+          set({
+            scale: newScale,
+            offsetX: newOffsetX,
             offsetY: newOffsetY,
-            zoomAnimating: true 
+            zoomAnimating: true,
           });
-          
+
           // 动画结束后重置动画状态
           setTimeout(() => {
             set({ zoomAnimating: false });
@@ -119,21 +136,24 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
 
       zoomOut: (centerX = 0, centerY = 0) => {
         const { scale, offsetX, offsetY } = get();
-        const newScale = Math.max(scale - CANVAS_CONSTANTS.ZOOM_STEP, CANVAS_CONSTANTS.MIN_SCALE);
-        
+        const newScale = Math.max(
+          scale - CANVAS_CONSTANTS.ZOOM_STEP,
+          CANVAS_CONSTANTS.MIN_SCALE
+        );
+
         if (newScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
           const scaleFactor = newScale / scale;
           const newOffsetX = centerX - (centerX - offsetX) * scaleFactor;
           const newOffsetY = centerY - (centerY - offsetY) * scaleFactor;
-          
-          set({ 
-            scale: newScale, 
-            offsetX: newOffsetX, 
+
+          set({
+            scale: newScale,
+            offsetX: newOffsetX,
             offsetY: newOffsetY,
-            zoomAnimating: true 
+            zoomAnimating: true,
           });
-          
+
           // 动画结束后重置动画状态
           setTimeout(() => {
             set({ zoomAnimating: false });
@@ -144,17 +164,17 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       setScale: (newScale, centerX = 0, centerY = 0) => {
         const { scale, offsetX, offsetY, minScale, maxScale } = get();
         const clampedScale = Math.max(minScale, Math.min(maxScale, newScale));
-        
+
         if (clampedScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
           const scaleFactor = clampedScale / scale;
           const newOffsetX = centerX - (centerX - offsetX) * scaleFactor;
           const newOffsetY = centerY - (centerY - offsetY) * scaleFactor;
-          
-          set({ 
-            scale: clampedScale, 
-            offsetX: newOffsetX, 
-            offsetY: newOffsetY 
+
+          set({
+            scale: clampedScale,
+            offsetX: newOffsetX,
+            offsetY: newOffsetY,
           });
         }
       },
@@ -178,7 +198,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             startY,
             startOffsetX: offsetX,
             startOffsetY: offsetY,
-          }
+          },
         });
       },
 
@@ -187,7 +207,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         if (dragState.isDragging) {
           const deltaX = currentX - dragState.startX;
           const deltaY = currentY - dragState.startY;
-          
+
           set({
             offsetX: dragState.startOffsetX + deltaX,
             offsetY: dragState.startOffsetY + deltaY,
@@ -197,9 +217,9 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
 
       endDrag: () => {
         const { offsetX, offsetY } = get();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🖱️ 结束拖拽画布', {
-            finalOffset: { x: offsetX.toFixed(1), y: offsetY.toFixed(1) }
+        if (process.env.NODE_ENV === "development") {
+          console.log("🖱️ 结束拖拽画布", {
+            finalOffset: { x: offsetX.toFixed(1), y: offsetY.toFixed(1) },
           });
         }
         set({
@@ -209,7 +229,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             startY: 0,
             startOffsetX: 0,
             startOffsetY: 0,
-          }
+          },
         });
       },
 
@@ -221,7 +241,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           offsetY: 0,
           zoomAnimating: true,
         });
-        
+
         setTimeout(() => {
           set({ zoomAnimating: false });
         }, CANVAS_CONSTANTS.ZOOM_ANIMATION_DURATION);
@@ -232,38 +252,40 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           get().resetView();
           return;
         }
-        
+
         // 计算所有便签的边界框
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-        
-        notes.forEach(note => {
+        let minX = Infinity,
+          minY = Infinity;
+        let maxX = -Infinity,
+          maxY = -Infinity;
+
+        notes.forEach((note) => {
           minX = Math.min(minX, note.x);
           minY = Math.min(minY, note.y);
           maxX = Math.max(maxX, note.x + note.width);
           maxY = Math.max(maxY, note.y + note.height);
         });
-        
+
         // 添加边距
         const padding = 50;
         minX -= padding;
         minY -= padding;
         maxX += padding;
         maxY += padding;
-        
+
         // 计算内容的中心点和尺寸
         const contentWidth = maxX - minX;
         const contentHeight = maxY - minY;
         const contentCenterX = (minX + maxX) / 2;
         const contentCenterY = (minY + maxY) / 2;
-        
+
         // 计算合适的缩放比例（假设视口大小为800x600）
         const viewportWidth = 800;
         const viewportHeight = 600;
         const scaleX = viewportWidth / contentWidth;
         const scaleY = viewportHeight / contentHeight;
         const newScale = Math.min(scaleX, scaleY, CANVAS_CONSTANTS.MAX_SCALE);
-        
+
         // 设置新的视图状态
         set({
           scale: newScale,
@@ -271,7 +293,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           offsetY: -contentCenterY * newScale + viewportHeight / 2,
           zoomAnimating: true,
         });
-        
+
         setTimeout(() => {
           set({ zoomAnimating: false });
         }, CANVAS_CONSTANTS.ZOOM_ANIMATION_DURATION);
@@ -301,11 +323,11 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
 
       // 网格控制
       toggleGrid: () => {
-        set(state => ({ showGrid: !state.showGrid }));
+        set((state) => ({ showGrid: !state.showGrid }));
       },
 
       toggleAxis: () => {
-        set(state => ({ showAxis: !state.showAxis }));
+        set((state) => ({ showAxis: !state.showAxis }));
       },
 
       // 获取画布中心点
@@ -315,12 +337,50 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         const viewportHeight = window.innerHeight;
         return {
           x: viewportWidth / 2,
-          y: viewportHeight / 2
+          y: viewportHeight / 2,
         };
+      },
+
+      // 定位到指定便签
+      centerOnNote: (noteX, noteY, noteWidth, noteHeight) => {
+        // 获取视口中心点
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const viewportCenterX = viewportWidth / 2;
+        const viewportCenterY = viewportHeight / 2;
+
+        // 计算便签中心点
+        const noteCenterX = noteX + noteWidth / 2;
+        const noteCenterY = noteY + noteHeight / 2;
+
+        // 计算需要的偏移量，使便签中心对齐到视口中心
+        const { scale } = get();
+        const newOffsetX = viewportCenterX - noteCenterX * scale;
+        const newOffsetY = viewportCenterY - noteCenterY * scale;
+
+        // 设置新的偏移量
+        set({
+          offsetX: newOffsetX,
+          offsetY: newOffsetY,
+          zoomAnimating: true,
+        });
+
+        // 动画结束后重置动画状态
+        setTimeout(() => {
+          set({ zoomAnimating: false });
+        }, CANVAS_CONSTANTS.ZOOM_ANIMATION_DURATION);
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("📍 定位到便签:", {
+            notePosition: { x: noteX, y: noteY },
+            noteSize: { width: noteWidth, height: noteHeight },
+            newOffset: { x: newOffsetX.toFixed(1), y: newOffsetY.toFixed(1) },
+          });
+        }
       },
     })),
     {
-      name: 'canvas-store', // DevTools中的名称
+      name: "canvas-store", // DevTools中的名称
     }
   )
 );

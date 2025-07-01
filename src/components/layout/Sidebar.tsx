@@ -23,7 +23,12 @@ import type { Canvas } from "../../database";
 import { connectionLineManager } from "../../utils/connectionLineManager";
 
 // 导入全局状态管理
-import { useStickyNotesStore, useUIStore, useUserStore } from "../../stores";
+import {
+  useCanvasStore,
+  useStickyNotesStore,
+  useUIStore,
+  useUserStore,
+} from "../../stores";
 
 const { Title, Text } = Typography;
 
@@ -100,7 +105,10 @@ const Sidebar: React.FC = () => {
   } = useUIStore();
 
   // 使用用户状态管理
-  const { currentUser, loading: userLoading, loadCurrentUser } = useUserStore();
+  const { currentUser, loadCurrentUser } = useUserStore();
+
+  // 使用画布状态管理
+  const { centerOnNote } = useCanvasStore();
 
   // 组件挂载时加载用户数据
   useEffect(() => {
@@ -344,12 +352,41 @@ const Sidebar: React.FC = () => {
 
   // 将便签转换为显示格式
   const displayNotes = filteredNotes.map(
-    (note: { id: string; title: string; color: string; updatedAt: Date }) => ({
+    (note: {
+      id: string;
+      title: string;
+      color: string;
+      updatedAt: Date;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => ({
       id: note.id,
       title: note.title || "无标题便签",
       color: getColorHex(note.color),
       lastEdited: formatDate(note.updatedAt.toISOString()),
+      x: note.x,
+      y: note.y,
+      width: note.width,
+      height: note.height,
     })
+  );
+
+  // 处理便签点击事件 - 定位到画布中的便签
+  const handleNoteClick = useCallback(
+    (note: {
+      id: string;
+      title: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => {
+      centerOnNote(note.x, note.y, note.width, note.height);
+      message.success(`📍 已定位到便签: ${note.title}`);
+    },
+    [centerOnNote]
   );
 
   const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);
@@ -787,11 +824,17 @@ const Sidebar: React.FC = () => {
                       : "暂无便签，三击画布或点击工具栏的 + 创建",
                   }}
                   renderItem={(note: {
+                    id: string;
                     color: string;
                     title: string;
                     lastEdited: string;
+                    x: number;
+                    y: number;
+                    width: number;
+                    height: number;
                   }) => (
                     <List.Item
+                      onClick={() => handleNoteClick(note)}
                       style={{
                         padding: "6px 12px",
                         cursor: "pointer",
@@ -801,6 +844,18 @@ const Sidebar: React.FC = () => {
                         border: "1px solid rgba(0, 0, 0, 0.08)",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.03)", // Subtle shadow for notes
                         transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "rgba(24, 144, 255, 0.06)";
+                        e.currentTarget.style.borderColor =
+                          "rgba(24, 144, 255, 0.2)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "rgba(255, 255, 255, 0.9)";
+                        e.currentTarget.style.borderColor =
+                          "rgba(0, 0, 0, 0.08)";
                       }}
                     >
                       <div
