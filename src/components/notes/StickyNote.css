@@ -764,19 +764,6 @@
   opacity: 1; /* 悬停时完全显示，包括有溯源标识的连接点 */
 }
 
-/* 虚拟化Markdown容器样式 */
-.virtualized-markdown-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* 虚拟化占位符样式 */
-.virtualized-placeholder {
-  width: 100%;
-  /* 占位符不显示任何内容，只用于撑开高度保持滚动条正确 */
-  pointer-events: none;
-}
-
 .connection-point.connected .connection-dot {
   background: #52c41a; /* 绿色表示已连接 */
   border-color: rgba(255, 255, 255, 1);

@@ -1384,7 +1384,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   content={displayContent}
                   containerRef={previewRef}
                   enableVirtualization={true}
-                  virtualizationThreshold={5000}
+                  virtualizationThreshold={8000}
                   isStreaming={isStreaming}
                   streamingCursor={
                     isStreaming && showCursor ? (

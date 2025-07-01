@@ -59,13 +59,49 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
     const pagesArray: string[] = [];
     const linesPerPage = 100; // 每页显示的行数
 
-    for (let i = 0; i < lines.length; i += linesPerPage) {
-      const pageLines = lines.slice(i, i + linesPerPage);
-      pagesArray.push(pageLines.join("\n"));
+    let currentPageLines: string[] = [];
+    let lineCount = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      currentPageLines.push(line);
+      lineCount++;
+
+      // 检查是否应该分页（避免在代码块中间分页）
+      const shouldBreak =
+        lineCount >= linesPerPage &&
+        !isInsideCodeBlock(currentPageLines) &&
+        !isInsideTable(line, lines[i + 1]);
+
+      if (shouldBreak || i === lines.length - 1) {
+        pagesArray.push(currentPageLines.join("\n"));
+        currentPageLines = [];
+        lineCount = 0;
+      }
     }
 
     return pagesArray.length > 0 ? pagesArray : [content];
   }, [content, shouldUsePagination]);
+
+  // 检查是否在代码块内部
+  const isInsideCodeBlock = (lines: string[]): boolean => {
+    let codeBlockCount = 0;
+    for (const line of lines) {
+      if (line.trim().startsWith("```")) {
+        codeBlockCount++;
+      }
+    }
+    return codeBlockCount % 2 !== 0; // 奇数表示在代码块内
+  };
+
+  // 检查是否在表格中
+  const isInsideTable = (currentLine: string, nextLine?: string): boolean => {
+    const tablePattern = /^\|.*\|$/;
+    return (
+      tablePattern.test(currentLine.trim()) ||
+      (nextLine ? tablePattern.test(nextLine.trim()) : false)
+    );
+  };
 
   // 当前显示的内容（包含已加载的所有页面）
   const displayContent = useMemo(() => {
@@ -73,6 +109,7 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
       return content;
     }
 
+    // 渐进式加载：显示从第一页到当前页的所有内容
     const currentPages = pages.slice(0, currentPage + 1);
     return currentPages.join("\n\n---\n\n"); // 页面间添加分隔符
   }, [pages, currentPage, shouldUsePagination, content]);
