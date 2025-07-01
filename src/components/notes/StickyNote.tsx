@@ -17,15 +17,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
 import SourceNotesModal from "../modals/SourceNotesModal";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
+import VirtualizedMarkdown from "./VirtualizedMarkdown";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -87,7 +85,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // Store hooks
   const {
-    updateNoteConnectionLines,
     updateNoteConnectionLinesImmediate,
     removeConnection: removeConnectionFromStore,
   } = useConnectionStore();
@@ -1383,14 +1380,18 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               }
             >
               {displayContent.trim() ? (
-                <div className="streaming-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                    {displayContent}
-                  </ReactMarkdown>
-                  {isStreaming && showCursor && (
-                    <span className="streaming-cursor">|</span>
-                  )}
-                </div>
+                <VirtualizedMarkdown
+                  content={displayContent}
+                  containerRef={previewRef}
+                  enableVirtualization={true}
+                  virtualizationThreshold={5000}
+                  isStreaming={isStreaming}
+                  streamingCursor={
+                    isStreaming && showCursor ? (
+                      <span className="streaming-cursor">|</span>
+                    ) : undefined
+                  }
+                />
               ) : (
                 <div className="empty-note">
                   {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
