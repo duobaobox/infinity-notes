@@ -81,7 +81,8 @@ export interface CanvasActions {
     noteX: number,
     noteY: number,
     noteWidth: number,
-    noteHeight: number
+    noteHeight: number,
+    noteId?: string
   ) => void;
 }
 
@@ -342,7 +343,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       },
 
       // 定位到指定便签
-      centerOnNote: (noteX, noteY, noteWidth, noteHeight) => {
+      centerOnNote: (noteX, noteY, noteWidth, noteHeight, noteId) => {
         // 获取视口中心点
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
@@ -365,6 +366,17 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           zoomAnimating: true,
         });
 
+        // 如果提供了便签ID，将便签置顶
+        if (noteId) {
+          // 由于 centerOnNote 在 canvasStore 中，我们需要通过导入来访问 stickyNotesStore
+          import("./stickyNotesStore").then(({ useStickyNotesStore }) => {
+            const { bringNoteToFront } = useStickyNotesStore.getState();
+            bringNoteToFront(noteId).catch((error) => {
+              console.error("便签置顶失败:", error);
+            });
+          });
+        }
+
         // 动画结束后重置动画状态
         setTimeout(() => {
           set({ zoomAnimating: false });
@@ -375,6 +387,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             notePosition: { x: noteX, y: noteY },
             noteSize: { width: noteWidth, height: noteHeight },
             newOffset: { x: newOffsetX.toFixed(1), y: newOffsetY.toFixed(1) },
+            bringToFront: !!noteId,
           });
         }
       },
