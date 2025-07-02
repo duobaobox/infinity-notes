@@ -35,8 +35,7 @@
 /* 移动模式下便签的样式 */
 .sticky-note.move-mode-disabled {
   cursor: grab !important;
-  opacity: 0.8;
-  filter: grayscale(20%);
+  /* 移除透明度和灰度滤镜，保持便签正常外观 */
 }
 
 .sticky-note.move-mode-disabled .sticky-note-title,
@@ -45,7 +44,7 @@
 }
 
 .sticky-note.move-mode-disabled::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -245,6 +244,7 @@
 .sticky-note-controls button.source-button:hover {
   color: #fa8c16 !important; /* 悬浮时图标变为橙色 */
   background: rgba(250, 140, 22, 0.1); /* 悬浮时背景带有淡橙色 */
+  transform: scale(1.05); /* 悬浮时轻微放大 */
 }
 
 /* 溯源按钮激活状态 */
@@ -264,10 +264,19 @@
   transition: all 0.2s ease; /* 添加过渡动画 */
 }
 
-.sticky-note-controls button.settings-button:hover {
+/* 覆盖 Ant Design 按钮的默认悬浮样式 */
+.sticky-note-controls button.settings-button:hover,
+.sticky-note-controls button.settings-button.ant-btn:hover {
   color: #1677ff !important; /* 悬浮时图标变为主题蓝色 */
-  background: rgba(22, 119, 255, 0.1); /* 悬浮时背景带有淡蓝色 */
+  background: rgba(
+    22,
+    119,
+    255,
+    0.1
+  ) !important; /* 悬浮时背景带有淡蓝色，覆盖 Ant Design 默认白色 */
   transform: scale(1.05); /* 悬浮时轻微放大 */
+  border-color: transparent !important; /* 确保边框透明 */
+  box-shadow: none !important; /* 移除 Ant Design 默认阴影 */
 }
 
 /* 设置按钮图标样式 */
@@ -335,9 +344,6 @@
 }
 
 /* 确保图标也变成蓝色 */
-.settings-toolbar
-  .settings-toolbar-button.ant-btn:hover:not(.disabled)
-  .anticon,
 .settings-toolbar .settings-toolbar-button:hover:not(.disabled) .anticon {
   color: #1677ff !important;
 }

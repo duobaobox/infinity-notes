@@ -105,7 +105,7 @@ export class AIService {
     const apiUrl = `${baseUrl}/chat/completions`;
 
     // 发送一个轻量级的预连接请求
-    const preconnectRequest = {
+    const preconnectRequest: any = {
       model: this.config.aiModel,
       messages: [
         { role: "system" as const, content: "预连接测试" },
@@ -115,6 +115,15 @@ export class AIService {
       temperature: 0,
       stream: false,
     };
+
+    // 对于支持思维链的模型（如阿里百炼），在非流式调用中必须禁用思维链
+    if (
+      this.config.apiUrl.includes("dashscope.aliyuncs.com") ||
+      this.config.apiUrl.includes("bailian") ||
+      this.config.aiModel.includes("qwen")
+    ) {
+      preconnectRequest.enable_thinking = false;
+    }
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -164,6 +173,8 @@ export class AIService {
   // 测试API连接
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log("🔗 开始测试AI连接...");
+
       if (!this.validateConfig()) {
         return { success: false, error: "配置信息不完整" };
       }
@@ -174,33 +185,50 @@ export class AIService {
         : this.config.apiUrl;
       const apiUrl = `${baseUrl}/chat/completions`;
 
+      // 构建请求体，确保非流式调用时禁用思维链功能
+      const requestBody: any = {
+        model: this.config.aiModel,
+        messages: [
+          {
+            role: "user",
+            content: "Hello, this is a connection test.",
+          },
+        ],
+        max_tokens: 10,
+        temperature: 0.1,
+        stream: false, // 明确指定非流式调用
+      };
+
+      // 对于支持思维链的模型（如阿里百炼），在非流式调用中必须禁用思维链
+      // 检查是否为阿里百炼或其他需要特殊处理的API
+      if (
+        this.config.apiUrl.includes("dashscope.aliyuncs.com") ||
+        this.config.apiUrl.includes("bailian") ||
+        this.config.aiModel.includes("qwen")
+      ) {
+        requestBody.enable_thinking = false;
+        console.log("🧠 阿里百炼API：测试连接时禁用思维链");
+      }
+
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: this.config.aiModel,
-          messages: [
-            {
-              role: "user",
-              content: "Hello, this is a connection test.",
-            },
-          ],
-          max_tokens: 10,
-          temperature: 0.1,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("❌ 连接测试失败:", errorData);
         return {
           success: false,
           error: errorData.error?.message || `HTTP ${response.status}`,
         };
       }
 
+      console.log("✅ 连接测试成功");
       return { success: true };
     } catch (error) {
       return {
@@ -223,7 +251,7 @@ export class AIService {
     // 创建AbortController用于取消请求
     const abortController = new AbortController();
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-    console.log("🚀 开始真实流式生成，prompt:", prompt);
+    console.log("🚀 开始AI流式生成，prompt:", prompt.substring(0, 50) + "...");
 
     try {
       if (!this.validateConfig()) {
@@ -242,22 +270,15 @@ export class AIService {
       const currentSystemPrompt = (this.config.systemPrompt || "").trim();
       const isNormalMode = currentSystemPrompt === "";
 
-      // 调试日志：检查AI模式
-      console.log("🎯 AI模式检查:", {
-        systemPromptLength: currentSystemPrompt.length,
-        isNormalMode: isNormalMode,
-        mode: isNormalMode ? "正常对话模式" : "自定义prompt模式",
-      });
-
       // 根据提示词内容决定是否添加系统消息
       if (!isNormalMode) {
         messages.push({ role: "system", content: currentSystemPrompt });
         console.log(
-          "✅ 使用自定义prompt模式，提示词长度:",
+          "📝 使用自定义prompt模式，提示词长度:",
           currentSystemPrompt.length
         );
       } else {
-        console.log("✅ 使用正常对话模式，直接与AI对话");
+        console.log("💬 使用正常对话模式");
       }
 
       messages.push({ role: "user", content: prompt });
@@ -268,16 +289,35 @@ export class AIService {
         : this.config.apiUrl;
       const apiUrl = `${baseUrl}/chat/completions`;
 
-      console.log("🌐 发送API请求:", {
-        url: apiUrl,
-        model: this.config.aiModel,
-        stream: true,
-      });
-
       // 设置30秒超时
       const timeoutId = setTimeout(() => {
         abortController.abort();
       }, 30000);
+
+      // 构建请求体，根据思维模式设置决定是否启用思维链
+      const requestBody: any = {
+        model: this.config.aiModel,
+        messages,
+        max_tokens: this.config.maxTokens || 1000,
+        temperature: this.config.temperature || 0.7,
+        stream: true, // 启用流式响应
+      };
+
+      // 对于支持思维链的模型（如阿里百炼），根据用户设置决定是否启用思维链
+      // 在流式调用中，可以根据showThinkingMode参数来控制
+      if (
+        this.config.apiUrl.includes("dashscope.aliyuncs.com") ||
+        this.config.apiUrl.includes("bailian") ||
+        this.config.aiModel.includes("qwen")
+      ) {
+        // 流式调用中，根据用户的思维模式设置来决定是否启用思维链
+        const showThinkingMode = options?.showThinkingMode ?? true;
+        requestBody.enable_thinking = showThinkingMode;
+        console.log(
+          "🧠 阿里百炼思维链设置:",
+          showThinkingMode ? "启用" : "禁用"
+        );
+      }
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -285,13 +325,7 @@ export class AIService {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: this.config.aiModel,
-          messages,
-          max_tokens: this.config.maxTokens || 1000,
-          temperature: this.config.temperature || 0.7,
-          stream: true, // 启用流式响应
-        }),
+        body: JSON.stringify(requestBody),
         signal: abortController.signal, // 添加取消信号
       });
 
@@ -314,7 +348,6 @@ export class AIService {
         return { success: false, error };
       }
 
-      console.log("📖 开始读取流式响应");
       let fullResponse = "";
       const decoder = new TextDecoder();
 
@@ -341,7 +374,7 @@ export class AIService {
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            console.log("📖 流式响应读取完成");
+            console.log("✅ 流式响应读取完成，开始解析内容");
             break;
           }
 
@@ -410,11 +443,10 @@ export class AIService {
 
                 // 如果有reasoning_content，根据思维模式设置决定是否显示
                 if (reasoningContent) {
-                  console.log(
-                    "🧠 检测到DeepSeek reasoning_content，长度:",
-                    reasoningContent.length
-                  );
-
+                  // 只在第一次检测到时记录日志，避免重复输出
+                  if (!hasStartedThinking) {
+                    console.log("🧠 检测到思维链内容，开始流式显示");
+                  }
                   // 将reasoning_content添加到完整响应中
                   if (!fullResponse.includes("<think>")) {
                     fullResponse =
@@ -483,8 +515,7 @@ export class AIService {
         );
 
         if (finalNotes.success && finalNotes.notes) {
-          console.log("✅ 解析成功，共", finalNotes.notes.length, "个便签");
-
+          console.log("✅ 内容解析成功，便签数量:", finalNotes.notes.length);
           // 如果只有一个便签，直接完成当前流式便签
           if (finalNotes.notes.length === 1) {
             const note = finalNotes.notes[0];
@@ -492,10 +523,9 @@ export class AIService {
             // 如果有实时显示的内容，使用实时内容而不是重新解析的内容
             if (displayedContent && hasStartedThinking) {
               note.content = displayedContent;
-              console.log(
-                "✅ 使用流式显示的思维链内容，长度:",
-                displayedContent.length
-              );
+              console.log("📝 使用流式显示的思维链内容");
+            } else {
+              console.log("📝 使用解析后的标准内容");
             }
 
             // 更新标题
@@ -561,7 +591,6 @@ export class AIService {
         if (reader) {
           try {
             reader.releaseLock();
-            console.log("🔒 Reader锁已释放");
           } catch (e) {
             console.warn("⚠️ 释放Reader锁时出错:", e);
           }
@@ -570,7 +599,6 @@ export class AIService {
         // 取消任何未完成的请求
         if (!abortController.signal.aborted) {
           abortController.abort();
-          console.log("🚫 请求已取消");
         }
       }
     } catch (error) {
@@ -612,12 +640,7 @@ export class AIService {
         return { success: false, error: "AI回复为空" };
       }
 
-      console.log("🧠 智能解析AI回复:", {
-        length: cleanResponse.length,
-        preview:
-          cleanResponse.substring(0, 100) +
-          (cleanResponse.length > 100 ? "..." : ""),
-      });
+      console.log("🔍 开始智能解析AI回复，内容长度:", cleanResponse.length);
 
       // 现在优先使用自然语言解析，因为我们已经简化了所有系统提示词
       // 只有在明确是JSON格式时才尝试JSON解析（兼容旧数据或特殊情况）
@@ -661,7 +684,7 @@ export class AIService {
             return { success: true, notes: validNotes };
           }
         } catch (jsonError) {
-          console.log("❌ JSON解析失败，使用自然语言解析:", jsonError);
+          console.log("⚠️ JSON解析失败，转为自然语言解析");
         }
       }
 
@@ -684,10 +707,7 @@ export class AIService {
         hasThinking: !!thinkingChain,
       };
 
-      console.log("✅ 自然语言解析成功:", {
-        title: note.title,
-        contentLength: note.content.length,
-        color: note.color,
+      console.log("✅ 自然语言解析完成:", {
         hasThinking: note.hasThinking,
         thinkingSteps: thinkingChain?.steps.length || 0,
       });
@@ -765,42 +785,34 @@ export class AIService {
 
       if (!thinkingMatch || !usedPattern) {
         // 没有思维链，返回原始内容
-        console.log("🤔 未找到思维链标记，返回原始内容");
+        console.log("💭 未检测到思维链标记");
         return { cleanContent: response, contentWithThinking: response };
       }
-
-      console.log("✅ 找到思维链内容，使用格式:", usedPattern.source);
 
       const thinkingContent = thinkingMatch[1].trim();
       const cleanContent = response.replace(usedPattern, "").trim();
 
-      console.log("🧠 思维链原始内容长度:", thinkingContent.length);
-      console.log(
-        "🧠 思维链内容预览:",
-        thinkingContent.substring(0, 200) + "..."
-      );
-
-      console.log("📝 清理后内容长度:", cleanContent.length);
-      console.log("📝 清理后内容预览:", cleanContent.substring(0, 200) + "...");
+      console.log("🧠 解析思维链:", {
+        thinkingLength: thinkingContent.length,
+        cleanLength: cleanContent.length,
+      });
 
       // 解析思维链步骤
       const steps = this.parseThinkingSteps(thinkingContent);
 
-      console.log("🔍 解析出的思维链步骤数量:", steps.length);
-
       // 如果思维链内容为空或步骤为0，但有<think>标签，说明AI没有进行复杂思考
       if (steps.length === 0) {
-        if (thinkingContent.trim().length === 0) {
-          console.log("💭 AI没有进行复杂思考，思维链为空");
-        } else {
-          console.warn("⚠️ 思维链步骤解析失败，返回原始内容");
-        }
+        console.log("⚠️ 思维链步骤解析失败或为空");
         return { cleanContent: response, contentWithThinking: response };
       }
 
+      console.log("✅ 思维链步骤解析成功，步骤数:", steps.length);
+
       // 创建思维链对象
       const thinkingChain: StickyNoteData["thinkingChain"] = {
-        id: `thinking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `thinking-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 11)}`,
         prompt: originalPrompt,
         steps,
         finalAnswer: cleanContent,
@@ -882,7 +894,7 @@ export class AIService {
       steps.push({
         id: `step-${Date.now()}-${index}-${Math.random()
           .toString(36)
-          .substr(2, 6)}`,
+          .substring(2, 8)}`,
         content: paragraph,
         stepType,
         timestamp: new Date(Date.now() + index * 100), // 模拟时间间隔
@@ -987,18 +999,31 @@ export class AIService {
         : this.config.apiUrl;
       const apiUrl = `${baseUrl}/chat/completions`;
 
+      // 构建请求体，确保非流式调用时禁用思维链功能
+      const requestBody: any = {
+        model: this.config.aiModel,
+        messages: [{ role: "user", content: testPrompt }],
+        max_tokens: Math.min(this.config.maxTokens || 1000, 500),
+        temperature: Math.min(this.config.temperature || 0.7, 0.5),
+        stream: false, // 明确指定非流式调用
+      };
+
+      // 对于支持思维链的模型（如阿里百炼），在非流式调用中必须禁用思维链
+      if (
+        this.config.apiUrl.includes("dashscope.aliyuncs.com") ||
+        this.config.apiUrl.includes("bailian") ||
+        this.config.aiModel.includes("qwen")
+      ) {
+        requestBody.enable_thinking = false;
+      }
+
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: this.config.aiModel,
-          messages: [{ role: "user", content: testPrompt }],
-          max_tokens: Math.min(this.config.maxTokens || 1000, 500),
-          temperature: Math.min(this.config.temperature || 0.7, 0.5),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -1009,12 +1034,6 @@ export class AIService {
       const aiResponse = data.choices?.[0]?.message?.content || "";
       const reasoningContent =
         data.choices?.[0]?.message?.reasoning_content || "";
-
-      console.log("🧪 思维链测试响应:", {
-        contentLength: aiResponse.length,
-        reasoningLength: reasoningContent.length,
-        hasReasoningContent: !!reasoningContent,
-      });
 
       // 解析思维链内容
       const { thinkingChain } = this.parseThinkingChain(
@@ -1079,18 +1098,31 @@ export class AIService {
         : this.config.apiUrl;
       const apiUrl = `${baseUrl}/chat/completions`;
 
+      // 构建请求体，确保非流式调用时禁用思维链功能
+      const requestBody: any = {
+        model: this.config.aiModel,
+        messages: [{ role: "user", content: analysisPrompt }],
+        max_tokens: Math.min(this.config.maxTokens || 1000, 500), // 分析功能限制最大500令牌
+        temperature: Math.min(this.config.temperature || 0.7, 0.5), // 分析功能使用较低温度
+        stream: false, // 明确指定非流式调用
+      };
+
+      // 对于支持思维链的模型（如阿里百炼），在非流式调用中必须禁用思维链
+      if (
+        this.config.apiUrl.includes("dashscope.aliyuncs.com") ||
+        this.config.apiUrl.includes("bailian") ||
+        this.config.aiModel.includes("qwen")
+      ) {
+        requestBody.enable_thinking = false;
+      }
+
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: this.config.aiModel,
-          messages: [{ role: "user", content: analysisPrompt }],
-          max_tokens: Math.min(this.config.maxTokens || 1000, 500), // 分析功能限制最大500令牌
-          temperature: Math.min(this.config.temperature || 0.7, 0.5), // 分析功能使用较低温度
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
