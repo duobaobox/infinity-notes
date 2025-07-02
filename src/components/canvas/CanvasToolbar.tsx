@@ -1,10 +1,11 @@
-import React, { memo } from "react";
-import { Button, Space, Tooltip } from "antd";
 import {
+  RedoOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
-  RedoOutlined,
 } from "@ant-design/icons";
+import { Move } from "@icon-park/react";
+import { Button, Space, Tooltip } from "antd";
+import React, { memo } from "react";
 
 interface CanvasToolbarProps {
   scale: number;
@@ -12,6 +13,8 @@ interface CanvasToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
+  isMoveModeActive: boolean;
+  onToggleMoveMode: () => void;
 
   minScale: number;
   maxScale: number;
@@ -24,6 +27,8 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     onZoomIn,
     onZoomOut,
     onReset,
+    isMoveModeActive,
+    onToggleMoveMode,
 
     minScale,
     maxScale,
@@ -57,6 +62,23 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               icon={<RedoOutlined />}
               onClick={onReset}
               type="text"
+              shape="circle"
+            />
+          </Tooltip>
+          {/* 分隔线 */}
+          <div className="toolbar-divider" />
+          <Tooltip
+            title={
+              isMoveModeActive
+                ? "退出移动模式"
+                : "进入移动模式 (仅能移动和缩放画布)"
+            }
+            placement="left"
+          >
+            <Button
+              icon={<Move />}
+              onClick={onToggleMoveMode}
+              type={isMoveModeActive ? "primary" : "text"}
               shape="circle"
             />
           </Tooltip>

@@ -35,6 +35,15 @@
   cursor: move;
 }
 
+/* 移动模式的光标状态 */
+.infinite-canvas-container.move-mode {
+  cursor: grab;
+}
+
+.infinite-canvas-container.move-mode.dragging {
+  cursor: grabbing;
+}
+
 .canvas-toolbar {
   position: fixed; /* 相对于视口定位 */
   top: 50%; /* 垂直居中 */
@@ -87,6 +96,35 @@
   line-height: 1;
 }
 
+/* 移动模式指示器 */
+.move-mode-indicator {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  backdrop-filter: blur(8px);
+  animation: slide-in-down 0.3s ease-out;
+}
+
+@keyframes slide-in-down {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* 工具栏分隔线 */
 .canvas-toolbar .toolbar-divider {
   width: 20px; /* 改为水平线 */
@@ -106,19 +144,6 @@
   pointer-events: none;
   z-index: 1;
   overflow: visible;
-}
-
-.canvas-background::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: var(--paper-texture-opacity);
-  pointer-events: none;
-  mix-blend-mode: multiply;
 }
 
 .infinite-canvas {
@@ -147,10 +172,11 @@
 
   /* 使用CSS变量进行变换，确保与便签同步 */
   transform: translate3d(
-    var(--content-offset-x, 0px),
-    var(--content-offset-y, 0px),
-    0
-  ) scale(var(--canvas-scale, 1));
+      var(--content-offset-x, 0px),
+      var(--content-offset-y, 0px),
+      0
+    )
+    scale(var(--canvas-scale, 1));
 }
 
 /* 便签恢复点击能力 */
@@ -209,12 +235,13 @@
   opacity: var(--grid-visible, 1);
 
   /* 只显示小网格，简洁清晰 */
-  background-image:
-    linear-gradient(var(--small-grid-color) 1px, transparent 1px),
+  background-image: linear-gradient(
+      var(--small-grid-color) 1px,
+      transparent 1px
+    ),
     linear-gradient(90deg, var(--small-grid-color) 1px, transparent 1px);
 
-  background-size:
-    calc(var(--small-grid-size) * var(--canvas-scale))
+  background-size: calc(var(--small-grid-size) * var(--canvas-scale))
     calc(var(--small-grid-size) * var(--canvas-scale));
 
   background-position: var(--canvas-offset-x) var(--canvas-offset-y);
@@ -223,7 +250,7 @@
 }
 
 .canvas-grid::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -233,12 +260,13 @@
   opacity: var(--grid-visible, 1);
 
   /* 大网格线 - 更粗更明显 */
-  background-image:
-    linear-gradient(var(--large-grid-color) 1px, transparent 1px),
+  background-image: linear-gradient(
+      var(--large-grid-color) 1px,
+      transparent 1px
+    ),
     linear-gradient(90deg, var(--large-grid-color) 1px, transparent 1px);
 
-  background-size:
-    calc(var(--large-grid-size) * var(--canvas-scale))
+  background-size: calc(var(--large-grid-size) * var(--canvas-scale))
     calc(var(--large-grid-size) * var(--canvas-scale));
 
   background-position: var(--canvas-offset-x) var(--canvas-offset-y);

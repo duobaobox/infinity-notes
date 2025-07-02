@@ -25,6 +25,9 @@ export interface CanvasState {
   // 动画状态
   zoomAnimating: boolean;
 
+  // 交互模式
+  isMoveModeActive: boolean;
+
   // 画布配置
   minScale: number;
   maxScale: number;
@@ -69,6 +72,10 @@ export interface CanvasActions {
   // 动画控制
   setZoomAnimating: (animating: boolean) => void;
 
+  // 交互模式控制
+  toggleMoveMode: () => void;
+  setMoveMode: (active: boolean) => void;
+
   // 网格控制
   toggleGrid: () => void;
   toggleAxis: () => void;
@@ -106,6 +113,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       maxScale: CANVAS_CONSTANTS.MAX_SCALE,
       showGrid: true,
       showAxis: false,
+      isMoveModeActive: false, // 初始为false，表示默认是正常模式
 
       // 缩放操作
       zoomIn: (centerX = 0, centerY = 0) => {
@@ -320,6 +328,15 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       // 动画控制
       setZoomAnimating: (animating) => {
         set({ zoomAnimating: animating });
+      },
+
+      // 交互模式控制
+      toggleMoveMode: () => {
+        set((state) => ({ isMoveModeActive: !state.isMoveModeActive }));
+      },
+
+      setMoveMode: (active: boolean) => {
+        set({ isMoveModeActive: active });
       },
 
       // 网格控制

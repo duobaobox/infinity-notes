@@ -64,6 +64,8 @@ export interface StickyNoteProps {
   onBringToFront: (id: string) => void; // 新增：置顶功能
   canvasScale: number;
   canvasOffset: { x: number; y: number }; // 新增：画布偏移量
+  // 交互模式
+  isMoveModeActive?: boolean; // 移动模式状态
   // 流式相关属性
   isStreaming?: boolean;
   streamingContent?: string;

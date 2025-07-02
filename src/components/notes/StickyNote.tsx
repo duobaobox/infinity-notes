@@ -32,6 +32,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onBringToFront,
   canvasScale,
   canvasOffset, // 新增：画布偏移量
+  // 交互模式
+  isMoveModeActive = false,
   // 流式相关属性
   isStreaming = false,
   streamingContent = "",
@@ -239,9 +241,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 开始编辑内容
   const startEditing = useCallback(() => {
     if (isStreaming) return; // 流式过程中不允许编辑
+    if (isMoveModeActive) return; // 移动模式下不允许编辑
     setIsEditing(true);
     setLocalContent(note.content);
-  }, [note.content, isStreaming]);
+  }, [note.content, isStreaming, isMoveModeActive]);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
@@ -258,9 +261,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 开始编辑标题
   const startTitleEditing = useCallback(() => {
     if (isStreaming) return; // 流式过程中不允许编辑
+    if (isMoveModeActive) return; // 移动模式下不允许编辑
     setIsTitleEditing(true);
     setLocalTitle(note.title);
-  }, [note.title, isStreaming]);
+  }, [note.title, isStreaming, isMoveModeActive]);
 
   // 停止编辑标题
   const stopTitleEditing = useCallback(() => {
@@ -1196,7 +1200,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           isEditing ? "editing" : ""
         } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${
           isStreaming ? "streaming" : ""
-        }`}
+        } ${isMoveModeActive ? "move-mode-disabled" : ""}`}
         style={{
           left: actualX,
           top: actualY,
@@ -1280,6 +1284,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   onDoubleClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    // 移动模式下禁用编辑
+                    if (isMoveModeActive) return;
                     // 如果不在编辑模式，双击开始编辑标题
                     if (!isEditing && !isTitleEditing) {
                       startTitleEditing();
@@ -1364,6 +1370,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               onDoubleClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // 移动模式下禁用编辑
+                if (isMoveModeActive) return;
                 // 如果不在编辑模式，双击开始编辑
                 if (!isEditing && !isTitleEditing) {
                   startEditing();

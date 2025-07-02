@@ -34,59 +34,30 @@ import { connectionUtils } from "../../stores/connectionStore";
 import { getAIService } from "../../services/ai/aiService";
 
 // 检查是否应该忽略画布事件的工具函数
-const shouldIgnoreCanvasEvent = (target: HTMLElement): boolean => {
+const shouldIgnoreCanvasEvent = (
+  target: HTMLElement,
+  isMoveModeActive: boolean = false
+): boolean => {
   return !!(
-    target.closest(".sticky-note") ||
-    target.closest(".canvas-console") ||
-    target.closest(".canvas-toolbar") ||
-    target.closest(".ant-modal") || // Ant Design 模态框
-    target.closest(".settings-modal") || // 设置模态框
-    target.closest(".ant-drawer") || // Ant Design 抽屉
-    target.closest(".ant-popover") || // Ant Design 弹出框
-    target.closest(".ant-tooltip") || // Ant Design 提示框
-    target.closest(".ant-dropdown") || // Ant Design 下拉菜单
-    target.closest(".sidebar") || // 侧边栏
-    target.closest("[data-sidebar]") || // 侧边栏数据属性
-    // 检查是否在侧边栏的固定位置范围内（左侧220px）
-    (target.getBoundingClientRect &&
-      target.getBoundingClientRect().left < 220 &&
-      !target.classList.contains("infinite-canvas-container"))
+    // 在移动模式下，不忽略便签事件，允许在便签上也能拖拽画布
+    (
+      (!isMoveModeActive && target.closest(".sticky-note")) ||
+      target.closest(".canvas-console") ||
+      target.closest(".canvas-toolbar") ||
+      target.closest(".ant-modal") || // Ant Design 模态框
+      target.closest(".settings-modal") || // 设置模态框
+      target.closest(".ant-drawer") || // Ant Design 抽屉
+      target.closest(".ant-popover") || // Ant Design 弹出框
+      target.closest(".ant-tooltip") || // Ant Design 提示框
+      target.closest(".ant-dropdown") || // Ant Design 下拉菜单
+      target.closest(".sidebar") || // 侧边栏
+      target.closest("[data-sidebar]") || // 侧边栏数据属性
+      // 检查是否在侧边栏的固定位置范围内（左侧220px）
+      (target.getBoundingClientRect &&
+        target.getBoundingClientRect().left < 220 &&
+        !target.classList.contains("infinite-canvas-container"))
+    )
   );
-};
-
-// 颜色转换工具函数 - 将十六进制颜色转换为便签颜色名称
-const convertColorToNoteName = (color?: string): StickyNoteType["color"] => {
-  if (!color) return "yellow";
-
-  // 十六进制颜色映射
-  const colorMap: Record<string, StickyNoteType["color"]> = {
-    "#fef3c7": "yellow",
-    "#e3f2fd": "blue",
-    "#dbeafe": "blue",
-    "#d1fae5": "green",
-    "#fce7f3": "pink",
-    "#e9d5ff": "purple",
-  };
-
-  // 直接匹配
-  if (colorMap[color.toLowerCase()]) {
-    return colorMap[color.toLowerCase()];
-  }
-
-  // 如果已经是颜色名称，直接返回
-  const validColors: StickyNoteType["color"][] = [
-    "yellow",
-    "blue",
-    "green",
-    "pink",
-    "purple",
-  ];
-  if (validColors.includes(color as StickyNoteType["color"])) {
-    return color as StickyNoteType["color"];
-  }
-
-  // 默认返回黄色
-  return "yellow";
 };
 
 // 组件接口
@@ -126,6 +97,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     offsetY,
     dragState,
     zoomAnimating,
+    isMoveModeActive,
     zoomIn,
     zoomOut,
     startDrag,
@@ -133,6 +105,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     endDrag,
     resetView,
     getCanvasCenter,
+    toggleMoveMode,
   } = useCanvasStore();
 
   // 全局状态管理 - AI状态
@@ -243,10 +216,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             : 0;
 
         const newNote: StickyNoteType = {
-          id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `note-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 11)}`,
           x: positionX,
           y: positionY,
-          // 移除硬编码的尺寸，让addNote方法根据设置来确定
+          width: 300, // 手动便签默认宽度
+          height: 200, // 手动便签默认高度
           content: "",
           title: "新便签",
           color: randomColor,
@@ -386,10 +362,11 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         const tempNote: StickyNoteType = {
           id: `ai-note-${Date.now()}-${Math.random()
             .toString(36)
-            .substr(2, 9)}`,
+            .substring(2, 11)}`,
           x: logicalX,
           y: logicalY,
-          // 移除硬编码的尺寸，让addNote方法根据设置来确定
+          width: 400, // AI便签默认宽度
+          height: 300, // AI便签默认高度
           content: "",
           title: "AI便签",
           color: randomColor, // 🔧 使用随机颜色
@@ -501,7 +478,20 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
       // 如果点击的是便签或其他交互元素，不处理画布拖拽
       const target = e.target as HTMLElement;
-      if (shouldIgnoreCanvasEvent(target)) {
+      if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
+        return;
+      }
+
+      // 移动模式下，直接开始拖拽画布，不进行其他操作
+      if (isMoveModeActive) {
+        e.preventDefault();
+        if (process.env.NODE_ENV === "development") {
+          console.log("🖱️ 移动模式：开始拖拽画布", {
+            x: e.clientX,
+            y: e.clientY,
+          });
+        }
+        startDrag(e.clientX, e.clientY);
         return;
       }
 
@@ -511,7 +501,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       }
       startDrag(e.clientX, e.clientY);
     },
-    [startDrag]
+    [startDrag, isMoveModeActive]
   );
 
   // 节流的鼠标移动处理 - 提升拖拽性能
@@ -564,9 +554,14 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   // 三击创建便签
   const handleTripleClick = useCallback(
     (e: React.MouseEvent) => {
+      // 移动模式下禁用三击创建便签
+      if (isMoveModeActive) {
+        return;
+      }
+
       // 如果点击的是便签或其他交互元素，不创建新便签
       const target = e.target as HTMLElement;
-      if (shouldIgnoreCanvasEvent(target)) {
+      if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
         return;
       }
 
@@ -617,7 +612,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       state.lastClickTime = now;
       state.lastClickPos = clickPos;
     },
-    [offsetX, offsetY, scale, createStickyNote]
+    [offsetX, offsetY, scale, createStickyNote, isMoveModeActive]
   );
 
   // 节流的滚轮缩放处理 - 提升缩放性能
@@ -761,7 +756,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     const handleWheelEvent = (e: WheelEvent) => {
       // 检查事件是否来自便签或其他交互元素
       const target = e.target as HTMLElement;
-      if (shouldIgnoreCanvasEvent(target)) {
+      if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
         return; // 不处理这些元素上的滚轮事件
       }
 
@@ -802,7 +797,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     <div
       className={`infinite-canvas-container ${
         dragState.isDragging ? "dragging" : ""
-      }`}
+      } ${isMoveModeActive ? "move-mode" : ""}`}
       onMouseDown={handleMouseDown}
       onClick={handleTripleClick}
     >
@@ -810,6 +805,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       <CanvasToolbar
         scale={scale}
         zoomAnimating={zoomAnimating}
+        isMoveModeActive={isMoveModeActive}
+        onToggleMoveMode={toggleMoveMode}
         onZoomIn={() => {
           // 以画布中心为缩放中心
           const center = getCanvasCenter();
@@ -845,6 +842,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               onBringToFront={bringNoteToFront}
               canvasScale={scale}
               canvasOffset={canvasOffset}
+              isMoveModeActive={isMoveModeActive}
               isStreaming={streamingData?.isStreaming}
               streamingContent={streamingData?.streamingContent}
               onConnect={addConnection}
@@ -853,6 +851,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           );
         })}
       </div>
+
+      {/* 移动模式指示器 */}
+      {isMoveModeActive && (
+        <div className="move-mode-indicator">
+          <span>移动模式已激活 - 便签编辑已禁用</span>
+        </div>
+      )}
 
       {/* 便签链接插槽 - 位于控制台上方 */}
       <StickyNoteSlots

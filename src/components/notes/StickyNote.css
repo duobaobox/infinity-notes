@@ -32,6 +32,30 @@
   /* contain: layout style paint; */
 }
 
+/* 移动模式下便签的样式 */
+.sticky-note.move-mode-disabled {
+  cursor: grab !important;
+  opacity: 0.8;
+  filter: grayscale(20%);
+}
+
+.sticky-note.move-mode-disabled .sticky-note-title,
+.sticky-note.move-mode-disabled .sticky-note-content {
+  pointer-events: none;
+}
+
+.sticky-note.move-mode-disabled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 10;
+  cursor: grab;
+}
+
 /* 流式便签样式 */
 .sticky-note.streaming {
   border: 2px solid #1890ff;
