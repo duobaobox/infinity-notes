@@ -18,20 +18,20 @@ interface ThinkingChainProps {
  */
 const ThinkingChainSimple: React.FC<ThinkingChainProps> = ({
   thinkingChain,
-  defaultExpanded = false,
-  compact = false,
+  // defaultExpanded = false,
+  // compact = false,
 }) => {
   return (
-    <Card 
-      size="small" 
+    <Card
+      size="small"
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <ExperimentOutlined style={{ color: "#1890ff" }} />
           <Text strong>AI思考过程</Text>
           <Text type="secondary">({thinkingChain.steps.length}步)</Text>
         </div>
       }
-      style={{ margin: '8px 0' }}
+      style={{ margin: "8px 0" }}
     >
       {/* 原始提示词 */}
       {thinkingChain.prompt && (
@@ -47,7 +47,15 @@ const ThinkingChainSimple: React.FC<ThinkingChainProps> = ({
       <div style={{ marginBottom: 12 }}>
         <Text strong>思考步骤：</Text>
         {thinkingChain.steps.map((step, index) => (
-          <div key={step.id} style={{ marginTop: 8, padding: 8, background: '#f5f5f5', borderRadius: 4 }}>
+          <div
+            key={step.id}
+            style={{
+              marginTop: 8,
+              padding: 8,
+              background: "#f5f5f5",
+              borderRadius: 4,
+            }}
+          >
             <Text type="secondary" style={{ fontSize: 12 }}>
               步骤 {index + 1} - {step.stepType}
             </Text>

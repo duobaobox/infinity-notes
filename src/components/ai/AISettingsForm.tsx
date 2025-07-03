@@ -1,15 +1,21 @@
 // AI设置表单组件 - 简化版本
-import React, { useEffect } from 'react';
-import { Form, Input, InputNumber, Button, Space, Tooltip, Card, Typography } from 'antd';
-import { InfoCircleOutlined, TestOutlined, SaveOutlined } from '@ant-design/icons';
-import type { AIConfig } from '../../services/ai/aiService';
-import { AIConfigValidator } from '../../utils/aiValidation';
-import AIProviderSelector from './AIProviderSelector';
-import AIModelSelector from './AIModelSelector';
-import { AIConfigStatus } from './AIConfigStatus';
+import { InfoCircleOutlined, SaveOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Space,
+  Tooltip,
+  Typography,
+} from "antd";
+import React, { useEffect } from "react";
+import type { AIConfig } from "../../services/ai/aiService";
+import { AIConfigValidator } from "../../utils/aiValidation";
+import { AIConfigStatus } from "./AIConfigStatus";
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
+const { Text } = Typography;
 
 interface AISettingsFormProps {
   config: Partial<AIConfig>;
@@ -28,7 +34,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
   loading = false,
   onSave,
   onTest,
-  testLoading = false
+  testLoading = false,
 }) => {
   const [form] = Form.useForm();
 
@@ -51,25 +57,25 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
   // 处理测试连接
   const handleTest = async () => {
     try {
-      await form.validateFields(['apiUrl', 'apiKey', 'aiModel']);
+      await form.validateFields(["apiUrl", "apiKey", "aiModel"]);
       await onTest();
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error("表单验证失败:", error);
     }
   };
 
   // 实时验证字段
   const validateField = (field: keyof AIConfig, value: any) => {
     switch (field) {
-      case 'apiKey':
+      case "apiKey":
         return AIConfigValidator.validateApiKey(value);
-      case 'apiUrl':
+      case "apiUrl":
         return AIConfigValidator.validateApiUrl(value);
-      case 'aiModel':
+      case "aiModel":
         return AIConfigValidator.validateAiModel(value);
-      case 'temperature':
+      case "temperature":
         return AIConfigValidator.validateTemperature(value);
-      case 'maxTokens':
+      case "maxTokens":
         return AIConfigValidator.validateMaxTokens(value);
       default:
         return { isValid: true };
@@ -80,8 +86,8 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
     <div className="ai-settings-form">
       {/* 配置状态指示器 */}
       <Card size="small" style={{ marginBottom: 16 }}>
-        <AIConfigStatus 
-          config={config} 
+        <AIConfigStatus
+          config={config}
           showProgress={true}
           showDetails={false}
         />
@@ -100,25 +106,25 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
             <Space>
               <Text>API地址</Text>
               <Tooltip title="AI服务的API接口地址，例如：https://api.openai.com/v1">
-                <InfoCircleOutlined style={{ color: '#666' }} />
+                <InfoCircleOutlined style={{ color: "#666" }} />
               </Tooltip>
             </Space>
           }
           name="apiUrl"
           rules={[
-            { required: true, message: '请输入API地址' },
+            { required: true, message: "请输入API地址" },
             {
               validator: (_, value) => {
-                const result = validateField('apiUrl', value);
+                const result = validateField("apiUrl", value);
                 if (!result.isValid) {
                   return Promise.reject(new Error(result.error));
                 }
                 return Promise.resolve();
-              }
-            }
+              },
+            },
           ]}
         >
-          <Input 
+          <Input
             placeholder="请输入API地址，如：https://api.openai.com/v1"
             size="large"
           />
@@ -130,25 +136,25 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
             <Space>
               <Text>API密钥</Text>
               <Tooltip title="从AI服务提供商获取的API密钥">
-                <InfoCircleOutlined style={{ color: '#666' }} />
+                <InfoCircleOutlined style={{ color: "#666" }} />
               </Tooltip>
             </Space>
           }
           name="apiKey"
           rules={[
-            { required: true, message: '请输入API密钥' },
+            { required: true, message: "请输入API密钥" },
             {
               validator: (_, value) => {
-                const result = validateField('apiKey', value);
+                const result = validateField("apiKey", value);
                 if (!result.isValid) {
                   return Promise.reject(new Error(result.error));
                 }
                 return Promise.resolve();
-              }
-            }
+              },
+            },
           ]}
         >
-          <Input.Password 
+          <Input.Password
             placeholder="请输入API密钥"
             size="large"
             visibilityToggle
@@ -161,34 +167,34 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
             <Space>
               <Text>AI模型</Text>
               <Tooltip title="选择要使用的AI模型">
-                <InfoCircleOutlined style={{ color: '#666' }} />
+                <InfoCircleOutlined style={{ color: "#666" }} />
               </Tooltip>
             </Space>
           }
           name="aiModel"
           rules={[
-            { required: true, message: '请选择或输入AI模型' },
+            { required: true, message: "请选择或输入AI模型" },
             {
               validator: (_, value) => {
-                const result = validateField('aiModel', value);
+                const result = validateField("aiModel", value);
                 if (!result.isValid) {
                   return Promise.reject(new Error(result.error));
                 }
                 return Promise.resolve();
-              }
-            }
+              },
+            },
           ]}
         >
-          <Input 
+          <Input
             placeholder="请输入AI模型名称，如：gpt-3.5-turbo"
             size="large"
           />
         </Form.Item>
 
         {/* 高级设置 */}
-        <Card 
-          size="small" 
-          title="高级设置" 
+        <Card
+          size="small"
+          title="高级设置"
           style={{ marginBottom: 16 }}
           bodyStyle={{ paddingTop: 16 }}
         >
@@ -198,7 +204,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
               <Space>
                 <Text>温度参数</Text>
                 <Tooltip title="控制AI回复的随机性，0-2之间，值越高越随机">
-                  <InfoCircleOutlined style={{ color: '#666' }} />
+                  <InfoCircleOutlined style={{ color: "#666" }} />
                 </Tooltip>
               </Space>
             }
@@ -206,13 +212,13 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
             rules={[
               {
                 validator: (_, value) => {
-                  const result = validateField('temperature', value);
+                  const result = validateField("temperature", value);
                   if (!result.isValid) {
                     return Promise.reject(new Error(result.error));
                   }
                   return Promise.resolve();
-                }
-              }
+                },
+              },
             ]}
           >
             <InputNumber
@@ -220,7 +226,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
               max={2}
               step={0.1}
               placeholder="0.7"
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
             />
           </Form.Item>
 
@@ -230,7 +236,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
               <Space>
                 <Text>最大Token数</Text>
                 <Tooltip title="限制AI回复的最大长度">
-                  <InfoCircleOutlined style={{ color: '#666' }} />
+                  <InfoCircleOutlined style={{ color: "#666" }} />
                 </Tooltip>
               </Space>
             }
@@ -238,20 +244,20 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
             rules={[
               {
                 validator: (_, value) => {
-                  const result = validateField('maxTokens', value);
+                  const result = validateField("maxTokens", value);
                   if (!result.isValid) {
                     return Promise.reject(new Error(result.error));
                   }
                   return Promise.resolve();
-                }
-              }
+                },
+              },
             ]}
           >
             <InputNumber
               min={1}
               max={32000}
               placeholder="1000"
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
             />
           </Form.Item>
         </Card>
@@ -260,7 +266,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
         <Form.Item>
           <Space>
             <Button
-              icon={<TestOutlined />}
+              icon={<InfoCircleOutlined />}
               onClick={handleTest}
               loading={testLoading}
               disabled={loading}

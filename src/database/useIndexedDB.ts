@@ -94,7 +94,7 @@ export async function initializeDatabase(): Promise<void> {
           id: "default_user",
           username: "user",
           email: "user@example.com",
-          display_name: "用户",
+          // display_name: "用户", // 移除不存在的属性
         });
       } catch (error) {
         // 如果用户已存在，忽略错误
@@ -246,7 +246,32 @@ export function useDatabase() {
     async (keyword: string): Promise<StickyNote[]> => {
       try {
         const adapter = getDatabaseAdapter();
-        return await adapter.searchNotes(keyword);
+        const dbService = getDatabaseService();
+        const canvasId = adapter.getCurrentCanvasId();
+        if (!canvasId) {
+          console.warn("没有当前画布，无法搜索便签");
+          return [];
+        }
+        const dbNotes = await dbService.searchNotes(canvasId, keyword);
+        return dbNotes.map((note) => ({
+          id: note.id,
+          x: note.position_x,
+          y: note.position_y,
+          width: note.width,
+          height: note.height,
+          content: note.content,
+          title: note.title,
+          color:
+            (note.color as "yellow" | "blue" | "green" | "pink" | "purple") ||
+            "yellow",
+          fontSize: note.font_size || 14,
+          zIndex: note.z_index || 1,
+          isEditing: false,
+          isTitleEditing: false,
+          isNew: false,
+          createdAt: new Date(note.created_at),
+          updatedAt: new Date(note.updated_at),
+        }));
       } catch (err) {
         console.error("搜索便签失败:", err);
         setError(err instanceof Error ? err.message : "搜索便签失败");

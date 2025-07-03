@@ -1,8 +1,8 @@
 // AI供应商选择组件 - 优化版本
 import {
-    BookOutlined,
-    CheckCircleOutlined,
-    GlobalOutlined,
+  BookOutlined,
+  CheckCircleOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import { Button, Card, Col, Row, Space, Tag, Tooltip, Typography } from "antd";
 import React from "react";
@@ -31,7 +31,7 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
   onProviderSelect,
   showCustomOption = true,
   onCustomSelect,
-  providerConfigs = {}
+  providerConfigs = {},
 }) => {
   const popularProviders = getPopularProviders();
   const otherProviders = AI_PROVIDERS.filter((provider) => !provider.popular);
@@ -61,24 +61,24 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
 
     return (
       <Col xs={24} sm={12} md={8} lg={6} key={provider.id}>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: "relative" }}>
           {/* 配置状态指示器 */}
           {isConfigured && (
             <Tooltip title="已配置API密钥和模型">
               <div
                 className="provider-config-indicator"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 8,
                   right: 8,
                   zIndex: 10,
                   width: 12,
                   height: 12,
-                  borderRadius: '50%',
-                  backgroundColor: '#52c41a',
-                  border: '2px solid white',
-                  boxShadow: '0 0 6px rgba(82, 196, 26, 0.6)',
-                  animation: 'pulse 2s infinite'
+                  borderRadius: "50%",
+                  backgroundColor: "#52c41a",
+                  border: "2px solid white",
+                  boxShadow: "0 0 6px rgba(82, 196, 26, 0.6)",
+                  animation: "pulse 2s infinite",
                 }}
               />
             </Tooltip>
@@ -90,18 +90,18 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
               <div
                 className="provider-current-indicator"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 8,
                   left: 8,
                   zIndex: 10,
-                  background: 'linear-gradient(45deg, #1890ff, #52c41a)',
-                  color: 'white',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  animation: 'glow 2s ease-in-out infinite alternate'
+                  background: "linear-gradient(45deg, #1890ff, #52c41a)",
+                  color: "white",
+                  fontSize: "10px",
+                  padding: "2px 6px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  animation: "glow 2s ease-in-out infinite alternate",
                 }}
               >
                 使用中
@@ -117,81 +117,98 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
             onClick={() => onProviderSelect(provider)}
             styles={{ body: { padding: "16px" } }}
           >
-          <div className="provider-card-content">
-            {/* 供应商头部 */}
-            <div className="provider-header">
-              <div className="provider-logo">{provider.logo}</div>
-              <div className="provider-info">
-                <Title level={5} style={{ margin: 0, fontSize: "14px" }}>
-                  {provider.displayName}
-                </Title>
-                {provider.popular && (
-                  <Tag color="gold" style={{ fontSize: '10px', padding: '0 4px', lineHeight: '16px', height: '16px' }}>
-                    热门
-                  </Tag>
+            <div className="provider-card-content">
+              {/* 供应商头部 */}
+              <div className="provider-header">
+                <div className="provider-logo">{provider.logo}</div>
+                <div className="provider-info">
+                  <Title level={5} style={{ margin: 0, fontSize: "14px" }}>
+                    {provider.displayName}
+                  </Title>
+                  {provider.popular && (
+                    <Tag
+                      color="gold"
+                      style={{
+                        fontSize: "10px",
+                        padding: "0 4px",
+                        lineHeight: "16px",
+                        height: "16px",
+                      }}
+                    >
+                      热门
+                    </Tag>
+                  )}
+                </div>
+                {isSelected && (
+                  <CheckCircleOutlined
+                    className="provider-selected-icon"
+                    style={{ color: "#52c41a", fontSize: "18px" }}
+                  />
                 )}
               </div>
-              {isSelected && (
-                <CheckCircleOutlined
-                  className="provider-selected-icon"
-                  style={{ color: "#52c41a", fontSize: "18px" }}
-                />
-              )}
-            </div>
 
-            {/* 供应商描述 */}
-            <Text
-              type="secondary"
-              style={{
-                fontSize: "12px",
-                display: "block",
-                marginTop: "8px",
-                lineHeight: "1.4",
-              }}
-            >
-              {provider.description}
-            </Text>
-
-            {/* 模型数量 */}
-            <div style={{ marginTop: "12px" }}>
-              <Text style={{ fontSize: "12px", color: "#666" }}>
-                {provider.models.length} 个模型可用
+              {/* 供应商描述 */}
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: "12px",
+                  display: "block",
+                  marginTop: "8px",
+                  lineHeight: "1.4",
+                }}
+              >
+                {provider.description}
               </Text>
-            </div>
 
-            {/* 快捷链接 */}
-            <Space size="small" style={{ marginTop: "8px" }}>
-              {provider.website && (
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<GlobalOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(provider.website, "_blank");
-                  }}
-                  style={{ padding: "0 4px", height: "20px", fontSize: "12px" }}
-                >
-                  官网
-                </Button>
-              )}
-              {provider.docUrl && (
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<BookOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(provider.docUrl, "_blank");
-                  }}
-                  style={{ padding: "0 4px", height: "20px", fontSize: "12px" }}
-                >
-                  文档
-                </Button>
-              )}
-            </Space>
-          </div>
-        </Card>
+              {/* 模型数量 */}
+              <div style={{ marginTop: "12px" }}>
+                <Text style={{ fontSize: "12px", color: "#666" }}>
+                  {provider.models.length} 个模型可用
+                </Text>
+              </div>
+
+              {/* 快捷链接 */}
+              <Space size="small" style={{ marginTop: "8px" }}>
+                {provider.website && (
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<GlobalOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(provider.website, "_blank");
+                    }}
+                    style={{
+                      padding: "0 4px",
+                      height: "20px",
+                      fontSize: "12px",
+                    }}
+                  >
+                    官网
+                  </Button>
+                )}
+                {provider.docUrl && (
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<BookOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(provider.docUrl, "_blank");
+                    }}
+                    style={{
+                      padding: "0 4px",
+                      height: "20px",
+                      fontSize: "12px",
+                    }}
+                  >
+                    文档
+                  </Button>
+                )}
+              </Space>
+            </div>
+          </Card>
+        </div>
       </Col>
     );
   };
@@ -208,24 +225,24 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
 
     return (
       <Col xs={24} sm={12} md={8} lg={6}>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: "relative" }}>
           {/* 配置状态指示器 */}
           {isConfigured && (
             <Tooltip title="已配置API密钥和模型">
               <div
                 className="provider-config-indicator"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 8,
                   right: 8,
                   zIndex: 10,
                   width: 12,
                   height: 12,
-                  borderRadius: '50%',
-                  backgroundColor: '#52c41a',
-                  border: '2px solid white',
-                  boxShadow: '0 0 6px rgba(82, 196, 26, 0.6)',
-                  animation: 'pulse 2s infinite'
+                  borderRadius: "50%",
+                  backgroundColor: "#52c41a",
+                  border: "2px solid white",
+                  boxShadow: "0 0 6px rgba(82, 196, 26, 0.6)",
+                  animation: "pulse 2s infinite",
                 }}
               />
             </Tooltip>
@@ -237,18 +254,18 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
               <div
                 className="provider-current-indicator"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 8,
                   left: 8,
                   zIndex: 10,
-                  background: 'linear-gradient(45deg, #1890ff, #52c41a)',
-                  color: 'white',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  animation: 'glow 2s ease-in-out infinite alternate'
+                  background: "linear-gradient(45deg, #1890ff, #52c41a)",
+                  color: "white",
+                  fontSize: "10px",
+                  padding: "2px 6px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  animation: "glow 2s ease-in-out infinite alternate",
                 }}
               >
                 使用中
@@ -264,34 +281,35 @@ export const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
             onClick={onCustomSelect}
             styles={{ body: { padding: "16px" } }}
           >
-          <div className="provider-card-content">
-            <div className="provider-header">
-              <div className="provider-logo">⚙️</div>
-              <div className="provider-info">
-                <Title level={5} style={{ margin: 0, fontSize: "14px" }}>
-                  自定义配置
-                </Title>
+            <div className="provider-card-content">
+              <div className="provider-header">
+                <div className="provider-logo">⚙️</div>
+                <div className="provider-info">
+                  <Title level={5} style={{ margin: 0, fontSize: "14px" }}>
+                    自定义配置
+                  </Title>
+                </div>
+                {isSelected && (
+                  <CheckCircleOutlined
+                    className="provider-selected-icon"
+                    style={{ color: "#52c41a", fontSize: "18px" }}
+                  />
+                )}
               </div>
-              {isSelected && (
-                <CheckCircleOutlined
-                  className="provider-selected-icon"
-                  style={{ color: "#52c41a", fontSize: "18px" }}
-                />
-              )}
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: "12px",
+                  display: "block",
+                  marginTop: "8px",
+                  lineHeight: "1.4",
+                }}
+              >
+                手动配置API地址和模型，适用于其他AI服务
+              </Text>
             </div>
-            <Text
-              type="secondary"
-              style={{
-                fontSize: "12px",
-                display: "block",
-                marginTop: "8px",
-                lineHeight: "1.4",
-              }}
-            >
-              手动配置API地址和模型，适用于其他AI服务
-            </Text>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </Col>
     );
   };

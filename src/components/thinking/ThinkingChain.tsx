@@ -10,7 +10,10 @@ import {
 } from "@ant-design/icons";
 import { Card, Collapse, Tag, Timeline, Typography } from "antd";
 import React from "react";
-import type { ThinkingChain as ThinkingChainType, ThinkingStep } from "../types";
+import type {
+  ThinkingChain as ThinkingChainType,
+  ThinkingStep,
+} from "../types";
 import "./ThinkingChain.css";
 
 const { Text, Paragraph } = Typography;
@@ -87,9 +90,9 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
         mode="left"
         className={`thinking-timeline ${compact ? "compact" : ""}`}
       >
-        {thinkingChain.steps.map((step, index) => {
+        {thinkingChain.steps.map((step) => {
           const { icon, color } = getStepIcon(step.stepType);
-          
+
           return (
             <Timeline.Item
               key={step.id}
@@ -148,7 +151,7 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
           {Object.entries(stepCounts).map(([type, count]) => {
             const { color } = getStepIcon(type as ThinkingStep["stepType"]);
             return (
-              <Tag key={type} color={color} size="small">
+              <Tag key={type} color={color}>
                 {getStepTypeLabel(type as ThinkingStep["stepType"])} {count}
               </Tag>
             );
@@ -172,9 +175,11 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
           header={
             <div className="thinking-header">
               <div className="thinking-title">
-                <ExperimentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+                <ExperimentOutlined
+                  style={{ marginRight: 8, color: "#1890ff" }}
+                />
                 <Text strong>AI思考过程</Text>
-                <Tag color="blue" size="small" style={{ marginLeft: 8 }}>
+                <Tag color="blue" style={{ marginLeft: 8 }}>
                   {thinkingChain.steps.length}步
                 </Tag>
               </div>

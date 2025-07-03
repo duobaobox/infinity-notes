@@ -223,9 +223,8 @@ export class IndexedDBAIProviderStorage {
       const db = IndexedDBService.getInstance();
       await db.initialize();
 
-      const allConfigs = await db.getAllItems<StoredProviderConfig>(
-        this.STORE_NAME
-      );
+      // 获取所有配置并逐一删除
+      const allConfigs = await this.getAllProviderConfigs(db);
       for (const config of allConfigs) {
         await db.deleteItem(this.STORE_NAME, config.id);
       }

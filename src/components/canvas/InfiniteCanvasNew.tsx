@@ -15,6 +15,7 @@ import CanvasGrid from "./CanvasGrid";
 import CanvasToolbar from "./CanvasToolbar";
 import StickyNoteSlots from "./StickyNoteSlots";
 
+import { usePerformanceOptimization } from "../../hooks/usePerformanceOptimization";
 import SettingsModal from "../modals/SettingsModal";
 import type { SourceNoteContent, StickyNote as StickyNoteType } from "../types";
 import { CANVAS_CONSTANTS, PERFORMANCE_CONSTANTS } from "./CanvasConstants";
@@ -75,6 +76,17 @@ interface InfiniteCanvasRef {
 const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const consoleRef = useRef<{ focus: () => void }>(null);
+
+  // 性能优化配置 - 动态检测设备性能并调整虚拟化阈值
+  const {
+    virtualizationThreshold,
+    viewportMargin,
+    // performanceLevel,
+    // performanceScore,
+    // isDetecting: isPerformanceDetecting,
+    getVirtualizationAdvice,
+    getPerformanceLevelInfo,
+  } = usePerformanceOptimization();
 
   // 全局状态管理 - 便签状态
   const {
@@ -173,6 +185,65 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     () => ({ x: offsetX, y: offsetY }),
     [offsetX, offsetY]
   );
+
+  // 便签虚拟化渲染 - 基于设备性能动态调整阈值
+  const visibleNotes = useMemo(() => {
+    // 如果便签数量少于动态虚拟化阈值，直接返回所有便签
+    if (stickyNotes.length <= virtualizationThreshold) {
+      return stickyNotes;
+    }
+
+    // 计算当前视口范围（考虑画布变换）
+    const viewportBounds = {
+      left: -offsetX / scale,
+      top: -offsetY / scale,
+      right: (-offsetX + window.innerWidth) / scale,
+      bottom: (-offsetY + window.innerHeight) / scale,
+    };
+
+    // 使用动态边距，根据设备性能调整
+    const expandedBounds = {
+      left: viewportBounds.left - viewportMargin,
+      top: viewportBounds.top - viewportMargin,
+      right: viewportBounds.right + viewportMargin,
+      bottom: viewportBounds.bottom + viewportMargin,
+    };
+
+    // 过滤出在扩展视口范围内的便签
+    const visibleNotesInViewport = stickyNotes.filter((note) => {
+      // 检查便签是否与视口相交
+      const noteRight = note.x + note.width;
+      const noteBottom = note.y + note.height;
+
+      return (
+        note.x < expandedBounds.right &&
+        noteRight > expandedBounds.left &&
+        note.y < expandedBounds.bottom &&
+        noteBottom > expandedBounds.top
+      );
+    });
+
+    // 开发环境下输出虚拟化统计信息
+    if (process.env.NODE_ENV === "development") {
+      const advice = getVirtualizationAdvice(stickyNotes.length);
+      const levelInfo = getPerformanceLevelInfo();
+
+      console.log(
+        `🎯 智能虚拟化 [${levelInfo?.icon} ${levelInfo?.label}]: 总数=${stickyNotes.length}, 可见=${visibleNotesInViewport.length}, 阈值=${virtualizationThreshold}, 负载=${advice?.currentLoad}, 边距=${viewportMargin}px`
+      );
+    }
+
+    return visibleNotesInViewport;
+  }, [
+    stickyNotes,
+    offsetX,
+    offsetY,
+    scale,
+    virtualizationThreshold,
+    viewportMargin,
+    getVirtualizationAdvice,
+    getPerformanceLevelInfo,
+  ]);
 
   // 便签操作函数
   const updateStickyNote = useCallback(
@@ -830,8 +901,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
       {/* 画布内容区域 - 通过CSS变量应用变换 */}
       <div ref={canvasRef} className="infinite-canvas">
-        {/* 便签 */}
-        {stickyNotes.map((note) => {
+        {/* 便签 - 使用虚拟化渲染优化性能 */}
+        {visibleNotes.map((note) => {
           const streamingData = streamingNotes.get(note.id);
           return (
             <StickyNote

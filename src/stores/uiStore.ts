@@ -573,7 +573,7 @@ export const useUIStore = create<UIState & UIActions>()(
             const savedLayout =
               await IndexedDBUISettingsStorage.loadUILayoutSettings();
             if (savedLayout) {
-              set((state) => ({
+              set((_state) => ({
                 sidebarCollapsed: savedLayout.sidebarCollapsed,
                 sidebarVisible: savedLayout.sidebarVisible,
                 toolbarVisible: savedLayout.toolbarVisible,

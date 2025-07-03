@@ -4,12 +4,15 @@
  */
 export class CacheManager {
   private static instance: CacheManager;
-  private cache: Map<string, {
-    data: any;
-    timestamp: number;
-    ttl: number; // 生存时间（毫秒）
-  }> = new Map();
-  
+  private cache: Map<
+    string,
+    {
+      data: any;
+      timestamp: number;
+      ttl: number; // 生存时间（毫秒）
+    }
+  > = new Map();
+
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 默认5分钟过期
   private cleanupInterval: NodeJS.Timeout | null = null;
 
@@ -37,7 +40,7 @@ export class CacheManager {
       timestamp: Date.now(),
       ttl,
     });
-    
+
     console.log(`💾 缓存已设置: ${key} (TTL: ${ttl}ms)`);
   }
 
@@ -46,7 +49,7 @@ export class CacheManager {
    */
   get<T>(key: string): T | null {
     const cached = this.cache.get(key);
-    
+
     if (!cached) {
       return null;
     }
@@ -78,7 +81,7 @@ export class CacheManager {
    */
   clear(): void {
     this.cache.clear();
-    console.log('🧹 所有缓存已清空');
+    console.log("🧹 所有缓存已清空");
   }
 
   /**
@@ -105,7 +108,7 @@ export class CacheManager {
       if (Date.now() - cached.timestamp > cached.ttl) {
         expiredKeys++;
       }
-      
+
       // 估算内存使用量（简单估算）
       memoryUsage += JSON.stringify(cached.data).length + key.length;
     }
@@ -132,7 +135,7 @@ export class CacheManager {
    */
   getMultiple<T>(keys: string[]): Map<string, T | null> {
     const result = new Map<string, T | null>();
-    keys.forEach(key => {
+    keys.forEach((key) => {
       result.set(key, this.get<T>(key));
     });
     return result;
@@ -143,14 +146,14 @@ export class CacheManager {
    */
   deleteByPrefix(prefix: string): number {
     let deletedCount = 0;
-    
+
     for (const key of this.cache.keys()) {
       if (key.startsWith(prefix)) {
         this.cache.delete(key);
         deletedCount++;
       }
     }
-    
+
     console.log(`🗑️ 按前缀删除缓存: ${prefix}* (${deletedCount}个)`);
     return deletedCount;
   }
@@ -197,7 +200,7 @@ export class CacheManager {
    * 生成缓存键
    */
   static generateKey(prefix: string, ...params: (string | number)[]): string {
-    return `${prefix}:${params.join(':')}`;
+    return `${prefix}:${params.join(":")}`;
   }
 }
 
@@ -206,7 +209,11 @@ export class CacheManager {
  * 自动缓存方法返回值
  */
 export function cached(keyPrefix: string, ttl?: number) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    _propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
     const originalMethod = descriptor.value;
     const cache = CacheManager.getInstance();
 
@@ -214,7 +221,9 @@ export function cached(keyPrefix: string, ttl?: number) {
       // 生成缓存键
       const cacheKey = CacheManager.generateKey(
         `${target.constructor.name}.${keyPrefix}`,
-        ...args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg))
+        ...args.map((arg) =>
+          typeof arg === "object" ? JSON.stringify(arg) : String(arg)
+        )
       );
 
       // 尝试从缓存获取
@@ -226,7 +235,7 @@ export function cached(keyPrefix: string, ttl?: number) {
       // 执行原方法并缓存结果
       const result = await originalMethod.apply(this, args);
       cache.set(cacheKey, result, ttl);
-      
+
       return result;
     };
 
