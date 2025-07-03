@@ -5,7 +5,7 @@ import InfiniteCanvas from "./components/canvas/InfiniteCanvasNew";
 import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
-import VirtualizationTest from "./test/VirtualizationTest";
+import VirtualizationStatusMonitor from "./test/VirtualizationTest";
 
 // 导入全局状态管理
 import {
@@ -172,8 +172,10 @@ function App() {
         {/* 悬浮侧边栏 */}
         <Sidebar />
 
-        {/* 开发环境下显示虚拟化测试工具 */}
-        {process.env.NODE_ENV === "development" && <VirtualizationTest />}
+        {/* 开发环境下显示虚拟化状态监控 */}
+        {process.env.NODE_ENV === "development" && (
+          <VirtualizationStatusMonitor />
+        )}
 
         {/* 操作加载指示器 - 小的、不阻塞的加载提示 */}
         {operationInProgress && (
