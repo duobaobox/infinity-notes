@@ -1,7 +1,6 @@
 import { Badge, Button, Collapse, Divider } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { usePerformanceOptimization } from "../hooks/usePerformanceOptimization";
-import { useConnectionStore } from "../stores/connectionStore";
 import { useStickyNotesStore } from "../stores/stickyNotesStore";
 import { connectionLineManager } from "../utils/connectionLineManager";
 
@@ -27,7 +26,6 @@ interface ConnectionPerformanceData {
  */
 const VirtualizationStatusMonitorEnhanced: React.FC = () => {
   const { notes } = useStickyNotesStore();
-  const { connectedNotes } = useConnectionStore();
 
   // 性能优化配置
   const {
@@ -106,7 +104,7 @@ const VirtualizationStatusMonitorEnhanced: React.FC = () => {
 
   // 强制更新所有连接线位置
   const forceUpdateConnections = useCallback(() => {
-    connectionLineManager.updateConnectionLinesImmediate();
+    connectionLineManager.updateConnectionPositions();
     updateConnectionPerformance();
   }, [updateConnectionPerformance]);
 

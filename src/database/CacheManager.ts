@@ -184,6 +184,35 @@ export class CacheManager {
     if (cleanedCount > 0) {
       console.log(`🧹 定期清理过期缓存: ${cleanedCount}个`);
     }
+
+    // 检查内存压力并进行额外清理
+    this.checkMemoryPressure();
+  }
+
+  /**
+   * 内存压力检测和自动清理
+   */
+  private checkMemoryPressure(): void {
+    const MAX_CACHE_ITEMS = 1000; // 最大缓存项目数
+    const CLEANUP_THRESHOLD = 0.8; // 清理阈值（80%）
+
+    // 如果缓存项目数超过阈值，清理最旧的项目
+    if (this.cache.size > MAX_CACHE_ITEMS * CLEANUP_THRESHOLD) {
+      const itemsToRemove = Math.floor(this.cache.size * 0.2); // 清理20%的项目
+
+      // 按时间戳排序，删除最旧的项目
+      const sortedEntries = Array.from(this.cache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp
+      );
+
+      for (let i = 0; i < itemsToRemove && i < sortedEntries.length; i++) {
+        this.cache.delete(sortedEntries[i][0]);
+      }
+
+      if (itemsToRemove > 0) {
+        console.log(`🧹 内存压力清理: 移除了 ${itemsToRemove} 个最旧的缓存项`);
+      }
+    }
   }
 
   /**
@@ -194,6 +223,24 @@ export class CacheManager {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
+  }
+
+  /**
+   * 销毁缓存管理器 - 完整的内存清理
+   */
+  destroy(): void {
+    console.log("🧹 开始销毁缓存管理器...");
+
+    // 停止清理定时器
+    this.stopCleanupTimer();
+
+    // 清空所有缓存
+    this.clear();
+
+    // 重置单例实例
+    CacheManager.instance = null as any;
+
+    console.log("🧹 缓存管理器已完全销毁");
   }
 
   /**

@@ -15,6 +15,8 @@ import {
   useUIStore,
 } from "./stores";
 
+// 导入内存管理器
+
 const { Content } = Layout;
 
 function App() {
@@ -74,6 +76,10 @@ function App() {
 
         // 最后初始化UI Store（同步操作）
         initializeUI();
+
+        // 初始化内存管理器
+        const { memoryManager } = await import("./utils/memoryManager");
+        memoryManager.initialize();
 
         // 标记应用初始化完成
         setAppInitialized(true);

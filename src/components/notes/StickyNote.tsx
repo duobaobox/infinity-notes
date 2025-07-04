@@ -8,7 +8,6 @@ import {
   TagOutlined,
 } from "@ant-design/icons";
 import { Button } from "antd";
-import { throttle } from "lodash";
 import React, {
   memo,
   useCallback,
@@ -605,18 +604,23 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note.width, note.height, canvasScale]
   );
 
-  // 节流的连接线更新 - 优化同步性能，减少延迟
-  const throttledNoteConnectionUpdate = useMemo(
-    () =>
-      throttle(() => {
-        // 使用单个 requestAnimationFrame 减少延迟，提高同步性
-        // 在拖拽过程中，DOM位置已经通过CSS transform实时更新
-        requestAnimationFrame(() => {
-          updateNoteConnectionLinesImmediate(note.id);
-        });
-      }, 16),
-    [updateNoteConnectionLinesImmediate, note.id]
-  );
+  // 优化的连接线更新 - 减少延迟，提升性能
+  const optimizedConnectionUpdate = useMemo(() => {
+    let updateScheduled = false;
+
+    return () => {
+      // 避免重复调度更新
+      if (updateScheduled) return;
+
+      updateScheduled = true;
+
+      // 使用requestAnimationFrame确保在下一帧更新，避免阻塞当前帧
+      requestAnimationFrame(() => {
+        updateNoteConnectionLinesImmediate(note.id);
+        updateScheduled = false;
+      });
+    };
+  }, [updateNoteConnectionLinesImmediate, note.id]);
 
   // 全局鼠标移动处理
   useEffect(() => {
@@ -635,7 +639,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           const newY = canvasY - dragOffset.y;
 
           setTempPosition({ x: newX, y: newY });
-          throttledNoteConnectionUpdate();
+          optimizedConnectionUpdate();
         });
       } else if (isResizing) {
         // 取消之前的动画帧
@@ -652,7 +656,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
           setTempSize({ width: newWidth, height: newHeight });
           // 调整大小时也需要更新连接线位置，因为连接点位置会改变
-          throttledNoteConnectionUpdate();
+          optimizedConnectionUpdate();
         });
       }
     };
@@ -716,7 +720,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempPosition.y,
     tempSize.width,
     tempSize.height,
-    throttledNoteConnectionUpdate,
+    optimizedConnectionUpdate,
   ]);
 
   // 处理位置同步
@@ -999,7 +1003,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const actualHeight =
     isResizing || isSyncingSize ? tempSize.height : note.height;
 
-  // 组件卸载时清理溯源连接线
+  // 组件卸载时完整清理 - 防止内存泄漏
   useEffect(() => {
     return () => {
       // 清理溯源连接线
@@ -1008,8 +1012,34 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           connectionLineManager.removeSourceConnection(sourceNoteId, note.id);
         }
       }
+
+      // 清理所有定时器
+      if (contentUpdateTimerRef.current) {
+        clearTimeout(contentUpdateTimerRef.current);
+        contentUpdateTimerRef.current = null;
+      }
+
+      if (titleUpdateTimerRef.current) {
+        clearTimeout(titleUpdateTimerRef.current);
+        titleUpdateTimerRef.current = null;
+      }
+
+      // 清理动画帧
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
+      // 清理所有连接线
+      try {
+        connectionLineManager.removeConnection(note.id);
+        connectionLineManager.removeAllSourceConnectionsToNote(note.id);
+        connectionLineManager.removeAllSourceConnectionsFromNote(note.id);
+      } catch (error) {
+        console.warn(`清理便签 ${note.id} 连接线时出错:`, error);
+      }
     };
-  }, [note.id, note.sourceNoteIds, sourceConnectionsVisible]);
+  }, [note.id]);
 
   // 点击外部区域关闭设置工具栏
   useEffect(() => {

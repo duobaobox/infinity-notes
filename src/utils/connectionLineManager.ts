@@ -155,6 +155,9 @@ class ConnectionLineManager {
     // 监听滚动事件，更新连接线位置
     window.addEventListener("scroll", this.handleScroll, true);
 
+    // 初始化缓存
+    this.buildConnectionCache();
+
     this.isInitialized = true;
     console.log("🔗 连接线管理器已初始化");
   }
@@ -260,6 +263,9 @@ class ConnectionLineManager {
       // 保存连接线
       this.connections.set(connectionId, connection);
 
+      // 更新缓存
+      this.updateConnectionCache(connectionId, connection);
+
       console.log(
         `✅ 已创建连接线: ${note.title || "无标题"} -> 插槽${slotIndex}`
       );
@@ -281,6 +287,8 @@ class ConnectionLineManager {
         if (connection && connection.type === "normal") {
           connection.line.remove();
           this.connections.delete(connectionId);
+          // 更新缓存
+          this.removeConnectionFromCache(connectionId, connection);
           console.log(`🗑️ 已移除普通连接线: ${noteId} -> 插槽${slotIndex}`);
           return true;
         } else if (connection && connection.type === "source") {
@@ -320,6 +328,8 @@ class ConnectionLineManager {
             console.log(`🗑️ 删除普通连接线: ${connectionId}`);
             connection.line.remove();
             this.connections.delete(connectionId);
+            // 更新缓存
+            this.removeConnectionFromCache(connectionId, connection);
             removed = true;
           }
         }
@@ -418,6 +428,9 @@ class ConnectionLineManager {
         this.connections.values()
       ).filter((conn) => conn.type === "source").length;
 
+      // 清空缓存并重新构建
+      this.buildConnectionCache();
+
       console.log(
         `🧹 已清空所有普通连接线，保留 ${sourceConnectionCount} 个溯源连接线`
       );
@@ -426,6 +439,9 @@ class ConnectionLineManager {
       throw error; // 抛出错误以便上层处理
     }
   }
+
+  // 连接线索引缓存 - 优化查找性能
+  private noteConnectionsCache = new Map<string, Set<string>>();
 
   // 更新连接线位置 - 使用节流优化性能
   updateConnectionPositions(): void {
@@ -445,6 +461,83 @@ class ConnectionLineManager {
       this.performConnectionUpdate();
       this.updateThrottleTimeout = null;
     }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_THROTTLE_MS);
+  }
+
+  // 构建连接线索引缓存 - 优化查找性能
+  private buildConnectionCache(): void {
+    this.noteConnectionsCache.clear();
+
+    for (const [connectionId, connection] of this.connections) {
+      // 为源便签建立索引
+      if (!this.noteConnectionsCache.has(connection.noteId)) {
+        this.noteConnectionsCache.set(connection.noteId, new Set());
+      }
+      this.noteConnectionsCache.get(connection.noteId)!.add(connectionId);
+
+      // 为目标便签建立索引（仅溯源连接线）
+      if (connection.type === "source" && connection.targetNoteId) {
+        if (!this.noteConnectionsCache.has(connection.targetNoteId)) {
+          this.noteConnectionsCache.set(connection.targetNoteId, new Set());
+        }
+        this.noteConnectionsCache
+          .get(connection.targetNoteId)!
+          .add(connectionId);
+      }
+    }
+  }
+
+  // 获取便签相关的连接线ID列表 - 使用缓存优化性能
+  private getNoteConnectionIds(noteId: string): string[] {
+    const connectionIds = this.noteConnectionsCache.get(noteId);
+    return connectionIds ? Array.from(connectionIds) : [];
+  }
+
+  // 更新单个连接线的缓存
+  private updateConnectionCache(
+    connectionId: string,
+    connection: ConnectionLine
+  ): void {
+    // 为源便签建立索引
+    if (!this.noteConnectionsCache.has(connection.noteId)) {
+      this.noteConnectionsCache.set(connection.noteId, new Set());
+    }
+    this.noteConnectionsCache.get(connection.noteId)!.add(connectionId);
+
+    // 为目标便签建立索引（仅溯源连接线）
+    if (connection.type === "source" && connection.targetNoteId) {
+      if (!this.noteConnectionsCache.has(connection.targetNoteId)) {
+        this.noteConnectionsCache.set(connection.targetNoteId, new Set());
+      }
+      this.noteConnectionsCache.get(connection.targetNoteId)!.add(connectionId);
+    }
+  }
+
+  // 从缓存中移除连接线
+  private removeConnectionFromCache(
+    connectionId: string,
+    connection: ConnectionLine
+  ): void {
+    // 从源便签的缓存中移除
+    const sourceConnections = this.noteConnectionsCache.get(connection.noteId);
+    if (sourceConnections) {
+      sourceConnections.delete(connectionId);
+      if (sourceConnections.size === 0) {
+        this.noteConnectionsCache.delete(connection.noteId);
+      }
+    }
+
+    // 从目标便签的缓存中移除（仅溯源连接线）
+    if (connection.type === "source" && connection.targetNoteId) {
+      const targetConnections = this.noteConnectionsCache.get(
+        connection.targetNoteId
+      );
+      if (targetConnections) {
+        targetConnections.delete(connectionId);
+        if (targetConnections.size === 0) {
+          this.noteConnectionsCache.delete(connection.targetNoteId);
+        }
+      }
+    }
   }
 
   // 执行连接线位置更新
@@ -474,25 +567,11 @@ class ConnectionLineManager {
     });
   }
 
-  // 更新特定便签的连接线位置 - 使用节流优化性能
+  // 更新特定便签的连接线位置 - 使用缓存优化性能
   updateNoteConnections(noteId: string): void {
-    // 检查该便签是否有连接线
-    let hasConnection = false;
-    for (const connection of this.connections.values()) {
-      // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
-      if (connection.noteId === noteId) {
-        hasConnection = true;
-        break;
-      }
-      // 检查以该便签为终点的溯源连接线（目标便签）
-      if (connection.type === "source" && connection.targetNoteId === noteId) {
-        hasConnection = true;
-        break;
-      }
-    }
-
-    // 如果该便签没有连接线，直接返回
-    if (!hasConnection) {
+    // 使用缓存快速检查该便签是否有连接线
+    const connectionIds = this.getNoteConnectionIds(noteId);
+    if (connectionIds.length === 0) {
       return;
     }
 
@@ -511,19 +590,23 @@ class ConnectionLineManager {
     }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS); // 改为16ms，与便签拖拽同步
   }
 
-  // 立即更新特定便签的连接线位置 - 用于拖动时的实时同步
+  // 立即更新特定便签的连接线位置 - 用于拖动时的实时同步（优化版）
   updateNoteConnectionsImmediate(noteId: string): void {
     try {
-      // 检查该便签是否有连接线
-      let hasConnection = false;
+      // 使用缓存快速获取相关连接线
+      const connectionIds = this.getNoteConnectionIds(noteId);
+      if (connectionIds.length === 0) {
+        return;
+      }
+
       const connectionsToUpdate: ConnectionLine[] = [];
       let normalConnections = 0;
       let sourceConnections = 0;
 
-      for (const connection of this.connections.values()) {
-        // 检查以该便签为起点的连接线（普通连接线和溯源连接线的源便签）
-        if (connection.noteId === noteId) {
-          hasConnection = true;
+      // 收集需要更新的连接线
+      for (const connectionId of connectionIds) {
+        const connection = this.connections.get(connectionId);
+        if (connection) {
           connectionsToUpdate.push(connection);
           if (connection.type === "normal") {
             normalConnections++;
@@ -531,53 +614,46 @@ class ConnectionLineManager {
             sourceConnections++;
           }
         }
-        // 检查以该便签为终点的溯源连接线（目标便签）
-        else if (
-          connection.type === "source" &&
-          connection.targetNoteId === noteId
-        ) {
-          hasConnection = true;
-          connectionsToUpdate.push(connection);
-          sourceConnections++;
-        }
       }
 
-      // 如果该便签没有连接线，直接返回
-      if (!hasConnection) {
+      if (connectionsToUpdate.length === 0) {
         return;
       }
 
       // 输出调试信息（仅在有溯源连接线时）
-      if (sourceConnections > 0) {
+      if (sourceConnections > 0 && process.env.NODE_ENV === "development") {
         console.log(
           `🔄 立即更新便签 ${noteId} 的连接线: ${normalConnections} 个普通连接线, ${sourceConnections} 个溯源连接线`
         );
       }
 
-      // 强制DOM重新计算布局，确保连接点位置是最新的
-      // 这对于拖拽时的实时更新非常重要
-      // 使用更强制的方式确保DOM位置同步
-      for (const connection of connectionsToUpdate) {
-        // 强制触发重排和重绘，确保CSS left/top属性已应用
-        // 这是关键：便签使用left/top定位，需要强制浏览器应用这些样式
-        connection.startElement.offsetHeight; // 强制重排
-        connection.endElement.offsetHeight; // 强制重排
+      // 优化的DOM位置同步策略 - 减少强制重排次数
+      // 只在必要时进行一次性的强制重排，而不是每个连接线都重排
+      if (connectionsToUpdate.length > 0) {
+        // 收集所有需要更新的元素，避免重复操作
+        const elements = new Set<HTMLElement>();
+        for (const connection of connectionsToUpdate) {
+          elements.add(connection.startElement);
+          elements.add(connection.endElement);
+        }
 
-        // 强制重新计算连接点的位置 - 确保获取到最新的left/top位置
-        connection.startElement.getBoundingClientRect();
-        connection.endElement.getBoundingClientRect();
-
-        // 再次强制重排，确保位置计算准确
-        connection.startElement.offsetTop;
-        connection.endElement.offsetTop;
-        connection.startElement.offsetLeft;
-        connection.endElement.offsetLeft;
+        // 一次性强制重排所有相关元素，减少重排次数
+        for (const element of elements) {
+          element.offsetHeight; // 触发重排
+        }
       }
 
-      // 批量更新连接线位置
-      for (const connection of connectionsToUpdate) {
-        connection.line.position();
-      }
+      // 批量更新连接线位置 - 使用requestAnimationFrame确保在下一帧执行
+      // 这样可以避免阻塞当前帧的渲染
+      requestAnimationFrame(() => {
+        for (const connection of connectionsToUpdate) {
+          try {
+            connection.line.position();
+          } catch (error) {
+            console.warn(`更新连接线 ${connection.noteId} 位置失败:`, error);
+          }
+        }
+      });
     } catch (error) {
       console.error("立即更新便签连接线位置失败:", error);
     }
@@ -818,6 +894,9 @@ class ConnectionLineManager {
       // 保存连接线
       this.connections.set(connectionId, connection);
 
+      // 更新缓存
+      this.updateConnectionCache(connectionId, connection);
+
       console.log(`✅ 已创建溯源连接线: ${sourceNoteId} -> ${targetNoteId}`);
       return true;
     } catch (error) {
@@ -839,6 +918,8 @@ class ConnectionLineManager {
         console.log(`🗑️ 删除溯源连接线: ${connectionId}`);
         connection.line.remove();
         this.connections.delete(connectionId);
+        // 更新缓存
+        this.removeConnectionFromCache(connectionId, connection);
         console.log(`✅ 已移除溯源连接线: ${sourceNoteId} -> ${targetNoteId}`);
         return true;
       } else if (connection && connection.type !== "source") {
@@ -867,6 +948,8 @@ class ConnectionLineManager {
         ) {
           connection.line.remove();
           this.connections.delete(connectionId);
+          // 更新缓存
+          this.removeConnectionFromCache(connectionId, connection);
           removed = true;
         }
       }
@@ -910,6 +993,8 @@ class ConnectionLineManager {
         ) {
           connection.line.remove();
           this.connections.delete(connectionId);
+          // 更新缓存
+          this.removeConnectionFromCache(connectionId, connection);
           removed = true;
         }
       }
@@ -1029,10 +1114,14 @@ class ConnectionLineManager {
     this.performanceMetrics.throttleHits++;
   }
 
-  // 销毁管理器
+  // 销毁管理器 - 完整的内存清理
   destroy(): void {
+    console.log("🔗 开始销毁连接线管理器...");
+
+    // 清理所有连接线
     this.clearAllConnections();
 
+    // 移除事件监听器
     if (this.isInitialized) {
       window.removeEventListener("resize", this.handleWindowResize);
       window.removeEventListener("scroll", this.handleScroll, true);
@@ -1058,7 +1147,15 @@ class ConnectionLineManager {
     // 清空待更新列表
     this.pendingUpdates.clear();
 
-    console.log("🔗 连接线管理器已销毁");
+    // 清空缓存
+    this.noteConnectionsCache.clear();
+
+    // 重置性能监控数据
+    this.resetPerformanceMetrics();
+
+    // 连接线池功能已移除
+
+    console.log("🔗 连接线管理器已完全销毁，内存已清理");
   }
 }
 
