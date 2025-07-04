@@ -126,8 +126,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         if (newScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
           const scaleFactor = newScale / scale;
-          const newOffsetX = centerX - (centerX - offsetX) * scaleFactor;
-          const newOffsetY = centerY - (centerY - offsetY) * scaleFactor;
+          const rawOffsetX = centerX - (centerX - offsetX) * scaleFactor;
+          const rawOffsetY = centerY - (centerY - offsetY) * scaleFactor;
+
+          // 将偏移量四舍五入到最近的整数像素，避免文本模糊
+          const newOffsetX = Math.round(rawOffsetX);
+          const newOffsetY = Math.round(rawOffsetY);
 
           set({
             scale: newScale,
@@ -153,8 +157,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         if (newScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
           const scaleFactor = newScale / scale;
-          const newOffsetX = centerX - (centerX - offsetX) * scaleFactor;
-          const newOffsetY = centerY - (centerY - offsetY) * scaleFactor;
+          const rawOffsetX = centerX - (centerX - offsetX) * scaleFactor;
+          const rawOffsetY = centerY - (centerY - offsetY) * scaleFactor;
+
+          // 将偏移量四舍五入到最近的整数像素，避免文本模糊
+          const newOffsetX = Math.round(rawOffsetX);
+          const newOffsetY = Math.round(rawOffsetY);
 
           set({
             scale: newScale,
@@ -177,8 +185,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         if (clampedScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
           const scaleFactor = clampedScale / scale;
-          const newOffsetX = centerX - (centerX - offsetX) * scaleFactor;
-          const newOffsetY = centerY - (centerY - offsetY) * scaleFactor;
+          const rawOffsetX = centerX - (centerX - offsetX) * scaleFactor;
+          const rawOffsetY = centerY - (centerY - offsetY) * scaleFactor;
+
+          // 将偏移量四舍五入到最近的整数像素，避免文本模糊
+          const newOffsetX = Math.round(rawOffsetX);
+          const newOffsetY = Math.round(rawOffsetY);
 
           set({
             scale: clampedScale,
@@ -226,12 +238,23 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
 
       endDrag: () => {
         const { offsetX, offsetY } = get();
+
+        // 拖拽结束时将偏移量四舍五入到整数像素，避免文本模糊
+        const roundedOffsetX = Math.round(offsetX);
+        const roundedOffsetY = Math.round(offsetY);
+
         if (process.env.NODE_ENV === "development") {
           console.log("🖱️ 结束拖拽画布", {
-            finalOffset: { x: offsetX.toFixed(1), y: offsetY.toFixed(1) },
+            finalOffset: {
+              x: roundedOffsetX.toFixed(1),
+              y: roundedOffsetY.toFixed(1),
+            },
           });
         }
+
         set({
+          offsetX: roundedOffsetX,
+          offsetY: roundedOffsetY,
           dragState: {
             isDragging: false,
             startX: 0,
@@ -295,11 +318,15 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         const scaleY = viewportHeight / contentHeight;
         const newScale = Math.min(scaleX, scaleY, CANVAS_CONSTANTS.MAX_SCALE);
 
+        // 计算偏移量并四舍五入到整数像素，避免文本模糊
+        const rawOffsetX = -contentCenterX * newScale + viewportWidth / 2;
+        const rawOffsetY = -contentCenterY * newScale + viewportHeight / 2;
+
         // 设置新的视图状态
         set({
           scale: newScale,
-          offsetX: -contentCenterX * newScale + viewportWidth / 2,
-          offsetY: -contentCenterY * newScale + viewportHeight / 2,
+          offsetX: Math.round(rawOffsetX),
+          offsetY: Math.round(rawOffsetY),
           zoomAnimating: true,
         });
 
@@ -373,8 +400,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
 
         // 计算需要的偏移量，使便签中心对齐到视口中心
         const { scale } = get();
-        const newOffsetX = viewportCenterX - noteCenterX * scale;
-        const newOffsetY = viewportCenterY - noteCenterY * scale;
+        const rawOffsetX = viewportCenterX - noteCenterX * scale;
+        const rawOffsetY = viewportCenterY - noteCenterY * scale;
+
+        // 关键修复：将偏移量四舍五入到最近的整数像素，避免亚像素渲染导致的文本模糊
+        const newOffsetX = Math.round(rawOffsetX);
+        const newOffsetY = Math.round(rawOffsetY);
 
         // 设置新的偏移量
         set({
