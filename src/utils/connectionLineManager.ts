@@ -113,6 +113,16 @@ interface SourceConnectionLine extends ConnectionLine {
   sourceNoteId: string; // 源便签ID
 }
 
+// 性能监控数据接口
+interface PerformanceMetrics {
+  updateCount: number; // 更新次数
+  totalUpdateTime: number; // 总更新时间
+  maxUpdateTime: number; // 最大更新时间
+  throttleHits: number; // 节流命中次数
+  lastUpdateTime: number; // 最后更新时间
+  updateFrequency: number; // 更新频率 (Hz)
+}
+
 // 连接线管理器类
 class ConnectionLineManager {
   private connections: Map<string, ConnectionLine> = new Map(); // 连接线映射表
@@ -120,6 +130,16 @@ class ConnectionLineManager {
   private updateThrottleTimeout: NodeJS.Timeout | null = null; // 更新节流定时器
   private rafId: number | null = null; // requestAnimationFrame ID
   private pendingUpdates = new Set<string>(); // 待更新的连接线ID
+
+  // 性能监控数据
+  private performanceMetrics: PerformanceMetrics = {
+    updateCount: 0,
+    totalUpdateTime: 0,
+    maxUpdateTime: 0,
+    throttleHits: 0,
+    lastUpdateTime: 0,
+    updateFrequency: 0,
+  };
 
   constructor() {
     this.init();
@@ -414,8 +434,9 @@ class ConnectionLineManager {
       return;
     }
 
-    // 如果已有待处理的更新，直接返回
+    // 如果已有待处理的更新，记录节流命中并直接返回
     if (this.updateThrottleTimeout) {
+      this.recordThrottleHit();
       return;
     }
 
@@ -435,10 +456,17 @@ class ConnectionLineManager {
 
     // 使用 requestAnimationFrame 优化性能
     this.rafId = requestAnimationFrame(() => {
+      const startTime = performance.now();
+
       try {
         for (const connection of this.connections.values()) {
           connection.line.position();
         }
+
+        // 记录性能指标
+        const endTime = performance.now();
+        const updateTime = endTime - startTime;
+        this.recordPerformanceMetric(updateTime);
       } catch (error) {
         console.error("更新连接线位置失败:", error);
       }
@@ -932,6 +960,74 @@ class ConnectionLineManager {
   };
 
   private scrollTimeout: NodeJS.Timeout | null = null;
+
+  // 记录性能指标
+  private recordPerformanceMetric(updateTime: number): void {
+    const now = Date.now();
+
+    this.performanceMetrics.updateCount++;
+    this.performanceMetrics.totalUpdateTime += updateTime;
+    this.performanceMetrics.maxUpdateTime = Math.max(
+      this.performanceMetrics.maxUpdateTime,
+      updateTime
+    );
+
+    // 计算更新频率 (Hz) - 基于最近1秒内的更新次数
+    if (this.performanceMetrics.lastUpdateTime > 0) {
+      const timeDiff = now - this.performanceMetrics.lastUpdateTime;
+      if (timeDiff > 0) {
+        this.performanceMetrics.updateFrequency = 1000 / timeDiff;
+      }
+    }
+
+    this.performanceMetrics.lastUpdateTime = now;
+  }
+
+  // 获取性能统计数据
+  getPerformanceMetrics(): PerformanceMetrics & {
+    averageUpdateTime: number;
+    normalConnections: number;
+    sourceConnections: number;
+  } {
+    let normalConnections = 0;
+    let sourceConnections = 0;
+
+    for (const connection of this.connections.values()) {
+      if (connection.type === "normal") {
+        normalConnections++;
+      } else if (connection.type === "source") {
+        sourceConnections++;
+      }
+    }
+
+    return {
+      ...this.performanceMetrics,
+      averageUpdateTime:
+        this.performanceMetrics.updateCount > 0
+          ? this.performanceMetrics.totalUpdateTime /
+            this.performanceMetrics.updateCount
+          : 0,
+      normalConnections,
+      sourceConnections,
+    };
+  }
+
+  // 重置性能统计数据
+  resetPerformanceMetrics(): void {
+    this.performanceMetrics = {
+      updateCount: 0,
+      totalUpdateTime: 0,
+      maxUpdateTime: 0,
+      throttleHits: 0,
+      lastUpdateTime: 0,
+      updateFrequency: 0,
+    };
+  }
+
+  // 记录节流命中
+  private recordThrottleHit(): void {
+    this.performanceMetrics.throttleHits++;
+  }
 
   // 销毁管理器
   destroy(): void {

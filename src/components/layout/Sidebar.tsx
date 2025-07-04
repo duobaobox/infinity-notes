@@ -65,7 +65,7 @@ const addCanvasListStyles = () => {
 };
 
 const Sidebar: React.FC = () => {
-  const siderRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const [selectedCanvas, setSelectedCanvas] = useState<string>("");
   const [editingCanvasId, setEditingCanvasId] = useState<string>("");
   const [editingCanvasName, setEditingCanvasName] = useState<string>("");
@@ -164,22 +164,6 @@ const Sidebar: React.FC = () => {
     [deleteCanvas]
   );
 
-  // 更新特定画布的便签数量
-  const updateCanvasNotesCount = useCallback(
-    async (canvasId: string) => {
-      try {
-        const count = await getCanvasNotesCount(canvasId);
-        setCanvasNotesCounts((prev) => ({
-          ...prev,
-          [canvasId]: count,
-        }));
-      } catch (error) {
-        console.error(`❌ 更新画布 ${canvasId} 便签数量失败:`, error);
-      }
-    },
-    [getCanvasNotesCount]
-  );
-
   // 处理画布选择
   const handleCanvasSelect = useCallback(
     async (canvasId: string) => {
@@ -193,10 +177,6 @@ const Sidebar: React.FC = () => {
           // 异步执行画布切换，不阻塞UI
           switchCanvas(canvasId)
             .then(() => {
-              // 切换成功后异步更新便签数量
-              updateCanvasNotesCount(canvasId).catch((error) => {
-                console.error("❌ 更新便签数量失败:", error);
-              });
               console.log("✅ Sidebar: 画布切换成功");
             })
             .catch((error) => {
@@ -212,7 +192,7 @@ const Sidebar: React.FC = () => {
         }
       }
     },
-    [selectedCanvas, switchCanvas, updateCanvasNotesCount]
+    [selectedCanvas, switchCanvas]
   );
 
   // 开始编辑画布名称
@@ -282,12 +262,15 @@ const Sidebar: React.FC = () => {
     loadCanvasNotesCounts();
   }, [canvasList, getCanvasNotesCount]);
 
-  // 监听当前画布便签数量变化
+  // 监听当前画布便签数量变化，并直接更新状态
   useEffect(() => {
     if (currentCanvasId) {
-      updateCanvasNotesCount(currentCanvasId);
+      setCanvasNotesCounts((prev) => ({
+        ...prev,
+        [currentCanvasId]: stickyNotes.length,
+      }));
     }
-  }, [stickyNotes.length, currentCanvasId, updateCanvasNotesCount]);
+  }, [stickyNotes.length, currentCanvasId]);
 
   // 组件初始化 - 添加样式和设置当前选中的画布
   useEffect(() => {
@@ -452,7 +435,7 @@ const Sidebar: React.FC = () => {
           transition: "left 0.3s ease",
           overflow: "hidden",
         }}
-        ref={siderRef as React.RefObject<HTMLDivElement>}
+        ref={sidebarRef as React.RefObject<HTMLDivElement>}
       >
         <Splitter layout="vertical" style={{ height: "100%" }}>
           <Splitter.Panel>
@@ -463,7 +446,7 @@ const Sidebar: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "transparent", // Make panel background transparent to show Sider gradient
+                background: "transparent", // Make panel background transparent to show Sidebar gradient
               }}
             >
               {/* 用户信息区域 */}
