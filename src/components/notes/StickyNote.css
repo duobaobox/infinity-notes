@@ -325,7 +325,7 @@
   background: rgba(250, 140, 22, 0.15); /* 激活时背景更明显 */
 }
 
-/* 便签工具栏样式 - 位于便签头部上方，极简设计 */
+/* 便签工具栏样式 - 位于便签右侧，极简设计 */
 .settings-toolbar {
   position: absolute;
   display: flex;
@@ -340,7 +340,13 @@
   animation: settingsToolbarSlideIn 0.12s ease-out; /* 进一步加快动画速度 */
 }
 
-/* 设置工具栏滑入动画 */
+/* 竖排工具栏样式 - 垂直排列按钮 */
+.settings-toolbar.vertical {
+  flex-direction: column; /* 改为垂直排列 */
+  animation: settingsToolbarSlideInVertical 0.12s ease-out; /* 使用垂直滑入动画 */
+}
+
+/* 设置工具栏滑入动画 - 水平版本 */
 @keyframes settingsToolbarSlideIn {
   from {
     opacity: 0;
@@ -349,6 +355,18 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* 设置工具栏滑入动画 - 垂直版本 */
+@keyframes settingsToolbarSlideInVertical {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.95); /* 从右侧滑入 */
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
   }
 }
 

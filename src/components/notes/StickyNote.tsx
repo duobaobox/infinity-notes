@@ -5,6 +5,7 @@ import {
   HistoryOutlined,
   LinkOutlined,
   LoadingOutlined,
+  MessageOutlined,
   TagOutlined,
 } from "@ant-design/icons";
 import { Button } from "antd";
@@ -1068,13 +1069,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   return (
     <>
-      {/* 设置工具栏 - 位于便签头部上方，选中时显示 */}
+      {/* 设置工具栏 - 位于便签右侧，竖排显示，选中时显示 */}
       {isSelected && (
         <div
-          className="settings-toolbar"
+          className="settings-toolbar vertical"
           style={{
-            left: actualX,
-            top: actualY - 45, // 位于便签头部上方45px
+            left: actualX + actualWidth + 8, // 位于便签右侧8px处
+            top: actualY, // 与便签顶部对齐
             zIndex: Math.max(note.zIndex + 10, 9999), // 确保足够高的z-index
           }}
           onClick={(e) => {
@@ -1146,6 +1147,16 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               </span>
             )}
           </Button>
+
+          {/* 持续对话按钮 */}
+          <Button
+            className="settings-toolbar-button disabled"
+            icon={<MessageOutlined />}
+            size="small"
+            type="default"
+            disabled
+            title="持续对话 - 即将推出"
+          />
 
           {/* 统计信息按钮 */}
           <Button

@@ -572,6 +572,12 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         return;
       }
 
+      // 记录鼠标按下位置并重置拖拽标记
+      dragDetectionRef.current = {
+        mouseDownPos: { x: e.clientX, y: e.clientY },
+        hasDragged: false,
+      };
+
       // 移动模式下，直接开始拖拽画布，不进行其他操作
       if (isMoveModeActive) {
         e.preventDefault();
@@ -616,6 +622,18 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     (e: MouseEvent) => {
       if (dragState.isDragging) {
         e.preventDefault();
+
+        // 检测拖拽行为：计算移动距离
+        const moveDistance = Math.sqrt(
+          Math.pow(e.clientX - dragDetectionRef.current.mouseDownPos.x, 2) +
+            Math.pow(e.clientY - dragDetectionRef.current.mouseDownPos.y, 2)
+        );
+
+        // 如果移动距离超过 5px，标记为已拖拽
+        if (moveDistance > 5) {
+          dragDetectionRef.current.hasDragged = true;
+        }
+
         throttledUpdateDrag(e.clientX, e.clientY);
         // 使用节流的连接线更新，减少卡顿
         throttledConnectionUpdate();
@@ -624,15 +642,16 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     [dragState.isDragging, throttledUpdateDrag, throttledConnectionUpdate]
   );
 
-  // 用于跟踪拖拽状态，防止拖拽结束后的点击事件误触发
-  const dragEndTimeRef = useRef<number>(0);
+  // 拖拽检测机制 - 用于区分真正的点击和拖拽后的点击
+  const dragDetectionRef = useRef({
+    mouseDownPos: { x: 0, y: 0 },
+    hasDragged: false,
+  });
 
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
         e.preventDefault();
-        // 记录拖拽结束的时间，用于防止后续的点击事件误触发
-        dragEndTimeRef.current = Date.now();
         endDrag();
       }
     },
@@ -660,16 +679,16 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         return;
       }
 
-      const now = Date.now();
-
-      // 检查是否是拖拽结束后立即触发的点击事件
-      // 如果距离拖拽结束时间小于100ms，则忽略此次点击，避免误清除选中状态
-      if (now - dragEndTimeRef.current < 100) {
+      // 检查是否发生了拖拽行为
+      // 如果发生了拖拽，则忽略此次点击，避免误清除选中状态
+      if (dragDetectionRef.current.hasDragged) {
         if (process.env.NODE_ENV === "development") {
-          console.log("🖱️ 忽略拖拽结束后的点击事件，保持便签选中状态");
+          console.log("🖱️ 检测到拖拽行为，忽略点击事件，保持便签选中状态");
         }
         return;
       }
+
+      const now = Date.now();
 
       const clickPos = { x: e.clientX, y: e.clientY };
       const state = tripleClickStateRef.current;
