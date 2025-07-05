@@ -1,12 +1,20 @@
 // 画布缩放常量
 export const CANVAS_CONSTANTS = {
-  MIN_SCALE: 0.3, // 最小缩放比例 (30%)
+  MIN_SCALE: 0.25, // 最小缩放比例 (25%)
   MAX_SCALE: 2.0, // 最大缩放比例 (200%)
-  DEFAULT_SCALE: 1.0, // 默认缩放比例
-  ZOOM_FACTOR: 1.2, // 缩放因子
-  ZOOM_STEP: 0.1, // 缩放步长
+  DEFAULT_SCALE: 1.0, // 默认缩放比例 (100%)
+  ZOOM_STEP: 0.25, // 缩放步长 (25%)
   WHEEL_THROTTLE_MS: 16, // 滚轮事件节流时间 (ms) - 60fps
   ZOOM_ANIMATION_DURATION: 200, // 缩放动画持续时间 (ms)
+
+  // 字体缩放相关常量
+  FONT_SCALE_BASE: 14, // 基础字体大小 (px)
+  FONT_SCALE_STEP: 1, // 每25%缩放的字体大小调整 (px)
+  FONT_MIN_SIZE: 10, // 最小字体大小 (px)
+  FONT_MAX_SIZE: 22, // 最大字体大小 (px)
+
+  // 缩放档位定义
+  SCALE_LEVELS: [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] as const,
 };
 
 // 性能优化常量

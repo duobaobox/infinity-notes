@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { CANVAS_CONSTANTS } from "../components/canvas/CanvasConstants";
+import { getNearestScaleLevel } from "../utils/fontScaleUtils";
 
 // 拖拽状态接口
 export interface DragState {
@@ -115,13 +116,36 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       showAxis: false,
       isMoveModeActive: false, // 初始为false，表示默认是正常模式
 
-      // 缩放操作
+      // 缩放操作 - 按25%档位进行缩放
       zoomIn: (centerX = 0, centerY = 0) => {
         const { scale, offsetX, offsetY } = get();
-        const newScale = Math.min(
-          scale + CANVAS_CONSTANTS.ZOOM_STEP,
-          CANVAS_CONSTANTS.MAX_SCALE
+
+        // 找到当前缩放级别的索引
+        let currentIndex = -1;
+        for (let i = 0; i < CANVAS_CONSTANTS.SCALE_LEVELS.length; i++) {
+          if (Math.abs(CANVAS_CONSTANTS.SCALE_LEVELS[i] - scale) < 0.01) {
+            currentIndex = i;
+            break;
+          }
+        }
+
+        // 如果没有找到精确匹配，找到第一个大于当前缩放的档位
+        if (currentIndex === -1) {
+          currentIndex = CANVAS_CONSTANTS.SCALE_LEVELS.findIndex(
+            (level) => level > scale
+          );
+          if (currentIndex === -1) {
+            currentIndex = CANVAS_CONSTANTS.SCALE_LEVELS.length;
+          }
+          currentIndex = Math.max(0, currentIndex - 1);
+        }
+
+        // 获取下一个缩放档位
+        const nextIndex = Math.min(
+          currentIndex + 1,
+          CANVAS_CONSTANTS.SCALE_LEVELS.length - 1
         );
+        const newScale = CANVAS_CONSTANTS.SCALE_LEVELS[nextIndex];
 
         if (newScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
@@ -149,10 +173,29 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
 
       zoomOut: (centerX = 0, centerY = 0) => {
         const { scale, offsetX, offsetY } = get();
-        const newScale = Math.max(
-          scale - CANVAS_CONSTANTS.ZOOM_STEP,
-          CANVAS_CONSTANTS.MIN_SCALE
-        );
+
+        // 找到当前缩放级别的索引
+        let currentIndex = -1;
+        for (let i = 0; i < CANVAS_CONSTANTS.SCALE_LEVELS.length; i++) {
+          if (Math.abs(CANVAS_CONSTANTS.SCALE_LEVELS[i] - scale) < 0.01) {
+            currentIndex = i;
+            break;
+          }
+        }
+
+        // 如果没有找到精确匹配，找到第一个小于当前缩放的档位
+        if (currentIndex === -1) {
+          currentIndex = CANVAS_CONSTANTS.SCALE_LEVELS.findIndex(
+            (level) => level >= scale
+          );
+          if (currentIndex === -1) {
+            currentIndex = CANVAS_CONSTANTS.SCALE_LEVELS.length - 1;
+          }
+        }
+
+        // 获取上一个缩放档位
+        const prevIndex = Math.max(currentIndex - 1, 0);
+        const newScale = CANVAS_CONSTANTS.SCALE_LEVELS[prevIndex];
 
         if (newScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变
@@ -179,8 +222,14 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       },
 
       setScale: (newScale, centerX = 0, centerY = 0) => {
-        const { scale, offsetX, offsetY, minScale, maxScale } = get();
-        const clampedScale = Math.max(minScale, Math.min(maxScale, newScale));
+        const { scale, offsetX, offsetY } = get();
+
+        // 将输入的缩放值调整到最接近的标准档位
+        const nearestScale = getNearestScaleLevel(newScale);
+        const clampedScale = Math.max(
+          CANVAS_CONSTANTS.MIN_SCALE,
+          Math.min(CANVAS_CONSTANTS.MAX_SCALE, nearestScale)
+        );
 
         if (clampedScale !== scale) {
           // 计算缩放后的偏移量，使缩放中心保持不变

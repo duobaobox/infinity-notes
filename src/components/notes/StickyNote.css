@@ -11,7 +11,7 @@
   flex-direction: column;
   /* 移除阴影过渡动画，减少视觉干扰 */
   /* transition: box-shadow 0.2s ease; */
-  font-size: 14px; /* 基础字体大小 */
+  font-size: var(--note-content-font-size, 14px); /* 使用CSS变量控制字体大小 */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
     sans-serif; /* 跨平台优质字体栈 */
@@ -21,6 +21,10 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "kern" 1, "liga" 1;
+
+  /* 像素对齐优化 - 避免亚像素渲染导致的模糊 */
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
 
   /* 性能优化 - GPU加速 */
   will-change: transform, opacity;
@@ -237,7 +241,10 @@
 
 .sticky-note-title {
   margin: 0;
-  font-size: 14px; /* 调整为更合适的字号 */
+  font-size: var(
+    --note-title-font-size,
+    14px
+  ); /* 使用CSS变量控制标题字体大小 */
   font-weight: 600;
   color: #374151;
   cursor: pointer;
@@ -444,7 +451,7 @@
   right: -2px;
   background: #fa8c16;
   color: white;
-  font-size: 8px; /* 进一步减小字体 */
+  font-size: var(--note-badge-font-size, 8px); /* 使用CSS变量控制徽章字体大小 */
   font-weight: bold;
   padding: 1px 2px; /* 进一步减小内边距 */
   border-radius: 4px; /* 进一步减小圆角 */
@@ -489,7 +496,10 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
     sans-serif;
-  font-size: 14px;
+  font-size: var(
+    --note-content-font-size,
+    14px
+  ); /* 使用CSS变量控制内容字体大小 */
   line-height: 1.5;
   color: #374151;
   box-sizing: border-box;
@@ -497,6 +507,11 @@
   /* padding-right: 17px; -- Removed as per user feedback */
   margin-right: -17px; /* Pull scrollbar area into the overflow hidden area */
   overflow-y: scroll;
+
+  /* 文本渲染优化 - 确保清晰显示 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .sticky-note-textarea::placeholder {
@@ -510,7 +525,10 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
     sans-serif;
-  font-size: 14px;
+  font-size: var(
+    --note-content-font-size,
+    14px
+  ); /* 使用CSS变量控制预览字体大小 */
   line-height: 1.5;
   color: #374151;
   box-sizing: border-box;
@@ -521,6 +539,11 @@
   margin-right: -17px; /* Pull scrollbar area into the overflow hidden area */
   scroll-behavior: smooth; /* 添加平滑滚动效果 */
   user-select: text; /* 允许选择预览区域的文本 */
+
+  /* 文本渲染优化 - 确保清晰显示 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .sticky-note-preview:hover {
@@ -610,22 +633,22 @@
 }
 
 .sticky-note-preview h1 {
-  font-size: 18px;
+  font-size: var(--note-h1-font-size, 18px);
 }
 .sticky-note-preview h2 {
-  font-size: 16px;
+  font-size: var(--note-h2-font-size, 16px);
 }
 .sticky-note-preview h3 {
-  font-size: 15px;
+  font-size: var(--note-h3-font-size, 15px);
 }
 .sticky-note-preview h4 {
-  font-size: 14px;
+  font-size: var(--note-h4-font-size, 14px);
 }
 .sticky-note-preview h5 {
-  font-size: 13px;
+  font-size: var(--note-h5-font-size, 13px);
 }
 .sticky-note-preview h6 {
-  font-size: 12px;
+  font-size: var(--note-h6-font-size, 12px);
 }
 
 .sticky-note-preview p {
@@ -650,7 +673,7 @@
   border-radius: 3px;
   font-family: "SF Mono", "Monaco", "Menlo", "Roboto Mono", "Consolas",
     "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
+  font-size: var(--note-code-font-size, 12px);
 }
 
 .sticky-note-preview pre {
@@ -677,7 +700,7 @@
 .sticky-note-preview table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--note-table-font-size, 12px);
   margin: 8px 0;
 }
 
@@ -740,7 +763,10 @@
 
 .sticky-note-title-input {
   margin: 0;
-  font-size: 14px; /* 调整为与标题一致的字号 */
+  font-size: var(
+    --note-title-font-size,
+    14px
+  ); /* 使用CSS变量控制标题输入框字体大小 */
   font-weight: 600;
   color: #374151;
   background: rgba(255, 255, 255, 0.8);

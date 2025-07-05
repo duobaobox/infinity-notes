@@ -20,6 +20,7 @@ import React, {
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
+import { getFontSizeStyles } from "../../utils/fontScaleUtils";
 import SourceNotesModal from "../modals/SourceNotesModal";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
@@ -987,11 +988,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   };
 
   // 计算实际使用的位置和尺寸（拖动时用临时值，否则用数据库值）
-  const actualX = isDragging || isSyncingPosition ? tempPosition.x : note.x;
-  const actualY = isDragging || isSyncingPosition ? tempPosition.y : note.y;
-  const actualWidth = isResizing || isSyncingSize ? tempSize.width : note.width;
-  const actualHeight =
-    isResizing || isSyncingSize ? tempSize.height : note.height;
+  // 对位置和尺寸进行像素取整，避免亚像素渲染导致的模糊
+  const actualX = Math.round(
+    isDragging || isSyncingPosition ? tempPosition.x : note.x
+  );
+  const actualY = Math.round(
+    isDragging || isSyncingPosition ? tempPosition.y : note.y
+  );
+  const actualWidth = Math.round(
+    isResizing || isSyncingSize ? tempSize.width : note.width
+  );
+  const actualHeight = Math.round(
+    isResizing || isSyncingSize ? tempSize.height : note.height
+  );
+
+  // 计算基于画布缩放的字体样式
+  const fontStyles = useMemo(
+    () => getFontSizeStyles(canvasScale),
+    [canvasScale]
+  );
 
   // 组件卸载时完整清理 - 防止内存泄漏
   useEffect(() => {
@@ -1206,6 +1221,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           width: actualWidth,
           height: actualHeight,
           zIndex: note.zIndex,
+          ...fontStyles, // 应用基于缩放的字体样式
         }}
         onWheel={(e) => {
           // 阻止滚轮事件冒泡到画布，避免在便签上滚动时触发画布缩放
