@@ -100,6 +100,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     updateStreamingContent,
     finishStreamingNote,
     cancelStreamingNote,
+    clearSelection, // 添加清除选中状态的方法
   } = useStickyNotesStore();
 
   // 全局状态管理 - 画布状态
@@ -565,6 +566,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 只处理左键点击
       if (e.button !== 0) return;
 
+      // 记录鼠标按下位置，用于后续判断是否为拖拽
+      dragDetectionRef.current.mouseDownPos = { x: e.clientX, y: e.clientY };
+      dragDetectionRef.current.hasDragged = false;
+
       // 如果点击的是便签或其他交互元素，不处理画布拖拽
       const target = e.target as HTMLElement;
       if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
@@ -613,6 +618,15 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
+      // 检测是否发生了拖拽（移动距离超过5px）
+      const moveDistance = Math.sqrt(
+        Math.pow(e.clientX - dragDetectionRef.current.mouseDownPos.x, 2) +
+          Math.pow(e.clientY - dragDetectionRef.current.mouseDownPos.y, 2)
+      );
+      if (moveDistance > 5) {
+        dragDetectionRef.current.hasDragged = true;
+      }
+
       if (dragState.isDragging) {
         e.preventDefault();
         throttledUpdateDrag(e.clientX, e.clientY);
@@ -640,6 +654,12 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     lastClickPos: { x: 0, y: 0 },
   });
 
+  // 拖拽检测状态 - 用于区分点击和拖拽
+  const dragDetectionRef = useRef({
+    mouseDownPos: { x: 0, y: 0 },
+    hasDragged: false,
+  });
+
   // 三击创建便签
   const handleTripleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -651,6 +671,11 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 如果点击的是便签或其他交互元素，不创建新便签
       const target = e.target as HTMLElement;
       if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
+        return;
+      }
+
+      // 如果发生了拖拽，不处理点击事件（避免拖拽后误触发）
+      if (dragDetectionRef.current.hasDragged) {
         return;
       }
 
@@ -669,7 +694,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         // 连续点击
         state.clickCount++;
 
-        if (state.clickCount === 3) {
+        if (state.clickCount === 1) {
+          // 第一次点击，清除便签选中状态（只有在真正点击时）
+          clearSelection();
+        } else if (state.clickCount === 3) {
           // 第三次点击，创建便签
           e.preventDefault();
 
@@ -696,12 +724,21 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       } else {
         // 重新开始计数
         state.clickCount = 1;
+        // 第一次点击，清除便签选中状态（只有在真正点击时）
+        clearSelection();
       }
 
       state.lastClickTime = now;
       state.lastClickPos = clickPos;
     },
-    [offsetX, offsetY, scale, createStickyNote, isMoveModeActive]
+    [
+      offsetX,
+      offsetY,
+      scale,
+      createStickyNote,
+      isMoveModeActive,
+      clearSelection,
+    ]
   );
 
   // 节流的滚轮缩放处理 - 提升缩放性能

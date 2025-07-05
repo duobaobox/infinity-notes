@@ -546,13 +546,18 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [isStreaming, settingsMenuVisible]
   );
 
-  // 新增：处理便签点击置顶
+  // 获取选中状态管理方法和当前选中状态
+  const { selectNote, selectedNoteId } = useStickyNotesStore();
+  const isSelected = selectedNoteId === note.id;
+
+  // 新增：处理便签点击置顶和选中
   const handleNoteClickToFront = useCallback(() => {
-    // 只有在预览模式（非编辑状态）下才触发置顶
+    // 只有在预览模式（非编辑状态）下才触发置顶和选中
     if (!isEditing && !isTitleEditing) {
-      onBringToFront(note.id);
+      onBringToFront(note.id); // 置顶
+      selectNote(note.id); // 选中
     }
-  }, [isEditing, isTitleEditing, onBringToFront, note.id]);
+  }, [isEditing, isTitleEditing, onBringToFront, selectNote, note.id]);
 
   // 开始拖拽
   const handleMouseDown = useCallback(
@@ -571,7 +576,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       });
       setTempPosition({ x: note.x, y: note.y });
       setIsDragging(true);
-      onBringToFront(note.id);
+      onBringToFront(note.id); // 置顶
+      selectNote(note.id); // 选中
     },
     [
       isEditing,
@@ -580,6 +586,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       note.x,
       note.y,
       onBringToFront,
+      selectNote,
       canvasScale,
       canvasOffset,
     ]
@@ -1229,7 +1236,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           isEditing ? "editing" : ""
         } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${
           isStreaming ? "streaming" : ""
-        } ${isMoveModeActive ? "move-mode-disabled" : ""}`}
+        } ${isMoveModeActive ? "move-mode-disabled" : ""} ${
+          isSelected ? "selected" : ""
+        }`}
         style={{
           left: actualX,
           top: actualY,

@@ -28,6 +28,9 @@ export interface StickyNotesState {
     }
   >;
 
+  // 选中状态管理
+  selectedNoteId: string | null; // 当前选中的便签ID
+
   // 画布管理
   currentCanvasId: string | null;
   canvases: Canvas[];
@@ -71,6 +74,11 @@ export interface StickyNotesActions {
   setOperationLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
+  // 选中状态操作
+  selectNote: (id: string) => void; // 选中便签
+  clearSelection: () => void; // 清除选中状态
+  isNoteSelected: (id: string) => boolean; // 检查便签是否被选中
+
   // 便签统计
   getCanvasNotesCount: (canvasId: string) => Promise<number>;
 
@@ -90,6 +98,7 @@ export const useStickyNotesStore = create<
       operationLoading: false, // 操作加载状态
       error: null,
       streamingNotes: new Map(),
+      selectedNoteId: null, // 初始化选中状态
       currentCanvasId: null,
       canvases: [],
       canvasLoading: false,
@@ -471,8 +480,8 @@ export const useStickyNotesStore = create<
           cacheManager.deleteByPrefix("notes_by_canvas");
           console.log("🧹 已清除画布便签缓存");
 
-          // 先更新当前画布ID，让UI立即响应
-          set({ currentCanvasId: canvasId });
+          // 先更新当前画布ID，清除选中状态，让UI立即响应
+          set({ currentCanvasId: canvasId, selectedNoteId: null });
 
           // 异步加载便签，使用局部loading状态
           const loadNotesWithoutGlobalLoading = async () => {
@@ -610,6 +619,17 @@ export const useStickyNotesStore = create<
       setLoading: (loading) => set({ loading }),
       setOperationLoading: (operationLoading) => set({ operationLoading }),
       setError: (error) => set({ error }),
+
+      // 选中状态操作
+      selectNote: (id) => {
+        set({ selectedNoteId: id });
+      },
+      clearSelection: () => {
+        set({ selectedNoteId: null });
+      },
+      isNoteSelected: (id) => {
+        return get().selectedNoteId === id;
+      },
 
       // 便签统计
       getCanvasNotesCount: async (canvasId) => {

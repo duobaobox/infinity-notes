@@ -72,6 +72,59 @@
   }
 }
 
+/* 选中状态样式 - 使用box-shadow模拟边框，完全避免像素偏移 */
+.sticky-note.selected {
+  box-shadow: inset 0 0 0 2px #1890ff,
+    /* 内边框效果 */ 0 0 0 2px rgba(24, 144, 255, 0.2),
+    /* 外发光效果 */ 0 2px 8px rgba(0, 0, 0, 0.1),
+    /* 原有阴影 */ 0 4px 20px rgba(0, 0, 0, 0.06); /* 原有阴影 */
+}
+
+/* 选中状态优先级高于流式状态 */
+.sticky-note.selected.streaming {
+  box-shadow: inset 0 0 0 2px #1890ff,
+    /* 内边框效果 */ 0 0 0 2px rgba(24, 144, 255, 0.3),
+    /* 外发光效果 */ 0 0 15px rgba(24, 144, 255, 0.4); /* 流式发光效果 */
+  animation: selectedStreamingPulse 2s ease-in-out infinite;
+}
+
+/* 选中+流式状态下的悬浮效果 */
+.sticky-note.selected.streaming:hover {
+  box-shadow: inset 0 0 0 2px #1890ff,
+    /* 内边框效果 */ 0 0 0 3px rgba(24, 144, 255, 0.4),
+    /* 增强外发光效果 */ 0 0 20px rgba(24, 144, 255, 0.5),
+    /* 悬浮阴影 */ 0 4px 16px rgba(0, 0, 0, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.08);
+  animation: selectedStreamingPulseHover 2s ease-in-out infinite;
+}
+
+@keyframes selectedStreamingPulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 2px #1890ff, 0 0 0 2px rgba(24, 144, 255, 0.3),
+      0 0 15px rgba(24, 144, 255, 0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px #1890ff, 0 0 0 2px rgba(24, 144, 255, 0.5),
+      0 0 20px rgba(24, 144, 255, 0.6);
+  }
+}
+
+/* 选中+流式状态悬浮时的动画 */
+@keyframes selectedStreamingPulseHover {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 2px #1890ff, 0 0 0 3px rgba(24, 144, 255, 0.4),
+      0 0 20px rgba(24, 144, 255, 0.5), 0 4px 16px rgba(0, 0, 0, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.08);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px #1890ff, 0 0 0 4px rgba(24, 144, 255, 0.6),
+      0 0 25px rgba(24, 144, 255, 0.7), 0 4px 16px rgba(0, 0, 0, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.08);
+  }
+}
+
 /* 流式内容容器 */
 .streaming-content {
   position: relative;
@@ -129,8 +182,17 @@
   background: #f2e8f7;
 }
 
-.sticky-note:hover {
+/* 悬浮效果 - 但不覆盖选中状态 */
+.sticky-note:hover:not(.selected) {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08); /* 悬停时增强阴影 */
+}
+
+/* 选中状态下的悬浮效果 - 增强选中边框的发光 */
+.sticky-note.selected:hover {
+  box-shadow: inset 0 0 0 2px #1890ff,
+    /* 内边框效果 */ 0 0 0 3px rgba(24, 144, 255, 0.3),
+    /* 增强外发光效果 */ 0 4px 16px rgba(0, 0, 0, 0.12),
+    /* 悬浮阴影 */ 0 8px 32px rgba(0, 0, 0, 0.08); /* 悬浮阴影 */
 }
 
 .sticky-note.dragging {
