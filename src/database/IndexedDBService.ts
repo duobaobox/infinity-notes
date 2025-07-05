@@ -424,10 +424,49 @@ export class IndexedDBService {
       "user_id",
       userId
     );
+    // 按最近访问时间排序，最近访问的排在前面
+    // 如果没有访问时间，则按更新时间排序
+    // 这个方法主要用于确定默认选择哪个画布
     return canvases.sort((a, b) => {
+      const lastAccessedA = a.last_accessed
+        ? new Date(a.last_accessed).getTime()
+        : 0;
+      const lastAccessedB = b.last_accessed
+        ? new Date(b.last_accessed).getTime()
+        : 0;
+
+      // 如果都有访问时间，按访问时间排序
+      if (lastAccessedA && lastAccessedB) {
+        return lastAccessedB - lastAccessedA;
+      }
+
+      // 如果只有一个有访问时间，有访问时间的排在前面
+      if (lastAccessedA && !lastAccessedB) return -1;
+      if (!lastAccessedA && lastAccessedB) return 1;
+
+      // 如果都没有访问时间，按更新时间排序
       const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
       const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
       return dateB - dateA;
+    });
+  }
+
+  /**
+   * 获取用户的所有画布，按创建时间从新到旧排序（用于界面显示）
+   * @param userId 用户ID
+   * @returns 按创建时间排序的画布列表
+   */
+  async getCanvasesByUserForDisplay(userId: string): Promise<Canvas[]> {
+    const canvases = await this.queryByIndex<Canvas>(
+      "canvases",
+      "user_id",
+      userId
+    );
+    // 按创建时间排序，最新创建的排在前面（用于侧边栏显示）
+    return canvases.sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA; // 从新到旧排序
     });
   }
 

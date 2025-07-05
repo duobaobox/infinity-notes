@@ -48,7 +48,7 @@ import {
 } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { useDatabase } from "../../database";
-import { IndexedDBAIProviderStorage } from "../../database/IndexedDBAIProviderStorage";
+import { IndexedDBAIProviderStorage } from "../../database/IndexedDBAIProviderStorage"; // IndexedDB AI Provider Storage - AI供应商配置存储
 import { initializeDatabase } from "../../database/useIndexedDB";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import { useAISettings } from "../../hooks/ai/useAISettings";
@@ -60,7 +60,56 @@ import { AIConfigStatus } from "../ai/AIConfigStatus";
 import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
 import "./SettingsModal.css";
 
-// 添加供应商卡片的样式
+/**
+ * 样式常量定义
+ * 统一管理组件中使用的样式对象
+ */
+const STYLES = {
+  // 供应商卡片样式
+  providerCard: {
+    height: "70px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    position: "relative" as const,
+  },
+  providerCardBody: {
+    padding: "8px",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column" as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    textAlign: "center" as const,
+  },
+  // 当前使用标签样式
+  currentUsageCard: {
+    marginBottom: 16,
+    background: "linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)",
+    border: "1px solid #1890ff",
+  },
+  // 配置状态指示器样式
+  configIndicator: {
+    position: "absolute" as const,
+    top: "4px",
+    right: "4px",
+    width: "8px",
+    height: "8px",
+    backgroundColor: "#1890ff",
+    borderRadius: "50%",
+    border: "1px solid white",
+    boxShadow: "0 0 4px rgba(24, 144, 255, 0.6)",
+  },
+  // 设置变更提示样式
+  changeNotification: {
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: "#fff7e6",
+    border: "1px solid #ffd591",
+    borderRadius: 4,
+  },
+} as const;
+
+// 添加供应商卡片的CSS样式
 const providerCardStyles = `
   .provider-card.ant-card {
     border-radius: 8px;
@@ -89,18 +138,48 @@ if (typeof document !== "undefined") {
 
 const { Title, Text } = Typography;
 
-// 固定的4个AI供应商（简化版）
-const DEFAULT_AI_PROVIDERS = [
+/**
+ * AI供应商配置接口定义
+ */
+interface AIProvider {
+  id: string;
+  name: string;
+  displayName: string;
+  logo: React.ReactNode;
+  apiUrl: string;
+  description: string;
+  models: Array<{
+    name: string;
+    displayName: string;
+  }>;
+}
+
+/**
+ * AI供应商配置对象接口
+ */
+interface AIProviderConfig {
+  apiUrl: string;
+  apiKey: string;
+  aiModel: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+/**
+ * 预定义的AI供应商配置列表
+ * 包含主流AI服务提供商的基础配置信息
+ */
+const DEFAULT_AI_PROVIDERS: AIProvider[] = [
   {
-    id: "deepseek",
+    id: "deepseek", // DeepSeek AI服务商ID
     name: "DeepSeek",
     displayName: "DeepSeek",
     logo: <DatabaseOutlined />,
     apiUrl: "https://api.deepseek.com/v1",
     description: "高性价比推理模型",
     models: [
-      { name: "deepseek-chat", displayName: "DeepSeek Chat" },
-      { name: "deepseek-coder", displayName: "DeepSeek Coder" },
+      { name: "deepseek-chat", displayName: "DeepSeek Chat" }, // DeepSeek聊天模型
+      { name: "deepseek-coder", displayName: "DeepSeek Coder" }, // DeepSeek编程模型
     ],
   },
   {
@@ -111,23 +190,23 @@ const DEFAULT_AI_PROVIDERS = [
     apiUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     description: "阿里云百炼智能大模型",
     models: [
-      { name: "qwen-turbo", displayName: "通义千问 Turbo" },
-      { name: "qwen-plus", displayName: "通义千问 Plus" },
-      { name: "qwen-max", displayName: "通义千问 Max" },
+      { name: "qwen-turbo", displayName: "通义千问 Turbo" }, // 通义千问快速版
+      { name: "qwen-plus", displayName: "通义千问 Plus" }, // 通义千问增强版
+      { name: "qwen-max", displayName: "通义千问 Max" }, // 通义千问旗舰版
     ],
   },
   {
-    id: "siliconflow",
+    id: "siliconflow", // SiliconFlow硅基流动服务商ID
     name: "SiliconFlow",
     displayName: "硅基流动",
     logo: <BulbOutlined />,
     apiUrl: "https://api.siliconflow.cn/v1",
     description: "高速AI推理平台",
     models: [
-      { name: "deepseek-chat", displayName: "DeepSeek Chat" },
-      { name: "Qwen/Qwen2.5-7B-Instruct", displayName: "通义千问 2.5-7B" },
+      { name: "deepseek-chat", displayName: "DeepSeek Chat" }, // DeepSeek聊天模型
+      { name: "Qwen/Qwen2.5-7B-Instruct", displayName: "通义千问 2.5-7B" }, // 通义千问2.5版本
       {
-        name: "meta-llama/Meta-Llama-3.1-8B-Instruct",
+        name: "meta-llama/Meta-Llama-3.1-8B-Instruct", // Meta Llama模型
         displayName: "Llama 3.1 8B",
       },
     ],
@@ -164,28 +243,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [userForm] = Form.useForm();
   const [testingConnection, setTestingConnection] = useState(false);
 
+  /**
+   * AI供应商相关状态管理
+   * 用于管理AI供应商选择、配置存储等功能
+   */
   // AI供应商和模型选择状态
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(
+    null
+  );
   const [isProviderAutoDetected, setIsProviderAutoDetected] = useState(false); // 标记是否已自动检测过供应商
-  const [providerConfigs, setProviderConfigs] = useState<Record<string, any>>(
-    {}
-  ); // 存储各供应商的配置
+  const [providerConfigs, setProviderConfigs] = useState<
+    Record<string, AIProviderConfig>
+  >({}); // 存储各供应商的配置
 
-  // AI提示词模板选择状态
+  /**
+   * AI提示词模板选择状态
+   * 用于管理AI角色模板的选择和应用
+   */
   const [selectedTemplate, setSelectedTemplate] =
     useState<AIPromptTemplate | null>(null);
 
-  // 加载多供应商配置
+  /**
+   * 加载多供应商配置
+   * 从IndexedDB中加载所有AI供应商的配置信息
+   */
   const loadProviderConfigs = useCallback(async () => {
     try {
       // 确保数据库已初始化
       await initializeDatabase();
 
       // 首先尝试从localStorage迁移数据（如果存在）
-      await IndexedDBAIProviderStorage.migrateFromLocalStorage();
+      await IndexedDBAIProviderStorage.migrateFromLocalStorage(); // IndexedDB AI Provider Storage迁移
 
       // 从IndexedDB加载所有供应商配置
-      const configs = await IndexedDBAIProviderStorage.loadAllProviderConfigs();
+      const configs = await IndexedDBAIProviderStorage.loadAllProviderConfigs(); // IndexedDB AI Provider Storage加载配置
       setProviderConfigs(configs);
       console.log(
         "🔧 SettingsModal: 从IndexedDB加载多供应商配置",
@@ -196,11 +287,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, []);
 
-  // 保存单个供应商配置到IndexedDB
+  /**
+   * 保存单个供应商配置到IndexedDB
+   * @param providerId 供应商ID
+   * @param config 配置对象
+   */
   const saveProviderConfig = useCallback(
-    async (providerId: string, config: any) => {
+    async (providerId: string, config: AIProviderConfig) => {
       try {
-        await IndexedDBAIProviderStorage.saveProviderConfig(providerId, config);
+        await IndexedDBAIProviderStorage.saveProviderConfig(providerId, config); // IndexedDB AI Provider Storage保存配置
         console.log("🔧 SettingsModal: 保存供应商配置到IndexedDB", providerId);
       } catch (error) {
         console.warn("🔧 SettingsModal: 保存供应商配置失败", error);
@@ -209,7 +304,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     []
   );
 
-  // 数据管理相关状态
+  /**
+   * 数据管理相关状态
+   * 用于管理数据统计、导入导出等功能的状态
+   */
   const [dataStats, setDataStats] = useState<{
     notesCount: number;
     canvasesCount: number;
@@ -267,7 +365,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   // 总是创建promptForm，但只在canConfigurePrompt为true时使用
   const [promptForm] = Form.useForm();
 
-  // 加载数据统计信息
+  /**
+   * 加载数据统计信息
+   * 获取便签数量、画布数量、存储使用情况等统计数据
+   */
   const loadDataStats = useCallback(async () => {
     try {
       setLoadingStats(true);
@@ -288,58 +389,91 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     } finally {
       setLoadingStats(false);
     }
-  }, []); // 空依赖数组，因为函数内部没有依赖外部变量
+  }, [getStats, getStorageInfo]); // 添加依赖项以确保正确的重新计算
 
-  // 导出数据
-  const handleExportData = async () => {
+  /**
+   * 导出数据处理函数
+   * 将所有数据导出为JSON文件
+   */
+  const handleExportData = useCallback(async () => {
     try {
       setExportLoading(true);
       await exportData();
-      message.success("数据导出成功！");
+      message.success("数据导出成功！文件已保存到下载文件夹。");
     } catch (error) {
       console.error("导出数据失败:", error);
-      message.error("导出数据失败");
+      const errorMessage =
+        error instanceof Error
+          ? `导出失败：${error.message}`
+          : "导出数据时发生未知错误，请稍后重试";
+      message.error(errorMessage);
     } finally {
       setExportLoading(false);
     }
-  };
+  }, [exportData]);
 
-  // 导入数据
-  const handleImportData = async (file: File) => {
-    try {
-      setImportLoading(true);
+  /**
+   * 导入数据处理函数
+   * 从JSON文件导入数据并更新应用状态
+   * @param file 要导入的JSON文件
+   */
+  const handleImportData = useCallback(
+    async (file: File) => {
+      try {
+        setImportLoading(true);
 
-      // 验证文件类型
-      if (!file.name.endsWith(".json")) {
-        throw new Error("请选择JSON格式的文件");
+        // 验证文件类型
+        if (!file.name.endsWith(".json")) {
+          throw new Error("请选择JSON格式的文件，当前文件类型不支持");
+        }
+
+        // 验证文件大小（限制为10MB）
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error("文件大小不能超过10MB，请选择较小的文件");
+        }
+
+        // 验证文件是否为空
+        if (file.size === 0) {
+          throw new Error("文件为空，请选择有效的数据文件");
+        }
+
+        await importData(file);
+
+        // 重新加载便签数据到状态管理中
+        await loadNotes();
+
+        message.success(
+          "数据导入成功！便签已更新显示，您可以在画布中查看导入的内容。"
+        );
+
+        // 重新加载统计信息
+        await loadDataStats();
+      } catch (error) {
+        console.error("导入数据失败:", error);
+        let errorMessage = "导入数据失败，请检查文件格式";
+
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === "string") {
+          errorMessage = error;
+        }
+
+        message.error({
+          content: errorMessage,
+          duration: 5, // 显示5秒
+        });
+      } finally {
+        setImportLoading(false);
       }
+    },
+    [importData, loadNotes, loadDataStats]
+  );
 
-      // 验证文件大小（限制为10MB）
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error("文件大小不能超过10MB");
-      }
-
-      await importData(file);
-
-      // 重新加载便签数据到状态管理中
-      await loadNotes();
-
-      message.success("数据导入成功！便签已更新显示。");
-
-      // 重新加载统计信息
-      await loadDataStats();
-    } catch (error) {
-      console.error("导入数据失败:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "导入数据失败，请检查文件格式";
-      message.error(errorMessage);
-    } finally {
-      setImportLoading(false);
-    }
-  };
-
-  // 清空所有数据
-  const handleClearAllData = async () => {
+  /**
+   * 清空所有数据处理函数
+   * 删除所有便签、画布和配置数据
+   */
+  const handleClearAllData = useCallback(async () => {
     try {
       await clearDatabase();
 
@@ -353,7 +487,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       console.error("清空数据失败:", error);
       message.error("清空数据失败");
     }
-  };
+  }, [clearDatabase, loadNotes, loadDataStats]);
 
   // 当模态框打开时加载数据统计
   useEffect(() => {
@@ -391,7 +525,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 setSelectedProvider(matchedProvider);
               } else {
                 // 如果没有匹配的供应商，设置为自定义配置
-                setSelectedProvider({ id: "custom" });
+                setSelectedProvider({
+                  id: "custom",
+                  name: "自定义配置",
+                  displayName: "自定义配置",
+                  logo: <SettingOutlined />,
+                  apiUrl: "",
+                  models: [],
+                  description: "手动配置API地址和模型",
+                });
               }
               setIsProviderAutoDetected(true); // 标记已完成自动检测
             }
@@ -495,14 +637,46 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [open, promptConfig, canConfigurePrompt, getCurrentSelectedTemplate]);
 
-  // 测试AI连接（简化版本，错误处理已在Hook中完成）
+  /**
+   * 测试AI连接
+   * 验证AI配置并测试连接状态
+   */
   const handleTestConnection = async () => {
     try {
       setTestingConnection(true);
+
+      // 先验证表单字段
       await aiForm.validateFields();
+
+      // 测试连接
       await testConnection();
+
+      message.success("AI连接测试成功！配置有效，可以正常使用AI功能。");
     } catch (error) {
       console.error("测试连接失败:", error);
+
+      let errorMessage = "连接测试失败，请检查配置信息";
+
+      if (error instanceof Error) {
+        // 根据错误类型提供更具体的提示
+        if (error.message.includes("API key")) {
+          errorMessage = "API密钥无效，请检查密钥是否正确";
+        } else if (
+          error.message.includes("network") ||
+          error.message.includes("timeout")
+        ) {
+          errorMessage = "网络连接失败，请检查网络状态或API地址";
+        } else if (error.message.includes("model")) {
+          errorMessage = "模型名称无效，请检查模型是否存在";
+        } else {
+          errorMessage = `连接失败：${error.message}`;
+        }
+      }
+
+      message.error({
+        content: errorMessage,
+        duration: 5,
+      });
     } finally {
       setTestingConnection(false);
     }
@@ -583,8 +757,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  // 处理AI供应商选择（简化版本）
-  const handleProviderSelect = async (provider: any) => {
+  /**
+   * 处理AI供应商选择
+   * @param provider 选择的AI供应商
+   */
+  const handleProviderSelect = async (provider: AIProvider) => {
     // 保存当前供应商的配置（如果有的话）
     if (selectedProvider && selectedProvider.id !== provider.id) {
       const currentValues = aiForm.getFieldsValue();
@@ -621,8 +798,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     aiForm.setFieldsValue(formValues);
   };
 
-  // 获取当前正在使用的供应商
-  const getCurrentProvider = () => {
+  /**
+   * 获取当前正在使用的供应商
+   * 根据AI配置判断当前使用的供应商
+   */
+  const getCurrentProvider = (): AIProvider | undefined => {
     // 根据当前AI配置判断使用的是哪个供应商
     if (!aiConfig.apiUrl) return undefined;
 
@@ -642,6 +822,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       id: "custom",
       name: "自定义配置",
       displayName: "自定义配置",
+      logo: <SettingOutlined />,
       apiUrl: aiConfig.apiUrl,
       models: [],
       description: "手动配置API地址和模型",
@@ -671,10 +852,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
 
     // 设置自定义配置供应商
-    const customProvider = {
+    const customProvider: AIProvider = {
       id: "custom",
       name: "自定义配置",
       displayName: "自定义配置",
+      logo: <SettingOutlined />,
       apiUrl: "",
       models: [],
       description: "手动配置API地址和模型",
@@ -732,7 +914,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose();
   };
 
-  // 保存AI基础配置（简化版本，错误处理已在Hook中完成）
+  /**
+   * 保存AI基础配置
+   * 验证并保存AI配置信息
+   */
   const handleSaveAIConfig = async () => {
     try {
       // 验证表单字段
@@ -746,15 +931,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         systemPrompt: aiConfig.systemPrompt, // 保留现有的systemPrompt
       };
 
-      // 使用 useAISettings Hook 进行保存，错误处理已在Hook中完成
+      // 使用 useAISettings Hook 进行保存
       const success = await saveAIConfig(configToSave);
-      if (!success) {
-        // 如果保存失败，saveAIConfig 内部已经处理了错误显示
-        return;
+      if (success) {
+        message.success("AI配置保存成功！现在可以使用AI功能了。");
+      } else {
+        throw new Error("配置保存失败");
       }
     } catch (error) {
       console.error("保存AI配置失败:", error);
-      // 错误处理已在Hook中完成，这里只记录日志
+
+      let errorMessage = "保存AI配置失败";
+
+      if (error instanceof Error) {
+        if (error.message.includes("validation")) {
+          errorMessage = "配置验证失败，请检查输入信息";
+        } else if (error.message.includes("network")) {
+          errorMessage = "网络错误，请稍后重试";
+        } else {
+          errorMessage = `保存失败：${error.message}`;
+        }
+      }
+
+      message.error({
+        content: errorMessage,
+        duration: 5,
+      });
     }
   };
 
@@ -874,39 +1076,72 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     [tempNoteSettings, appearance]
   );
 
-  // 保存便签设置
-  const handleSaveNoteSettings = React.useCallback(() => {
-    try {
-      setAppearance(tempNoteSettings);
-      setNoteSettingsChanged(false);
-      message.success("便签设置已保存");
-    } catch (error) {
-      console.error("保存便签设置失败:", error);
-      message.error("保存便签设置失败");
-    }
-  }, [tempNoteSettings, setAppearance]);
-
-  // 重置便签设置
-  const handleResetNoteSettings = React.useCallback(() => {
-    try {
-      resetNoteDefaultSizes();
-      // 更新临时设置为默认值
-      const defaultSettings = {
-        manualNoteDefaultWidth: 250,
-        manualNoteDefaultHeight: 200,
-        aiNoteDefaultWidth: 300,
-        aiNoteDefaultHeight: 250,
+  /**
+   * 通用表单操作处理器
+   * 统一处理表单保存和重置操作的错误处理
+   */
+  const createFormHandler = React.useCallback(
+    (
+      operation: () => void | Promise<void>,
+      successMessage: string,
+      errorMessage: string
+    ) => {
+      return async () => {
+        try {
+          await operation();
+          message.success(successMessage);
+        } catch (error) {
+          console.error(`${errorMessage}:`, error);
+          const finalErrorMessage =
+            error instanceof Error
+              ? `${errorMessage}：${error.message}`
+              : errorMessage;
+          message.error(finalErrorMessage);
+        }
       };
-      setTempNoteSettings(defaultSettings);
-      setNoteSettingsChanged(false);
-      // 同步表单值
-      appearanceForm.setFieldsValue(defaultSettings);
-      message.success("便签设置已重置为默认值");
-    } catch (error) {
-      console.error("重置便签设置失败:", error);
-      message.error("重置便签设置失败");
-    }
-  }, [resetNoteDefaultSizes, appearanceForm]);
+    },
+    []
+  );
+
+  /**
+   * 保存便签设置
+   */
+  const handleSaveNoteSettings = React.useCallback(
+    createFormHandler(
+      () => {
+        setAppearance(tempNoteSettings);
+        setNoteSettingsChanged(false);
+      },
+      "便签设置已保存",
+      "保存便签设置失败"
+    ),
+    [createFormHandler, tempNoteSettings, setAppearance]
+  );
+
+  /**
+   * 重置便签设置
+   */
+  const handleResetNoteSettings = React.useCallback(
+    createFormHandler(
+      () => {
+        resetNoteDefaultSizes();
+        // 更新临时设置为默认值
+        const defaultSettings = {
+          manualNoteDefaultWidth: 250,
+          manualNoteDefaultHeight: 200,
+          aiNoteDefaultWidth: 300,
+          aiNoteDefaultHeight: 250,
+        };
+        setTempNoteSettings(defaultSettings);
+        setNoteSettingsChanged(false);
+        // 同步表单值
+        appearanceForm.setFieldsValue(defaultSettings);
+      },
+      "便签设置已重置为默认值",
+      "重置便签设置失败"
+    ),
+    [createFormHandler, resetNoteDefaultSizes, appearanceForm]
+  );
 
   // 同步便签设置表单值
   React.useEffect(() => {
@@ -944,33 +1179,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     [tempThinkingMode, basicSettings]
   );
 
-  // 保存思维模式设置
-  const handleSaveThinkingMode = React.useCallback(() => {
-    try {
-      setBasicSettings(tempThinkingMode);
-      setThinkingModeChanged(false);
-      message.success("思维模式设置已保存");
-    } catch (error) {
-      console.error("保存思维模式设置失败:", error);
-      message.error("保存思维模式设置失败");
-    }
-  }, [tempThinkingMode, setBasicSettings]);
+  /**
+   * 保存思维模式设置
+   */
+  const handleSaveThinkingMode = React.useCallback(
+    createFormHandler(
+      () => {
+        setBasicSettings(tempThinkingMode);
+        setThinkingModeChanged(false);
+      },
+      "思维模式设置已保存",
+      "保存思维模式设置失败"
+    ),
+    [createFormHandler, tempThinkingMode, setBasicSettings]
+  );
 
-  // 重置思维模式设置
-  const handleResetThinkingMode = React.useCallback(() => {
-    try {
-      const defaultSettings = { showThinkingMode: true };
-      setBasicSettings(defaultSettings);
-      setTempThinkingMode(defaultSettings);
-      setThinkingModeChanged(false);
-      // 同步表单值
-      thinkingModeForm.setFieldsValue(defaultSettings);
-      message.success("思维模式设置已重置为默认值");
-    } catch (error) {
-      console.error("重置思维模式设置失败:", error);
-      message.error("重置思维模式设置失败");
-    }
-  }, [setBasicSettings, thinkingModeForm]);
+  /**
+   * 重置思维模式设置
+   */
+  const handleResetThinkingMode = React.useCallback(
+    createFormHandler(
+      () => {
+        const defaultSettings = { showThinkingMode: true };
+        setBasicSettings(defaultSettings);
+        setTempThinkingMode(defaultSettings);
+        setThinkingModeChanged(false);
+        // 同步表单值
+        thinkingModeForm.setFieldsValue(defaultSettings);
+      },
+      "思维模式设置已重置为默认值",
+      "重置思维模式设置失败"
+    ),
+    [createFormHandler, setBasicSettings, thinkingModeForm]
+  );
 
   // 同步思维模式设置表单值
   React.useEffect(() => {
@@ -984,10 +1225,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [open, basicSettings, thinkingModeForm]);
 
-  // 处理用户信息更新
+  /**
+   * 处理用户信息更新
+   * 更新用户的基本信息（用户名、邮箱等）
+   * @param values 表单提交的用户信息
+   */
   const handleUserProfileUpdate = React.useCallback(
-    async (values: any) => {
+    async (values: { username: string; email?: string }) => {
       try {
+        // 调用用户信息更新API
         await updateUserProfile({
           username: values.username,
           email: values.email,
@@ -995,13 +1241,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         message.success("用户信息更新成功");
       } catch (error) {
         console.error("更新用户信息失败:", error);
-        message.error("更新用户信息失败");
+        const errorMessage =
+          error instanceof Error
+            ? `更新失败：${error.message}`
+            : "更新用户信息失败，请稍后重试";
+        message.error(errorMessage);
       }
     },
     [updateUserProfile]
   );
 
-  // 动态生成标签页项目，根据AI配置状态决定是否显示AI提示词标签页
+  /**
+   * 动态生成标签页项目
+   * 根据AI配置状态决定是否显示AI提示词标签页
+   * 这是一个复杂的渲染逻辑，包含了所有设置页面的内容
+   */
   const getTabItems = React.useMemo(() => {
     const baseItems = [
       {
@@ -1097,23 +1351,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               onValuesChange={handleAppearanceChange}
               initialValues={appearance}
             >
-              {/* 当前使用的主题 */}
+              {/* 当前使用的主题显示区域 */}
               {(() => {
+                // 查找当前正在使用的主题
+                // 通过比较画布背景色来确定当前主题
                 const currentTheme = PRESET_THEMES.find(
                   (theme) =>
                     theme.colors.canvasBackground ===
                     appearance.canvasBackground
                 );
+                // 如果找到匹配的主题，显示当前主题信息
                 return currentTheme ? (
-                  <Card
-                    size="small"
-                    style={{
-                      marginBottom: 16,
-                      background:
-                        "linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)",
-                      border: "1px solid #1890ff",
-                    }}
-                  >
+                  <Card size="small" style={STYLES.currentUsageCard}>
                     <div
                       style={{
                         display: "flex",
@@ -1165,27 +1414,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     return (
                       <Col xs={12} sm={8} md={6} lg={4} key={theme.id}>
                         <Card
-                          hoverable
+                          hoverable={true} // 启用悬停效果
                           size="small"
                           className={`provider-card ${
                             isSelected ? "provider-card-selected" : ""
                           }`}
-                          style={{
-                            height: "70px",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            position: "relative",
-                          }}
+                          style={STYLES.providerCard}
                           styles={{
-                            body: {
-                              padding: "8px",
-                              height: "100%",
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              textAlign: "center",
-                            },
+                            body: STYLES.providerCardBody,
                           }}
                           onClick={() =>
                             handleApplyPresetTheme(theme.id, theme.name)
@@ -1390,15 +1626,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* 设置变更状态提示 */}
               {noteSettingsChanged && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: 8,
-                    backgroundColor: "#fff7e6",
-                    border: "1px solid #ffd591",
-                    borderRadius: 4,
-                  }}
-                >
+                <div style={STYLES.changeNotification}>
                   <Text style={{ fontSize: "12px", color: "#d46b08" }}>
                     <ExclamationCircleOutlined style={{ marginRight: 4 }} />
                     设置已修改，请点击"保存设置"按钮保存更改
@@ -1749,35 +1977,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     AI供应商
                   </Title>
 
-                  {/* AI供应商选择 - 使用Ant Design Card组件 */}
+                  {/* AI供应商选择区域 - 使用网格布局展示所有可用的AI供应商 */}
                   <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
                     {DEFAULT_AI_PROVIDERS.map((provider) => {
+                      // 检查当前供应商是否被选中
                       const isSelected = selectedProvider?.id === provider.id;
 
                       return (
                         <Col xs={12} sm={8} md={6} lg={4} key={provider.id}>
                           <Card
-                            hoverable
+                            hoverable={true} // 启用悬停效果，提升用户体验
                             size="small"
                             className={`provider-card ${
                               isSelected ? "provider-card-selected" : ""
                             }`}
-                            style={{
-                              height: "70px",
-                              cursor: "pointer",
-                              transition: "all 0.2s ease",
-                              position: "relative",
-                            }}
+                            style={STYLES.providerCard}
                             styles={{
-                              body: {
-                                padding: "8px",
-                                height: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                textAlign: "center",
-                              },
+                              body: STYLES.providerCardBody,
                             }}
                             onClick={() => handleProviderSelect(provider)}
                           >
@@ -1796,58 +2012,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             >
                               {provider.displayName}
                             </Text>
-                            {/* 配置状态指示器 */}
+                            {/* 配置状态指示器 - 显示供应商是否已完成配置 */}
                             {providerConfigs[provider.id]?.apiKey &&
                               providerConfigs[provider.id]?.aiModel && (
                                 <Tooltip
                                   title={`${provider.displayName} 已配置完成`}
                                   placement="top"
                                 >
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      top: "4px",
-                                      right: "4px",
-                                      width: "8px",
-                                      height: "8px",
-                                      backgroundColor: "#1890ff",
-                                      borderRadius: "50%",
-                                      border: "1px solid white",
-                                      boxShadow:
-                                        "0 0 4px rgba(24, 144, 255, 0.6)",
-                                    }}
-                                  />
+                                  {/* 蓝色圆点表示该供应商已配置完成 */}
+                                  <div style={STYLES.configIndicator} />
                                 </Tooltip>
                               )}
                           </Card>
                         </Col>
                       );
                     })}
+                    {/* 自定义配置选项 - 允许用户配置其他AI服务商 */}
                     <Col xs={12} sm={8} md={6} lg={4}>
                       <Card
-                        hoverable
+                        hoverable={true} // 启用悬停效果
                         size="small"
                         className={`provider-card ${
                           selectedProvider?.id === "custom"
                             ? "provider-card-selected"
                             : ""
                         }`}
-                        style={{
-                          height: "70px",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                          position: "relative",
-                        }}
+                        style={STYLES.providerCard}
                         styles={{
-                          body: {
-                            padding: "8px",
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            textAlign: "center",
-                          },
+                          body: STYLES.providerCardBody,
                         }}
                         onClick={handleCustomSelect}
                       >
@@ -1867,26 +2059,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         >
                           自定义
                         </Text>
-                        {/* 配置状态指示器 */}
+                        {/* 自定义配置状态指示器 */}
                         {providerConfigs["custom"]?.apiKey &&
                           providerConfigs["custom"]?.aiModel && (
                             <Tooltip
                               title="自定义配置 已配置完成"
                               placement="top"
                             >
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  top: "4px",
-                                  right: "4px",
-                                  width: "8px",
-                                  height: "8px",
-                                  backgroundColor: "#1890ff",
-                                  borderRadius: "50%",
-                                  border: "1px solid white",
-                                  boxShadow: "0 0 4px rgba(24, 144, 255, 0.6)",
-                                }}
-                              />
+                              {/* 显示自定义配置已完成的状态指示器 */}
+                              <div style={STYLES.configIndicator} />
                             </Tooltip>
                           )}
                       </Card>
@@ -1894,14 +2075,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   </Row>
                 </Card>
 
-                {/* AI配置详情卡片 */}
+                {/* AI配置详情卡片 - 显示具体的配置选项 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
                   <Title level={5} style={{ margin: "0 0 16px 0" }}>
                     <SettingOutlined style={{ marginRight: 8 }} />
                     配置详情
                   </Title>
 
-                  {/* AI模型选择 */}
+                  {/* AI模型选择区域 - 根据选择的供应商显示不同的输入方式 */}
                   <Form.Item
                     label="AI模型"
                     name="aiModel"
@@ -1917,7 +2098,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     {selectedProvider?.id === "custom" ? (
                       // 自定义配置：只显示输入框
                       <Input
-                        placeholder="例如：gpt-4, claude-3-sonnet, deepseek-chat"
+                        placeholder="例如：gpt-4, claude-3-sonnet, deepseek-chat" // DeepSeek聊天模型示例
                         style={{ width: "100%" }}
                       />
                     ) : selectedProvider ? (
@@ -2245,13 +2426,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="settings-modal-content">
             <Card size="small" style={{ marginBottom: 16 }}>
               <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                无限便签 - 思维整理的AI工作空间
+                无限便签
               </Title>
               <p>
                 <strong>无限便签</strong>{" "}
                 是一款创新的无限画布便签应用，支持AI智能汇总、连接线可视化和溯源追踪，让您自由组织思路和灵感。
               </p>
-              <p>版本: 1.0.0</p>
+              <p>版本: RC1.0.0</p>
               <Divider />
               <p>
                 <strong>核心功能:</strong>
@@ -2308,17 +2489,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </Space>
               <Divider />
               <p>
-                <strong>开发者:</strong> duobao
+                <strong>开发者:</strong> duobao {/* 开发者姓名 */}
               </p>
               <p>
-                <strong> 联系方式:</strong> 2385561331@qq.com
+                <strong> 邮箱:</strong> 2385561331@qq.com
+              </p>
+              <p>
+                <strong> 小红书号:</strong> 7429489345
               </p>
               <p>
                 <strong>数据存储:</strong> 本地 IndexedDB（保护隐私）
               </p>
               <Divider />
               <p style={{ textAlign: "center", color: "#666" }}>
-                © 2025 无限便签. 专注于思维整理的创新工具.
+                © 2025 无限便签. 专注于思维整理的便签工具.
               </p>
             </Card>
           </div>

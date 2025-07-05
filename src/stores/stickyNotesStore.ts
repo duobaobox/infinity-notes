@@ -424,14 +424,18 @@ export const useStickyNotesStore = create<
           set({ canvasLoading: true, error: null });
 
           const adapter = getDatabaseAdapter();
-          const canvases = await adapter.getUserCanvases();
+          // 使用按创建时间排序的方法，用于界面显示
+          const canvases = await adapter.getUserCanvasesForDisplay();
 
           set({
             canvases,
             canvasLoading: false,
           });
 
-          console.log("✅ 画布列表加载成功:", canvases.length);
+          console.log(
+            "✅ 画布列表加载成功（按创建时间排序）:",
+            canvases.length
+          );
         } catch (error) {
           const errorMsg =
             error instanceof Error ? error.message : "加载画布列表失败";

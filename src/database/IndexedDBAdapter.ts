@@ -149,14 +149,18 @@ export class IndexedDBAdapter {
 
       console.log("🎨 IndexedDBAdapter: 没有当前画布，开始确保默认画布存在");
 
-      // 尝试获取用户的画布
+      // 尝试获取用户的画布（已按最近访问时间排序）
       const canvases = await this.dbService.getCanvasesByUser(
         this.currentUserId
       );
 
       if (canvases.length > 0) {
-        // 如果已有画布，使用第一个画布
+        // 如果已有画布，使用第一个画布（最近访问的画布）
+        // 这样页面刷新后会恢复到用户最后访问的画布，而不是最新更新的画布
         this.currentCanvasId = canvases[0].id;
+        console.log(
+          `🎨 IndexedDBAdapter: 选择最近访问的画布 ${canvases[0].id} (${canvases[0].name})`
+        );
         return canvases[0].id;
       }
 
@@ -262,10 +266,17 @@ export class IndexedDBAdapter {
   }
 
   /**
-   * 获取用户的所有画布
+   * 获取用户的所有画布（按访问时间排序，用于选择逻辑）
    */
   async getUserCanvases(): Promise<DbCanvas[]> {
     return await this.dbService.getCanvasesByUser(this.currentUserId);
+  }
+
+  /**
+   * 获取用户的所有画布（按创建时间排序，用于界面显示）
+   */
+  async getUserCanvasesForDisplay(): Promise<DbCanvas[]> {
+    return await this.dbService.getCanvasesByUserForDisplay(this.currentUserId);
   }
 
   /**
