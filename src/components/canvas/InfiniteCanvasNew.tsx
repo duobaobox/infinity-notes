@@ -566,10 +566,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 只处理左键点击
       if (e.button !== 0) return;
 
-      // 记录鼠标按下位置，用于后续判断是否为拖拽
-      dragDetectionRef.current.mouseDownPos = { x: e.clientX, y: e.clientY };
-      dragDetectionRef.current.hasDragged = false;
-
       // 如果点击的是便签或其他交互元素，不处理画布拖拽
       const target = e.target as HTMLElement;
       if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
@@ -618,15 +614,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      // 检测是否发生了拖拽（移动距离超过5px）
-      const moveDistance = Math.sqrt(
-        Math.pow(e.clientX - dragDetectionRef.current.mouseDownPos.x, 2) +
-          Math.pow(e.clientY - dragDetectionRef.current.mouseDownPos.y, 2)
-      );
-      if (moveDistance > 5) {
-        dragDetectionRef.current.hasDragged = true;
-      }
-
       if (dragState.isDragging) {
         e.preventDefault();
         throttledUpdateDrag(e.clientX, e.clientY);
@@ -637,10 +624,15 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     [dragState.isDragging, throttledUpdateDrag, throttledConnectionUpdate]
   );
 
+  // 用于跟踪拖拽状态，防止拖拽结束后的点击事件误触发
+  const dragEndTimeRef = useRef<number>(0);
+
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
         e.preventDefault();
+        // 记录拖拽结束的时间，用于防止后续的点击事件误触发
+        dragEndTimeRef.current = Date.now();
         endDrag();
       }
     },
@@ -654,32 +646,31 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     lastClickPos: { x: 0, y: 0 },
   });
 
-  // 拖拽检测状态 - 用于区分点击和拖拽
-  const dragDetectionRef = useRef({
-    mouseDownPos: { x: 0, y: 0 },
-    hasDragged: false,
-  });
-
-  // 三击创建便签
-  const handleTripleClick = useCallback(
+  // 处理画布点击事件（包括三击创建便签和清除选中状态）
+  const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
-      // 移动模式下禁用三击创建便签
+      // 移动模式下禁用点击功能
       if (isMoveModeActive) {
         return;
       }
 
-      // 如果点击的是便签或其他交互元素，不创建新便签
+      // 如果点击的是便签或其他交互元素，不处理
       const target = e.target as HTMLElement;
       if (shouldIgnoreCanvasEvent(target, isMoveModeActive)) {
         return;
       }
 
-      // 如果发生了拖拽，不处理点击事件（避免拖拽后误触发）
-      if (dragDetectionRef.current.hasDragged) {
+      const now = Date.now();
+
+      // 检查是否是拖拽结束后立即触发的点击事件
+      // 如果距离拖拽结束时间小于100ms，则忽略此次点击，避免误清除选中状态
+      if (now - dragEndTimeRef.current < 100) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("🖱️ 忽略拖拽结束后的点击事件，保持便签选中状态");
+        }
         return;
       }
 
-      const now = Date.now();
       const clickPos = { x: e.clientX, y: e.clientY };
       const state = tripleClickStateRef.current;
 
@@ -695,7 +686,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         state.clickCount++;
 
         if (state.clickCount === 1) {
-          // 第一次点击，清除便签选中状态（只有在真正点击时）
+          // 第一次点击，清除便签选中状态
           clearSelection();
         } else if (state.clickCount === 3) {
           // 第三次点击，创建便签
@@ -724,7 +715,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       } else {
         // 重新开始计数
         state.clickCount = 1;
-        // 第一次点击，清除便签选中状态（只有在真正点击时）
+        // 第一次点击，清除便签选中状态
         clearSelection();
       }
 
@@ -925,7 +916,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         dragState.isDragging ? "dragging" : ""
       } ${isMoveModeActive ? "move-mode" : ""}`}
       onMouseDown={handleMouseDown}
-      onClick={handleTripleClick}
+      onClick={handleCanvasClick}
     >
       {/* 工具栏 */}
       <CanvasToolbar

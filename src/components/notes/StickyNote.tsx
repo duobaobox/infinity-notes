@@ -72,7 +72,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [sourceConnectionsVisible, setSourceConnectionsVisible] =
     useState(false);
   const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
-  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
   const [sourceNotesModalVisible, setSourceNotesModalVisible] = useState(false);
 
   // Refs 和定时器
@@ -534,18 +533,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     ]
   );
 
-  // 处理设置按钮点击
-  const handleSettingsClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (isStreaming) return;
-
-      e.stopPropagation();
-      e.preventDefault();
-      setSettingsMenuVisible(!settingsMenuVisible);
-    },
-    [isStreaming, settingsMenuVisible]
-  );
-
   // 获取选中状态管理方法和当前选中状态
   const { selectNote, selectedNoteId } = useStickyNotesStore();
   const isSelected = selectedNoteId === note.id;
@@ -555,7 +542,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     // 只有在预览模式（非编辑状态）下才触发置顶和选中
     if (!isEditing && !isTitleEditing) {
       onBringToFront(note.id); // 置顶
-      selectNote(note.id); // 选中
+      selectNote(note.id); // 选中（会自动取消其他便签的选中状态）
     }
   }, [isEditing, isTitleEditing, onBringToFront, selectNote, note.id]);
 
@@ -885,13 +872,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         if (relatedTarget.classList.contains("sticky-note-title-input")) {
           return;
         }
-        // 转移到删除按钮、设置按钮等，不退出编辑模式
+        // 转移到删除按钮等，不退出编辑模式
         if (
           relatedTarget.classList.contains("delete-button") ||
           relatedTarget.closest(".delete-button") ||
           relatedTarget.closest("[class*='delete-button']") ||
-          relatedTarget.classList.contains("settings-button") ||
-          relatedTarget.closest(".settings-button") ||
           relatedTarget.closest(".settings-toolbar")
         ) {
           return;
@@ -921,13 +906,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         if (relatedTarget.classList.contains("sticky-note-textarea")) {
           return;
         }
-        // 转移到删除按钮、设置按钮等，不退出编辑模式
+        // 转移到删除按钮等，不退出编辑模式
         if (
           relatedTarget.classList.contains("delete-button") ||
           relatedTarget.closest(".delete-button") ||
           relatedTarget.closest("[class*='delete-button']") ||
-          relatedTarget.classList.contains("settings-button") ||
-          relatedTarget.closest(".settings-button") ||
           relatedTarget.closest(".settings-toolbar")
         ) {
           return;
@@ -1047,39 +1030,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     };
   }, [note.id]);
 
-  // 点击外部区域关闭设置工具栏
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (settingsMenuVisible && noteRef.current) {
-        const target = event.target as HTMLElement;
-        // 检查点击是否在便签内部或工具栏内部
-        const isInsideNote = noteRef.current.contains(target);
-        const isInsideToolbar = target.closest(".settings-toolbar");
-        const isInsideToolbarButton = target.closest(
-          ".settings-toolbar-button"
-        );
-
-        // 如果点击的不是便签内部也不是工具栏内部，关闭设置工具栏
-        // 但是如果点击的是工具栏按钮，不要关闭（让按钮自己处理）
-        if (!isInsideNote && !isInsideToolbar && !isInsideToolbarButton) {
-          setSettingsMenuVisible(false);
-        }
-      }
-    };
-
-    if (settingsMenuVisible) {
-      // 使用setTimeout延迟添加事件监听器，避免与按钮点击冲突
-      const timeoutId = setTimeout(() => {
-        document.addEventListener("click", handleClickOutside);
-      }, 150); // 增加延迟时间，确保按钮点击事件先执行
-
-      return () => {
-        clearTimeout(timeoutId);
-        document.removeEventListener("click", handleClickOutside);
-      };
-    }
-  }, [settingsMenuVisible]);
-
   // 便签级别的失焦检测 - 当点击便签外部时退出编辑模式
   useEffect(() => {
     const handleGlobalClick = (event: MouseEvent) => {
@@ -1118,8 +1068,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   return (
     <>
-      {/* 设置工具栏 - 位于便签头部上方 */}
-      {settingsMenuVisible && (
+      {/* 设置工具栏 - 位于便签头部上方，选中时显示 */}
+      {isSelected && (
         <div
           className="settings-toolbar"
           style={{
@@ -1351,19 +1301,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             </div>
           </div>
           <div className="sticky-note-controls">
-            {/* 设置按钮 - 三个点 */}
-            <Button
-              icon={<span className="settings-icon">⋯</span>}
-              onClick={handleSettingsClick}
-              title="便签设置"
-              type="default"
-              size="small"
-              style={{
-                borderRadius: "4px",
-                marginRight: "4px", // 与删除按钮保持间距
-              }}
-              className="settings-button sticky-note-settings-button"
-            />
             {/* 删除按钮 */}
             <Button
               icon={<DeleteOutlined />}

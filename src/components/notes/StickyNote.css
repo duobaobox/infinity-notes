@@ -263,6 +263,7 @@
 .sticky-note-controls {
   display: flex;
   gap: 4px;
+  justify-content: flex-end; /* 让按钮靠右对齐，删除按钮保持在右侧 */
   opacity: 0; /* 恢复透明度控制，默认隐藏 */
   /* 移除透明度过渡动画，让控件显示更直接 */
   /* transition: opacity 0.2s ease; */
@@ -322,40 +323,6 @@
 .sticky-note-controls button.source-button.active {
   color: #fa8c16 !important; /* 激活时橙色 */
   background: rgba(250, 140, 22, 0.15); /* 激活时背景更明显 */
-}
-
-/* 设置按钮样式 - 与删除按钮保持一致 */
-.sticky-note-controls button.settings-button {
-  background: rgba(0, 0, 0, 0.06); /* 与删除按钮背景色一致 */
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease; /* 添加过渡动画 */
-}
-
-/* 覆盖 Ant Design 按钮的默认悬浮样式 */
-.sticky-note-controls button.settings-button:hover,
-.sticky-note-controls button.settings-button.ant-btn:hover {
-  color: #1677ff !important; /* 悬浮时图标变为主题蓝色 */
-  background: rgba(
-    22,
-    119,
-    255,
-    0.1
-  ) !important; /* 悬浮时背景带有淡蓝色，覆盖 Ant Design 默认白色 */
-  transform: scale(1.05); /* 悬浮时轻微放大 */
-  border-color: transparent !important; /* 确保边框透明 */
-  box-shadow: none !important; /* 移除 Ant Design 默认阴影 */
-}
-
-/* 设置按钮图标样式 */
-.settings-icon {
-  font-size: 16px;
-  font-weight: bold;
-  line-height: 1;
-  transform: rotate(90deg); /* 将横向三点转为竖向 */
 }
 
 /* 便签工具栏样式 - 位于便签头部上方，极简设计 */
