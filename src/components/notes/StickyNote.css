@@ -77,6 +77,15 @@
   position: relative;
   display: inline-block;
   width: 100%;
+  user-select: text; /* 允许选择流式内容中的文本 */
+}
+
+/* 流式内容中的分割线样式 */
+.streaming-content hr {
+  border: none;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 16px 0;
 }
 
 /* 流式光标样式 */
@@ -101,23 +110,23 @@
 
 /* 便签颜色变体 */
 .sticky-note.color-yellow {
-  background: #fef3c7;
+  background: #fffad6;
 }
 
 .sticky-note.color-blue {
-  background: #dbeafe;
+  background: #e1f3fd;
 }
 
 .sticky-note.color-green {
-  background: #d1fae5;
+  background: #e5f9f0;
 }
 
 .sticky-note.color-pink {
-  background: #fce7f3;
+  background: #fef1f0;
 }
 
 .sticky-note.color-purple {
-  background: #e9d5ff;
+  background: #f2e8f7;
 }
 
 .sticky-note:hover {
@@ -420,6 +429,7 @@
   overflow: hidden; /* Re-add to clip the oversized child */
   display: flex;
   flex-direction: column;
+  user-select: text; /* 允许选择内容区域的文本 */
 }
 
 .sticky-note-textarea {
@@ -463,6 +473,7 @@
   /* padding-right: 17px; -- Removed as per user feedback */
   margin-right: -17px; /* Pull scrollbar area into the overflow hidden area */
   scroll-behavior: smooth; /* 添加平滑滚动效果 */
+  user-select: text; /* 允许选择预览区域的文本 */
 }
 
 .sticky-note-preview:hover {
@@ -620,6 +631,13 @@
   text-decoration: line-through;
 }
 
+.sticky-note-preview hr {
+  border: none;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 16px 0;
+}
+
 /* 响应式设计 - 在小缩放级别下调整字体 */
 @media (max-width: 768px) {
   .sticky-note {
@@ -636,52 +654,6 @@
     font-size: 13px;
   }
 }
-
-/* 滚动条样式，使其不挤占内容空间 */
-/*
-.sticky-note-preview,
-.sticky-note-textarea {
-  scrollbar-width: auto;
-  scrollbar-color: transparent transparent;
-}
-
-.sticky-note-preview::-webkit-scrollbar,
-.sticky-note-textarea::-webkit-scrollbar {
-  width: 17px;
-  height: 17px;
-}
-
-.sticky-note-preview::-webkit-scrollbar-track,
-.sticky-note-textarea::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sticky-note-preview::-webkit-scrollbar-thumb,
-.sticky-note-textarea::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 4px;
-  border: 4px solid transparent;
-  background-clip: content-box;
-}
-
-
-.sticky-note:hover .sticky-note-preview,
-.sticky-note:hover .sticky-note-textarea {
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-
-.sticky-note:hover .sticky-note-preview::-webkit-scrollbar-thumb,
-.sticky-note:hover .sticky-note-textarea::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.15);
-}
-
-
-.sticky-note:hover .sticky-note-preview,
-.sticky-note:hover .sticky-note-textarea {
-
-
-}
-*/
 
 .sticky-note-title-input {
   margin: 0;
@@ -839,6 +811,15 @@
 .paginated-markdown-container {
   width: 100%;
   height: 100%;
+  user-select: text; /* 允许选择分页Markdown容器中的文本 */
+}
+
+/* 分页Markdown容器中的分割线样式 */
+.paginated-markdown-container hr {
+  border: none;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 16px 0;
 }
 
 /* 加载更多内容的触发器 */

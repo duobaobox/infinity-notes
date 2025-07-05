@@ -557,7 +557,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 开始拖拽
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (isEditing || isTitleEditing || isStreaming) return;
+      if (isEditing || isTitleEditing) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -576,7 +576,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [
       isEditing,
       isTitleEditing,
-      isStreaming,
       note.id,
       note.x,
       note.y,
@@ -1439,7 +1438,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           )}
         </div>
 
-        {!isEditing && !isStreaming && (
+        {!isEditing && (
           <div
             className="resize-handle"
             onMouseDown={handleResizeMouseDown}
