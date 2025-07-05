@@ -430,6 +430,23 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         ];
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
+        // 生成便签标题：使用用户的prompt，限制长度避免过长
+        const generateTitleFromPrompt = (prompt: string): string => {
+          if (!prompt || prompt.trim().length === 0) {
+            return "AI便签";
+          }
+
+          // 清理prompt，移除多余的空白字符
+          const cleanPrompt = prompt.trim().replace(/\s+/g, " ");
+
+          // 如果prompt长度超过30个字符，截取前30个字符并添加省略号
+          if (cleanPrompt.length > 30) {
+            return cleanPrompt.substring(0, 30) + "...";
+          }
+
+          return cleanPrompt;
+        };
+
         const tempNote: StickyNoteType = {
           id: `ai-note-${Date.now()}-${Math.random()
             .toString(36)
@@ -439,7 +456,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           width: 400, // AI便签默认宽度
           height: 300, // AI便签默认高度
           content: "",
-          title: "AI便签",
+          title: generateTitleFromPrompt(prompt), // 🔧 使用用户的prompt作为标题
           color: randomColor, // 🔧 使用随机颜色
           isNew: false,
           zIndex: maxZ + 1,
@@ -474,11 +491,12 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               // 完成流式生成，更新最终内容
               await finishStreamingNote(addedNote.id, noteData.content);
 
-              // 🔧 修复：保持临时便签的颜色，不使用AI返回的颜色
-              // 这样确保生成过程中和最终的便签颜色保持一致
+              // 🔧 修复：保持临时便签的颜色和标题，不使用AI返回的
+              // 这样确保生成过程中和最终的便签颜色和标题保持一致
               // 新增：同时更新思维链数据
               const updateData: any = {
                 color: tempNote.color, // 保持临时便签的颜色
+                title: tempNote.title, // 🔧 保持用户prompt作为标题，不被AI覆盖
                 updatedAt: new Date(),
               };
 
