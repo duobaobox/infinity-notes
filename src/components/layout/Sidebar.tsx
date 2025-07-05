@@ -367,7 +367,6 @@ const Sidebar: React.FC = () => {
       height: number;
     }) => {
       centerOnNote(note.x, note.y, note.width, note.height, note.id);
-      message.success(`📍 已定位到便签: ${note.title}，并置顶显示`);
     },
     [centerOnNote]
   );
