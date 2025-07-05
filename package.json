@@ -12,7 +12,7 @@
     "react",
     "typescript",
     "vite",
-    "indexeddb"
+    "IndexedDB"
   ],
   "homepage": "https://github.com/your-username/infinite-notes#readme",
   "repository": {
