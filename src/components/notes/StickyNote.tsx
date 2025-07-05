@@ -1396,11 +1396,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         </div>
 
         {!isEditing && (
-          <div
-            className="resize-handle"
-            onMouseDown={handleResizeMouseDown}
-            title="拖拽调整大小"
-          />
+          <>
+            <div
+              className="resize-handle"
+              onMouseDown={handleResizeMouseDown}
+              title="拖拽调整大小"
+            />
+            {/* macOS风格的缩放提示符号 */}
+            <div className="resize-indicator" />
+          </>
         )}
 
         {/* AI生成加载状态指示器 - 只在等待生成时显示 */}

@@ -561,6 +561,42 @@
   opacity: 1;
 } */
 
+/* 优雅的弧形缩放提示符号 - 位于便签外部右下角，保持3px间距 */
+.resize-indicator {
+  position: absolute;
+  bottom: -11px; /* 8px弧线高度 + 3px间距 */
+  right: -11px; /* 8px弧线宽度 + 3px间距 */
+  width: 11px;
+  height: 11px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none; /* 不阻挡resize-handle的点击事件 */
+  z-index: 1; /* 确保在resize-handle之上显示 */
+}
+
+/* 便签悬浮时显示缩放提示符号 */
+.sticky-note:hover:not(.editing):not(.dragging) .resize-indicator {
+  opacity: 0.4;
+}
+
+/* 完整的弧形指示器 - 同时实现弧形连接和圆头线段，8px粗线条 */
+.resize-indicator::before {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: transparent;
+  border-bottom: 5px solid rgba(0, 0, 0, 0.3); /* 更粗的线条 */
+  border-right: 5px solid rgba(0, 0, 0, 0.3); /* 更粗的线条 */
+  border-radius: 2px 2px 13px 2px; /* 调整端点圆角以匹配线条宽度 */
+  /* 4px: 右侧线段上端圆头（线条宽度的一半） */
+  /* 4px: 保持对称 */
+  /* 10px: 弧形连接处 */
+  /* 4px: 底部线段左端圆头（线条宽度的一半） */
+}
+
 /* Markdown 样式 */
 .sticky-note-preview h1,
 .sticky-note-preview h2,
