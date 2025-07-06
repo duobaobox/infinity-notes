@@ -20,7 +20,10 @@ import React, {
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
-import { getFontSizeStyles } from "../../utils/fontScaleUtils";
+import {
+  getFontSizeStyles,
+  getPixelAlignedValue,
+} from "../../utils/fontScaleUtils";
 import SourceNotesModal from "../modals/SourceNotesModal";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
@@ -556,12 +559,18 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
-      const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
-      const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
+      // 由于现在便签直接根据缩放调整大小，需要重新计算坐标
+      // 将屏幕坐标转换为画布坐标（不需要除以缩放，因为便签已经缩放）
+      const canvasX = e.clientX - canvasOffset.x;
+      const canvasY = e.clientY - canvasOffset.y;
+
+      // 计算拖拽偏移（基于缩放后的便签尺寸）
+      const scaledNoteX = note.x * canvasScale;
+      const scaledNoteY = note.y * canvasScale;
 
       setDragOffset({
-        x: canvasX - note.x,
-        y: canvasY - note.y,
+        x: (canvasX - scaledNoteX) / canvasScale, // 转换回原始坐标系
+        y: (canvasY - scaledNoteY) / canvasScale,
       });
       setTempPosition({ x: note.x, y: note.y });
       setIsDragging(true);
@@ -587,9 +596,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
+      // 调整大小时的坐标计算也需要适应新的缩放模式
       setResizeStart({
-        x: e.clientX / canvasScale,
-        y: e.clientY / canvasScale,
+        x: e.clientX, // 直接使用屏幕坐标
+        y: e.clientY,
         width: note.width,
         height: note.height,
       });
@@ -628,10 +638,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         // 使用 requestAnimationFrame 优化性能
         rafRef.current = requestAnimationFrame(() => {
-          const canvasX = (e.clientX - canvasOffset.x) / canvasScale;
-          const canvasY = (e.clientY - canvasOffset.y) / canvasScale;
-          const newX = canvasX - dragOffset.x;
-          const newY = canvasY - dragOffset.y;
+          // 新的坐标计算方式，适应直接缩放模式
+          const canvasX = e.clientX - canvasOffset.x;
+          const canvasY = e.clientY - canvasOffset.y;
+          const newX = canvasX / canvasScale - dragOffset.x;
+          const newY = canvasY / canvasScale - dragOffset.y;
 
           setTempPosition({ x: newX, y: newY });
           optimizedConnectionUpdate();
@@ -644,8 +655,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         // 使用 requestAnimationFrame 优化性能
         rafRef.current = requestAnimationFrame(() => {
-          const deltaX = e.clientX / canvasScale - resizeStart.x;
-          const deltaY = e.clientY / canvasScale - resizeStart.y;
+          // 调整大小的坐标计算也需要适应新模式
+          const deltaX = (e.clientX - resizeStart.x) / canvasScale;
+          const deltaY = (e.clientY - resizeStart.y) / canvasScale;
           const newWidth = Math.max(200, resizeStart.width + deltaX);
           const newHeight = Math.max(150, resizeStart.height + deltaY);
 
@@ -987,26 +999,36 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     return Math.max(maxAvailableWidth, 80) + "px"; // 至少80px
   };
 
-  // 计算实际使用的位置和尺寸（拖动时用临时值，否则用数据库值）
-  // 对位置和尺寸进行像素取整，避免亚像素渲染导致的模糊
-  const actualX = Math.round(
-    isDragging || isSyncingPosition ? tempPosition.x : note.x
+  // 计算实际使用的位置和尺寸，并应用缩放变换
+  // 现在便签直接根据缩放级别调整自身大小和位置，避免CSS transform缩放
+  const scaledX = Math.round(
+    (isDragging || isSyncingPosition ? tempPosition.x : note.x) * canvasScale
   );
-  const actualY = Math.round(
-    isDragging || isSyncingPosition ? tempPosition.y : note.y
+  const scaledY = Math.round(
+    (isDragging || isSyncingPosition ? tempPosition.y : note.y) * canvasScale
   );
-  const actualWidth = Math.round(
-    isResizing || isSyncingSize ? tempSize.width : note.width
+  const scaledWidth = Math.round(
+    (isResizing || isSyncingSize ? tempSize.width : note.width) * canvasScale
   );
-  const actualHeight = Math.round(
-    isResizing || isSyncingSize ? tempSize.height : note.height
+  const scaledHeight = Math.round(
+    (isResizing || isSyncingSize ? tempSize.height : note.height) * canvasScale
   );
 
-  // 计算基于画布缩放的字体样式
-  const fontStyles = useMemo(
-    () => getFontSizeStyles(canvasScale),
-    [canvasScale]
-  );
+  // 应用精确的像素对齐，确保在所有缩放级别下都清晰显示
+  const getAlignedValue = useCallback((value: number): number => {
+    return getPixelAlignedValue(value);
+  }, []);
+
+  // 应用像素对齐到缩放后的值
+  const pixelAlignedX = getAlignedValue(scaledX);
+  const pixelAlignedY = getAlignedValue(scaledY);
+  const pixelAlignedWidth = getAlignedValue(scaledWidth);
+  const pixelAlignedHeight = getAlignedValue(scaledHeight);
+
+  // 计算基于画布缩放的字体样式 - 现在简化为只需要字体大小
+  const fontStyles = useMemo(() => {
+    return getFontSizeStyles(canvasScale);
+  }, [canvasScale]);
 
   // 组件卸载时完整清理 - 防止内存泄漏
   useEffect(() => {
@@ -1089,8 +1111,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         <div
           className="settings-toolbar vertical"
           style={{
-            left: actualX + actualWidth + 8, // 位于便签右侧8px处
-            top: actualY, // 与便签顶部对齐
+            left: pixelAlignedX + pixelAlignedWidth + 8, // 位于便签右侧8px处
+            top: pixelAlignedY, // 与便签顶部对齐
             zIndex: Math.max(note.zIndex + 10, 9999), // 确保足够高的z-index
           }}
           onClick={(e) => {
@@ -1216,16 +1238,42 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           isSelected ? "selected" : ""
         }`}
         style={{
-          left: actualX,
-          top: actualY,
-          width: actualWidth,
-          height: actualHeight,
+          left: pixelAlignedX,
+          top: pixelAlignedY,
+          width: pixelAlignedWidth,
+          height: pixelAlignedHeight,
           zIndex: note.zIndex,
           ...fontStyles, // 应用基于缩放的字体样式
         }}
         onWheel={(e) => {
-          // 阻止滚轮事件冒泡到画布，避免在便签上滚动时触发画布缩放
-          e.stopPropagation();
+          // 简化的滚轮事件处理逻辑，提升性能
+
+          // 预览模式：直接允许画布缩放
+          if (!isEditing) {
+            return; // 不阻止冒泡，让画布处理缩放
+          }
+
+          // 编辑模式：只有textarea需要检查滚动
+          if (isEditing && textareaRef.current) {
+            const textarea = textareaRef.current;
+            const { scrollTop, scrollHeight, clientHeight } = textarea;
+
+            // 简化判断：只有内容确实可滚动时才进行边界检查
+            if (scrollHeight <= clientHeight) {
+              return; // 内容不需要滚动，允许画布缩放
+            }
+
+            const deltaY = e.deltaY;
+            const canScrollUp = scrollTop > 0;
+            const canScrollDown = scrollTop < scrollHeight - clientHeight;
+
+            // 只有在可以继续滚动的方向上才阻止冒泡
+            if ((deltaY < 0 && canScrollUp) || (deltaY > 0 && canScrollDown)) {
+              e.stopPropagation();
+            }
+          }
+
+          // 其他情况允许画布缩放
         }}
       >
         <div className="sticky-note-header">

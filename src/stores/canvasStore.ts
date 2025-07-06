@@ -155,9 +155,10 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           const rawOffsetX = centerX - (centerX - offsetX) * scaleFactor;
           const rawOffsetY = centerY - (centerY - offsetY) * scaleFactor;
 
-          // 将偏移量四舍五入到最近的整数像素，避免文本模糊
-          const newOffsetX = Math.round(rawOffsetX);
-          const newOffsetY = Math.round(rawOffsetY);
+          // 关键修复：引入设备像素比，将偏移量对齐到物理像素，避免文本模糊
+          const dpr = window.devicePixelRatio || 1;
+          const newOffsetX = Math.round(rawOffsetX * dpr) / dpr;
+          const newOffsetY = Math.round(rawOffsetY * dpr) / dpr;
 
           set({
             scale: newScale,
@@ -208,9 +209,10 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           const rawOffsetX = centerX - (centerX - offsetX) * scaleFactor;
           const rawOffsetY = centerY - (centerY - offsetY) * scaleFactor;
 
-          // 将偏移量四舍五入到最近的整数像素，避免文本模糊
-          const newOffsetX = Math.round(rawOffsetX);
-          const newOffsetY = Math.round(rawOffsetY);
+          // 关键修复：引入设备像素比，将偏移量对齐到物理像素，避免文本模糊
+          const dpr = window.devicePixelRatio || 1;
+          const newOffsetX = Math.round(rawOffsetX * dpr) / dpr;
+          const newOffsetY = Math.round(rawOffsetY * dpr) / dpr;
 
           set({
             scale: newScale,
@@ -242,9 +244,10 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           const rawOffsetX = centerX - (centerX - offsetX) * scaleFactor;
           const rawOffsetY = centerY - (centerY - offsetY) * scaleFactor;
 
-          // 将偏移量四舍五入到最近的整数像素，避免文本模糊
-          const newOffsetX = Math.round(rawOffsetX);
-          const newOffsetY = Math.round(rawOffsetY);
+          // 关键修复：引入设备像素比，将偏移量对齐到物理像素，避免文本模糊
+          const dpr = window.devicePixelRatio || 1;
+          const newOffsetX = Math.round(rawOffsetX * dpr) / dpr;
+          const newOffsetY = Math.round(rawOffsetY * dpr) / dpr;
 
           set({
             scale: clampedScale,
@@ -283,9 +286,18 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           const deltaX = currentX - dragState.startX;
           const deltaY = currentY - dragState.startY;
 
+          // 关键优化：在拖拽过程中实时将偏移量四舍五入到整数像素
+          // 这可以显著减少拖拽时的文本模糊，但可能会在低性能设备上引入微小的“抖动”感
+          // 引入设备像素比以在高清屏上获得更精确的对齐
+          const dpr = window.devicePixelRatio || 1;
+          const newOffsetX =
+            Math.round((dragState.startOffsetX + deltaX) * dpr) / dpr;
+          const newOffsetY =
+            Math.round((dragState.startOffsetY + deltaY) * dpr) / dpr;
+
           set({
-            offsetX: dragState.startOffsetX + deltaX,
-            offsetY: dragState.startOffsetY + deltaY,
+            offsetX: newOffsetX,
+            offsetY: newOffsetY,
           });
         }
       },
@@ -293,9 +305,10 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       endDrag: () => {
         const { offsetX, offsetY } = get();
 
-        // 拖拽结束时将偏移量四舍五入到整数像素，避免文本模糊
-        const roundedOffsetX = Math.round(offsetX);
-        const roundedOffsetY = Math.round(offsetY);
+        // 关键修复：拖拽结束时，基于设备像素比对齐偏移量
+        const dpr = window.devicePixelRatio || 1;
+        const roundedOffsetX = Math.round(offsetX * dpr) / dpr;
+        const roundedOffsetY = Math.round(offsetY * dpr) / dpr;
 
         if (process.env.NODE_ENV === "development") {
           console.log("🖱️ 结束拖拽画布", {
@@ -383,11 +396,16 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         const rawOffsetX = -contentCenterX * newScale + viewportWidth / 2;
         const rawOffsetY = -contentCenterY * newScale + viewportHeight / 2;
 
+        // 关键修复：引入设备像素比，将偏移量对齐到物理像素
+        const dpr = window.devicePixelRatio || 1;
+        const newOffsetX = Math.round(rawOffsetX * dpr) / dpr;
+        const newOffsetY = Math.round(rawOffsetY * dpr) / dpr;
+
         // 设置新的视图状态
         set({
           scale: newScale,
-          offsetX: Math.round(rawOffsetX),
-          offsetY: Math.round(rawOffsetY),
+          offsetX: newOffsetX,
+          offsetY: newOffsetY,
           zoomAnimating: true,
         });
 
@@ -464,9 +482,10 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         const rawOffsetX = viewportCenterX - noteCenterX * scale;
         const rawOffsetY = viewportCenterY - noteCenterY * scale;
 
-        // 关键修复：将偏移量四舍五入到最近的整数像素，避免亚像素渲染导致的文本模糊
-        const newOffsetX = Math.round(rawOffsetX);
-        const newOffsetY = Math.round(rawOffsetY);
+        // 关键修复：将偏移量四舍五入到最近的物理像素，避免亚像素渲染导致的文本模糊
+        const dpr = window.devicePixelRatio || 1;
+        const newOffsetX = Math.round(rawOffsetX * dpr) / dpr;
+        const newOffsetY = Math.round(rawOffsetY * dpr) / dpr;
 
         // 设置新的偏移量
         set({

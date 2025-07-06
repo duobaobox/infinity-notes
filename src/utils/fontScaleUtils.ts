@@ -1,3 +1,4 @@
+import React from "react";
 import { CANVAS_CONSTANTS } from "../components/canvas/CanvasConstants";
 
 /**
@@ -6,25 +7,27 @@ import { CANVAS_CONSTANTS } from "../components/canvas/CanvasConstants";
  */
 
 /**
- * 计算基于缩放级别的字体大小
+ * 直接缩放字体大小，避免CSS transform的双重缩放问题
  * @param baseSize 基础字体大小 (px)
  * @param scale 当前缩放级别 (0.25 - 2.0)
- * @returns 计算后的字体大小 (px)，确保为整数像素值
+ * @returns 计算后的最终字体大小 (px)，确保像素完美对齐
  */
 export const calculateFontSize = (baseSize: number, scale: number): number => {
-  // 计算相对于100%缩放的调整量
-  // 每25%缩放调整1px
-  const scaleAdjustment = (scale - 1) * 4; // (scale - 1) * (1px / 0.25)
-  const adjustedSize = baseSize + scaleAdjustment;
+  // 直接计算最终字体大小：baseSize * scale
+  const finalSize = baseSize * scale;
 
-  // 确保字体大小在合理范围内，并强制取整到最近的整数像素
+  // 确保字体大小在合理范围内
   const clampedSize = Math.max(
     CANVAS_CONSTANTS.FONT_MIN_SIZE,
-    Math.min(CANVAS_CONSTANTS.FONT_MAX_SIZE, adjustedSize)
+    Math.min(CANVAS_CONSTANTS.FONT_MAX_SIZE, finalSize)
   );
 
-  // 使用Math.round确保字体大小为整数像素，避免亚像素渲染导致的模糊
-  return Math.round(clampedSize);
+  // 设备像素比对齐，确保文本清晰
+  const dpr = window.devicePixelRatio || 1;
+  const devicePixelSize = clampedSize * dpr;
+  const alignedDevicePixelSize = Math.round(devicePixelSize);
+
+  return Math.max(CANVAS_CONSTANTS.FONT_MIN_SIZE, alignedDevicePixelSize / dpr);
 };
 
 /**
@@ -119,42 +122,23 @@ export const getNearestScaleLevel = (scale: number): number => {
 };
 
 /**
- * 获取缩放级别的显示文本
- * @param scale 缩放级别
- * @returns 格式化的缩放显示文本 (如 "100%")
+ * 简化的像素对齐函数
+ * @param value 要对齐的值
+ * @returns 像素对齐后的值
  */
-export const getScaleDisplayText = (scale: number): string => {
-  return `${Math.round(scale * 100)}%`;
+export const getPixelAlignedValue = (value: number): number => {
+  const dpr = window.devicePixelRatio || 1;
+  return Math.round(value * dpr) / dpr;
 };
 
 /**
- * 获取所有字体大小的样式对象
- * @param scale 当前缩放级别
- * @returns 包含所有字体大小的CSS样式对象
+ * 获取基于缩放级别的字体样式对象
+ * 用于便签组件应用字体大小样式
+ * @param scale 当前缩放级别 (0.25 - 2.0)
+ * @returns 包含字体大小的样式对象
  */
-export const getFontSizeStyles = (scale: number) => {
+export const getFontSizeStyles = (scale: number): React.CSSProperties => {
   return {
-    "--note-title-font-size": `${getTitleFontSize(scale)}px`,
-    "--note-content-font-size": `${getContentFontSize(scale)}px`,
-    "--note-h1-font-size": `${getMarkdownHeadingFontSize(scale, 1)}px`,
-    "--note-h2-font-size": `${getMarkdownHeadingFontSize(scale, 2)}px`,
-    "--note-h3-font-size": `${getMarkdownHeadingFontSize(scale, 3)}px`,
-    "--note-h4-font-size": `${getMarkdownHeadingFontSize(scale, 4)}px`,
-    "--note-h5-font-size": `${getMarkdownHeadingFontSize(scale, 5)}px`,
-    "--note-h6-font-size": `${getMarkdownHeadingFontSize(scale, 6)}px`,
-    "--note-code-font-size": `${getCodeFontSize(scale)}px`,
-    "--note-table-font-size": `${getTableFontSize(scale)}px`,
-    "--note-badge-font-size": `${getBadgeFontSize(scale)}px`,
-  } as React.CSSProperties;
-};
-
-/**
- * 检查缩放级别是否有效
- * @param scale 缩放级别
- * @returns 是否为有效的缩放级别
- */
-export const isValidScaleLevel = (scale: number): boolean => {
-  return (
-    scale >= CANVAS_CONSTANTS.MIN_SCALE && scale <= CANVAS_CONSTANTS.MAX_SCALE
-  );
+    fontSize: `${getContentFontSize(scale)}px`, // 使用内容字体大小作为基础字体大小
+  };
 };

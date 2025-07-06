@@ -4,36 +4,23 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 20px rgba(0, 0, 0, 0.06); /* 更柔和的双层阴影 */
   user-select: none;
-  transform-origin: top left;
   min-width: 200px;
   min-height: 150px;
   display: flex;
   flex-direction: column;
-  /* 移除阴影过渡动画，减少视觉干扰 */
-  /* transition: box-shadow 0.2s ease; */
   font-size: var(--note-content-font-size, 14px); /* 使用CSS变量控制字体大小 */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
     sans-serif; /* 跨平台优质字体栈 */
 
-  /* 字体渲染优化 */
+  /* 字体渲染优化 - 保持基本的清晰度设置 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "liga" 1;
 
-  /* 像素对齐优化 - 避免亚像素渲染导致的模糊 */
-  image-rendering: crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
-
-  /* 性能优化 - GPU加速 */
-  will-change: transform, opacity;
+  /* 性能优化 */
+  will-change: auto;
   backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  -webkit-transform: translate3d(0, 0, 0);
-  /* 移除contain以避免裁剪问题 */
-  /* contain: layout style paint; */
 }
 
 /* 移动模式下便签的样式 */
@@ -514,8 +501,14 @@
   text-rendering: optimizeLegibility;
 }
 
-.sticky-note-textarea::placeholder {
-  color: #9ca3af;
+/* 基本的文本渲染优化 - 简化版本 */
+.sticky-note-textarea,
+.sticky-note-preview,
+.sticky-note-title,
+.sticky-note-title-input {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .sticky-note-preview {
@@ -799,6 +792,10 @@
   opacity: 0.8;
 }
 
+.ai-loading-indicator .anticon {
+  margin-right: 4px;
+}
+
 /* 连接点样式 - 位于便签左下角 */
 .connection-point {
   position: absolute;
@@ -910,10 +907,6 @@
 /* 有溯源标识的连接点悬停时的特殊效果 */
 .connection-point.has-source:hover {
   border-color: rgba(250, 140, 22, 0.3); /* 悬停时橙色边框更明显 */
-}
-
-.ai-loading-indicator .anticon {
-  margin-right: 4px;
 }
 
 /* 分页Markdown容器样式 */

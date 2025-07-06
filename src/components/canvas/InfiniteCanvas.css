@@ -170,13 +170,14 @@
   /* contain: layout style; */
   /* isolation: isolate; */
 
-  /* 使用CSS变量进行变换，确保与便签同步 */
+  /* 使用CSS变量进行变换，但便签容器只平移不缩放 */
+  /* 避免CSS transform缩放导致的文本模糊问题 */
   transform: translate3d(
-      var(--content-offset-x, 0px),
-      var(--content-offset-y, 0px),
-      0
-    )
-    scale(var(--canvas-scale, 1));
+    var(--content-offset-x, 0px),
+    var(--content-offset-y, 0px),
+    0
+  );
+  /* 移除 scale(var(--canvas-scale, 1)) - 便签现在通过字体大小调整来适应缩放 */
 }
 
 /* 便签恢复点击能力 */
@@ -191,13 +192,13 @@
   position: relative;
   will-change: transform; /* 优化性能 */
 
-  /* 注意：我们现在需要额外添加位置变量来控制内容偏移，因为网格偏移变量已重新用途 */
+  /* 便签内容容器只平移不缩放，避免文本模糊 */
   transform: translate3d(
-      var(--content-offset-x, 0px),
-      var(--content-offset-y, 0px),
-      0
-    )
-    scale(var(--canvas-scale, 1));
+    var(--content-offset-x, 0px),
+    var(--content-offset-y, 0px),
+    0
+  );
+  /* 移除缩放变换，改为通过字体大小和便签尺寸调整来模拟缩放效果 */
 }
 
 /* 便签容器 - 独立于画布变换 */
