@@ -46,20 +46,28 @@
   cursor: grab;
 }
 
-/* 流式便签样式 */
+/* 流式便签样式 - 使用box-shadow统一边框效果，避免与选中状态叠加 */
 .sticky-note.streaming {
-  border: 2px solid #1890ff;
-  box-shadow: 0 0 10px rgba(24, 144, 255, 0.3);
+  box-shadow: inset 0 0 0 2px #1890ff,
+    /* 内边框效果，与选中状态一致 */ 0 0 10px rgba(24, 144, 255, 0.3),
+    /* 外发光效果 */ 0 2px 8px rgba(0, 0, 0, 0.1),
+    /* 保持原有阴影 */ 0 4px 20px rgba(0, 0, 0, 0.06); /* 保持原有阴影 */
   animation: streamingPulse 2s ease-in-out infinite;
 }
 
 @keyframes streamingPulse {
   0%,
   100% {
-    box-shadow: 0 0 10px rgba(24, 144, 255, 0.3);
+    box-shadow: inset 0 0 0 2px #1890ff,
+      /* 内边框效果 */ 0 0 10px rgba(24, 144, 255, 0.3),
+      /* 外发光效果 */ 0 2px 8px rgba(0, 0, 0, 0.1),
+      /* 保持原有阴影 */ 0 4px 20px rgba(0, 0, 0, 0.06); /* 保持原有阴影 */
   }
   50% {
-    box-shadow: 0 0 15px rgba(24, 144, 255, 0.5);
+    box-shadow: inset 0 0 0 2px #1890ff,
+      /* 内边框效果 */ 0 0 15px rgba(24, 144, 255, 0.5),
+      /* 增强外发光效果 */ 0 2px 8px rgba(0, 0, 0, 0.1),
+      /* 保持原有阴影 */ 0 4px 20px rgba(0, 0, 0, 0.06); /* 保持原有阴影 */
   }
 }
 
@@ -262,7 +270,7 @@
   /* 移除透明度过渡动画，让控件显示更直接 */
   /* transition: opacity 0.2s ease; */
   flex-shrink: 0; /* 防止按钮被压缩 */
-  min-width: 56px; /* 减少按钮区域占用空间，给标题更多空间 */
+  /* 移除固定最小宽度，让控件区域自适应按钮数量 */
 }
 
 /* 恢复鼠标悬浮才显示控件的规则 */

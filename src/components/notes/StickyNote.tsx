@@ -1,7 +1,6 @@
 import {
   BarChartOutlined,
   DeleteOutlined,
-  FileTextOutlined,
   HistoryOutlined,
   LinkOutlined,
   LoadingOutlined,
@@ -1213,16 +1212,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             type="default"
             disabled
             title="标签管理 - 即将推出"
-          />
-
-          {/* 模板应用按钮 */}
-          <Button
-            className="settings-toolbar-button disabled"
-            icon={<FileTextOutlined />}
-            size="small"
-            type="default"
-            disabled
-            title="模板应用 - 即将推出"
           />
         </div>
       )}
