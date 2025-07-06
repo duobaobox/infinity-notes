@@ -1,5 +1,6 @@
 import {
   BgColorsOutlined,
+  BookOutlined,
   BulbOutlined,
   DatabaseOutlined,
   DeleteOutlined,
@@ -10,6 +11,7 @@ import {
   GlobalOutlined,
   HddOutlined,
   InfoCircleOutlined,
+  MessageOutlined,
   RobotOutlined,
   SafetyOutlined,
   SettingOutlined,
@@ -2487,6 +2489,66 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   在新窗口打开应用
                 </Button>
               </Space>
+
+              <Divider />
+              <div style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 12px 0" }}>
+                  <BookOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+                  使用教程
+                </Title>
+                <p
+                  style={{ marginBottom: 12, color: "#666", fontSize: "14px" }}
+                >
+                  详细的使用教程和功能介绍，帮助您快速掌握无限便签的所有功能
+                </p>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    window.open("https://kdocs.cn/l/cj6sWRtZJqcl", "_blank")
+                  }
+                  block
+                  icon={<BookOutlined />}
+                  style={{ marginBottom: 8 }}
+                >
+                  查看完整使用教程
+                </Button>
+                <Text type="secondary" style={{ fontSize: "12px" }}>
+                  💡 包含基础操作、AI功能、高级技巧等详细说明
+                </Text>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ margin: "0 0 12px 0" }}>
+                  <MessageOutlined
+                    style={{ marginRight: 8, color: "#52c41a" }}
+                  />
+                  问题反馈
+                </Title>
+                <p
+                  style={{ marginBottom: 12, color: "#666", fontSize: "14px" }}
+                >
+                  遇到问题或有建议？我们很乐意听到您的反馈
+                </p>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Button
+                    onClick={() =>
+                      window.open(
+                        "https://www.kdocs.cn/wo/sl/v128c55q",
+                        "_blank"
+                      )
+                    }
+                    block
+                  >
+                    问卷反馈
+                  </Button>
+                </Space>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: "12px", marginTop: 8, display: "block" }}
+                >
+                  🚀 您的反馈将帮助我们不断改进产品体验
+                </Text>
+              </div>
               <Divider />
               <p>
                 <strong>开发者:</strong> duobao {/* 开发者姓名 */}
