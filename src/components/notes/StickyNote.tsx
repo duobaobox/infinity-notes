@@ -1219,6 +1219,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       <div
         ref={noteRef}
         data-note-id={note.id}
+        data-scale={canvasScale.toString()} // 添加缩放级别数据属性
         className={`sticky-note color-${note.color} ${
           isEditing ? "editing" : ""
         } ${isDragging ? "dragging" : ""} ${note.isNew ? "new" : ""} ${
