@@ -39,19 +39,19 @@ npm run preview
 
 ### 静态文件服务器
 
-#### Nginx配置
+#### Nginx 配置
 
-使用项目提供的Nginx配置模板：
+使用项目提供的 Nginx 配置模板：
 
 ```bash
 # 复制配置文件
-cp nginx.conf /etc/nginx/sites-available/infinite-notes
+cp nginx.conf /etc/nginx/sites-available/infinity-notes
 
 # 修改配置中的域名和路径
-sudo nano /etc/nginx/sites-available/infinite-notes
+sudo nano /etc/nginx/sites-available/infinity-notes
 
 # 启用站点
-sudo ln -s /etc/nginx/sites-available/infinite-notes /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/infinity-notes /etc/nginx/sites-enabled/
 
 # 测试配置
 sudo nginx -t
@@ -60,13 +60,13 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-#### Apache配置
+#### Apache 配置
 
 ```apache
 <VirtualHost *:80>
     ServerName your-domain.com
     DocumentRoot /path/to/infinite-notes/dist
-    
+
     # 启用压缩
     LoadModule deflate_module modules/mod_deflate.so
     <Location />
@@ -76,13 +76,13 @@ sudo systemctl restart nginx
         SetEnvIfNoCase Request_URI \
             \.(?:exe|t?gz|zip|bz2|sit|rar)$ no-gzip dont-vary
     </Location>
-    
+
     # 处理SPA路由
     <Directory "/path/to/infinite-notes/dist">
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted
-        
+
         # 重写规则
         RewriteEngine On
         RewriteBase /
@@ -91,7 +91,7 @@ sudo systemctl restart nginx
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule . /index.html [L]
     </Directory>
-    
+
     # 缓存策略
     <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg)$">
         ExpiresActive On
@@ -100,9 +100,9 @@ sudo systemctl restart nginx
 </VirtualHost>
 ```
 
-### CDN部署
+### CDN 部署
 
-#### 阿里云OSS + CDN
+#### 阿里云 OSS + CDN
 
 ```bash
 # 1. 安装阿里云CLI工具
@@ -118,7 +118,7 @@ aliyun oss cp dist/ oss://your-bucket-name/ --recursive
 # 在阿里云控制台配置CDN域名和缓存规则
 ```
 
-#### 腾讯云COS + CDN
+#### 腾讯云 COS + CDN
 
 ```bash
 # 1. 安装腾讯云CLI工具
@@ -133,14 +133,16 @@ coscmd upload -r dist/ /
 
 ## ☁️ 云平台部署
 
-### Vercel部署
+### Vercel 部署
 
-1. **连接GitHub仓库**
+1. **连接 GitHub 仓库**
+
    - 访问 [Vercel](https://vercel.com)
-   - 导入GitHub仓库
+   - 导入 GitHub 仓库
    - 选择无限便签项目
 
 2. **配置构建设置**
+
    ```json
    {
      "buildCommand": "npm run build",
@@ -150,60 +152,63 @@ coscmd upload -r dist/ /
    ```
 
 3. **环境变量配置**
-   - 在Vercel控制台设置环境变量
+   - 在 Vercel 控制台设置环境变量
    - 配置自定义域名（可选）
 
-### Netlify部署
+### Netlify 部署
 
 1. **连接仓库**
+
    - 访问 [Netlify](https://netlify.com)
-   - 连接GitHub仓库
+   - 连接 GitHub 仓库
 
 2. **构建配置**
    创建 `netlify.toml` 文件：
+
    ```toml
    [build]
      publish = "dist"
      command = "npm run build"
-   
+
    [[redirects]]
      from = "/*"
      to = "/index.html"
      status = 200
-   
+
    [build.environment]
      NODE_VERSION = "18"
    ```
 
-### GitHub Pages部署
+### GitHub Pages 部署
 
-1. **创建GitHub Actions工作流**
+1. **创建 GitHub Actions 工作流**
    创建 `.github/workflows/deploy.yml`：
+
    ```yaml
    name: Deploy to GitHub Pages
-   
+
    on:
      push:
-       branches: [ main ]
-   
+       branches: [main]
+
    jobs:
      deploy:
        runs-on: ubuntu-latest
        steps:
          - uses: actions/checkout@v3
-         
+
          - name: Setup Node.js
            uses: actions/setup-node@v3
            with:
-             node-version: '18'
-             cache: 'npm'
-         
+             node-version: "18"
+             cache: "npm"
+
          - name: Install dependencies
            run: npm ci
-         
+
          - name: Build
            run: npm run build
-         
+
          - name: Deploy to GitHub Pages
            uses: peaceiris/actions-gh-pages@v3
            with:
@@ -211,11 +216,11 @@ coscmd upload -r dist/ /
              publish_dir: ./dist
    ```
 
-2. **配置GitHub Pages**
-   - 在仓库设置中启用GitHub Pages
-   - 选择gh-pages分支作为源
+2. **配置 GitHub Pages**
+   - 在仓库设置中启用 GitHub Pages
+   - 选择 gh-pages 分支作为源
 
-## 🐳 Docker部署
+## 🐳 Docker 部署
 
 ### Dockerfile
 
@@ -249,15 +254,15 @@ CMD ["nginx", "-g", "daemon off;"]
 ### Docker Compose
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
-  infinite-notes:
+  infinity-notes:
     build: .
     ports:
       - "80:80"
     restart: unless-stopped
-    
+
   # 可选：添加SSL终端
   nginx-proxy:
     image: nginx:alpine
@@ -267,17 +272,17 @@ services:
       - ./ssl:/etc/nginx/ssl
       - ./nginx-ssl.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - infinite-notes
+      - infinity-notes
 ```
 
 ### 构建和运行
 
 ```bash
 # 构建镜像
-docker build -t infinite-notes .
+docker build -t infinity-notes .
 
 # 运行容器
-docker run -d -p 80:80 --name infinite-notes infinite-notes
+docker run -d -p 80:80 --name infinity-notes infinity-notes
 
 # 使用Docker Compose
 docker-compose up -d
@@ -309,22 +314,22 @@ VITE_GOOGLE_ANALYTICS_ID=your-ga-id
 export default defineConfig({
   build: {
     // 启用压缩
-    minify: 'esbuild',
-    
+    minify: "esbuild",
+
     // 生成source map（可选）
     sourcemap: false,
-    
+
     // 分包策略
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          antd: ['antd'],
-          utils: ['lodash', 'uuid'],
+          vendor: ["react", "react-dom"],
+          antd: ["antd"],
+          utils: ["lodash", "uuid"],
         },
       },
     },
-    
+
     // 压缩选项
     terserOptions: {
       compress: {
@@ -341,6 +346,7 @@ export default defineConfig({
 ### 资源优化
 
 1. **图片优化**
+
    ```bash
    # 压缩图片
    npm install -g imagemin-cli
@@ -348,7 +354,8 @@ export default defineConfig({
    ```
 
 2. **字体优化**
-   - 使用Web字体子集
+
+   - 使用 Web 字体子集
    - 启用字体预加载
 
 3. **代码分割**
@@ -377,11 +384,12 @@ location ~* \.html$ {
 ### 性能监控
 
 1. **Google Analytics**
+
    ```typescript
    // 在main.tsx中添加
-   import { gtag } from './utils/analytics';
-   
-   gtag('config', 'GA_MEASUREMENT_ID');
+   import { gtag } from "./utils/analytics";
+
+   gtag("config", "GA_MEASUREMENT_ID");
    ```
 
 2. **错误监控**
@@ -390,7 +398,7 @@ location ~* \.html$ {
    class ErrorBoundary extends React.Component {
      componentDidCatch(error, errorInfo) {
        // 发送错误到监控服务
-       console.error('Application error:', error, errorInfo);
+       console.error("Application error:", error, errorInfo);
      }
    }
    ```
@@ -405,22 +413,22 @@ error_log /var/log/nginx/infinite-notes.error.log;
 
 ## 🔒 安全配置
 
-### HTTPS配置
+### HTTPS 配置
 
 ```nginx
 server {
     listen 443 ssl http2;
     server_name your-domain.com;
-    
+
     # SSL证书
     ssl_certificate /path/to/certificate.crt;
     ssl_certificate_key /path/to/private.key;
-    
+
     # SSL配置
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
     ssl_prefer_server_ciphers off;
-    
+
     # 安全头部
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -444,6 +452,7 @@ sudo ufw enable
 ### 常见问题
 
 1. **构建失败**
+
    ```bash
    # 清理缓存
    rm -rf node_modules package-lock.json
@@ -451,12 +460,13 @@ sudo ufw enable
    ```
 
 2. **路由问题**
-   - 确保服务器配置了SPA路由重写
-   - 检查base路径配置
+
+   - 确保服务器配置了 SPA 路由重写
+   - 检查 base 路径配置
 
 3. **资源加载失败**
    - 检查资源路径配置
-   - 验证CDN配置
+   - 验证 CDN 配置
 
 ### 日志分析
 
@@ -475,21 +485,21 @@ sudo tail -f /var/log/nginx/access.log
 - [ ] 静态资源正确加载
 - [ ] 路由功能正常
 - [ ] 数据存储功能正常
-- [ ] AI功能配置正确
+- [ ] AI 功能配置正确
 - [ ] 性能指标达标
 - [ ] 安全配置完成
 - [ ] 监控系统配置
 - [ ] 备份策略制定
-- [ ] 域名和SSL证书配置
-- [ ] CDN配置（如果使用）
+- [ ] 域名和 SSL 证书配置
+- [ ] CDN 配置（如果使用）
 
 ## 📞 技术支持
 
 如果在部署过程中遇到问题，请：
 
 1. 查看项目文档
-2. 检查GitHub Issues
-3. 创建新的Issue报告问题
+2. 检查 GitHub Issues
+3. 创建新的 Issue 报告问题
 4. 联系项目维护者
 
 部署成功后，记得定期更新项目版本和依赖包，保持系统安全性和稳定性。

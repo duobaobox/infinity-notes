@@ -6,9 +6,9 @@
 
 ### 报告问题
 
-如果您发现了bug或有功能建议，请：
+如果您发现了 bug 或有功能建议，请：
 
-1. 检查[现有issues](../../issues)，避免重复报告
+1. 检查[现有 issues](../../issues)，避免重复报告
 2. 使用清晰的标题描述问题
 3. 提供详细的复现步骤
 4. 包含您的环境信息（浏览器、操作系统等）
@@ -16,23 +16,27 @@
 
 ### 提交代码
 
-1. **Fork项目**
+1. **Fork 项目**
+
    ```bash
-   git clone https://github.com/your-username/infinite-notes.git
-   cd infinite-notes
+   git clone https://github.com/your-username/infinity-notes.git
+   cd infinity-notes
    ```
 
 2. **创建功能分支**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 3. **安装依赖**
+
    ```bash
    npm install
    ```
 
 4. **开发和测试**
+
    ```bash
    npm run dev          # 启动开发服务器
    npm run lint         # 代码检查
@@ -41,17 +45,19 @@
    ```
 
 5. **提交更改**
+
    ```bash
    git add .
    git commit -m "feat: 添加新功能描述"
    ```
 
 6. **推送分支**
+
    ```bash
    git push origin feature/your-feature-name
    ```
 
-7. **创建Pull Request**
+7. **创建 Pull Request**
 
 ## 📝 代码规范
 
@@ -60,7 +66,7 @@
 我们使用[Conventional Commits](https://www.conventionalcommits.org/)规范：
 
 - `feat:` 新功能
-- `fix:` 修复bug
+- `fix:` 修复 bug
 - `docs:` 文档更新
 - `style:` 代码格式调整
 - `refactor:` 代码重构
@@ -68,6 +74,7 @@
 - `chore:` 构建工具或辅助工具的变动
 
 示例：
+
 ```
 feat: 添加AI汇总功能
 fix: 修复便签拖拽时的位置偏移问题
@@ -76,8 +83,8 @@ docs: 更新API文档
 
 ### 代码风格
 
-- 使用TypeScript进行开发
-- 遵循ESLint配置的代码规范
+- 使用 TypeScript 进行开发
+- 遵循 ESLint 配置的代码规范
 - 使用有意义的变量和函数名
 - 添加必要的注释，特别是复杂逻辑
 - 保持函数简洁，单一职责
@@ -87,7 +94,7 @@ docs: 更新API文档
 - 新组件放在`src/components/`对应的子目录中
 - 工具函数放在`src/utils/`目录
 - 类型定义放在`src/types/`目录
-- 每个模块都应该有对应的README文档
+- 每个模块都应该有对应的 README 文档
 
 ## 🧪 测试
 
@@ -98,7 +105,7 @@ docs: 更新API文档
 
 ## 📚 文档
 
-- 更新相关的README文档
+- 更新相关的 README 文档
 - 为新功能添加使用说明
 - 保持文档与代码同步
 - 使用清晰的中文描述
@@ -109,7 +116,7 @@ docs: 更新API文档
 
 1. **性能优化**: 大量便签时的渲染性能
 2. **用户体验**: 交互的流畅性和直观性
-3. **AI功能**: 智能汇总的准确性和实用性
+3. **AI 功能**: 智能汇总的准确性和实用性
 4. **数据安全**: 本地数据的安全存储
 5. **跨平台**: 不同浏览器和设备的兼容性
 
@@ -134,4 +141,4 @@ docs: 更新API文档
 
 ## 📄 许可证
 
-通过贡献代码，您同意您的贡献将在[MIT许可证](LICENSE)下发布。
+通过贡献代码，您同意您的贡献将在[MIT 许可证](LICENSE)下发布。

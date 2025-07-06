@@ -1,5 +1,5 @@
 {
-  "name": "infinite-notes",
+  "name": "infinity-notes",
   "private": false,
   "version": "0.1.0",
   "type": "module",
@@ -14,18 +14,18 @@
     "vite",
     "IndexedDB"
   ],
-  "homepage": "https://github.com/your-username/infinite-notes#readme",
+  "homepage": "https://github.com/your-username/infinity-notes#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/infinite-notes.git"
+    "url": "git+https://github.com/your-username/infinity-notes.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/infinite-notes/issues"
+    "url": "https://github.com/your-username/infinity-notes/issues"
   },
   "license": "MIT",
   "author": {
     "name": "无限便签项目贡献者",
-    "url": "https://github.com/your-username/infinite-notes/graphs/contributors"
+    "url": "https://github.com/your-username/infinity-notes/graphs/contributors"
   },
   "engines": {
     "node": ">=16.0.0",

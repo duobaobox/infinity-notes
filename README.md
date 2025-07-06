@@ -61,8 +61,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/infinite-notes.git
-cd infinite-notes
+git clone https://github.com/your-username/infinity-notes.git
+cd infinity-notes
 
 # 安装依赖
 npm install
