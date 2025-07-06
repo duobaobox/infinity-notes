@@ -35,6 +35,11 @@
   cursor: move;
 }
 
+/* 中键拖拽时的光标状态 */
+.infinite-canvas-container.middle-button-dragging {
+  cursor: all-scroll; /* 使用全方向滚动光标 */
+}
+
 /* 移动模式的光标状态 */
 .infinite-canvas-container.move-mode {
   cursor: grab;

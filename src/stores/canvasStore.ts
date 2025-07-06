@@ -11,6 +11,7 @@ export interface DragState {
   startY: number;
   startOffsetX: number;
   startOffsetY: number;
+  isMiddleButtonDrag: boolean; // 新增：标记是否为中键拖拽
 }
 
 // 画布状态接口
@@ -50,7 +51,7 @@ export interface CanvasActions {
   panTo: (x: number, y: number) => void;
 
   // 拖拽操作
-  startDrag: (startX: number, startY: number) => void;
+  startDrag: (startX: number, startY: number, isMiddleButton?: boolean) => void;
   updateDrag: (currentX: number, currentY: number) => void;
   endDrag: () => void;
 
@@ -108,6 +109,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         startY: 0,
         startOffsetX: 0,
         startOffsetY: 0,
+        isMiddleButtonDrag: false,
       },
       zoomAnimating: false,
       minScale: CANVAS_CONSTANTS.MIN_SCALE,
@@ -267,7 +269,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       },
 
       // 拖拽操作
-      startDrag: (startX, startY) => {
+      startDrag: (startX, startY, isMiddleButton = false) => {
         const { offsetX, offsetY } = get();
         set({
           dragState: {
@@ -276,6 +278,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             startY,
             startOffsetX: offsetX,
             startOffsetY: offsetY,
+            isMiddleButtonDrag: isMiddleButton,
           },
         });
       },
@@ -328,6 +331,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             startY: 0,
             startOffsetX: 0,
             startOffsetY: 0,
+            isMiddleButtonDrag: false,
           },
         });
       },

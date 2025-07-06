@@ -563,6 +563,26 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   // 鼠标事件处理
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      // 处理鼠标中键拖拽（按钮值为1）
+      if (e.button === 1) {
+        e.preventDefault(); // 防止浏览器默认的中键行为（如滚动）
+
+        // 记录鼠标按下位置并重置拖拽标记
+        dragDetectionRef.current = {
+          mouseDownPos: { x: e.clientX, y: e.clientY },
+          hasDragged: false,
+        };
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("🖱️ 鼠标中键：开始拖拽画布", {
+            x: e.clientX,
+            y: e.clientY,
+          });
+        }
+        startDrag(e.clientX, e.clientY, true); // 传递true表示中键拖拽
+        return;
+      }
+
       // 只处理左键点击
       if (e.button !== 0) return;
 
@@ -651,8 +671,11 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
-        e.preventDefault();
-        endDrag();
+        // 处理左键和中键的释放
+        if (e.button === 0 || e.button === 1) {
+          e.preventDefault();
+          endDrag();
+        }
       }
     },
     [dragState.isDragging, endDrag]
@@ -665,9 +688,22 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     lastClickPos: { x: 0, y: 0 },
   });
 
+  // 阻止鼠标中键的上下文菜单
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    // 如果是中键触发的上下文菜单，阻止它
+    if (e.button === 1) {
+      e.preventDefault();
+    }
+  }, []);
+
   // 处理画布点击事件（包括三击创建便签和清除选中状态）
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
+      // 忽略中键点击
+      if (e.button === 1) {
+        return;
+      }
+
       // 移动模式下禁用点击功能
       if (isMoveModeActive) {
         return;
@@ -939,10 +975,15 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   return (
     <div
       className={`infinite-canvas-container ${
-        dragState.isDragging ? "dragging" : ""
+        dragState.isDragging
+          ? dragState.isMiddleButtonDrag
+            ? "middle-button-dragging"
+            : "dragging"
+          : ""
       } ${isMoveModeActive ? "move-mode" : ""}`}
       onMouseDown={handleMouseDown}
       onClick={handleCanvasClick}
+      onContextMenu={handleContextMenu}
     >
       {/* 工具栏 */}
       <CanvasToolbar
