@@ -3,8 +3,8 @@ export const CANVAS_CONSTANTS = {
   MIN_SCALE: 0.25, // 最小缩放比例 (25%)
   MAX_SCALE: 2.0, // 最大缩放比例 (200%)
   DEFAULT_SCALE: 1.0, // 默认缩放比例 (100%)
-  ZOOM_STEP: 0.25, // 缩放步长 (25%)
-  WHEEL_THROTTLE_MS: 16, // 滚轮事件节流时间 (ms) - 60fps
+  ZOOM_STEP: 0.125, // 缩放步长 (12.5%) - 更精细的步长
+  WHEEL_THROTTLE_MS: 50, // 滚轮事件节流时间 (ms) - 减少连续触发
   ZOOM_ANIMATION_DURATION: 200, // 缩放动画持续时间 (ms)
 
   // 字体缩放相关常量
@@ -13,8 +13,17 @@ export const CANVAS_CONSTANTS = {
   FONT_MIN_SIZE: 10, // 最小字体大小 (px)
   FONT_MAX_SIZE: 22, // 最大字体大小 (px)
 
-  // 缩放档位定义
-  SCALE_LEVELS: [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] as const,
+  // 缩放档位定义 - 8个标准档位，简洁清晰
+  SCALE_LEVELS: [
+    0.25, // 25%
+    0.5, // 50%
+    0.75, // 75%
+    1.0, // 100% (默认)
+    1.25, // 125%
+    1.5, // 150%
+    1.75, // 175%
+    2.0, // 200%
+  ] as const,
 };
 
 // 性能优化常量

@@ -31,16 +31,32 @@ export interface BasicSettings {
   showThinkingMode: boolean; // 是否显示思维模式
 }
 
+// 缩放敏感度设置接口
+export interface ZoomSensitivitySettings {
+  enabled: boolean; // 是否启用智能缩放敏感度
+  smallScrollThreshold: number; // 小幅滚动阈值
+  mediumScrollThreshold: number; // 中等滚动阈值
+  smallScrollSteps: number; // 小幅滚动跳跃级数
+  mediumScrollSteps: number; // 中等滚动跳跃级数
+  largeScrollSteps: number; // 大幅滚动跳跃级数
+}
+
 // 定义存储在 IndexedDB 中的 UI 设置结构
 interface StoredUISettings {
   id: string;
   user_id: string;
-  setting_type: "theme" | "appearance" | "layout" | "basic";
+  setting_type:
+    | "theme"
+    | "appearance"
+    | "layout"
+    | "basic"
+    | "zoom-sensitivity";
   settings:
     | ThemeSettings
     | AppearanceSettings
     | UILayoutSettings
-    | BasicSettings;
+    | BasicSettings
+    | ZoomSensitivitySettings;
   updated_at: string;
 }
 
@@ -223,6 +239,32 @@ export class IndexedDBUISettingsStorage {
     }
   }
 
+  // 保存缩放敏感度设置
+  static async saveZoomSensitivitySettings(
+    settings: ZoomSensitivitySettings
+  ): Promise<void> {
+    console.log("💾 IndexedDBUISettingsStorage: 保存缩放敏感度设置", settings);
+
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const settingsToSave: StoredUISettings = {
+        id: "ui-zoom-sensitivity",
+        user_id: this.DEFAULT_USER_ID,
+        setting_type: "zoom-sensitivity",
+        settings,
+        updated_at: new Date().toISOString(),
+      };
+
+      await db.putItem("ui_settings", settingsToSave);
+      console.log("💾 IndexedDBUISettingsStorage: 缩放敏感度设置保存成功");
+    } catch (error) {
+      console.error("保存缩放敏感度设置失败:", error);
+      throw new Error("保存缩放敏感度设置失败");
+    }
+  }
+
   // 加载基础设置
   static async loadBasicSettings(): Promise<BasicSettings | null> {
     try {
@@ -245,6 +287,32 @@ export class IndexedDBUISettingsStorage {
       return null;
     } catch (error) {
       console.error("加载基础设置失败:", error);
+      return null;
+    }
+  }
+
+  // 加载缩放敏感度设置
+  static async loadZoomSensitivitySettings(): Promise<ZoomSensitivitySettings | null> {
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const result = await db.getItem<StoredUISettings>(
+        "ui_settings",
+        "ui-zoom-sensitivity"
+      );
+
+      if (result && result.setting_type === "zoom-sensitivity") {
+        console.log(
+          "💾 IndexedDBUISettingsStorage: 缩放敏感度设置加载成功",
+          result.settings
+        );
+        return result.settings as ZoomSensitivitySettings;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("加载缩放敏感度设置失败:", error);
       return null;
     }
   }

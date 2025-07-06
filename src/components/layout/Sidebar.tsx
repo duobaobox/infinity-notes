@@ -87,6 +87,7 @@ const Sidebar: React.FC = () => {
     updateCanvas,
     deleteCanvas,
     getCanvasNotesCount,
+    selectNote, // 添加选中便签的方法
   } = useStickyNotesStore();
 
   // 确保本地选中状态与全局状态同步
@@ -356,7 +357,7 @@ const Sidebar: React.FC = () => {
     })
   );
 
-  // 处理便签点击事件 - 定位到画布中的便签
+  // 处理便签点击事件 - 定位到画布中的便签并添加选中效果
   const handleNoteClick = useCallback(
     (note: {
       id: string;
@@ -366,9 +367,13 @@ const Sidebar: React.FC = () => {
       width: number;
       height: number;
     }) => {
+      // 先选中便签，让用户立即看到选中效果
+      selectNote(note.id);
+
+      // 然后定位到便签（这会同时置顶便签）
       centerOnNote(note.x, note.y, note.width, note.height, note.id);
     },
-    [centerOnNote]
+    [centerOnNote, selectNote]
   );
 
   const currentCanvas = canvasList.find((c: Canvas) => c.id === selectedCanvas);

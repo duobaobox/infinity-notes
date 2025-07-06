@@ -104,7 +104,7 @@ export const getNearestScaleLevel = (scale: number): number => {
   const levels = CANVAS_CONSTANTS.SCALE_LEVELS;
 
   // 找到最接近的缩放档位
-  let nearestLevel = levels[0];
+  let nearestLevel: number = levels[0]; // 显式声明为 number 类型
   let minDiff = Math.abs(scale - levels[0]);
 
   for (const level of levels) {

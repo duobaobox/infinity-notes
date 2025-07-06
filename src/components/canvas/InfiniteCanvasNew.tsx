@@ -751,19 +751,45 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     ]
   );
 
-  // 节流的滚轮缩放处理 - 提升缩放性能
-  const throttledZoom = useMemo(
-    () =>
-      throttle((deltaY: number, centerX: number, centerY: number) => {
-        if (deltaY < 0) {
-          // 向上滚动，放大
-          zoomIn(centerX, centerY);
-        } else {
-          // 向下滚动，缩小
-          zoomOut(centerX, centerY);
-        }
-      }, CANVAS_CONSTANTS.WHEEL_THROTTLE_MS),
+  // 滚轮滚动结束检测状态
+  const wheelEndTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const wheelDirectionRef = useRef<"up" | "down" | null>(null);
+
+  // 基于滚动结束事件的缩放处理
+  const handleWheelEnd = useCallback(
+    (direction: "up" | "down", centerX: number, centerY: number) => {
+      if (direction === "up") {
+        // 向上滚动，放大（单级）
+        zoomIn(centerX, centerY);
+      } else {
+        // 向下滚动，缩小（单级）
+        zoomOut(centerX, centerY);
+      }
+    },
     [zoomIn, zoomOut]
+  );
+
+  // 滚轮事件处理 - 基于滚动结束检测
+  const handleWheelScroll = useCallback(
+    (deltaY: number, centerX: number, centerY: number) => {
+      // 确定滚动方向
+      const direction = deltaY < 0 ? "up" : "down";
+      wheelDirectionRef.current = direction;
+
+      // 清除之前的定时器
+      if (wheelEndTimerRef.current) {
+        clearTimeout(wheelEndTimerRef.current);
+      }
+
+      // 设置新的定时器，检测滚动结束
+      wheelEndTimerRef.current = setTimeout(() => {
+        if (wheelDirectionRef.current) {
+          handleWheelEnd(wheelDirectionRef.current, centerX, centerY);
+          wheelDirectionRef.current = null;
+        }
+      }, 100); // 100ms 内没有新的滚动事件则认为滚动结束
+    },
+    [handleWheelEnd]
   );
 
   const handleWheel = useCallback(
@@ -780,9 +806,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       const centerX = e.clientX - rect.left;
       const centerY = e.clientY - rect.top;
 
-      throttledZoom(e.deltaY, centerX, centerY);
+      // 使用新的滚动结束检测逻辑
+      handleWheelScroll(e.deltaY, centerX, centerY);
     },
-    [throttledZoom]
+    [handleWheelScroll]
   );
 
   // 即时更新CSS变量 - 确保画布和便签同步
@@ -849,22 +876,23 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       console.log("🎨 InfiniteCanvas 组件初始化完成");
     }
 
-    // 组件卸载时清理节流和防抖函数
+    // 组件卸载时清理节流和防抖函数以及定时器
     return () => {
       throttledUpdateDrag.cancel();
-      throttledZoom.cancel();
       throttledConnectionUpdate.cancel();
       debouncedLogUpdate.cancel();
+
+      // 清理滚轮结束检测定时器
+      if (wheelEndTimerRef.current) {
+        clearTimeout(wheelEndTimerRef.current);
+        wheelEndTimerRef.current = null;
+      }
+
       if (process.env.NODE_ENV === "development") {
         console.log("🧹 InfiniteCanvas 组件清理完成");
       }
     };
-  }, [
-    throttledUpdateDrag,
-    throttledZoom,
-    throttledConnectionUpdate,
-    debouncedLogUpdate,
-  ]);
+  }, [throttledUpdateDrag, throttledConnectionUpdate, debouncedLogUpdate]);
 
   // 设置全局鼠标事件监听器
   useEffect(() => {
