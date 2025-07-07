@@ -853,11 +853,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         // Ctrl/Cmd + Enter 保存并退出编辑
         e.preventDefault();
         stopEditing();
+      } else if (e.key === "Tab") {
+        // 阻止Tab键的默认行为（移动焦点），在textarea中插入制表符
+        e.preventDefault();
+        const textarea = e.currentTarget;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const newContent =
+          localContent.substring(0, start) + "\t" + localContent.substring(end);
+        setLocalContent(newContent);
+        debouncedUpdateContent(newContent);
+
+        // 设置光标位置到插入的制表符之后
+        setTimeout(() => {
+          textarea.setSelectionRange(start + 1, start + 1);
+        }, 0);
       } else {
         // 对于其他按键，不需要保存光标位置
       }
     },
-    [stopEditing]
+    [stopEditing, localContent, debouncedUpdateContent]
   );
 
   // 处理标题编辑键盘事件
@@ -868,9 +883,24 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       } else if (e.key === "Enter") {
         e.preventDefault();
         stopTitleEditing();
+      } else if (e.key === "Tab") {
+        // 阻止Tab键的默认行为（移动焦点），在标题输入框中插入制表符
+        e.preventDefault();
+        const input = e.currentTarget as HTMLInputElement;
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        const newTitle =
+          localTitle.substring(0, start) + "\t" + localTitle.substring(end);
+        setLocalTitle(newTitle);
+        debouncedUpdateTitle(newTitle);
+
+        // 设置光标位置到插入的制表符之后
+        setTimeout(() => {
+          input.setSelectionRange(start + 1, start + 1);
+        }, 0);
       }
     },
-    [stopTitleEditing]
+    [stopTitleEditing, localTitle, debouncedUpdateTitle]
   );
 
   // 防止文本框失焦时意外保存空内容
