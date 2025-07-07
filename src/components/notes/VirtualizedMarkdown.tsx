@@ -4,9 +4,11 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
 // 自定义链接组件 - 在新标签页中打开链接
-const CustomLink: React.FC<{ href?: string; children: React.ReactNode }> = ({
+// 使用React.AnchorHTMLAttributes来确保类型兼容性
+const CustomLink: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
   href,
   children,
+  ...props
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // 阻止事件冒泡，避免触发便签的点击事件
@@ -14,6 +16,7 @@ const CustomLink: React.FC<{ href?: string; children: React.ReactNode }> = ({
 
   return (
     <a
+      {...props} // 传递所有其他属性
       href={href}
       target="_blank" // 在新标签页中打开
       rel="noopener noreferrer" // 安全性设置
@@ -22,6 +25,7 @@ const CustomLink: React.FC<{ href?: string; children: React.ReactNode }> = ({
         color: "#1890ff", // 蓝色链接
         textDecoration: "underline",
         cursor: "pointer",
+        ...props.style, // 合并传入的样式
       }}
     >
       {children}
