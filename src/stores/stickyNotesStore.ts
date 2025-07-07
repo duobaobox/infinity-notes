@@ -476,6 +476,15 @@ export const useStickyNotesStore = create<
           canvasStore.resetView();
           console.log("🎨 已重置画布视图状态");
 
+          // 修复：确保画布重置后便签状态能正确同步
+          // 强制触发一次状态更新，确保虚拟化逻辑能重新计算
+          setTimeout(() => {
+            const currentNotes = get().notes;
+            // 通过重新设置notes数组来强制触发重新渲染
+            set({ notes: [...currentNotes] });
+            console.log("🔄 已强制更新便签状态，确保虚拟化重新计算");
+          }, 50);
+
           // 清除相关缓存，确保加载最新数据
           cacheManager.deleteByPrefix("notes_by_canvas");
           console.log("🧹 已清除画布便签缓存");

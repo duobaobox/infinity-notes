@@ -190,11 +190,18 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   // 便签虚拟化渲染 - 基于设备性能动态调整阈值
   const visibleNotes = useMemo(() => {
     // 如果便签数量少于动态虚拟化阈值，直接返回所有便签
-    if (stickyNotes.length <= virtualizationThreshold) {
+    // 修复：提高阈值判断的容错性，避免少量便签被意外虚拟化
+    if (stickyNotes.length <= Math.max(virtualizationThreshold, 10)) {
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `📝 便签数量较少(${stickyNotes.length}个)，跳过虚拟化，直接显示所有便签`
+        );
+      }
       return stickyNotes;
     }
 
     // 计算当前视口范围（考虑画布变换）
+    // 修复：确保视口边界计算的准确性，特别是在画布重置后
     const viewportBounds = {
       left: -offsetX / scale,
       top: -offsetY / scale,
@@ -203,11 +210,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     };
 
     // 使用动态边距，根据设备性能调整
+    // 修复：增加更大的安全边距，确保边界便签不会被意外隐藏
+    const safeMargin = Math.max(viewportMargin, 500); // 至少500px的安全边距
     const expandedBounds = {
-      left: viewportBounds.left - viewportMargin,
-      top: viewportBounds.top - viewportMargin,
-      right: viewportBounds.right + viewportMargin,
-      bottom: viewportBounds.bottom + viewportMargin,
+      left: viewportBounds.left - safeMargin,
+      top: viewportBounds.top - safeMargin,
+      right: viewportBounds.right + safeMargin,
+      bottom: viewportBounds.bottom + safeMargin,
     };
 
     // 过滤出在扩展视口范围内的便签
@@ -216,12 +225,28 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       const noteRight = note.x + note.width;
       const noteBottom = note.y + note.height;
 
-      return (
+      const isVisible =
         note.x < expandedBounds.right &&
         noteRight > expandedBounds.left &&
         note.y < expandedBounds.bottom &&
-        noteBottom > expandedBounds.top
-      );
+        noteBottom > expandedBounds.top;
+
+      // 开发环境下记录被隐藏的便签信息，便于调试
+      if (process.env.NODE_ENV === "development" && !isVisible) {
+        console.log(`🔍 便签 ${note.id} 被虚拟化隐藏:`, {
+          notePos: {
+            x: note.x,
+            y: note.y,
+            width: note.width,
+            height: note.height,
+          },
+          viewportBounds,
+          expandedBounds,
+          canvasState: { offsetX, offsetY, scale },
+        });
+      }
+
+      return isVisible;
     });
 
     // 开发环境下输出虚拟化统计信息
@@ -230,7 +255,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       const levelInfo = getPerformanceLevelInfo();
 
       console.log(
-        `🎯 智能虚拟化 [${levelInfo?.icon} ${levelInfo?.label}]: 总数=${stickyNotes.length}, 可见=${visibleNotesInViewport.length}, 阈值=${virtualizationThreshold}, 负载=${advice?.currentLoad}, 边距=${viewportMargin}px`
+        `🎯 智能虚拟化 [${levelInfo?.icon} ${levelInfo?.label}]: 总数=${stickyNotes.length}, 可见=${visibleNotesInViewport.length}, 阈值=${virtualizationThreshold}, 负载=${advice?.currentLoad}, 安全边距=${safeMargin}px`
       );
     }
 
@@ -969,7 +994,19 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     },
     zoomIn: () => zoomIn(),
     zoomOut: () => zoomOut(),
-    resetZoom: () => resetView(),
+    resetZoom: () => {
+      // 执行画布重置
+      resetView();
+
+      // 修复：确保重置后便签能正确显示
+      setTimeout(() => {
+        const currentNotes = stickyNotes;
+        if (currentNotes.length > 0) {
+          clearSelection();
+          console.log("🔄 resetZoom后已强制更新便签显示状态");
+        }
+      }, 100);
+    },
   }));
 
   return (
@@ -1001,7 +1038,21 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           const center = getCanvasCenter();
           zoomOut(center.x, center.y);
         }}
-        onReset={resetView}
+        onReset={() => {
+          // 执行画布重置
+          resetView();
+
+          // 修复：确保重置后便签能正确显示
+          // 延迟强制更新便签状态，确保虚拟化逻辑重新计算
+          setTimeout(() => {
+            const currentNotes = stickyNotes;
+            if (currentNotes.length > 0) {
+              // 通过触发一个微小的状态变化来强制重新渲染
+              clearSelection();
+              console.log("🔄 画布重置后已强制更新便签显示状态");
+            }
+          }, 100);
+        }}
         minScale={CANVAS_CONSTANTS.MIN_SCALE}
         maxScale={CANVAS_CONSTANTS.MAX_SCALE}
       />

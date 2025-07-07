@@ -91,6 +91,7 @@ export interface UIActions {
   resetNoteDefaultSizes: () => void; // 重置便签尺寸到默认值
 
   applyPresetTheme: (themeId: string) => void;
+  getCurrentTheme: () => PresetTheme | null; // 获取当前选中的主题
 
   // 基础设置操作
   setBasicSettings: (settings: Partial<BasicSettingsState>) => void;
@@ -251,11 +252,11 @@ export const useUIStore = create<UIState & UIActions>()(
         isDarkMode: getSystemTheme(),
       },
       appearance: {
-        canvasBackground: "#fdfbf7",
+        canvasBackground: "#ffffff", // 默认使用经典白主题
         gridVisible: true,
         gridSize: 10,
-        gridColor: "#f5f2ea",
-        gridMajorColor: "#ece7db",
+        gridColor: "#f5f5f5", // 默认使用经典白主题的网格颜色
+        gridMajorColor: "#ebebeb", // 默认使用经典白主题的主网格颜色
         // 便签默认尺寸设置
         ...DEFAULT_NOTE_SIZES,
       },
@@ -420,6 +421,18 @@ export const useUIStore = create<UIState & UIActions>()(
         get().applyAppearanceSettings();
 
         return true;
+      },
+
+      // 获取当前选中的主题
+      getCurrentTheme: () => {
+        const { appearance } = get();
+        // 根据当前画布背景色查找匹配的主题
+        return (
+          PRESET_THEMES.find(
+            (theme) =>
+              theme.colors.canvasBackground === appearance.canvasBackground
+          ) || null
+        );
       },
 
       // 应用外观设置到DOM
