@@ -3,6 +3,32 @@ import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
+// 自定义链接组件 - 在新标签页中打开链接
+const CustomLink: React.FC<{ href?: string; children: React.ReactNode }> = ({
+  href,
+  children,
+}) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止事件冒泡，避免触发便签的点击事件
+  };
+
+  return (
+    <a
+      href={href}
+      target="_blank" // 在新标签页中打开
+      rel="noopener noreferrer" // 安全性设置
+      onClick={handleClick}
+      style={{
+        color: "#1890ff", // 蓝色链接
+        textDecoration: "underline",
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </a>
+  );
+};
+
 // 优化后的Markdown组件属性接口
 interface VirtualizedMarkdownProps {
   /** Markdown内容 */
@@ -160,7 +186,12 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
   if (!shouldUsePagination) {
     return (
       <div className="streaming-content">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          components={{
+            a: CustomLink, // 使用自定义链接组件
+          }}
+        >
           {content}
         </ReactMarkdown>
         {isStreaming && streamingCursor}
@@ -172,7 +203,12 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
     <div className="paginated-markdown-container">
       {/* 已加载的内容 */}
       <div className="streaming-content">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          components={{
+            a: CustomLink, // 使用自定义链接组件
+          }}
+        >
           {displayContent}
         </ReactMarkdown>
       </div>
