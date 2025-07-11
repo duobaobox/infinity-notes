@@ -650,35 +650,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       // 先验证表单字段
       await aiForm.validateFields();
 
-      // 测试连接
+      // 测试连接 - Hook层会自动处理成功/失败消息
       await testConnection();
-
-      message.success("AI连接测试成功！配置有效，可以正常使用AI功能。");
     } catch (error) {
       console.error("测试连接失败:", error);
-
-      let errorMessage = "连接测试失败，请检查配置信息";
-
-      if (error instanceof Error) {
-        // 根据错误类型提供更具体的提示
-        if (error.message.includes("API key")) {
-          errorMessage = "API密钥无效，请检查密钥是否正确";
-        } else if (
-          error.message.includes("network") ||
-          error.message.includes("timeout")
-        ) {
-          errorMessage = "网络连接失败，请检查网络状态或API地址";
-        } else if (error.message.includes("model")) {
-          errorMessage = "模型名称无效，请检查模型是否存在";
-        } else {
-          errorMessage = `连接失败：${error.message}`;
-        }
-      }
-
-      message.error({
-        content: errorMessage,
-        duration: 5,
-      });
+      // Hook层已经处理了错误消息，这里不需要重复显示
     } finally {
       setTestingConnection(false);
     }
@@ -933,11 +909,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         systemPrompt: aiConfig.systemPrompt, // 保留现有的systemPrompt
       };
 
-      // 使用 useAISettings Hook 进行保存
+      // 使用 useAISettings Hook 进行保存 - Hook层会自动处理成功/失败消息
       const success = await saveAIConfig(configToSave);
-      if (success) {
-        message.success("AI配置保存成功！现在可以使用AI功能了。");
-      } else {
+      if (!success) {
         throw new Error("配置保存失败");
       }
     } catch (error) {
