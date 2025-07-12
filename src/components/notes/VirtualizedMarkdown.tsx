@@ -2,6 +2,8 @@ import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import type { Components } from "react-markdown";
 
 // 自定义链接组件 - 在新标签页中打开链接
 // 使用React.AnchorHTMLAttributes来确保类型兼容性
@@ -31,6 +33,74 @@ const CustomLink: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
       {children}
     </a>
   );
+};
+
+// 多级编号列表预处理器
+const createMultilevelListProcessor = () => {
+  const MULTILEVEL_LIST_REGEX =
+    /^(\s*)([0-9]+\.|[a-z]+\.|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.)\s(.*)$/;
+
+  const getListType = (marker: string): string => {
+    if (marker.match(/^[a-z]+\.$/)) return "a";
+    if (marker.match(/^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.$/)) return "I";
+    return "1";
+  };
+
+  const getLevel = (indent: string): number => Math.floor(indent.length / 3);
+
+  return (content: string): string => {
+    const lines = content.split("\n");
+    const processedLines: string[] = [];
+    const listStack: { level: number; type: string }[] = [];
+
+    for (const line of lines) {
+      const match = line.match(MULTILEVEL_LIST_REGEX);
+
+      if (match) {
+        const [, indent, marker, content] = match;
+        const level = getLevel(indent);
+        const listType = getListType(marker);
+
+        // 关闭更深层级的列表
+        while (listStack.length > level) {
+          listStack.pop();
+          processedLines.push("  ".repeat(listStack.length) + "</ol>");
+        }
+
+        // 开始新的列表层级
+        if (listStack.length === level) {
+          processedLines.push("  ".repeat(level) + `<ol type="${listType}">`);
+          listStack.push({ level, type: listType });
+        }
+
+        // 添加列表项
+        processedLines.push("  ".repeat(level + 1) + `<li>${content}</li>`);
+      } else {
+        // 非列表行，关闭所有列表
+        while (listStack.length > 0) {
+          listStack.pop();
+          processedLines.push("  ".repeat(listStack.length) + "</ol>");
+        }
+        processedLines.push(line);
+      }
+    }
+
+    // 关闭剩余的列表
+    while (listStack.length > 0) {
+      listStack.pop();
+      processedLines.push("  ".repeat(listStack.length) + "</ol>");
+    }
+
+    return processedLines.join("\n");
+  };
+};
+
+// 创建预处理器实例
+const preprocessMultilevelLists = createMultilevelListProcessor();
+
+// 自定义组件配置
+const customComponents: Components = {
+  a: CustomLink,
 };
 
 // 优化后的Markdown组件属性接口
@@ -186,17 +256,28 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
     setCurrentPage(0);
   }, [content]);
 
+  // 预处理内容
+  const processedContent = useMemo(() => {
+    return preprocessMultilevelLists(content);
+  }, [content]);
+
+  const processedDisplayContent = useMemo(() => {
+    if (!shouldUsePagination) {
+      return processedContent;
+    }
+    return preprocessMultilevelLists(displayContent);
+  }, [shouldUsePagination, processedContent, displayContent]);
+
   // 如果不需要分页，直接渲染全部内容
   if (!shouldUsePagination) {
     return (
       <div className="streaming-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
-          components={{
-            a: CustomLink, // 使用自定义链接组件
-          }}
+          rehypePlugins={[rehypeRaw]}
+          components={customComponents}
         >
-          {content}
+          {processedContent}
         </ReactMarkdown>
         {isStreaming && streamingCursor}
       </div>
@@ -209,11 +290,10 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
       <div className="streaming-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
-          components={{
-            a: CustomLink, // 使用自定义链接组件
-          }}
+          rehypePlugins={[rehypeRaw]}
+          components={customComponents}
         >
-          {displayContent}
+          {processedDisplayContent}
         </ReactMarkdown>
       </div>
 

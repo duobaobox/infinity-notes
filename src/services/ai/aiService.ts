@@ -905,7 +905,7 @@ export class AIService {
     return steps;
   }
 
-  // 将思维链格式化为Markdown内容
+  // 将思维链格式化为Markdown内容（使用details/summary实现默认折叠）
   private formatThinkingChainAsMarkdown(
     thinkingChain: StickyNoteData["thinkingChain"],
     finalAnswer: string
@@ -916,12 +916,13 @@ export class AIService {
 
     let markdown = "";
 
-    // 添加思维链标题
-    markdown += "## 🤔 AI思考过程\n\n";
+    // 使用details/summary标签实现默认折叠的思考过程
+    markdown += "<details>\n";
+    markdown += "<summary>点击展开思维链</summary>\n";
 
     // 如果有原始提示，添加它
     if (thinkingChain.prompt) {
-      markdown += `**提示：** ${thinkingChain.prompt}\n\n`;
+      markdown += `**原始提示：** ${thinkingChain.prompt}\n\n`;
     }
 
     // 添加思考步骤
@@ -932,6 +933,17 @@ export class AIService {
       )}\n\n`;
       markdown += `${step.content}\n\n`;
     });
+
+    // 添加思考时间统计
+    if (thinkingChain.totalThinkingTime > 0) {
+      const thinkingTimeSeconds = Math.round(
+        thinkingChain.totalThinkingTime / 1000
+      );
+      markdown += `---\n\n`;
+      markdown += `⏱️ **思考时长：** 约 ${thinkingTimeSeconds} 秒\n\n`;
+    }
+
+    markdown += "</details>\n\n";
 
     // 添加分隔线
     markdown += "---\n\n";

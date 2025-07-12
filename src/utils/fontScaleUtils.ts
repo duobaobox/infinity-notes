@@ -22,12 +22,9 @@ export const calculateFontSize = (baseSize: number, scale: number): number => {
     Math.min(CANVAS_CONSTANTS.FONT_MAX_SIZE, finalSize)
   );
 
-  // 设备像素比对齐，确保文本清晰
-  const dpr = window.devicePixelRatio || 1;
-  const devicePixelSize = clampedSize * dpr;
-  const alignedDevicePixelSize = Math.round(devicePixelSize);
-
-  return Math.max(CANVAS_CONSTANTS.FONT_MIN_SIZE, alignedDevicePixelSize / dpr);
+  // 对于表情符号和特殊字符，使用更简单的像素对齐策略
+  // 避免设备像素比对齐导致的渲染问题
+  return Math.round(clampedSize * 100) / 100; // 保留两位小数，确保精度
 };
 
 /**
@@ -99,6 +96,27 @@ export const getBadgeFontSize = (scale: number): number => {
 };
 
 /**
+ * 获取表情符号的字体大小
+ * 表情符号需要特殊处理，确保在所有缩放级别下都能正确显示
+ * @param scale 当前缩放级别
+ * @returns 表情符号字体大小 (px)
+ */
+export const getEmojiFontSize = (scale: number): number => {
+  // 表情符号使用与内容相同的基础大小，但应用更平滑的缩放
+  const baseSize = 14;
+  const scaledSize = baseSize * scale;
+
+  // 确保表情符号在小缩放时不会太小，在大缩放时不会太大
+  const minSize = Math.max(CANVAS_CONSTANTS.FONT_MIN_SIZE, 12);
+  const maxSize = Math.min(CANVAS_CONSTANTS.FONT_MAX_SIZE, 20);
+
+  const clampedSize = Math.max(minSize, Math.min(maxSize, scaledSize));
+
+  // 使用更精确的像素对齐，避免表情符号模糊
+  return Math.round(clampedSize * 2) / 2; // 0.5px 精度对齐
+};
+
+/**
  * 获取最接近的缩放档位
  * @param scale 当前缩放值
  * @returns 最接近的标准缩放档位
@@ -138,7 +156,12 @@ export const getPixelAlignedValue = (value: number): number => {
  * @returns 包含字体大小的样式对象
  */
 export const getFontSizeStyles = (scale: number): React.CSSProperties => {
+  const contentFontSize = getContentFontSize(scale);
+  const emojiFontSize = getEmojiFontSize(scale);
+
   return {
-    fontSize: `${getContentFontSize(scale)}px`, // 使用内容字体大小作为基础字体大小
-  };
+    fontSize: `${contentFontSize}px`, // 使用内容字体大小作为基础字体大小
+    // 通过CSS变量为表情符号提供特殊的字体大小
+    "--emoji-font-size": `${emojiFontSize}px`,
+  } as React.CSSProperties;
 };

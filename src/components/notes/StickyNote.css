@@ -23,6 +23,31 @@
   backface-visibility: hidden;
 }
 
+/* 表情符号特殊处理 - 确保在所有缩放级别下正确显示 */
+.sticky-note :is(span, p, div, h1, h2, h3, h4, h5, h6, li, td, th) {
+  /* 使用CSS变量控制表情符号字体大小 */
+  font-variant-emoji: normal;
+  /* 确保表情符号使用系统默认渲染 */
+  text-rendering: auto;
+}
+
+/* 针对表情符号的字体大小优化 - 使用更广泛的选择器 */
+.sticky-note .sticky-note-preview,
+.sticky-note .sticky-note-textarea,
+.sticky-note .sticky-note-title,
+.sticky-note .sticky-note-title-input {
+  /* 为包含表情符号的文本提供更好的渲染 */
+  font-variant-emoji: normal;
+  text-rendering: optimizeLegibility;
+}
+
+/* 通过伪元素和CSS变量优化表情符号显示 */
+.sticky-note {
+  /* 设置表情符号的基础样式变量 */
+  --emoji-line-height: 1.2;
+  --emoji-vertical-align: baseline;
+}
+
 /* 移动模式下便签的样式 */
 .sticky-note.move-mode-disabled {
   cursor: grab !important;
@@ -897,7 +922,9 @@
   display: flex;
   align-items: center;
   color: #666;
-  font-size: 12px;
+  font-size: calc(
+    var(--note-content-font-size, 14px) * 0.85
+  ); /* 使用相对于内容字体的大小 */
   opacity: 0.8;
 }
 

@@ -5,6 +5,7 @@ import InfiniteCanvas from "./components/canvas/InfiniteCanvasNew";
 import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
+import ThinkingChainTest from "./test/ThinkingChainTest";
 import VirtualizationStatusMonitorEnhanced from "./test/VirtualizationTestEnhanced";
 
 // 导入全局状态管理
@@ -21,9 +22,10 @@ const { Content } = Layout;
 
 function App() {
   // 检查是否为测试模式
+  const urlParams = new URLSearchParams(window.location.search);
+  const testMode = urlParams.get("test");
   const isTestMode =
-    new URLSearchParams(window.location.search).get("test") ===
-    "prompt-template";
+    testMode === "prompt-template" || testMode === "thinking-chain";
 
   const canvasRef = useRef<{
     createNote: () => void;
@@ -162,9 +164,13 @@ function App() {
     );
   }
 
-  // 如果是测试模式，显示测试页面
+  // 如果是测试模式，显示对应的测试页面
   if (isTestMode) {
-    return <AIPromptTemplateTest />;
+    if (testMode === "prompt-template") {
+      return <AIPromptTemplateTest />;
+    } else if (testMode === "thinking-chain") {
+      return <ThinkingChainTest />;
+    }
   }
 
   return (

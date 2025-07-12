@@ -844,17 +844,371 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [isTitleEditing]);
 
-  // 处理内容编辑键盘事件
+  // 智能Markdown辅助函数
+  const insertTextAtCursor = useCallback(
+    (text: string, offsetStart = 0, offsetEnd = 0) => {
+      if (!textareaRef.current) return;
+
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent =
+        localContent.substring(0, start) + text + localContent.substring(end);
+
+      setLocalContent(newContent);
+      debouncedUpdateContent(newContent);
+
+      // 设置光标位置
+      setTimeout(() => {
+        textarea.setSelectionRange(start + offsetStart, start + offsetEnd);
+      }, 0);
+    },
+    [localContent, debouncedUpdateContent]
+  );
+
+  // 获取当前行内容和位置
+  const getCurrentLineInfo = useCallback(() => {
+    if (!textareaRef.current) return null;
+
+    const textarea = textareaRef.current;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = localContent.substring(0, cursorPos);
+    const textAfterCursor = localContent.substring(cursorPos);
+
+    const lineStart = textBeforeCursor.lastIndexOf("\n") + 1;
+    const lineEnd = textAfterCursor.indexOf("\n");
+    const lineEndPos =
+      lineEnd === -1 ? localContent.length : cursorPos + lineEnd;
+
+    const currentLine = localContent.substring(lineStart, lineEndPos);
+    const cursorInLine = cursorPos - lineStart;
+
+    return {
+      line: currentLine,
+      lineStart,
+      lineEnd: lineEndPos,
+      cursorPos,
+      cursorInLine,
+      textBeforeCursor,
+      textAfterCursor,
+    };
+  }, [localContent]);
+
+  // 多级编号工具函数
+  const multilevelNumbering = useMemo(() => {
+    const ROMAN_NUMERALS = [
+      "",
+      "Ⅰ",
+      "Ⅱ",
+      "Ⅲ",
+      "Ⅳ",
+      "Ⅴ",
+      "Ⅵ",
+      "Ⅶ",
+      "Ⅷ",
+      "Ⅸ",
+      "Ⅹ",
+    ];
+    const ROMAN_MAP = {
+      Ⅰ: 1,
+      Ⅱ: 2,
+      Ⅲ: 3,
+      Ⅳ: 4,
+      Ⅴ: 5,
+      Ⅵ: 6,
+      Ⅶ: 7,
+      Ⅷ: 8,
+      Ⅸ: 9,
+      Ⅹ: 10,
+    };
+
+    return {
+      // 获取缩进级别
+      getLevel: (indent: string) => Math.floor(indent.length / 3),
+
+      // 生成编号格式
+      generateNumber: (number: number, level: number) => {
+        switch (level) {
+          case 0:
+            return `${number}.`;
+          case 1:
+            return `${String.fromCharCode(96 + number)}.`;
+          case 2:
+            return `${
+              ROMAN_NUMERALS[number] ||
+              `Ⅹ${ROMAN_NUMERALS[number - 10] || number - 10}`
+            }.`;
+          default:
+            return `${number}.`;
+        }
+      },
+
+      // 解析编号
+      parseNumber: (marker: string) => {
+        if (marker.match(/^\d+\.$/)) {
+          return parseInt(marker.replace(".", ""));
+        } else if (marker.match(/^[a-z]+\.$/)) {
+          return marker.replace(".", "").charCodeAt(0) - 96;
+        } else if (marker.match(/^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.$/)) {
+          const roman = marker.replace(".", "");
+          return ROMAN_MAP[roman as keyof typeof ROMAN_MAP] || 1;
+        }
+        return 1;
+      },
+
+      // 检测列表项
+      detectListItem: (line: string) => {
+        return line.match(/^(\s*)([0-9]+\.|[a-z]+\.|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.)\s(.*)$/);
+      },
+    };
+  }, []);
+
+  // 查找有序列表的下一个编号（支持多级编号格式）
+  const findNextOrderedNumber = useCallback(
+    (currentLineStart: number, currentIndent: string) => {
+      const lines = localContent.split("\n");
+      const currentLineIndex =
+        localContent.substring(0, currentLineStart).split("\n").length - 1;
+      const currentLevel = multilevelNumbering.getLevel(currentIndent);
+
+      // 向上查找同级别的最后一个编号
+      let lastSameLevelNumber = 0;
+      let foundAnyAtThisLevel = false;
+
+      for (let i = currentLineIndex - 1; i >= 0; i--) {
+        const line = lines[i];
+        const match = multilevelNumbering.detectListItem(line);
+        if (match) {
+          const [, indent, marker] = match;
+          if (indent.length === currentIndent.length) {
+            // 找到同级别的列表项，解析编号
+            lastSameLevelNumber = multilevelNumbering.parseNumber(marker);
+            foundAnyAtThisLevel = true;
+            break;
+          } else if (indent.length < currentIndent.length) {
+            // 遇到更高级别的列表项，停止查找
+            break;
+          }
+          // 如果是更深层级，继续查找
+        } else if (
+          line.trim() !== "" &&
+          !line.match(/^\s*[-*+]\s/) &&
+          !multilevelNumbering.detectListItem(line)
+        ) {
+          // 遇到非列表内容，停止查找
+          break;
+        }
+      }
+
+      // 生成下一个编号
+      const nextNumber = foundAnyAtThisLevel ? lastSameLevelNumber + 1 : 1;
+      return multilevelNumbering.generateNumber(nextNumber, currentLevel);
+    },
+    [localContent, multilevelNumbering]
+  );
+
+  // 智能列表处理
+  const handleSmartList = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      const lineInfo = getCurrentLineInfo();
+      if (!lineInfo) return false;
+
+      const { line, lineStart } = lineInfo;
+
+      // 检测无序列表 (- 或 * 或 +)
+      const unorderedMatch = line.match(/^(\s*)([-*+])\s(.*)$/);
+      if (unorderedMatch) {
+        const [, indent, marker, content] = unorderedMatch;
+        if (content.trim() === "") {
+          // 空列表项，删除当前行的列表标记
+          e.preventDefault();
+          const newContent =
+            localContent.substring(0, lineStart) +
+            indent +
+            localContent.substring(lineStart + line.length);
+          setLocalContent(newContent);
+          debouncedUpdateContent(newContent);
+          setTimeout(() => {
+            textareaRef.current?.setSelectionRange(
+              lineStart + indent.length,
+              lineStart + indent.length
+            );
+          }, 0);
+        } else {
+          // 创建新的列表项
+          e.preventDefault();
+          const newListItem = `\n${indent}${marker} `;
+          insertTextAtCursor(
+            newListItem,
+            newListItem.length,
+            newListItem.length
+          );
+        }
+        return true;
+      }
+
+      // 检测有序列表 (支持多种格式：1. a. Ⅰ. 等)
+      const orderedMatch = multilevelNumbering.detectListItem(line);
+      if (orderedMatch) {
+        const [, indent, marker, content] = orderedMatch;
+        if (content.trim() === "") {
+          // 空列表项，删除当前行的列表标记
+          e.preventDefault();
+          const newContent =
+            localContent.substring(0, lineStart) +
+            indent +
+            localContent.substring(lineStart + line.length);
+          setLocalContent(newContent);
+          debouncedUpdateContent(newContent);
+          setTimeout(() => {
+            textareaRef.current?.setSelectionRange(
+              lineStart + indent.length,
+              lineStart + indent.length
+            );
+          }, 0);
+        } else {
+          // 创建新的有序列表项 - 智能多级编号
+          e.preventDefault();
+
+          // 获取当前级别并生成下一个编号
+          const currentLevel = multilevelNumbering.getLevel(indent);
+          const currentNumber = multilevelNumbering.parseNumber(marker);
+          const nextNumber = currentNumber + 1;
+          const nextMarker = multilevelNumbering.generateNumber(
+            nextNumber,
+            currentLevel
+          );
+
+          const newListItem = `\n${indent}${nextMarker} `;
+          insertTextAtCursor(
+            newListItem,
+            newListItem.length,
+            newListItem.length
+          );
+        }
+        return true;
+      }
+
+      return false;
+    },
+    [
+      getCurrentLineInfo,
+      insertTextAtCursor,
+      localContent,
+      debouncedUpdateContent,
+      multilevelNumbering,
+    ]
+  );
+
+  // 智能缩进处理
+  const handleSmartIndent = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>, isShift = false) => {
+      const lineInfo = getCurrentLineInfo();
+      if (!lineInfo) return false;
+
+      const { line, lineStart } = lineInfo;
+
+      // 检测无序列表项
+      const unorderedMatch = line.match(/^(\s*)([-*+])\s(.*)$/);
+      if (unorderedMatch) {
+        e.preventDefault();
+        const [, currentIndent, marker, content] = unorderedMatch;
+
+        // 使用2个空格作为无序列表的标准缩进单位
+        const indentChange = isShift ? -2 : 2;
+        const newIndentLevel = Math.max(0, currentIndent.length + indentChange);
+        const newIndent = " ".repeat(newIndentLevel);
+
+        const newLine = `${newIndent}${marker} ${content}`;
+        const newContent =
+          localContent.substring(0, lineStart) +
+          newLine +
+          localContent.substring(lineStart + line.length);
+
+        setLocalContent(newContent);
+        debouncedUpdateContent(newContent);
+
+        // 保持光标在合适位置
+        const newCursorPos = lineStart + newIndent.length + marker.length + 1;
+        setTimeout(() => {
+          textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+
+        return true;
+      }
+
+      // 检测有序列表项（支持多种格式）
+      const orderedMatch = multilevelNumbering.detectListItem(line);
+      if (orderedMatch) {
+        e.preventDefault();
+        const [, currentIndent, , content] = orderedMatch;
+
+        // 使用3个空格作为标准缩进单位（符合Markdown规范）
+        const indentChange = isShift ? -3 : 3;
+        const newIndentLevel = Math.max(0, currentIndent.length + indentChange);
+        const newIndent = " ".repeat(newIndentLevel);
+
+        // 为新的缩进级别找到合适的编号（使用多级编号格式）
+        const newMarker = findNextOrderedNumber(lineStart, newIndent);
+        const newLine = `${newIndent}${newMarker} ${content}`;
+        const newContent =
+          localContent.substring(0, lineStart) +
+          newLine +
+          localContent.substring(lineStart + line.length);
+
+        setLocalContent(newContent);
+        debouncedUpdateContent(newContent);
+
+        // 保持光标在合适位置
+        const newCursorPos =
+          lineStart + newIndent.length + newMarker.length + 1;
+        setTimeout(() => {
+          textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+
+        return true;
+      }
+
+      return false;
+    },
+    [
+      getCurrentLineInfo,
+      localContent,
+      debouncedUpdateContent,
+      findNextOrderedNumber,
+      multilevelNumbering,
+    ]
+  );
+
+  // 处理内容编辑键盘事件 - 增强版
   const handleContentKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Escape") {
         stopEditing();
-      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        return;
+      }
+
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         // Ctrl/Cmd + Enter 保存并退出编辑
         e.preventDefault();
         stopEditing();
-      } else if (e.key === "Tab") {
-        // 阻止Tab键的默认行为（移动焦点），在textarea中插入制表符
+        return;
+      }
+
+      if (e.key === "Enter") {
+        // 智能列表处理
+        if (handleSmartList(e)) {
+          return;
+        }
+      }
+
+      if (e.key === "Tab") {
+        // 智能缩进处理
+        if (handleSmartIndent(e, e.shiftKey)) {
+          return;
+        }
+
+        // 默认Tab处理（插入制表符）
         e.preventDefault();
         const textarea = e.currentTarget;
         const start = textarea.selectionStart;
@@ -868,11 +1222,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         setTimeout(() => {
           textarea.setSelectionRange(start + 1, start + 1);
         }, 0);
-      } else {
-        // 对于其他按键，不需要保存光标位置
       }
     },
-    [stopEditing, localContent, debouncedUpdateContent]
+    [
+      stopEditing,
+      localContent,
+      debouncedUpdateContent,
+      handleSmartList,
+      handleSmartIndent,
+    ]
   );
 
   // 处理标题编辑键盘事件
@@ -1054,9 +1412,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const pixelAlignedWidth = getAlignedValue(scaledWidth);
   const pixelAlignedHeight = getAlignedValue(scaledHeight);
 
-  // 计算基于画布缩放的字体样式 - 现在简化为只需要字体大小
+  // 计算基于画布缩放的字体样式 - 包含表情符号优化
   const fontStyles = useMemo(() => {
-    return getFontSizeStyles(canvasScale);
+    const styles = getFontSizeStyles(canvasScale);
+    // 添加CSS变量以支持所有子元素的字体缩放
+    return {
+      ...styles,
+      "--note-content-font-size": styles.fontSize,
+      "--note-title-font-size": styles.fontSize,
+    } as React.CSSProperties;
   }, [canvasScale]);
 
   // 组件卸载时完整清理 - 防止内存泄漏
@@ -1425,7 +1789,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               onClick={handleTextareaClick}
               onCompositionStart={handleContentCompositionStart}
               onCompositionEnd={handleContentCompositionEnd}
-              placeholder="输入 Markdown 内容...&#10;&#10;💡 快捷键：&#10;• Esc 退出编辑（会自动保存）&#10;• Ctrl/⌘ + Enter 保存"
+              placeholder="支持 Markdown 输入...&#10;&#10;⌨️ 快捷键：Esc 退出 | Ctrl+Enter 保存"
               className="sticky-note-textarea"
             />
           ) : (
@@ -1494,8 +1858,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         {/* AI生成加载状态指示器 - 只在等待生成时显示 */}
         {isStreaming && !streamingContent && (
           <div className="ai-loading-indicator">
-            <LoadingOutlined style={{ marginRight: 4, fontSize: 12 }} />
-            <span style={{ fontSize: 12 }}>等待AI响应...</span>
+            <LoadingOutlined style={{ marginRight: 4 }} />
+            <span>等待AI响应...</span>
           </div>
         )}
 
