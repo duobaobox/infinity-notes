@@ -471,8 +471,9 @@ export class AIService {
 
                     if (!hasStartedThinking && isStreamingNote) {
                       // 第一次检测到思考内容，显示思考标题
+                      // 🔧 修改：使用与最终格式一致的标题，提示用户这是思考过程
                       hasStartedThinking = true;
-                      displayedContent = "## 🤔 AI思考过程\n\n";
+                      displayedContent = "🤔 **AI正在思考中...**\n\n";
                       callbacks.onContentChunk?.(
                         currentNoteIndex,
                         displayedContent,
@@ -520,13 +521,10 @@ export class AIService {
           if (finalNotes.notes.length === 1) {
             const note = finalNotes.notes[0];
 
-            // 如果有实时显示的内容，使用实时内容而不是重新解析的内容
-            if (displayedContent && hasStartedThinking) {
-              note.content = displayedContent;
-              console.log("📝 使用流式显示的思维链内容");
-            } else {
-              console.log("📝 使用解析后的标准内容");
-            }
+            // 🔧 修复：始终使用解析后的标准格式化内容，确保折叠功能生效
+            // 不再使用流式显示的临时内容，而是使用经过formatThinkingChainAsMarkdown格式化的内容
+            console.log("📝 使用解析后的标准格式化内容（支持折叠）");
+            // note.content 已经是经过 formatThinkingChainAsMarkdown 处理的内容
 
             // 更新标题
             callbacks.onNoteStart?.(0, note.title);
@@ -916,9 +914,12 @@ export class AIService {
 
     let markdown = "";
 
+    // 🔧 修复：按照用户偏好格式，先添加思考过程标题
+    markdown += "## 🤔 AI思考过程\n\n";
+
     // 使用details/summary标签实现默认折叠的思考过程
     markdown += "<details>\n";
-    markdown += "<summary>点击展开思维链</summary>\n";
+    markdown += "<summary>点击展开思考过程</summary>\n\n";
 
     // 如果有原始提示，添加它
     if (thinkingChain.prompt) {
@@ -944,9 +945,6 @@ export class AIService {
     }
 
     markdown += "</details>\n\n";
-
-    // 添加分隔线
-    markdown += "---\n\n";
 
     // 添加最终答案
     markdown += "## ✨ 最终答案\n\n";

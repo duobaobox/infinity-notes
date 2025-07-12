@@ -15,8 +15,10 @@ const ThinkingChainTest: React.FC = () => {
   const generateTestContent = () => {
     const content = `# AI 便签生成结果
 
+## 🤔 AI思考过程
+
 <details>
-<summary>点击展开思维链</summary>
+<summary>点击展开思考过程</summary>
 
 **原始提示：** 请帮我整理一下今天的工作计划
 
@@ -48,8 +50,6 @@ const ThinkingChainTest: React.FC = () => {
 ⏱️ **思考时长：** 约 4 秒
 
 </details>
-
----
 
 ## ✨ 最终答案
 

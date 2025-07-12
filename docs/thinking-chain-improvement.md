@@ -26,9 +26,12 @@
 修改了 `src/services/ai/aiService.ts` 中的 `formatThinkingChainAsMarkdown` 方法：
 
 ```typescript
+// 🔧 修复：按照用户偏好格式，先添加思考过程标题
+markdown += "## 🤔 AI思考过程\n\n";
+
 // 使用details/summary标签实现默认折叠的思考过程
 markdown += "<details>\n";
-markdown += "<summary>点击展开思维链</summary>\n";
+markdown += "<summary>点击展开思考过程</summary>\n\n";
 
 // 思考步骤内容...
 
@@ -40,9 +43,9 @@ markdown += "</details>\n\n";
 #### 折叠状态（默认）
 
 ```
-点击展开思维链 ▶️
+## 🤔 AI思考过程
 
----
+点击展开思考过程 ▶️
 
 ## ✨ 最终答案
 [答案内容...]
@@ -51,7 +54,9 @@ markdown += "</details>\n\n";
 #### 展开状态（点击后）
 
 ```
-点击展开思维链 ▼
+## 🤔 AI思考过程
+
+点击展开思考过程 ▼
 
 原始提示： [用户输入]
 
