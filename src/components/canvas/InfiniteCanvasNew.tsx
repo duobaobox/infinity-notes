@@ -385,11 +385,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         startGeneration();
 
         // 如果有连接的便签，将其内容包含在提示中
+        // 使用AI配置中的总结模式设置
         const finalPrompt =
           connectedNotes.length > 0
             ? connectionUtils.generateAIPromptWithConnections(
                 prompt,
-                connectedNotes
+                connectedNotes,
+                aiService.getConfig().summaryMode || "final_answer_only"
               )
             : prompt;
 

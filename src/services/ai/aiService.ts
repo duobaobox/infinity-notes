@@ -8,6 +8,7 @@ export interface AIConfig {
   temperature?: number; // AI温度参数
   maxTokens?: number; // 最大token数
   systemPrompt?: string; // 系统提示词（空字符串表示无提示词模式，有内容表示自定义prompt模式）
+  summaryMode?: "full" | "final_answer_only"; // 总结模式：完整内容或仅最终答案
 }
 
 export interface AIMessage {
@@ -1371,4 +1372,5 @@ export const defaultAIConfig: AIConfig = {
   temperature: 0.7, // 默认温度值
   maxTokens: 1000, // 默认最大token数
   systemPrompt: "", // 默认为无提示词模式（空字符串=正常API对话，有内容=自定义prompt回复）
+  summaryMode: "final_answer_only", // 默认仅提取最终答案进行总结
 };

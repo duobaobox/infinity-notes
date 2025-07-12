@@ -43,7 +43,11 @@ export class AIConfigValidator {
 
     // 检查是否包含明显的占位符文本
     const placeholders = ["your-api-key", "sk-xxx", "请输入", "密钥"];
-    if (placeholders.some(placeholder => apiKey.toLowerCase().includes(placeholder))) {
+    if (
+      placeholders.some((placeholder) =>
+        apiKey.toLowerCase().includes(placeholder)
+      )
+    ) {
       return {
         isValid: false,
         error: "请输入有效的API密钥，不能使用占位符文本",
@@ -66,7 +70,7 @@ export class AIConfigValidator {
 
     try {
       const url = new URL(apiUrl);
-      
+
       // 检查协议
       if (!["http:", "https:"].includes(url.protocol)) {
         return {
@@ -105,7 +109,11 @@ export class AIConfigValidator {
 
     // 检查是否包含明显的占位符文本
     const placeholders = ["请选择", "模型名称", "your-model"];
-    if (placeholders.some(placeholder => aiModel.toLowerCase().includes(placeholder))) {
+    if (
+      placeholders.some((placeholder) =>
+        aiModel.toLowerCase().includes(placeholder)
+      )
+    ) {
       return {
         isValid: false,
         error: "请输入有效的AI模型名称",
@@ -209,11 +217,40 @@ export class AIConfigValidator {
       warnings.push(maxTokensResult.warning);
     }
 
+    const summaryModeResult = this.validateSummaryMode(config.summaryMode);
+    if (!summaryModeResult.isValid) {
+      errors.push(summaryModeResult.error!);
+    } else if (summaryModeResult.warning) {
+      warnings.push(summaryModeResult.warning);
+    }
+
     return {
       isValid: errors.length === 0,
       errors,
       warnings,
     };
+  }
+
+  /**
+   * 验证总结模式
+   */
+  static validateSummaryMode(summaryMode?: string): FieldValidationResult {
+    if (!summaryMode) {
+      return {
+        isValid: true,
+        warning: "未设置总结模式，将使用默认值（仅最终答案）",
+      };
+    }
+
+    const validModes = ["full", "final_answer_only"];
+    if (!validModes.includes(summaryMode)) {
+      return {
+        isValid: false,
+        error: "总结模式必须是 'full' 或 'final_answer_only'",
+      };
+    }
+
+    return { isValid: true };
   }
 
   /**
@@ -228,7 +265,7 @@ export class AIConfigValidator {
    */
   static getConfigCompleteness(config: Partial<AIConfig>): number {
     const requiredFields = ["apiKey", "apiUrl", "aiModel"];
-    const completedFields = requiredFields.filter(field => {
+    const completedFields = requiredFields.filter((field) => {
       const value = config[field as keyof AIConfig];
       return value && String(value).trim() !== "";
     });

@@ -6,6 +6,7 @@ import {
   Form,
   Input,
   InputNumber,
+  Radio,
   Space,
   Tooltip,
   Typography,
@@ -259,6 +260,39 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
               placeholder="1000"
               style={{ width: "100%" }}
             />
+          </Form.Item>
+
+          {/* 总结模式设置 */}
+          <Form.Item
+            label={
+              <Space>
+                <Text>便签总结模式</Text>
+                <Tooltip title="控制AI总结便签时如何处理包含思维链的内容">
+                  <InfoCircleOutlined style={{ color: "#666" }} />
+                </Tooltip>
+              </Space>
+            }
+            name="summaryMode"
+            initialValue="final_answer_only"
+          >
+            <Radio.Group>
+              <Radio value="final_answer_only">
+                <Space direction="vertical" size={0}>
+                  <Text>仅最终答案</Text>
+                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                    智能提取便签核心内容，过滤思维链（推荐）
+                  </Text>
+                </Space>
+              </Radio>
+              <Radio value="full">
+                <Space direction="vertical" size={0}>
+                  <Text>完整内容</Text>
+                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                    包含思维链在内的完整便签内容
+                  </Text>
+                </Space>
+              </Radio>
+            </Radio.Group>
           </Form.Item>
         </Card>
 

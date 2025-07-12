@@ -205,35 +205,99 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
 // 导出便签连接相关的工具函数
 export const connectionUtils = {
   /**
-   * 获取连接的便签内容摘要
+   * 智能提取便签的核心内容
+   * 优先提取最终答案部分，过滤思维链内容
    */
-  getConnectionSummary: (connectedNotes: StickyNote[]): string => {
+  extractNoteContent: (note: StickyNote): string => {
+    const content = note.content;
+
+    // 检查是否包含思维链格式的内容
+    const finalAnswerMatch = content.match(
+      /## ✨ 最终答案\s*\n\n([\s\S]*?)(?=\n##|$)/
+    );
+    if (finalAnswerMatch) {
+      // 提取最终答案部分，去除多余的换行和空格
+      const finalAnswer = finalAnswerMatch[1].trim();
+      console.log(
+        `📝 从便签 "${note.title}" 提取最终答案内容:`,
+        finalAnswer.substring(0, 50) + "..."
+      );
+      return finalAnswer;
+    }
+
+    // 检查是否包含折叠的思维链（details标签）
+    const detailsMatch = content.match(/<\/details>\s*\n+---\s*\n+([\s\S]*?)$/);
+    if (detailsMatch) {
+      // 提取details标签后的内容（通常是最终答案）
+      const afterDetails = detailsMatch[1].trim();
+      // 移除可能的"## ✨ 最终答案"标题
+      const cleanContent = afterDetails
+        .replace(/^## ✨ 最终答案\s*\n+/, "")
+        .trim();
+      console.log(
+        `📝 从便签 "${note.title}" 提取折叠后内容:`,
+        cleanContent.substring(0, 50) + "..."
+      );
+      return cleanContent;
+    }
+
+    // 如果没有思维链格式，直接返回原内容
+    console.log(`📝 便签 "${note.title}" 无思维链格式，使用原始内容`);
+    return content;
+  },
+
+  /**
+   * 获取连接的便签内容摘要
+   * 优化版：智能提取核心内容，过滤思维链
+   */
+  getConnectionSummary: (
+    connectedNotes: StickyNote[],
+    summaryMode: "full" | "final_answer_only" = "final_answer_only"
+  ): string => {
     if (connectedNotes.length === 0) return "";
 
     return connectedNotes
-      .map(
-        (note, index) =>
-          `${index + 1}. ${note.title || "无标题"}: ${note.content.substring(
-            0,
-            100
-          )}`
-      )
+      .map((note, index) => {
+        // 根据配置决定内容提取方式
+        const coreContent =
+          summaryMode === "final_answer_only"
+            ? connectionUtils.extractNoteContent(note)
+            : note.content; // 完整模式直接使用原内容
+
+        // 限制长度，避免提示词过长
+        const maxLength = summaryMode === "final_answer_only" ? 200 : 100;
+        const truncatedContent =
+          coreContent.length > maxLength
+            ? coreContent.substring(0, maxLength) + "..."
+            : coreContent;
+
+        return `${index + 1}. ${note.title || "无标题"}: ${truncatedContent}`;
+      })
       .join("\n\n");
   },
 
   /**
    * 生成AI提示词，包含连接的便签内容
+   * 支持配置驱动的内容提取模式
    */
   generateAIPromptWithConnections: (
     userPrompt: string,
-    connectedNotes: StickyNote[]
+    connectedNotes: StickyNote[],
+    summaryMode: "full" | "final_answer_only" = "final_answer_only"
   ): string => {
     if (connectedNotes.length === 0) return userPrompt;
 
-    const connectionSummary =
-      connectionUtils.getConnectionSummary(connectedNotes);
+    const connectionSummary = connectionUtils.getConnectionSummary(
+      connectedNotes,
+      summaryMode
+    );
 
-    return `基于以下已连接的便签内容：
+    const modeDescription =
+      summaryMode === "final_answer_only"
+        ? "（已智能提取核心内容，过滤思维链）"
+        : "（完整内容）";
+
+    return `基于以下已连接的便签内容${modeDescription}：
 
 ${connectionSummary}
 
