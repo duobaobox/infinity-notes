@@ -5,6 +5,7 @@ import InfiniteCanvas from "./components/canvas/InfiniteCanvasNew";
 import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
+import MarkdownListTest from "./test/MarkdownListTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import VirtualizationStatusMonitorEnhanced from "./test/VirtualizationTestEnhanced";
 
@@ -25,7 +26,9 @@ function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const testMode = urlParams.get("test");
   const isTestMode =
-    testMode === "prompt-template" || testMode === "thinking-chain";
+    testMode === "prompt-template" ||
+    testMode === "thinking-chain" ||
+    testMode === "markdown-list";
 
   const canvasRef = useRef<{
     createNote: () => void;
@@ -170,6 +173,8 @@ function App() {
       return <AIPromptTemplateTest />;
     } else if (testMode === "thinking-chain") {
       return <ThinkingChainTest />;
+    } else if (testMode === "markdown-list") {
+      return <MarkdownListTest />;
     }
   }
 

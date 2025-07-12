@@ -921,30 +921,23 @@ export class AIService {
     markdown += "<details>\n";
     markdown += "<summary>点击展开思考过程</summary>\n\n";
 
-    // 如果有原始提示，添加它
-    if (thinkingChain.prompt) {
-      markdown += `**原始提示：** ${thinkingChain.prompt}\n\n`;
-    }
+    // 将思考内容格式化为引用块（注释格式）
+    const originalThinkingContent = thinkingChain.steps
+      .map((step) => step.content)
+      .join("\n\n");
 
-    // 添加思考步骤
-    thinkingChain.steps.forEach((step, index) => {
-      const stepIcon = this.getStepIconText(step.stepType);
-      markdown += `### ${stepIcon} 步骤 ${index + 1}: ${this.getStepTypeLabel(
-        step.stepType
-      )}\n\n`;
-      markdown += `${step.content}\n\n`;
-    });
+    // 将每一行都添加引用前缀 "> "，形成统一的注释块
+    const quotedThinkingContent = originalThinkingContent
+      .split("\n")
+      .map((line) => (line.trim() === "" ? ">" : `> ${line}`))
+      .join("\n");
 
-    // 添加思考时间统计
-    if (thinkingChain.totalThinkingTime > 0) {
-      const thinkingTimeSeconds = Math.round(
-        thinkingChain.totalThinkingTime / 1000
-      );
-      markdown += `---\n\n`;
-      markdown += `⏱️ **思考时长：** 约 ${thinkingTimeSeconds} 秒\n\n`;
-    }
+    markdown += quotedThinkingContent + "\n\n";
 
     markdown += "</details>\n\n";
+
+    // 添加分割线
+    markdown += "---\n\n";
 
     // 添加最终答案
     markdown += "## ✨ 最终答案\n\n";

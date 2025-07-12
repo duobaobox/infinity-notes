@@ -35,18 +35,25 @@ const CustomLink: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
   );
 };
 
-// 多级编号列表预处理器
+// 多级列表预处理器（支持标准Markdown语法）
 const createMultilevelListProcessor = () => {
+  // 🔧 修复：支持标准Markdown列表语法，包括无序列表和有序列表
   const MULTILEVEL_LIST_REGEX =
-    /^(\s*)([0-9]+\.|[a-z]+\.|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.)\s(.*)$/;
+    /^(\s*)([*+-]|[0-9]+\.|[a-z]+\.|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.)\s(.*)$/;
 
   const getListType = (marker: string): string => {
+    if (marker.match(/^[*+-]$/)) return "ul"; // 无序列表
     if (marker.match(/^[a-z]+\.$/)) return "a";
     if (marker.match(/^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.$/)) return "I";
-    return "1";
+    return "1"; // 数字有序列表
   };
 
-  const getLevel = (indent: string): number => Math.floor(indent.length / 3);
+  // 🔧 修复：支持标准的2空格或4空格缩进
+  const getLevel = (indent: string): number => {
+    if (indent.length === 0) return 0;
+    // 支持2空格或4空格缩进
+    return Math.floor(indent.length / (indent.length >= 4 ? 4 : 2));
+  };
 
   return (content: string): string => {
     const lines = content.split("\n");
@@ -63,13 +70,16 @@ const createMultilevelListProcessor = () => {
 
         // 关闭更深层级的列表
         while (listStack.length > level) {
-          listStack.pop();
-          processedLines.push("  ".repeat(listStack.length) + "</ol>");
+          const closedList = listStack.pop();
+          const tagName = closedList?.type === "ul" ? "ul" : "ol";
+          processedLines.push("  ".repeat(listStack.length) + `</${tagName}>`);
         }
 
         // 开始新的列表层级
         if (listStack.length === level) {
-          processedLines.push("  ".repeat(level) + `<ol type="${listType}">`);
+          const tagName = listType === "ul" ? "ul" : "ol";
+          const typeAttr = listType === "ul" ? "" : ` type="${listType}"`;
+          processedLines.push("  ".repeat(level) + `<${tagName}${typeAttr}>`);
           listStack.push({ level, type: listType });
         }
 
@@ -78,8 +88,9 @@ const createMultilevelListProcessor = () => {
       } else {
         // 非列表行，关闭所有列表
         while (listStack.length > 0) {
-          listStack.pop();
-          processedLines.push("  ".repeat(listStack.length) + "</ol>");
+          const closedList = listStack.pop();
+          const tagName = closedList?.type === "ul" ? "ul" : "ol";
+          processedLines.push("  ".repeat(listStack.length) + `</${tagName}>`);
         }
         processedLines.push(line);
       }
@@ -87,8 +98,9 @@ const createMultilevelListProcessor = () => {
 
     // 关闭剩余的列表
     while (listStack.length > 0) {
-      listStack.pop();
-      processedLines.push("  ".repeat(listStack.length) + "</ol>");
+      const closedList = listStack.pop();
+      const tagName = closedList?.type === "ul" ? "ul" : "ol";
+      processedLines.push("  ".repeat(listStack.length) + `</${tagName}>`);
     }
 
     return processedLines.join("\n");
@@ -258,14 +270,17 @@ const VirtualizedMarkdown: React.FC<VirtualizedMarkdownProps> = ({
 
   // 预处理内容
   const processedContent = useMemo(() => {
-    return preprocessMultilevelLists(content);
+    // 🔧 完全禁用自定义列表预处理器，让ReactMarkdown处理所有标准Markdown列表
+    // ReactMarkdown本身就能很好地处理嵌套列表，包括有序列表和无序列表的混合
+    return content;
   }, [content]);
 
   const processedDisplayContent = useMemo(() => {
     if (!shouldUsePagination) {
       return processedContent;
     }
-    return preprocessMultilevelLists(displayContent);
+    // 同样禁用预处理器
+    return displayContent;
   }, [shouldUsePagination, processedContent, displayContent]);
 
   // 如果不需要分页，直接渲染全部内容
