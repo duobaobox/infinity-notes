@@ -198,20 +198,67 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     };
   }, [note.sourceNoteIds, sourceConnectionsVisible, note.id, allNotes]);
 
-  // 处理流式内容更新
+  // 智能滚动状态管理 - 无UI版本
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollTopRef = useRef<number>(0);
+
+  // 检测用户是否主动向上滚动
+  const detectUserScrollUp = useCallback(
+    (currentScrollTop: number) => {
+      const container = previewRef.current;
+      if (!container) return false;
+
+      const { scrollHeight, clientHeight } = container;
+      const isAtBottom =
+        Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10;
+      const lastScrollTop = lastScrollTopRef.current;
+
+      // 关键逻辑：只有当用户主动向上滚动时才标记为手动滚动
+      // 向下滚动或自动滚动不应该触发暂停
+      if (currentScrollTop < lastScrollTop && !isAtBottom) {
+        // 用户向上滚动且不在底部，标记为手动滚动
+        setIsUserScrolling(true);
+
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+
+        // 3秒后重新启用自动滚动
+        scrollTimeoutRef.current = setTimeout(() => {
+          setIsUserScrolling(false);
+        }, 3000);
+
+        console.log("🔄 检测到用户向上滚动，暂停自动滚动");
+      } else if (isAtBottom && isUserScrolling) {
+        // 用户滚动到底部，立即重新启用自动滚动
+        setIsUserScrolling(false);
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = null;
+        }
+        console.log("✅ 用户回到底部，恢复自动滚动");
+      }
+
+      lastScrollTopRef.current = currentScrollTop;
+    },
+    [isStreaming, isUserScrolling]
+  );
+
+  // 处理流式内容更新 - 智能滚动版
   useEffect(() => {
     if (isStreaming) {
       setDisplayContent(streamingContent);
       setShowCursor(true);
-      // 内容更新时滚动到底部
-      if (previewRef.current) {
+      // 智能滚动：只有在用户没有主动向上滚动时才自动滚动到底部
+      if (previewRef.current && !isUserScrolling) {
         previewRef.current.scrollTop = previewRef.current.scrollHeight;
       }
     } else {
       setDisplayContent(note.content);
       setShowCursor(false);
     }
-  }, [isStreaming, streamingContent, note.content]);
+  }, [isStreaming, streamingContent, note.content, isUserScrolling]);
 
   // 处理流式完成回调（分离逻辑避免循环依赖）
   useEffect(() => {
@@ -239,6 +286,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
     return () => clearInterval(interval);
   }, [isStreaming]);
+
+  // 滚动事件监听器 - 只检测用户主动向上滚动
+  useEffect(() => {
+    const container = previewRef.current;
+    if (!container || !isStreaming) return;
+
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLDivElement;
+      detectUserScrollUp(target.scrollTop);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [isStreaming, detectUserScrollUp]);
 
   // 开始编辑内容
   const startEditing = useCallback(() => {
@@ -1509,6 +1576,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+
+      // 清理滚动状态定时器
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
       }
 
       // 清理所有连接线
