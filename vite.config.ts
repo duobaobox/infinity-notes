@@ -5,6 +5,7 @@ import { resolve } from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: "./", // Electron 需要相对路径
   server: {
     port: 5173,
     host: "0.0.0.0", // 允许外部访问，便于内网测试
@@ -35,5 +36,13 @@ export default defineConfig({
         },
       },
     },
+  },
+  // 优化依赖处理
+  optimizeDeps: {
+    exclude: ["leader-line"], // 排除 leader-line 的预构建，使用静态文件
+  },
+  // 解决兼容性问题
+  define: {
+    global: "globalThis",
   },
 });

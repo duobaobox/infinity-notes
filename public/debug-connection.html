@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连接线调试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .debug-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .test-area {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            border: 2px dashed #ccc;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+
+        .note {
+            position: absolute;
+            width: 150px;
+            height: 100px;
+            background: #ffeb3b;
+            border: 2px solid #fbc02d;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .note1 {
+            top: 50px;
+            left: 50px;
+        }
+
+        .note2 {
+            top: 250px;
+            left: 350px;
+        }
+
+        .connection-point {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 16px;
+            height: 16px;
+            background: #ff5722;
+            border-radius: 50%;
+        }
+
+        .slot {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 16px;
+            background: #2196f3;
+            border-radius: 8px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 12px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .log {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="debug-container">
+        <h1>连接线调试</h1>
+
+        <div>
+            <button onclick="testLoader()">测试加载器</button>
+            <button onclick="createConnection()">创建连接</button>
+            <button onclick="clearConnection()">清除连接</button>
+        </div>
+
+        <div class="test-area">
+            <div class="note note1" id="note1">
+                <div class="connection-point" id="point1"></div>
+                <div class="slot" id="slot1"></div>
+                便签 1
+            </div>
+
+            <div class="note note2" id="note2">
+                <div class="connection-point" id="point2"></div>
+                <div class="slot" id="slot2"></div>
+                便签 2
+            </div>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script type="module">
+        let currentLine = null;
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+
+        window.testLoader = async function () {
+            log("🔄 测试 Leader Line 加载器...");
+            try {
+                const { loadLeaderLine } = await import('/src/utils/leaderLineLoader.ts');
+                const LeaderLine = await loadLeaderLine();
+                log("✅ Leader Line 加载成功");
+                window.LeaderLine = LeaderLine;
+            } catch (error) {
+                log(`❌ 加载失败: ${error.message}`);
+                console.error(error);
+            }
+        };
+
+        window.createConnection = async function () {
+            log("🔗 尝试创建连接线...");
+            try {
+                if (!window.LeaderLine) {
+                    await testLoader();
+                }
+
+                if (!window.LeaderLine) {
+                    log("❌ Leader Line 未加载");
+                    return;
+                }
+
+                const point1 = document.getElementById('point1');
+                const slot2 = document.getElementById('slot2');
+
+                if (point1 && slot2) {
+                    currentLine = new window.LeaderLine(point1, slot2, {
+                        color: '#1677ff',
+                        size: 4,
+                        path: 'fluid'
+                    });
+                    log("✅ 连接线创建成功");
+                } else {
+                    log("❌ 找不到连接点");
+                }
+            } catch (error) {
+                log(`❌ 创建连接线失败: ${error.message}`);
+                console.error(error);
+            }
+        };
+
+        window.clearConnection = function () {
+            if (currentLine) {
+                currentLine.remove();
+                currentLine = null;
+                log("🗑️ 连接线已清除");
+            } else {
+                log("ℹ️ 没有连接线需要清除");
+            }
+        };
+
+        log("📄 调试页面加载完成");
+    </script>
+</body>
+
+</html>

@@ -12,6 +12,51 @@ dist
 dist-ssr
 *.local
 
+# Electron 构建产物
+dist-electron
+out/
+release/
+app/dist/
+app/node_modules/
+
+# Electron 打包文件
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+*.exe
+*.msi
+*.AppImage
+
+# Electron 开发文件
+.electron/
+electron-dist/
+build/
+*.blockmap
+
+# Electron Builder 配置和缓存
+.electron-builder/
+electron-builder-*.yaml
+builder-debug.yml
+builder-effective-config.yaml
+
+# macOS 特定文件
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# 代码签名文件
+*.p12
+*.cer
+*.provisionprofile
+entitlements.plist
+
+# 自动更新相关
+latest*.yml
+*.blockmap
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

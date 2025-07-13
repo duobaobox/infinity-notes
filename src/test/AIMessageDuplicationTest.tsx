@@ -12,17 +12,20 @@ const { Title, Text } = Typography;
  */
 export const AIMessageDuplicationTest: React.FC = () => {
   const [testResults, setTestResults] = useState<string[]>([]);
-  const { config, saveAIConfig, testConnection, loading } = useAISettings();
+  const { config, saveConfig, testConnection, loading } = useAISettings();
 
   // 添加测试结果
   const addTestResult = (result: string) => {
-    setTestResults(prev => [...prev, `${new Date().toLocaleTimeString()}: ${result}`]);
+    setTestResults((prev) => [
+      ...prev,
+      `${new Date().toLocaleTimeString()}: ${result}`,
+    ]);
   };
 
   // 测试保存AI配置
   const testSaveConfig = async () => {
     addTestResult("开始测试保存AI配置...");
-    
+
     const testConfig: AIConfig = {
       ...config,
       apiUrl: "https://api.openai.com/v1",
@@ -35,21 +38,25 @@ export const AIMessageDuplicationTest: React.FC = () => {
     };
 
     try {
-      const success = await saveAIConfig(testConfig);
+      const success = await saveConfig(testConfig);
       if (success) {
         addTestResult("✅ 保存配置成功 - 应该只看到一条成功消息");
       } else {
         addTestResult("❌ 保存配置失败");
       }
     } catch (error) {
-      addTestResult(`❌ 保存配置异常: ${error instanceof Error ? error.message : "未知错误"}`);
+      addTestResult(
+        `❌ 保存配置异常: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`
+      );
     }
   };
 
   // 测试连接
   const testConnectionTest = async () => {
     addTestResult("开始测试连接...");
-    
+
     try {
       const result = await testConnection();
       if (result.success) {
@@ -58,7 +65,11 @@ export const AIMessageDuplicationTest: React.FC = () => {
         addTestResult(`❌ 连接测试失败: ${result.error || "未知错误"}`);
       }
     } catch (error) {
-      addTestResult(`❌ 连接测试异常: ${error instanceof Error ? error.message : "未知错误"}`);
+      addTestResult(
+        `❌ 连接测试异常: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`
+      );
     }
   };
 
@@ -70,7 +81,7 @@ export const AIMessageDuplicationTest: React.FC = () => {
   return (
     <div style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}>
       <Title level={2}>🔧 AI消息重复提醒修复测试</Title>
-      
+
       <Card title="测试说明" style={{ marginBottom: 16 }}>
         <Text>
           此测试用于验证AI设置保存和测试连接功能是否还会出现重复的成功消息提醒。
@@ -80,33 +91,26 @@ export const AIMessageDuplicationTest: React.FC = () => {
 
       <Card title="测试操作" style={{ marginBottom: 16 }}>
         <Space>
-          <Button 
-            type="primary" 
-            onClick={testSaveConfig}
-            loading={loading}
-          >
+          <Button type="primary" onClick={testSaveConfig} loading={loading}>
             测试保存配置
           </Button>
-          <Button 
-            onClick={testConnectionTest}
-            loading={loading}
-          >
+          <Button onClick={testConnectionTest} loading={loading}>
             测试连接
           </Button>
-          <Button onClick={clearResults}>
-            清空结果
-          </Button>
+          <Button onClick={clearResults}>清空结果</Button>
         </Space>
       </Card>
 
       <Card title="测试结果" style={{ marginBottom: 16 }}>
-        <div style={{ 
-          maxHeight: "300px", 
-          overflowY: "auto",
-          backgroundColor: "#f5f5f5",
-          padding: "12px",
-          borderRadius: "4px"
-        }}>
+        <div
+          style={{
+            maxHeight: "300px",
+            overflowY: "auto",
+            backgroundColor: "#f5f5f5",
+            padding: "12px",
+            borderRadius: "4px",
+          }}
+        >
           {testResults.length === 0 ? (
             <Text type="secondary">暂无测试结果</Text>
           ) : (

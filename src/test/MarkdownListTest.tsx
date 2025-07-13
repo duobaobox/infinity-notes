@@ -2,7 +2,7 @@ import { Button, Card, Space, Typography } from "antd";
 import React, { useState } from "react";
 import VirtualizedMarkdown from "../components/notes/VirtualizedMarkdown";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 /**
  * Markdown列表渲染测试页面

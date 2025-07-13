@@ -36,6 +36,8 @@ const CustomLink: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
 };
 
 // 多级列表预处理器（支持标准Markdown语法）
+// 多级列表处理器（暂时未使用，保留备用）
+/*
 const createMultilevelListProcessor = () => {
   // 🔧 修复：支持标准Markdown列表语法，包括无序列表和有序列表
   const MULTILEVEL_LIST_REGEX =
@@ -105,10 +107,11 @@ const createMultilevelListProcessor = () => {
 
     return processedLines.join("\n");
   };
-};
+}; */
 
 // 创建预处理器实例
-const preprocessMultilevelLists = createMultilevelListProcessor();
+// 多级列表处理器（暂时未使用，保留备用）
+// const preprocessMultilevelLists = createMultilevelListProcessor();
 
 // 自定义组件配置
 const customComponents: Components = {

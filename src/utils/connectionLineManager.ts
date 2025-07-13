@@ -1,6 +1,7 @@
 // 连接线管理器 - 使用Leader Line实现便签到插槽的连接线
 import { PERFORMANCE_CONSTANTS } from "../components/canvas/CanvasConstants";
 import type { StickyNote } from "../components/types";
+import { loadLeaderLine } from "./leaderLineLoader";
 
 // Leader Line类型定义
 interface LeaderLineOptions {
@@ -38,55 +39,6 @@ declare class LeaderLineClass {
   hide(hideEffectName?: string, animOptions?: object): void;
   setOptions(options: LeaderLineOptions): void;
 }
-
-// 全局Leader Line变量
-declare global {
-  interface Window {
-    LeaderLine: typeof LeaderLineClass;
-  }
-}
-
-// 动态加载Leader Line
-let LeaderLine: typeof LeaderLineClass | null = null;
-let loadPromise: Promise<typeof LeaderLineClass> | null = null;
-
-// 异步加载Leader Line
-const loadLeaderLine = async (): Promise<typeof LeaderLineClass> => {
-  if (LeaderLine) return LeaderLine;
-
-  if (loadPromise) return loadPromise;
-
-  loadPromise = new Promise((resolve, reject) => {
-    try {
-      // 检查是否已经在全局作用域中
-      if (window.LeaderLine) {
-        LeaderLine = window.LeaderLine;
-        resolve(LeaderLine);
-        return;
-      }
-
-      // 动态加载脚本
-      const script = document.createElement("script");
-      script.src =
-        "https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js";
-      script.onload = () => {
-        if (window.LeaderLine) {
-          LeaderLine = window.LeaderLine;
-          resolve(LeaderLine);
-        } else {
-          reject(new Error("Leader Line failed to load"));
-        }
-      };
-      script.onerror = () =>
-        reject(new Error("Failed to load Leader Line script"));
-      document.head.appendChild(script);
-    } catch (error) {
-      reject(error);
-    }
-  });
-
-  return loadPromise;
-};
 
 // 连接线类型常量
 const ConnectionType = {

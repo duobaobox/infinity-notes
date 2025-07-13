@@ -948,6 +948,8 @@ export class AIService {
   }
 
   // 获取步骤类型的图标文本
+  // 获取步骤图标文本（暂时未使用）
+  /*
   private getStepIconText(stepType: string): string {
     switch (stepType) {
       case "analysis":
@@ -982,6 +984,7 @@ export class AIService {
         return "思考";
     }
   }
+  */
 
   // 测试思维链功能
   async testThinkingChain(): Promise<{
