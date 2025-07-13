@@ -248,15 +248,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   );
 
   // 平滑滚动到底部
-  const scrollToBottom = useCallback(() => {
-    const container = previewRef.current;
-    if (!container) return;
-
-    container.scrollTo({
-      top: container.scrollHeight,
-      behavior: "smooth",
-    });
-  }, []);
 
   // 手动滚动到底部（按钮触发）
   // 处理流式内容更新 - 智能滚动版
@@ -1929,7 +1920,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 )}
               </div>
             </>
-
           )}
         </div>
 
