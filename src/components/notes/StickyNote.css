@@ -1,8 +1,45 @@
+/* 便签磨砂效果CSS变量定义 */
+:root {
+  /* 便签磨砂效果变量 */
+  --note-glass-bg: rgba(255, 255, 255, 0.15);
+  --note-glass-border: rgba(0, 0, 0, 0.08);
+  --note-glass-blur: blur(8px) saturate(150%);
+  --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
+    0 4px 20px rgba(0, 0, 0, 0.06);
+  --note-glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(248, 249, 250, 0.7) 100%
+  );
+}
+
+/* 深色模式下的便签磨砂效果 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --note-glass-bg: rgba(40, 40, 40, 0.15);
+    --note-glass-border: rgba(255, 255, 255, 0.1);
+    --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+      0 4px 20px rgba(0, 0, 0, 0.2);
+    --note-glass-fallback: linear-gradient(
+      135deg,
+      rgba(40, 40, 40, 0.7) 0%,
+      rgba(50, 50, 50, 0.7) 100%
+    );
+  }
+}
+
 .sticky-note {
   position: absolute;
   border: none; /* 去掉边线 */
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 20px rgba(0, 0, 0, 0.06); /* 更柔和的双层阴影 */
+
+  /* 半透明磨砂效果 - 使用CSS变量 */
+  background: var(--note-glass-bg);
+  backdrop-filter: var(--note-glass-blur);
+  -webkit-backdrop-filter: var(--note-glass-blur);
+  border: 1px solid var(--note-glass-border);
+  box-shadow: var(--note-glass-shadow);
+
   user-select: none;
   min-width: 200px;
   min-height: 150px;
@@ -21,6 +58,17 @@
   /* 性能优化 */
   will-change: auto;
   backface-visibility: hidden;
+
+  /* 平滑过渡效果 */
+  transition: backdrop-filter 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* 浏览器降级方案 - 不支持 backdrop-filter 的情况 */
+@supports not (backdrop-filter: blur(8px)) {
+  .sticky-note {
+    background: var(--note-glass-fallback);
+  }
 }
 
 /* 表情符号特殊处理 - 确保在所有缩放级别下正确显示 */
@@ -185,30 +233,107 @@
   }
 }
 
-/* 便签颜色变体 */
+/* 便签颜色变体 - 半透明磨砂效果叠加 */
 .sticky-note.color-yellow {
-  background: #fffad6;
+  background: linear-gradient(
+      rgba(255, 250, 214, 0.4),
+      rgba(255, 250, 214, 0.4)
+    ),
+    var(--note-glass-bg);
+  backdrop-filter: var(--note-glass-blur) hue-rotate(5deg);
+  -webkit-backdrop-filter: var(--note-glass-blur) hue-rotate(5deg);
 }
 
 .sticky-note.color-blue {
-  background: #e1f3fd;
+  background: linear-gradient(
+      rgba(225, 243, 253, 0.4),
+      rgba(225, 243, 253, 0.4)
+    ),
+    var(--note-glass-bg);
+  backdrop-filter: var(--note-glass-blur) hue-rotate(-10deg);
+  -webkit-backdrop-filter: var(--note-glass-blur) hue-rotate(-10deg);
 }
 
 .sticky-note.color-green {
-  background: #e5f9f0;
+  background: linear-gradient(
+      rgba(229, 249, 240, 0.4),
+      rgba(229, 249, 240, 0.4)
+    ),
+    var(--note-glass-bg);
+  backdrop-filter: var(--note-glass-blur) hue-rotate(15deg);
+  -webkit-backdrop-filter: var(--note-glass-blur) hue-rotate(15deg);
 }
 
 .sticky-note.color-pink {
-  background: #fef1f0;
+  background: linear-gradient(
+      rgba(254, 241, 240, 0.4),
+      rgba(254, 241, 240, 0.4)
+    ),
+    var(--note-glass-bg);
+  backdrop-filter: var(--note-glass-blur) hue-rotate(-5deg);
+  -webkit-backdrop-filter: var(--note-glass-blur) hue-rotate(-5deg);
 }
 
 .sticky-note.color-purple {
-  background: #f2e8f7;
+  background: linear-gradient(
+      rgba(242, 232, 247, 0.4),
+      rgba(242, 232, 247, 0.4)
+    ),
+    var(--note-glass-bg);
+  backdrop-filter: var(--note-glass-blur) hue-rotate(20deg);
+  -webkit-backdrop-filter: var(--note-glass-blur) hue-rotate(20deg);
 }
 
-/* 悬浮效果 - 但不覆盖选中状态 */
+/* 颜色变体的降级方案 */
+@supports not (backdrop-filter: blur(8px)) {
+  .sticky-note.color-yellow {
+    background: linear-gradient(
+        rgba(255, 250, 214, 0.6),
+        rgba(255, 250, 214, 0.6)
+      ),
+      var(--note-glass-fallback);
+  }
+
+  .sticky-note.color-blue {
+    background: linear-gradient(
+        rgba(225, 243, 253, 0.6),
+        rgba(225, 243, 253, 0.6)
+      ),
+      var(--note-glass-fallback);
+  }
+
+  .sticky-note.color-green {
+    background: linear-gradient(
+        rgba(229, 249, 240, 0.6),
+        rgba(229, 249, 240, 0.6)
+      ),
+      var(--note-glass-fallback);
+  }
+
+  .sticky-note.color-pink {
+    background: linear-gradient(
+        rgba(254, 241, 240, 0.6),
+        rgba(254, 241, 240, 0.6)
+      ),
+      var(--note-glass-fallback);
+  }
+
+  .sticky-note.color-purple {
+    background: linear-gradient(
+        rgba(242, 232, 247, 0.6),
+        rgba(242, 232, 247, 0.6)
+      ),
+      var(--note-glass-fallback);
+  }
+}
+
+/* 悬浮效果 - 增强磨砂效果 */
 .sticky-note:hover:not(.selected) {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08); /* 悬停时增强阴影 */
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px); /* 轻微上浮效果 */
+  transition: all 0.2s ease;
 }
 
 /* 选中状态下的悬浮效果 - 增强选中边框的发光 */
