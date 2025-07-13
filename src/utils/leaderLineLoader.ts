@@ -16,11 +16,8 @@ export const loadLeaderLine = async (): Promise<any> => {
   // 检查全局变量（可能已经通过 script 标签加载）
   if ((window as any).LeaderLine) {
     LeaderLineClass = (window as any).LeaderLine;
-    console.log("✅ 使用预加载的 LeaderLine");
     return LeaderLineClass;
   }
-
-  console.log("🔄 动态加载 Leader Line...");
 
   // 如果没有预加载，则动态加载
   return new Promise((resolve, reject) => {
@@ -38,7 +35,6 @@ export const loadLeaderLine = async (): Promise<any> => {
       clearTimeout(timeout);
       if ((window as any).LeaderLine) {
         LeaderLineClass = (window as any).LeaderLine;
-        console.log("✅ Leader Line 动态加载成功");
         resolve(LeaderLineClass);
       } else {
         reject(new Error("Leader Line 加载失败：未找到全局变量"));
@@ -60,12 +56,4 @@ export const isLeaderLineLoaded = (): boolean => {
     LeaderLineClass !== null ||
     (typeof window !== "undefined" && !!(window as any).LeaderLine)
   );
-};
-
-// 重置加载状态（用于测试）
-export const resetLeaderLineLoader = () => {
-  LeaderLineClass = null;
-  if (typeof window !== "undefined") {
-    delete (window as any).LeaderLine;
-  }
 };
