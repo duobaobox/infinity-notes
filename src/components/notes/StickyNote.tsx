@@ -198,98 +198,20 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     };
   }, [note.sourceNoteIds, sourceConnectionsVisible, note.id, allNotes]);
 
-  // 智能滚动状态管理
-  const [isUserScrolling, setIsUserScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastScrollTopRef = useRef<number>(0);
-
-  // 检测用户是否主动向上滚动
-  const detectUserScrollUp = useCallback(
-    (currentScrollTop: number) => {
-      const container = previewRef.current;
-      if (!container) return false;
-
-      const { scrollHeight, clientHeight } = container;
-      const isAtBottom =
-        Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10;
-      const lastScrollTop = lastScrollTopRef.current;
-
-      // 更新显示状态
-
-      // 关键逻辑：只有当用户主动向上滚动时才标记为手动滚动
-      // 向下滚动或自动滚动不应该触发暂停
-      if (currentScrollTop < lastScrollTop && !isAtBottom) {
-        // 用户向上滚动且不在底部，标记为手动滚动
-        setIsUserScrolling(true);
-
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
-        // 3秒后重新启用自动滚动
-        scrollTimeoutRef.current = setTimeout(() => {
-          setIsUserScrolling(false);
-        }, 3000);
-
-        console.log("🔄 检测到用户向上滚动，暂停自动滚动");
-      } else if (isAtBottom && isUserScrolling) {
-        // 用户滚动到底部，立即重新启用自动滚动
-        setIsUserScrolling(false);
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-          scrollTimeoutRef.current = null;
-        }
-        console.log("✅ 用户回到底部，恢复自动滚动");
-      }
-
-      lastScrollTopRef.current = currentScrollTop;
-    },
-    [isStreaming, isUserScrolling]
-  );
-
-  // 平滑滚动到底部
-
-  // 手动滚动到底部（按钮触发）
-  // 处理流式内容更新 - 智能滚动版
+  // 处理流式内容更新
   useEffect(() => {
     if (isStreaming) {
       setDisplayContent(streamingContent);
       setShowCursor(true);
-
-      // 关键修复：只有在用户没有主动向上滚动时才自动滚动
-      if (!isUserScrolling && previewRef.current) {
-        const container = previewRef.current;
-        // 直接滚动到底部，确保跟随最新内容
-        container.scrollTop = container.scrollHeight;
-        console.log("📜 自动滚动到底部，跟随AI生成内容");
-      } else if (isUserScrolling) {
-        console.log("⏸️ 用户正在查看历史内容，暂停自动滚动");
+      // 内容更新时滚动到底部
+      if (previewRef.current) {
+        previewRef.current.scrollTop = previewRef.current.scrollHeight;
       }
     } else {
       setDisplayContent(note.content);
       setShowCursor(false);
     }
-  }, [isStreaming, streamingContent, note.content, isUserScrolling]);
-
-  // 滚动事件监听器 - 只检测用户主动向上滚动
-  useEffect(() => {
-    const container = previewRef.current;
-    if (!container || !isStreaming) return;
-
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLDivElement;
-      detectUserScrollUp(target.scrollTop);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [isStreaming, detectUserScrollUp]);
+  }, [isStreaming, streamingContent, note.content]);
 
   // 处理流式完成回调（分离逻辑避免循环依赖）
   useEffect(() => {
@@ -416,6 +338,38 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [debouncedUpdateTitle]
   );
 
+  // 确保光标在可视区域内的辅助函数
+  const scrollToCursor = useCallback(() => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const cursorPos = textarea.selectionStart;
+
+    // 获取光标所在行的位置
+    const textBeforeCursor = textarea.value.substring(0, cursorPos);
+    const lines = textBeforeCursor.split("\n");
+    const currentLineIndex = lines.length - 1;
+
+    // 计算光标所在行的大致位置
+    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 21; // 默认行高
+    const cursorTop = currentLineIndex * lineHeight;
+
+    // 获取textarea的滚动信息
+    const { scrollTop, clientHeight } = textarea;
+    const scrollBottom = scrollTop + clientHeight;
+
+    // 检查光标是否在可视区域内
+    const padding = lineHeight; // 给一些缓冲空间
+
+    if (cursorTop < scrollTop + padding) {
+      // 光标在可视区域上方，向上滚动
+      textarea.scrollTop = Math.max(0, cursorTop - padding);
+    } else if (cursorTop + lineHeight > scrollBottom - padding) {
+      // 光标在可视区域下方，向下滚动
+      textarea.scrollTop = cursorTop + lineHeight - clientHeight + padding;
+    }
+  }, []);
+
   // 内容变化处理
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -425,8 +379,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       if (!isComposing) {
         debouncedUpdateContent(newContent);
       }
+
+      // 确保光标在可视区域内
+      setTimeout(() => {
+        scrollToCursor();
+      }, 0);
     },
-    [isComposing, debouncedUpdateContent]
+    [isComposing, debouncedUpdateContent, scrollToCursor]
   );
 
   // 标题变化处理
@@ -936,12 +895,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       setLocalContent(newContent);
       debouncedUpdateContent(newContent);
 
-      // 设置光标位置
+      // 设置光标位置并确保可见
       setTimeout(() => {
         textarea.setSelectionRange(start + offsetStart, start + offsetEnd);
+        scrollToCursor();
       }, 0);
     },
-    [localContent, debouncedUpdateContent]
+    [localContent, debouncedUpdateContent, scrollToCursor]
   );
 
   // 获取当前行内容和位置
@@ -1299,6 +1259,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         // 设置光标位置到插入的制表符之后
         setTimeout(() => {
           textarea.setSelectionRange(start + 1, start + 1);
+          scrollToCursor();
+        }, 0);
+      }
+
+      // 对于其他可能改变光标位置的按键，延迟执行滚动检查
+      if (
+        [
+          "ArrowUp",
+          "ArrowDown",
+          "ArrowLeft",
+          "ArrowRight",
+          "Home",
+          "End",
+          "PageUp",
+          "PageDown",
+        ].includes(e.key)
+      ) {
+        setTimeout(() => {
+          scrollToCursor();
         }, 0);
       }
     },
@@ -1308,6 +1287,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       debouncedUpdateContent,
       handleSmartList,
       handleSmartIndent,
+      scrollToCursor,
     ]
   );
 
@@ -1370,8 +1350,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 处理文本框点击事件
   const handleTextareaClick = useCallback(() => {
-    // 不需要特殊处理
-  }, []);
+    // 点击后确保光标在可视区域内
+    setTimeout(() => {
+      scrollToCursor();
+    }, 0);
+  }, [scrollToCursor]);
 
   // 标题失焦时停止编辑
   const handleTitleBlur = useCallback(
@@ -1871,55 +1854,53 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               className="sticky-note-textarea"
             />
           ) : (
-            <>
-              <div
-                ref={previewRef}
-                className="sticky-note-preview"
-                onMouseDown={handleNoteClickToFront}
-                onClick={(e) => {
-                  // 阻止冒泡，让全局失焦检测处理编辑模式退出
-                  e.stopPropagation();
-                }}
-                onDoubleClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  // 移动模式下禁用编辑
-                  if (isMoveModeActive) return;
-                  // 如果不在编辑模式，双击开始编辑
-                  if (!isEditing && !isTitleEditing) {
-                    startEditing();
-                  }
-                }}
-                style={{
-                  backgroundColor: "transparent",
-                  cursor: isEditing || isTitleEditing ? "default" : "default",
-                }}
-                title={
-                  isEditing || isTitleEditing
-                    ? "点击便签外部区域退出编辑模式"
-                    : "双击开始编辑内容"
+            <div
+              ref={previewRef}
+              className="sticky-note-preview"
+              onMouseDown={handleNoteClickToFront}
+              onClick={(e) => {
+                // 阻止冒泡，让全局失焦检测处理编辑模式退出
+                e.stopPropagation();
+              }}
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // 移动模式下禁用编辑
+                if (isMoveModeActive) return;
+                // 如果不在编辑模式，双击开始编辑
+                if (!isEditing && !isTitleEditing) {
+                  startEditing();
                 }
-              >
-                {displayContent.trim() ? (
-                  <VirtualizedMarkdown
-                    content={displayContent}
-                    containerRef={previewRef}
-                    enableVirtualization={true}
-                    virtualizationThreshold={8000}
-                    isStreaming={isStreaming}
-                    streamingCursor={
-                      isStreaming && showCursor ? (
-                        <span className="streaming-cursor">|</span>
-                      ) : undefined
-                    }
-                  />
-                ) : (
-                  <div className="empty-note">
-                    {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
-                  </div>
-                )}
-              </div>
-            </>
+              }}
+              style={{
+                backgroundColor: "transparent",
+                cursor: isEditing || isTitleEditing ? "default" : "default",
+              }}
+              title={
+                isEditing || isTitleEditing
+                  ? "点击便签外部区域退出编辑模式"
+                  : "双击开始编辑内容"
+              }
+            >
+              {displayContent.trim() ? (
+                <VirtualizedMarkdown
+                  content={displayContent}
+                  containerRef={previewRef}
+                  enableVirtualization={true}
+                  virtualizationThreshold={8000}
+                  isStreaming={isStreaming}
+                  streamingCursor={
+                    isStreaming && showCursor ? (
+                      <span className="streaming-cursor">|</span>
+                    ) : undefined
+                  }
+                />
+              ) : (
+                <div className="empty-note">
+                  {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
