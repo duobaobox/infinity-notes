@@ -1,6 +1,7 @@
 import {
   BarChartOutlined,
   DeleteOutlined,
+  DownOutlined,
   HistoryOutlined,
   LinkOutlined,
   LoadingOutlined,
@@ -200,6 +201,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 智能滚动状态管理
   const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollTopRef = useRef<number>(0);
 
@@ -215,6 +217,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       const lastScrollTop = lastScrollTopRef.current;
 
       // 更新显示状态
+      setShowScrollToBottom(!isAtBottom && isStreaming);
 
       // 关键逻辑：只有当用户主动向上滚动时才标记为手动滚动
       // 向下滚动或自动滚动不应该触发暂停
@@ -259,6 +262,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   }, []);
 
   // 手动滚动到底部（按钮触发）
+  const handleScrollToBottom = useCallback(() => {
+    setIsUserScrolling(false);
+    setShowScrollToBottom(false);
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    scrollToBottom();
+    console.log("🎯 手动点击回到底部");
+  }, [scrollToBottom]);
+
   // 处理流式内容更新 - 智能滚动版
   useEffect(() => {
     if (isStreaming) {
@@ -1928,8 +1942,33 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   </div>
                 )}
               </div>
-            </>
 
+              {/* 智能滚动控制按钮 */}
+              {showScrollToBottom && (
+                <div className="scroll-control-container">
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<DownOutlined />}
+                    className="scroll-to-bottom-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleScrollToBottom();
+                    }}
+                    title="回到底部查看最新内容"
+                  >
+                    回到底部
+                  </Button>
+
+                  <div className="scroll-status-indicator">
+                    <div className="scroll-status-dot" />
+                    <span className="scroll-status-text">
+                      {isUserScrolling ? "已暂停自动滚动" : "正在生成内容..."}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
