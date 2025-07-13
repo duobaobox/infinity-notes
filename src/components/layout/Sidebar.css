@@ -1,0 +1,143 @@
+/* 侧边栏半透明磨砂效果样式 */
+
+/*
+ * 跨平台兼容的半透明磨砂效果实现
+ * - 使用 backdrop-filter 实现现代浏览器的磨砂效果
+ * - 为不支持的浏览器提供渐变降级方案
+ * - 最小性能开销，GPU 硬件加速
+ */
+
+/* CSS 变量定义 - 便于维护和主题切换 */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(224, 224, 224, 0.6);
+  --glass-blur: blur(12px) saturate(180%);
+  --glass-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.2),
+    2px 0 8px rgba(0, 0, 0, 0.08);
+  --glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 250, 0.95) 100%
+  );
+}
+
+.sidebar {
+  /* 基础布局 */
+  position: fixed;
+  top: 0;
+  width: 220px;
+  height: 100vh;
+  z-index: 1000;
+  overflow: hidden;
+  transition: left 0.3s ease;
+
+  /* 磨砂效果 */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* 浏览器降级方案 - 合并重复的 @supports 查询 */
+@supports not (backdrop-filter: blur(12px)) {
+  .sidebar {
+    background: var(--glass-fallback);
+  }
+}
+
+/* 侧边栏触发按钮样式 */
+.sidebar-toggle {
+  position: fixed;
+  top: 16px;
+  z-index: 1001;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+
+  /* 继承侧边栏的磨砂效果 */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+/* 触发按钮悬停效果 */
+.sidebar-toggle:hover {
+  background: rgba(248, 249, 250, 0.9);
+  border-color: rgba(22, 119, 255, 0.8);
+  backdrop-filter: blur(16px) saturate(200%);
+  -webkit-backdrop-filter: blur(16px) saturate(200%);
+}
+
+/* 便签列表项磨砂效果 - 轻量级实现 */
+.note-list-item {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.note-list-item:hover {
+  background: rgba(24, 144, 255, 0.08);
+  border-color: rgba(24, 144, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 浏览器降级方案 - 统一处理不支持 backdrop-filter 的情况 */
+@supports not (backdrop-filter: blur(4px)) {
+  .sidebar,
+  .sidebar-toggle {
+    background: var(--glass-fallback);
+  }
+
+  .note-list-item {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .note-list-item:hover {
+    background: rgba(24, 144, 255, 0.12);
+  }
+}
+
+/* 深色模式适配 - 使用 CSS 变量重新定义 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-bg: rgba(30, 30, 30, 0.85);
+    --glass-border: rgba(60, 60, 60, 0.6);
+    --glass-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1),
+      2px 0 8px rgba(0, 0, 0, 0.2);
+    --glass-fallback: linear-gradient(
+      135deg,
+      rgba(30, 30, 30, 0.95) 0%,
+      rgba(40, 40, 40, 0.95) 100%
+    );
+  }
+
+  .note-list-item {
+    background: rgba(40, 40, 40, 0.6);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .note-list-item:hover {
+    background: rgba(24, 144, 255, 0.15);
+    border-color: rgba(24, 144, 255, 0.4);
+  }
+}
+
+/* 性能优化 - 减少动画对低性能设备的影响 */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-toggle,
+  .note-list-item {
+    transition: none !important;
+  }
+}

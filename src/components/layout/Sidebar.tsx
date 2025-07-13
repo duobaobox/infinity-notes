@@ -21,6 +21,7 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { Canvas } from "../../database";
 import { connectionLineManager } from "../../utils/connectionLineManager";
+import "./Sidebar.css"; // 导入半透明磨砂效果样式
 
 // 导入全局状态管理
 import {
@@ -387,32 +388,10 @@ const Sidebar: React.FC = () => {
         onClick={toggleSidebar}
         aria-label={collapsed ? "打开侧边栏" : "关闭侧边栏"}
         style={{
-          position: "fixed",
-          top: "16px",
-          left: collapsed ? "0" : "220px", // 紧贴侧边栏边缘
-          zIndex: 1001,
-          width: "32px",
-          height: "32px",
-          background: "#ffffff",
-          borderRadius: collapsed ? "0 8px 8px 0" : "0 8px 8px 0", // 左侧始终无圆角，与侧边栏或屏幕边缘贴合
-          border: collapsed ? "1px solid #e0e0e0" : "1px solid #e0e0e0",
-          borderLeft: "none", // 始终无左边框，与侧边栏或屏幕边缘完美融合
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
+          left: collapsed ? "0" : "220px", // 只保留动态位置控制
           boxShadow: collapsed
             ? "2px 0 8px rgba(0, 0, 0, 0.08)"
-            : "2px 0 4px rgba(0, 0, 0, 0.04)", // 展开时保持轻微阴影增加层次感
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#f8f9fa";
-          e.currentTarget.style.borderColor = "#1677ff";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "#ffffff";
-          e.currentTarget.style.borderColor = "#e0e0e0";
+            : "2px 0 4px rgba(0, 0, 0, 0.04)", // 保留动态阴影效果
         }}
       >
         <MenuOutlined
@@ -423,21 +402,12 @@ const Sidebar: React.FC = () => {
           }}
         />
       </div>
-      {/* 悬浮侧边栏 */}
+      {/* 悬浮侧边栏 - 半透明磨砂效果 */}
       <div
         className="sidebar"
         data-sidebar="true"
         style={{
-          position: "fixed",
-          top: 0,
-          left: collapsed ? "-220px" : "0",
-          width: "220px",
-          height: "100vh",
-          background: "#ffffff",
-          borderRight: "1px solid #e0e0e0",
-          zIndex: 1000,
-          transition: "left 0.3s ease",
-          overflow: "hidden",
+          left: collapsed ? "-220px" : "0", // 只保留动态位置控制
         }}
         ref={sidebarRef as React.RefObject<HTMLDivElement>}
       >
@@ -821,28 +791,14 @@ const Sidebar: React.FC = () => {
                     height: number;
                   }) => (
                     <List.Item
+                      className="note-list-item"
                       onClick={() => handleNoteClick(note)}
                       style={{
                         padding: "6px 12px",
                         cursor: "pointer",
-                        backgroundColor: "rgba(255, 255, 255, 0.9)", // Slightly transparent items
                         marginBottom: "8px",
                         borderRadius: "8px",
-                        border: "1px solid rgba(0, 0, 0, 0.08)",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.03)", // Subtle shadow for notes
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(24, 144, 255, 0.06)";
-                        e.currentTarget.style.borderColor =
-                          "rgba(24, 144, 255, 0.2)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.9)";
-                        e.currentTarget.style.borderColor =
-                          "rgba(0, 0, 0, 0.08)";
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)", // 保留轻微阴影
                       }}
                     >
                       <div
