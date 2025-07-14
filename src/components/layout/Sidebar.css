@@ -22,7 +22,7 @@
   );
 
   /* 便签磨砂效果变量 */
-  --note-glass-bg: rgba(255, 255, 255, 0.15);
+  --note-glass-bg: rgba(255, 255, 255, 0.35);
   --note-glass-border: rgba(0, 0, 0, 0.08);
   --note-glass-blur: blur(8px) saturate(150%);
   --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
@@ -31,6 +31,18 @@
     135deg,
     rgba(255, 255, 255, 0.7) 0%,
     rgba(248, 249, 250, 0.7) 100%
+  );
+
+  /* 工具栏磨砂效果变量 */
+  --toolbar-glass-bg: rgba(255, 255, 255, 0.45);
+  --toolbar-glass-border: rgba(0, 0, 0, 0.06);
+  --toolbar-glass-blur: blur(12px) saturate(180%);
+  --toolbar-glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+  --toolbar-glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 250, 0.95) 100%
   );
 }
 
@@ -136,7 +148,7 @@
     );
 
     /* 便签深色模式 */
-    --note-glass-bg: rgba(40, 40, 40, 0.15);
+    --note-glass-bg: rgba(40, 40, 40, 0.35);
     --note-glass-border: rgba(255, 255, 255, 0.1);
     --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
       0 4px 20px rgba(0, 0, 0, 0.2);
@@ -144,6 +156,17 @@
       135deg,
       rgba(40, 40, 40, 0.7) 0%,
       rgba(50, 50, 50, 0.7) 100%
+    );
+
+    /* 工具栏深色模式 */
+    --toolbar-glass-bg: rgba(30, 30, 30, 0.85);
+    --toolbar-glass-border: rgba(255, 255, 255, 0.1);
+    --toolbar-glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
+      0 1px 4px rgba(0, 0, 0, 0.2);
+    --toolbar-glass-fallback: linear-gradient(
+      135deg,
+      rgba(30, 30, 30, 0.95) 0%,
+      rgba(40, 40, 40, 0.95) 100%
     );
   }
 

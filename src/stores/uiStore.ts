@@ -516,19 +516,27 @@ export const useUIStore = create<UIState & UIActions>()(
       setSidebarCollapsed: (collapsed) => {
         set({ sidebarCollapsed: collapsed });
 
-        // 自动保存UI布局设置
+        // 使用防抖延迟保存，避免频繁的数据库操作造成卡顿
         if (typeof window !== "undefined") {
-          const currentState = get();
-          const layoutSettings = {
-            sidebarCollapsed: collapsed,
-            sidebarVisible: currentState.sidebarVisible,
-            toolbarVisible: currentState.toolbarVisible,
-          };
-          IndexedDBUISettingsStorage.saveUILayoutSettings(layoutSettings).catch(
-            (error) => {
+          // 清除之前的定时器
+          if ((window as any).__sidebarSaveTimeout) {
+            clearTimeout((window as any).__sidebarSaveTimeout);
+          }
+
+          // 设置新的防抖定时器
+          (window as any).__sidebarSaveTimeout = setTimeout(() => {
+            const currentState = get();
+            const layoutSettings = {
+              sidebarCollapsed: collapsed,
+              sidebarVisible: currentState.sidebarVisible,
+              toolbarVisible: currentState.toolbarVisible,
+            };
+            IndexedDBUISettingsStorage.saveUILayoutSettings(
+              layoutSettings
+            ).catch((error) => {
               console.error("保存UI布局设置失败:", error);
-            }
-          );
+            });
+          }, 100); // 100ms防抖，减少频繁操作
         }
       },
 

@@ -1,7 +1,7 @@
 /* 便签磨砂效果CSS变量定义 */
 :root {
   /* 便签磨砂效果变量 */
-  --note-glass-bg: rgba(255, 255, 255, 0.15);
+  --note-glass-bg: rgba(255, 255, 255, 0.35);
   --note-glass-border: rgba(0, 0, 0, 0.08);
   --note-glass-blur: blur(8px) saturate(150%);
   --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
@@ -16,7 +16,7 @@
 /* 深色模式下的便签磨砂效果 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --note-glass-bg: rgba(40, 40, 40, 0.15);
+    --note-glass-bg: rgba(40, 40, 40, 0.35);
     --note-glass-border: rgba(255, 255, 255, 0.1);
     --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
       0 4px 20px rgba(0, 0, 0, 0.2);
@@ -59,9 +59,8 @@
   will-change: auto;
   backface-visibility: hidden;
 
-  /* 平滑过渡效果 */
-  transition: backdrop-filter 0.2s ease, transform 0.2s ease,
-    box-shadow 0.2s ease;
+  /* 平滑过渡效果 - 只对视觉效果应用过渡，不影响拖拽性能 */
+  transition: backdrop-filter 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* 浏览器降级方案 - 不支持 backdrop-filter 的情况 */
@@ -348,7 +347,13 @@
   cursor: move;
   z-index: 1000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.1); /* 简化阴影效果 */
-  /* 移除缩放动画 */
+  /* 拖拽时禁用所有过渡效果，确保流畅性能 */
+  transition: none !important;
+}
+
+/* 缩放状态 - 禁用过渡效果避免顿挫 */
+.sticky-note.resizing {
+  transition: none !important;
 }
 
 .sticky-note.editing {

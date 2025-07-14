@@ -1,3 +1,33 @@
+/* 工具栏磨砂效果CSS变量定义 */
+:root {
+  /* 工具栏磨砂效果变量 */
+  --toolbar-glass-bg: rgba(255, 255, 255, 0.45);
+  --toolbar-glass-border: rgba(0, 0, 0, 0.06);
+  --toolbar-glass-blur: blur(12px) saturate(180%);
+  --toolbar-glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+  --toolbar-glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 250, 0.95) 100%
+  );
+}
+
+/* 深色模式下的工具栏磨砂效果 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --toolbar-glass-bg: rgba(30, 30, 30, 0.85);
+    --toolbar-glass-border: rgba(255, 255, 255, 0.1);
+    --toolbar-glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
+      0 1px 4px rgba(0, 0, 0, 0.2);
+    --toolbar-glass-fallback: linear-gradient(
+      135deg,
+      rgba(30, 30, 30, 0.95) 0%,
+      rgba(40, 40, 40, 0.95) 100%
+    );
+  }
+}
+
 .infinite-canvas-container {
   position: relative;
   width: 100vw;
@@ -56,10 +86,15 @@
   transform: translateY(-50%); /* 精确垂直居中 */
   z-index: 100;
   padding: 8px 6px 16px 6px; /* 减少顶部内边距到8px，底部保持16px */
-  background: rgba(255, 255, 255, 0.95);
+
+  /* 半透明磨砂效果 - 使用CSS变量 */
+  background: var(--toolbar-glass-bg);
+  backdrop-filter: var(--toolbar-glass-blur);
+  -webkit-backdrop-filter: var(--toolbar-glass-blur);
+  border: 1px solid var(--toolbar-glass-border);
+  box-shadow: var(--toolbar-glass-shadow);
+
   border-radius: 32px; /* 保持药丸形状 */
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(8px);
   display: flex; /* 用于内部元素对齐 */
   align-items: center; /* 水平对齐内部元素 */
   flex-direction: column; /* 修改为垂直排列 */
@@ -67,6 +102,13 @@
   /* 性能优化 */
   will-change: transform;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 工具栏浏览器降级方案 */
+@supports not (backdrop-filter: blur(12px)) {
+  .canvas-toolbar {
+    background: var(--toolbar-glass-fallback);
+  }
 }
 
 /* 新增：小提示文本样式 */
