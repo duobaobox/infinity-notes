@@ -1,6 +1,9 @@
 import { Button, Card, Space, Typography } from "antd";
 import React, { useState } from "react";
-import VirtualizedMarkdown from "../components/notes/VirtualizedMarkdown";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 const { Title } = Typography;
 
@@ -105,11 +108,12 @@ const MarkdownListTest: React.FC = () => {
               backgroundColor: "#fafafa",
             }}
           >
-            <VirtualizedMarkdown
-              content={testContent}
-              containerRef={{ current: null }}
-              enableVirtualization={false}
-            />
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              rehypePlugins={[rehypeRaw]}
+            >
+              {testContent}
+            </ReactMarkdown>
           </div>
         </Card>
       )}

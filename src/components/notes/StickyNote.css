@@ -220,8 +220,6 @@
 }
 
 /* 针对表情符号的字体大小优化 - 使用更广泛的选择器 */
-.sticky-note .sticky-note-preview,
-.sticky-note .sticky-note-textarea,
 .sticky-note .sticky-note-title,
 .sticky-note .sticky-note-title-input {
   /* 为包含表情符号的文本提供更好的渲染 */
@@ -878,75 +876,12 @@
   user-select: text; /* 允许选择内容区域的文本 */
 }
 
-.sticky-note-textarea {
-  width: calc(100% + 17px); /* Oversize to hide scrollbar in overflow */
-  flex: 1; /* Use flex to grow like preview mode */
-  border: none;
-  background: transparent;
-  resize: none;
-  outline: none;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
-    sans-serif;
-  font-size: var(
-    --note-content-font-size,
-    14px
-  ); /* 使用CSS变量控制内容字体大小 */
-  line-height: 1.5;
-  color: #374151;
-  box-sizing: border-box;
-  padding-left: 0; /* Ensure no default textarea left padding */
-  /* padding-right: 17px; -- Removed as per user feedback */
-  margin-right: -17px; /* Pull scrollbar area into the overflow hidden area */
-  overflow-y: scroll;
-
-  /* 文本渲染优化 - 确保清晰显示 */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
 /* 基本的文本渲染优化 - 简化版本 */
-.sticky-note-textarea,
-.sticky-note-preview,
 .sticky-note-title,
 .sticky-note-title-input {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-.sticky-note-preview {
-  flex: 1;
-  overflow-y: scroll; /* 始终显示滚动条轨道以占据空间 */
-  cursor: text;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
-    sans-serif;
-  font-size: var(
-    --note-content-font-size,
-    14px
-  ); /* 使用CSS变量控制预览字体大小 */
-  line-height: 1.5;
-  color: #374151;
-  box-sizing: border-box;
-  /* padding-left: 0; -- Redundant, already set or implicitly 0 for div */
-  width: calc(100% + 17px); /* Oversize to hide scrollbar in overflow */
-  padding-left: 0; /* Ensure consistent left padding */
-  /* padding-right: 17px; -- Removed as per user feedback */
-  margin-right: -17px; /* Pull scrollbar area into the overflow hidden area */
-  scroll-behavior: smooth; /* 添加平滑滚动效果 */
-  user-select: text; /* 允许选择预览区域的文本 */
-
-  /* 文本渲染优化 - 确保清晰显示 */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-.sticky-note-preview:hover {
-  background: none;
-  border-radius: 4px;
 }
 
 .empty-note {
@@ -1018,144 +953,10 @@
   /* 4px: 底部线段左端圆头（线条宽度的一半） */
 }
 
-/* Markdown 样式 */
-.sticky-note-preview h1,
-.sticky-note-preview h2,
-.sticky-note-preview h3,
-.sticky-note-preview h4,
-.sticky-note-preview h5,
-.sticky-note-preview h6 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.sticky-note-preview h1 {
-  font-size: var(--note-h1-font-size, 18px);
-}
-.sticky-note-preview h2 {
-  font-size: var(--note-h2-font-size, 16px);
-}
-.sticky-note-preview h3 {
-  font-size: var(--note-h3-font-size, 15px);
-}
-.sticky-note-preview h4 {
-  font-size: var(--note-h4-font-size, 14px);
-}
-.sticky-note-preview h5 {
-  font-size: var(--note-h5-font-size, 13px);
-}
-.sticky-note-preview h6 {
-  font-size: var(--note-h6-font-size, 12px);
-}
-
-.sticky-note-preview p {
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.sticky-note-preview ul,
-.sticky-note-preview ol {
-  margin-top: 0;
-  margin-bottom: 8px;
-  padding-left: 20px;
-}
-
-.sticky-note-preview li {
-  margin-bottom: 2px;
-}
-
-.sticky-note-preview code {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-family: "SF Mono", "Monaco", "Menlo", "Roboto Mono", "Consolas",
-    "Liberation Mono", "Courier New", monospace;
-  font-size: var(--note-code-font-size, 12px);
-}
-
-.sticky-note-preview pre {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 8px;
-  border-radius: 4px;
-  overflow-x: auto;
-  margin: 8px 0;
-}
-
-.sticky-note-preview pre code {
-  background: none;
-  padding: 0;
-}
-
-.sticky-note-preview blockquote {
-  border-left: 3px solid currentColor;
-  margin: 8px 0;
-  padding-left: 12px;
-  color: #6b7280;
-  opacity: 0.8;
-}
-
-.sticky-note-preview table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: var(--note-table-font-size, 12px);
-  margin: 8px 0;
-}
-
-.sticky-note-preview th,
-.sticky-note-preview td {
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  padding: 4px 8px;
-  text-align: left;
-}
-
-.sticky-note-preview th {
-  background: rgba(0, 0, 0, 0.05);
-  font-weight: 600;
-}
-
-.sticky-note-preview a {
-  color: #3b82f6;
-  text-decoration: none;
-}
-
-.sticky-note-preview a:hover {
-  text-decoration: underline;
-}
-
-.sticky-note-preview strong {
-  font-weight: 600;
-}
-
-.sticky-note-preview em {
-  font-style: italic;
-}
-
-.sticky-note-preview del {
-  text-decoration: line-through;
-}
-
-.sticky-note-preview hr {
-  border: none;
-  height: 1px;
-  background: rgba(0, 0, 0, 0.15);
-  margin: 16px 0;
-}
-
 /* 响应式设计 - 在小缩放级别下调整字体 */
 @media (max-width: 768px) {
   .sticky-note {
     font-size: 12px;
-  }
-
-  .sticky-note-preview h1 {
-    font-size: 16px;
-  }
-  .sticky-note-preview h2 {
-    font-size: 14px;
-  }
-  .sticky-note-preview h3 {
-    font-size: 13px;
   }
 }
 

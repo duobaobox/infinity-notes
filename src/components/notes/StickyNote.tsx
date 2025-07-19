@@ -26,7 +26,6 @@ import {
 import SourceNotesModal from "../modals/SourceNotesModal";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
-import VirtualizedMarkdown from "./VirtualizedMarkdown";
 import WysiwygEditor from "./WysiwygEditor";
 import FormatToolbar from "./FormatToolbar";
 
@@ -68,32 +67,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   const [isEditing, setIsEditing] = useState(note.isEditing);
   const [isTitleEditing, setIsTitleEditing] = useState(note.isTitleEditing);
-  const [isComposing, setIsComposing] = useState(false);
   const [isTitleComposing, setIsTitleComposing] = useState(false);
   const [localContent, setLocalContent] = useState(note.content);
   const [localTitle, setLocalTitle] = useState(note.title);
 
-  const [displayContent, setDisplayContent] = useState(note.content);
-  const [showCursor, setShowCursor] = useState(false);
   const [sourceConnectionsVisible, setSourceConnectionsVisible] =
     useState(false);
   const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
 
   // 新编辑器相关状态
-  const [useWysiwygEditor, setUseWysiwygEditor] = useState(true); // 是否使用所见即所得编辑器
   const [showFormatToolbar, setShowFormatToolbar] = useState(false); // 是否显示格式化工具栏
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 }); // 工具栏位置
   const [editorInstance, setEditorInstance] = useState<any>(null); // TipTap编辑器实例
   const [sourceNotesModalVisible, setSourceNotesModalVisible] = useState(false);
 
   // Refs 和定时器
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const contentUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
   const titleUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
 
   // Store hooks
   const {
@@ -206,68 +198,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     };
   }, [note.sourceNoteIds, sourceConnectionsVisible, note.id, allNotes]);
 
-  // 智能滚动状态管理 - 无UI版本
-  const [isUserScrolling, setIsUserScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastScrollTopRef = useRef<number>(0);
-
-  // 检测用户是否主动向上滚动
-  const detectUserScrollUp = useCallback(
-    (currentScrollTop: number) => {
-      const container = previewRef.current;
-      if (!container) return false;
-
-      const { scrollHeight, clientHeight } = container;
-      const isAtBottom =
-        Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10;
-      const lastScrollTop = lastScrollTopRef.current;
-
-      // 关键逻辑：只有当用户主动向上滚动时才标记为手动滚动
-      // 向下滚动或自动滚动不应该触发暂停
-      if (currentScrollTop < lastScrollTop && !isAtBottom) {
-        // 用户向上滚动且不在底部，标记为手动滚动
-        setIsUserScrolling(true);
-
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
-        // 3秒后重新启用自动滚动
-        scrollTimeoutRef.current = setTimeout(() => {
-          setIsUserScrolling(false);
-        }, 3000);
-
-        console.log("🔄 检测到用户向上滚动，暂停自动滚动");
-      } else if (isAtBottom && isUserScrolling) {
-        // 用户滚动到底部，立即重新启用自动滚动
-        setIsUserScrolling(false);
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-          scrollTimeoutRef.current = null;
-        }
-        console.log("✅ 用户回到底部，恢复自动滚动");
-      }
-
-      lastScrollTopRef.current = currentScrollTop;
-    },
-    [isStreaming, isUserScrolling]
-  );
-
-  // 处理流式内容更新 - 智能滚动版
-  useEffect(() => {
-    if (isStreaming) {
-      setDisplayContent(streamingContent);
-      setShowCursor(true);
-      // 智能滚动：只有在用户没有主动向上滚动时才自动滚动到底部
-      if (previewRef.current && !isUserScrolling) {
-        previewRef.current.scrollTop = previewRef.current.scrollHeight;
-      }
-    } else {
-      setDisplayContent(note.content);
-      setShowCursor(false);
-    }
-  }, [isStreaming, streamingContent, note.content, isUserScrolling]);
-
   // 处理流式完成回调（分离逻辑避免循环依赖）
   useEffect(() => {
     if (!isStreaming && streamingContent && streamingContent !== note.content) {
@@ -283,37 +213,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     onUpdate,
     onStreamingComplete,
   ]);
-
-  // 光标闪烁效果
-  useEffect(() => {
-    if (!isStreaming) return;
-
-    const interval = setInterval(() => {
-      setShowCursor((prev) => !prev);
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [isStreaming]);
-
-  // 滚动事件监听器 - 只检测用户主动向上滚动
-  useEffect(() => {
-    const container = previewRef.current;
-    if (!container || !isStreaming) return;
-
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLDivElement;
-      detectUserScrollUp(target.scrollTop);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [isStreaming, detectUserScrollUp]);
 
   // 开始编辑内容
   const startEditing = useCallback(() => {
@@ -350,17 +249,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         }
       }
     }, 50);
-  }, [note.content, isStreaming, isMoveModeActive, useWysiwygEditor]);
+  }, [note.content, isStreaming, isMoveModeActive]);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
     setIsEditing(false);
     setShowFormatToolbar(false); // 隐藏格式化工具栏
-    // 清理防抖计时器
-    if (contentUpdateTimerRef.current) {
-      clearTimeout(contentUpdateTimerRef.current);
-      contentUpdateTimerRef.current = null;
-    }
     // 最后一次保存确保数据同步
     onUpdate(note.id, { content: localContent, updatedAt: new Date() });
   }, [note.id, onUpdate, localContent]);
@@ -385,20 +279,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     onUpdate(note.id, { title: localTitle, updatedAt: new Date() });
   }, [note.id, onUpdate, localTitle]);
 
-  // 防抖更新内容到数据库
-  const debouncedUpdateContent = useCallback(
-    (newContent: string) => {
-      if (contentUpdateTimerRef.current) {
-        clearTimeout(contentUpdateTimerRef.current);
-      }
-      contentUpdateTimerRef.current = setTimeout(() => {
-        onUpdate(note.id, { content: newContent });
-        contentUpdateTimerRef.current = null;
-      }, 300); // 300ms 防抖
-    },
-    [note.id, onUpdate]
-  );
-
   // 防抖更新标题到数据库
   const debouncedUpdateTitle = useCallback(
     (newTitle: string) => {
@@ -411,21 +291,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }, 300); // 300ms 防抖
     },
     [note.id, onUpdate]
-  );
-
-  // 内容合成事件处理
-  const handleContentCompositionStart = useCallback(() => {
-    setIsComposing(true);
-  }, []);
-
-  const handleContentCompositionEnd = useCallback(
-    (e: React.CompositionEvent<HTMLTextAreaElement>) => {
-      setIsComposing(false);
-      const newContent = e.currentTarget.value;
-      setLocalContent(newContent);
-      debouncedUpdateContent(newContent);
-    },
-    [debouncedUpdateContent]
   );
 
   // 标题合成事件处理
@@ -441,56 +306,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       debouncedUpdateTitle(newTitle);
     },
     [debouncedUpdateTitle]
-  );
-
-  // 确保光标在可视区域内的辅助函数
-  const scrollToCursor = useCallback(() => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const cursorPos = textarea.selectionStart;
-
-    // 获取光标所在行的位置
-    const textBeforeCursor = textarea.value.substring(0, cursorPos);
-    const lines = textBeforeCursor.split("\n");
-    const currentLineIndex = lines.length - 1;
-
-    // 计算光标所在行的大致位置
-    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 21; // 默认行高
-    const cursorTop = currentLineIndex * lineHeight;
-
-    // 获取textarea的滚动信息
-    const { scrollTop, clientHeight } = textarea;
-    const scrollBottom = scrollTop + clientHeight;
-
-    // 检查光标是否在可视区域内
-    const padding = lineHeight; // 给一些缓冲空间
-
-    if (cursorTop < scrollTop + padding) {
-      // 光标在可视区域上方，向上滚动
-      textarea.scrollTop = Math.max(0, cursorTop - padding);
-    } else if (cursorTop + lineHeight > scrollBottom - padding) {
-      // 光标在可视区域下方，向下滚动
-      textarea.scrollTop = cursorTop + lineHeight - clientHeight + padding;
-    }
-  }, []);
-
-  // 内容变化处理
-  const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newContent = e.target.value;
-      setLocalContent(newContent);
-
-      if (!isComposing) {
-        debouncedUpdateContent(newContent);
-      }
-
-      // 确保光标在可视区域内
-      setTimeout(() => {
-        scrollToCursor();
-      }, 0);
-    },
-    [isComposing, debouncedUpdateContent, scrollToCursor]
   );
 
   // 标题变化处理
@@ -511,9 +326,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleWysiwygContentChange = useCallback(
     (newContent: string) => {
       setLocalContent(newContent);
-      debouncedUpdateContent(newContent);
+      // 直接更新，WysiwygEditor内部已有防抖机制
+      onUpdate(note.id, { content: newContent });
     },
-    [debouncedUpdateContent]
+    [note.id, onUpdate]
   );
 
   // 处理 WysiwygEditor 失焦
@@ -977,10 +793,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 同步外部状态到本地状态
   useEffect(() => {
-    if (!isEditing && !isComposing) {
+    if (!isEditing) {
       setLocalContent(note.content);
     }
-  }, [note.content, isEditing, isComposing]);
+  }, [note.content, isEditing]);
 
   useEffect(() => {
     if (!isTitleEditing && !isTitleComposing) {
@@ -1012,25 +828,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 清理防抖计时器
   useEffect(() => {
     return () => {
-      if (contentUpdateTimerRef.current) {
-        clearTimeout(contentUpdateTimerRef.current);
-      }
       if (titleUpdateTimerRef.current) {
         clearTimeout(titleUpdateTimerRef.current);
       }
     };
   }, []);
-
-  // 自动聚焦
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(
-        localContent.length,
-        localContent.length
-      );
-    }
-  }, [isEditing]);
 
   useEffect(() => {
     if (isTitleEditing && titleInputRef.current) {
@@ -1041,416 +843,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       );
     }
   }, [isTitleEditing]);
-
-  // 智能Markdown辅助函数
-  const insertTextAtCursor = useCallback(
-    (text: string, offsetStart = 0, offsetEnd = 0) => {
-      if (!textareaRef.current) return;
-
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const newContent =
-        localContent.substring(0, start) + text + localContent.substring(end);
-
-      setLocalContent(newContent);
-      debouncedUpdateContent(newContent);
-
-      // 设置光标位置并确保可见
-      setTimeout(() => {
-        textarea.setSelectionRange(start + offsetStart, start + offsetEnd);
-        scrollToCursor();
-      }, 0);
-    },
-    [localContent, debouncedUpdateContent, scrollToCursor]
-  );
-
-  // 获取当前行内容和位置
-  const getCurrentLineInfo = useCallback(() => {
-    if (!textareaRef.current) return null;
-
-    const textarea = textareaRef.current;
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = localContent.substring(0, cursorPos);
-    const textAfterCursor = localContent.substring(cursorPos);
-
-    const lineStart = textBeforeCursor.lastIndexOf("\n") + 1;
-    const lineEnd = textAfterCursor.indexOf("\n");
-    const lineEndPos =
-      lineEnd === -1 ? localContent.length : cursorPos + lineEnd;
-
-    const currentLine = localContent.substring(lineStart, lineEndPos);
-    const cursorInLine = cursorPos - lineStart;
-
-    return {
-      line: currentLine,
-      lineStart,
-      lineEnd: lineEndPos,
-      cursorPos,
-      cursorInLine,
-      textBeforeCursor,
-      textAfterCursor,
-    };
-  }, [localContent]);
-
-  // 多级编号工具函数
-  const multilevelNumbering = useMemo(() => {
-    const ROMAN_NUMERALS = [
-      "",
-      "Ⅰ",
-      "Ⅱ",
-      "Ⅲ",
-      "Ⅳ",
-      "Ⅴ",
-      "Ⅵ",
-      "Ⅶ",
-      "Ⅷ",
-      "Ⅸ",
-      "Ⅹ",
-    ];
-    const ROMAN_MAP = {
-      Ⅰ: 1,
-      Ⅱ: 2,
-      Ⅲ: 3,
-      Ⅳ: 4,
-      Ⅴ: 5,
-      Ⅵ: 6,
-      Ⅶ: 7,
-      Ⅷ: 8,
-      Ⅸ: 9,
-      Ⅹ: 10,
-    };
-
-    return {
-      // 获取缩进级别
-      getLevel: (indent: string) => Math.floor(indent.length / 3),
-
-      // 生成编号格式
-      generateNumber: (number: number, level: number) => {
-        switch (level) {
-          case 0:
-            return `${number}.`;
-          case 1:
-            return `${String.fromCharCode(96 + number)}.`;
-          case 2:
-            return `${
-              ROMAN_NUMERALS[number] ||
-              `Ⅹ${ROMAN_NUMERALS[number - 10] || number - 10}`
-            }.`;
-          default:
-            return `${number}.`;
-        }
-      },
-
-      // 解析编号
-      parseNumber: (marker: string) => {
-        if (marker.match(/^\d+\.$/)) {
-          return parseInt(marker.replace(".", ""));
-        } else if (marker.match(/^[a-z]+\.$/)) {
-          return marker.replace(".", "").charCodeAt(0) - 96;
-        } else if (marker.match(/^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.$/)) {
-          const roman = marker.replace(".", "");
-          return ROMAN_MAP[roman as keyof typeof ROMAN_MAP] || 1;
-        }
-        return 1;
-      },
-
-      // 检测列表项
-      detectListItem: (line: string) => {
-        return line.match(/^(\s*)([0-9]+\.|[a-z]+\.|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\.)\s(.*)$/);
-      },
-    };
-  }, []);
-
-  // 查找有序列表的下一个编号（支持多级编号格式）
-  const findNextOrderedNumber = useCallback(
-    (currentLineStart: number, currentIndent: string) => {
-      const lines = localContent.split("\n");
-      const currentLineIndex =
-        localContent.substring(0, currentLineStart).split("\n").length - 1;
-      const currentLevel = multilevelNumbering.getLevel(currentIndent);
-
-      // 向上查找同级别的最后一个编号
-      let lastSameLevelNumber = 0;
-      let foundAnyAtThisLevel = false;
-
-      for (let i = currentLineIndex - 1; i >= 0; i--) {
-        const line = lines[i];
-        const match = multilevelNumbering.detectListItem(line);
-        if (match) {
-          const [, indent, marker] = match;
-          if (indent.length === currentIndent.length) {
-            // 找到同级别的列表项，解析编号
-            lastSameLevelNumber = multilevelNumbering.parseNumber(marker);
-            foundAnyAtThisLevel = true;
-            break;
-          } else if (indent.length < currentIndent.length) {
-            // 遇到更高级别的列表项，停止查找
-            break;
-          }
-          // 如果是更深层级，继续查找
-        } else if (
-          line.trim() !== "" &&
-          !line.match(/^\s*[-*+]\s/) &&
-          !multilevelNumbering.detectListItem(line)
-        ) {
-          // 遇到非列表内容，停止查找
-          break;
-        }
-      }
-
-      // 生成下一个编号
-      const nextNumber = foundAnyAtThisLevel ? lastSameLevelNumber + 1 : 1;
-      return multilevelNumbering.generateNumber(nextNumber, currentLevel);
-    },
-    [localContent, multilevelNumbering]
-  );
-
-  // 智能列表处理
-  const handleSmartList = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      const lineInfo = getCurrentLineInfo();
-      if (!lineInfo) return false;
-
-      const { line, lineStart } = lineInfo;
-
-      // 检测无序列表 (- 或 * 或 +)
-      const unorderedMatch = line.match(/^(\s*)([-*+])\s(.*)$/);
-      if (unorderedMatch) {
-        const [, indent, marker, content] = unorderedMatch;
-        if (content.trim() === "") {
-          // 空列表项，删除当前行的列表标记
-          e.preventDefault();
-          const newContent =
-            localContent.substring(0, lineStart) +
-            indent +
-            localContent.substring(lineStart + line.length);
-          setLocalContent(newContent);
-          debouncedUpdateContent(newContent);
-          setTimeout(() => {
-            textareaRef.current?.setSelectionRange(
-              lineStart + indent.length,
-              lineStart + indent.length
-            );
-          }, 0);
-        } else {
-          // 创建新的列表项
-          e.preventDefault();
-          const newListItem = `\n${indent}${marker} `;
-          insertTextAtCursor(
-            newListItem,
-            newListItem.length,
-            newListItem.length
-          );
-        }
-        return true;
-      }
-
-      // 检测有序列表 (支持多种格式：1. a. Ⅰ. 等)
-      const orderedMatch = multilevelNumbering.detectListItem(line);
-      if (orderedMatch) {
-        const [, indent, marker, content] = orderedMatch;
-        if (content.trim() === "") {
-          // 空列表项，删除当前行的列表标记
-          e.preventDefault();
-          const newContent =
-            localContent.substring(0, lineStart) +
-            indent +
-            localContent.substring(lineStart + line.length);
-          setLocalContent(newContent);
-          debouncedUpdateContent(newContent);
-          setTimeout(() => {
-            textareaRef.current?.setSelectionRange(
-              lineStart + indent.length,
-              lineStart + indent.length
-            );
-          }, 0);
-        } else {
-          // 创建新的有序列表项 - 智能多级编号
-          e.preventDefault();
-
-          // 获取当前级别并生成下一个编号
-          const currentLevel = multilevelNumbering.getLevel(indent);
-          const currentNumber = multilevelNumbering.parseNumber(marker);
-          const nextNumber = currentNumber + 1;
-          const nextMarker = multilevelNumbering.generateNumber(
-            nextNumber,
-            currentLevel
-          );
-
-          const newListItem = `\n${indent}${nextMarker} `;
-          insertTextAtCursor(
-            newListItem,
-            newListItem.length,
-            newListItem.length
-          );
-        }
-        return true;
-      }
-
-      return false;
-    },
-    [
-      getCurrentLineInfo,
-      insertTextAtCursor,
-      localContent,
-      debouncedUpdateContent,
-      multilevelNumbering,
-    ]
-  );
-
-  // 智能缩进处理
-  const handleSmartIndent = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>, isShift = false) => {
-      const lineInfo = getCurrentLineInfo();
-      if (!lineInfo) return false;
-
-      const { line, lineStart } = lineInfo;
-
-      // 检测无序列表项
-      const unorderedMatch = line.match(/^(\s*)([-*+])\s(.*)$/);
-      if (unorderedMatch) {
-        e.preventDefault();
-        const [, currentIndent, marker, content] = unorderedMatch;
-
-        // 使用2个空格作为无序列表的标准缩进单位
-        const indentChange = isShift ? -2 : 2;
-        const newIndentLevel = Math.max(0, currentIndent.length + indentChange);
-        const newIndent = " ".repeat(newIndentLevel);
-
-        const newLine = `${newIndent}${marker} ${content}`;
-        const newContent =
-          localContent.substring(0, lineStart) +
-          newLine +
-          localContent.substring(lineStart + line.length);
-
-        setLocalContent(newContent);
-        debouncedUpdateContent(newContent);
-
-        // 保持光标在合适位置
-        const newCursorPos = lineStart + newIndent.length + marker.length + 1;
-        setTimeout(() => {
-          textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
-        }, 0);
-
-        return true;
-      }
-
-      // 检测有序列表项（支持多种格式）
-      const orderedMatch = multilevelNumbering.detectListItem(line);
-      if (orderedMatch) {
-        e.preventDefault();
-        const [, currentIndent, , content] = orderedMatch;
-
-        // 使用3个空格作为标准缩进单位（符合Markdown规范）
-        const indentChange = isShift ? -3 : 3;
-        const newIndentLevel = Math.max(0, currentIndent.length + indentChange);
-        const newIndent = " ".repeat(newIndentLevel);
-
-        // 为新的缩进级别找到合适的编号（使用多级编号格式）
-        const newMarker = findNextOrderedNumber(lineStart, newIndent);
-        const newLine = `${newIndent}${newMarker} ${content}`;
-        const newContent =
-          localContent.substring(0, lineStart) +
-          newLine +
-          localContent.substring(lineStart + line.length);
-
-        setLocalContent(newContent);
-        debouncedUpdateContent(newContent);
-
-        // 保持光标在合适位置
-        const newCursorPos =
-          lineStart + newIndent.length + newMarker.length + 1;
-        setTimeout(() => {
-          textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
-        }, 0);
-
-        return true;
-      }
-
-      return false;
-    },
-    [
-      getCurrentLineInfo,
-      localContent,
-      debouncedUpdateContent,
-      findNextOrderedNumber,
-      multilevelNumbering,
-    ]
-  );
-
-  // 处理内容编辑键盘事件 - 增强版
-  const handleContentKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Escape") {
-        stopEditing();
-        return;
-      }
-
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        // Ctrl/Cmd + Enter 保存并退出编辑
-        e.preventDefault();
-        stopEditing();
-        return;
-      }
-
-      if (e.key === "Enter") {
-        // 智能列表处理
-        if (handleSmartList(e)) {
-          return;
-        }
-      }
-
-      if (e.key === "Tab") {
-        // 智能缩进处理
-        if (handleSmartIndent(e, e.shiftKey)) {
-          return;
-        }
-
-        // 默认Tab处理（插入制表符）
-        e.preventDefault();
-        const textarea = e.currentTarget;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const newContent =
-          localContent.substring(0, start) + "\t" + localContent.substring(end);
-        setLocalContent(newContent);
-        debouncedUpdateContent(newContent);
-
-        // 设置光标位置到插入的制表符之后
-        setTimeout(() => {
-          textarea.setSelectionRange(start + 1, start + 1);
-          scrollToCursor();
-        }, 0);
-      }
-
-      // 对于其他可能改变光标位置的按键，延迟执行滚动检查
-      if (
-        [
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "Home",
-          "End",
-          "PageUp",
-          "PageDown",
-        ].includes(e.key)
-      ) {
-        setTimeout(() => {
-          scrollToCursor();
-        }, 0);
-      }
-    },
-    [
-      stopEditing,
-      localContent,
-      debouncedUpdateContent,
-      handleSmartList,
-      handleSmartIndent,
-      scrollToCursor,
-    ]
-  );
 
   // 处理标题编辑键盘事件
   const handleTitleKeyDown = useCallback(
@@ -1478,72 +870,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
     },
     [stopTitleEditing, localTitle, debouncedUpdateTitle]
-  );
-
-  // 防止文本框失焦时意外保存空内容
-  const handleContentBlur = useCallback(
-    (e: React.FocusEvent) => {
-      // 检查新的焦点目标
-      const relatedTarget = e.relatedTarget as HTMLElement;
-
-      // 如果焦点转移到当前便签内的其他元素，不退出编辑模式
-      if (relatedTarget && noteRef.current?.contains(relatedTarget)) {
-        // 但是如果转移到标题输入框，允许
-        if (relatedTarget.classList.contains("sticky-note-title-input")) {
-          return;
-        }
-        // 转移到删除按钮等，不退出编辑模式
-        if (
-          relatedTarget.classList.contains("delete-button") ||
-          relatedTarget.closest(".delete-button") ||
-          relatedTarget.closest("[class*='delete-button']") ||
-          relatedTarget.closest(".settings-toolbar")
-        ) {
-          return;
-        }
-      }
-
-      // 所有其他情况（包括点击便签外部、其他便签等）都退出编辑模式
-      stopEditing();
-    },
-    [stopEditing]
-  );
-
-  // 处理文本框点击事件
-  const handleTextareaClick = useCallback(() => {
-    // 点击后确保光标在可视区域内
-    setTimeout(() => {
-      scrollToCursor();
-    }, 0);
-  }, [scrollToCursor]);
-
-  // 标题失焦时停止编辑
-  const handleTitleBlur = useCallback(
-    (e: React.FocusEvent) => {
-      // 检查新的焦点目标
-      const relatedTarget = e.relatedTarget as HTMLElement;
-
-      // 如果焦点转移到当前便签内的其他元素，不退出编辑模式
-      if (relatedTarget && noteRef.current?.contains(relatedTarget)) {
-        // 但是如果转移到内容文本框，允许
-        if (relatedTarget.classList.contains("sticky-note-textarea")) {
-          return;
-        }
-        // 转移到删除按钮等，不退出编辑模式
-        if (
-          relatedTarget.classList.contains("delete-button") ||
-          relatedTarget.closest(".delete-button") ||
-          relatedTarget.closest("[class*='delete-button']") ||
-          relatedTarget.closest(".settings-toolbar")
-        ) {
-          return;
-        }
-      }
-
-      // 所有其他情况（包括点击便签外部、其他便签等）都退出编辑模式
-      stopTitleEditing();
-    },
-    [stopTitleEditing]
   );
 
   // 焦点变化检测 - 更敏感的失焦检测
@@ -1656,11 +982,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
 
       // 清理所有定时器
-      if (contentUpdateTimerRef.current) {
-        clearTimeout(contentUpdateTimerRef.current);
-        contentUpdateTimerRef.current = null;
-      }
-
       if (titleUpdateTimerRef.current) {
         clearTimeout(titleUpdateTimerRef.current);
         titleUpdateTimerRef.current = null;
@@ -1670,12 +991,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
-      }
-
-      // 清理滚动状态定时器
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-        scrollTimeoutRef.current = null;
       }
 
       // 清理所有连接线
@@ -1857,34 +1172,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           zIndex: note.zIndex,
           ...fontStyles, // 应用基于缩放的字体样式
         }}
-        onWheel={(e) => {
-          // 简化的滚轮事件处理逻辑，提升性能
-
-          // 预览模式：直接允许画布缩放
-          if (!isEditing) {
-            return; // 不阻止冒泡，让画布处理缩放
-          }
-
-          // 编辑模式：只有textarea需要检查滚动
-          if (isEditing && textareaRef.current) {
-            const textarea = textareaRef.current;
-            const { scrollTop, scrollHeight, clientHeight } = textarea;
-
-            // 简化判断：只有内容确实可滚动时才进行边界检查
-            if (scrollHeight <= clientHeight) {
-              return; // 内容不需要滚动，允许画布缩放
-            }
-
-            const deltaY = e.deltaY;
-            const canScrollUp = scrollTop > 0;
-            const canScrollDown = scrollTop < scrollHeight - clientHeight;
-
-            // 只有在可以继续滚动的方向上才阻止冒泡
-            if ((deltaY < 0 && canScrollUp) || (deltaY > 0 && canScrollDown)) {
-              e.stopPropagation();
-            }
-          }
-
+        onWheel={() => {
+          // 滚轮事件处理由WysiwygEditor内部处理
           // 其他情况允许画布缩放
         }}
       >
@@ -1933,7 +1222,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   value={localTitle}
                   onChange={handleTitleChange}
                   onKeyDown={handleTitleKeyDown}
-                  onBlur={handleTitleBlur}
                   onCompositionStart={handleTitleCompositionStart}
                   onCompositionEnd={handleTitleCompositionEnd}
                   className="sticky-note-title-input"
@@ -2054,11 +1342,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 isEditing ? "editing" : "viewing"
               }`}
             />
-
-            {/* 流式生成光标 - 只在AI生成时显示 */}
-            {isStreaming && showCursor && (
-              <span className="streaming-cursor">|</span>
-            )}
           </div>
         </div>
 
