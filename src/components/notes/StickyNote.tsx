@@ -1312,7 +1312,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 !isEditing && !isMoveModeActive && !isTitleEditing
                   ? "text"
                   : "default",
-              height: "100%",
               position: "relative",
             }}
             title={

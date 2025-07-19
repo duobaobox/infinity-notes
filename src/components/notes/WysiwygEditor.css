@@ -2,6 +2,8 @@
 .wysiwyg-editor {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
     sans-serif;
@@ -10,9 +12,18 @@
   color: #374151;
 }
 
+/* 修复EditorContent生成的包装div */
+.wysiwyg-editor > div {
+  flex: 1; /* 让EditorContent的包装div也使用flex */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* 允许收缩 */
+  overflow: hidden; /* 确保不溢出 */
+}
+
 .wysiwyg-editor.disabled {
   /* 移除 opacity，保持文本清晰 */
-  pointer-events: none;
+  /* 不设置 pointer-events: none，允许滚动但阻止编辑 */
 }
 
 /* 在便签中的禁用状态不应该有透明度 */
@@ -31,13 +42,16 @@
 
 /* ProseMirror 编辑器核心样式 */
 .wysiwyg-editor .ProseMirror {
+  flex: 1; /* 关键：使用flex占满可用空间 */
   outline: none;
   border: none;
   padding: 0;
   margin: 0;
   width: 100%;
-  height: 100%;
-  overflow-y: auto;
+  height: 0; /* 关键：让flex完全控制高度 */
+  max-height: 100%; /* 确保不超过容器高度 */
+  overflow-y: auto !important; /* 强制显示滚动条 */
+  overflow-x: hidden; /* 隐藏水平滚动条 */
   word-wrap: break-word;
   white-space: pre-wrap;
   -webkit-font-variant-ligatures: none;
