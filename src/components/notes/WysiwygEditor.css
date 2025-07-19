@@ -1,0 +1,315 @@
+/* 所见即所得编辑器样式 */
+.wysiwyg-editor {
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
+    sans-serif;
+  font-size: var(--note-content-font-size, 14px);
+  line-height: 1.5;
+  color: #374151;
+}
+
+.wysiwyg-editor.disabled {
+  /* 移除 opacity，保持文本清晰 */
+  pointer-events: none;
+}
+
+/* 在便签中的禁用状态不应该有透明度 */
+.unified-wysiwyg-editor.viewing .wysiwyg-editor.disabled {
+  opacity: 1 !important;
+}
+
+.wysiwyg-editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ProseMirror 编辑器核心样式 */
+.wysiwyg-editor .ProseMirror {
+  outline: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+/* 空编辑器占位符样式 */
+.wysiwyg-editor .ProseMirror.is-editor-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* 标题样式 */
+.wysiwyg-editor .ProseMirror h1 {
+  font-size: var(--note-h1-font-size, 18px);
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.wysiwyg-editor .ProseMirror h2 {
+  font-size: var(--note-h2-font-size, 16px);
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.wysiwyg-editor .ProseMirror h3 {
+  font-size: var(--note-h3-font-size, 15px);
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.wysiwyg-editor .ProseMirror h4,
+.wysiwyg-editor .ProseMirror h5,
+.wysiwyg-editor .ProseMirror h6 {
+  font-size: var(--note-content-font-size, 14px);
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+/* 段落样式 */
+.wysiwyg-editor .ProseMirror p {
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.wysiwyg-editor .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+/* 文本格式样式 */
+.wysiwyg-editor .ProseMirror strong {
+  font-weight: 600;
+}
+
+.wysiwyg-editor .ProseMirror em {
+  font-style: italic;
+}
+
+.wysiwyg-editor .ProseMirror code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: "SF Mono", "Monaco", "Menlo", "Roboto Mono", "Consolas",
+    "Liberation Mono", "Courier New", monospace;
+  font-size: var(--note-code-font-size, 12px);
+}
+
+/* 代码块样式 */
+.wysiwyg-editor .ProseMirror pre {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-family: "SF Mono", "Monaco", "Menlo", "Roboto Mono", "Consolas",
+    "Liberation Mono", "Courier New", monospace;
+  font-size: var(--note-code-font-size, 12px);
+}
+
+.wysiwyg-editor .ProseMirror pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* 列表样式 */
+.wysiwyg-editor .ProseMirror ul,
+.wysiwyg-editor .ProseMirror ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.wysiwyg-editor .ProseMirror ul ul,
+.wysiwyg-editor .ProseMirror ol ol,
+.wysiwyg-editor .ProseMirror ul ol,
+.wysiwyg-editor .ProseMirror ol ul {
+  margin: 0;
+}
+
+.wysiwyg-editor .ProseMirror li {
+  margin: 2px 0;
+  line-height: 1.5;
+}
+
+.wysiwyg-editor .ProseMirror li p {
+  margin: 0;
+}
+
+/* 任务列表样式 */
+.wysiwyg-editor .ProseMirror .task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.wysiwyg-editor .ProseMirror .task-item {
+  display: flex;
+  align-items: flex-start;
+  margin: 4px 0;
+}
+
+.wysiwyg-editor .ProseMirror .task-item input[type="checkbox"] {
+  margin-right: 8px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.wysiwyg-editor .ProseMirror .task-item[data-checked="true"] {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* 引用样式 */
+.wysiwyg-editor .ProseMirror blockquote {
+  border-left: 3px solid currentColor;
+  margin: 8px 0;
+  padding-left: 12px;
+  color: #6b7280;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* 链接样式 */
+.wysiwyg-editor .ProseMirror .editor-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.wysiwyg-editor .ProseMirror .editor-link:hover {
+  color: #1d4ed8;
+}
+
+/* 图片样式 */
+.wysiwyg-editor .ProseMirror .editor-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+/* 分割线样式 */
+.wysiwyg-editor .ProseMirror hr {
+  border: none;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 16px 0;
+}
+
+/* 表格样式 */
+.wysiwyg-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--note-table-font-size, 12px);
+  margin: 8px 0;
+}
+
+.wysiwyg-editor .ProseMirror table th,
+.wysiwyg-editor .ProseMirror table td {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.wysiwyg-editor .ProseMirror table th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+/* 选中文本样式 */
+.wysiwyg-editor .ProseMirror ::selection {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+/* 焦点样式 */
+.wysiwyg-editor .ProseMirror:focus {
+  outline: none;
+}
+
+/* 拖拽样式 */
+.wysiwyg-editor .ProseMirror .ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .wysiwyg-editor {
+    font-size: 12px;
+  }
+
+  .wysiwyg-editor .ProseMirror h1 {
+    font-size: 16px;
+  }
+
+  .wysiwyg-editor .ProseMirror h2 {
+    font-size: 14px;
+  }
+
+  .wysiwyg-editor .ProseMirror h3 {
+    font-size: 13px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .wysiwyg-editor {
+    color: #e5e7eb;
+  }
+
+  .wysiwyg-editor .ProseMirror.is-editor-empty::before {
+    color: #6b7280;
+  }
+
+  .wysiwyg-editor .ProseMirror code {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .wysiwyg-editor .ProseMirror pre {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .wysiwyg-editor .ProseMirror blockquote {
+    color: #9ca3af;
+  }
+
+  .wysiwyg-editor .ProseMirror .editor-link {
+    color: #60a5fa;
+  }
+
+  .wysiwyg-editor .ProseMirror .editor-link:hover {
+    color: #93c5fd;
+  }
+
+  .wysiwyg-editor .ProseMirror hr {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .wysiwyg-editor .ProseMirror table th,
+  .wysiwyg-editor .ProseMirror table td {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .wysiwyg-editor .ProseMirror table th {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}

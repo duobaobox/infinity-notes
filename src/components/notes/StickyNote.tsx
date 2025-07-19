@@ -27,6 +27,8 @@ import SourceNotesModal from "../modals/SourceNotesModal";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
 import VirtualizedMarkdown from "./VirtualizedMarkdown";
+import WysiwygEditor from "./WysiwygEditor";
+import FormatToolbar from "./FormatToolbar";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -76,6 +78,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [sourceConnectionsVisible, setSourceConnectionsVisible] =
     useState(false);
   const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
+
+  // 新编辑器相关状态
+  const [useWysiwygEditor, setUseWysiwygEditor] = useState(true); // 是否使用所见即所得编辑器
+  const [showFormatToolbar, setShowFormatToolbar] = useState(false); // 是否显示格式化工具栏
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 }); // 工具栏位置
+  const [editorInstance, setEditorInstance] = useState<any>(null); // TipTap编辑器实例
   const [sourceNotesModalVisible, setSourceNotesModalVisible] = useState(false);
 
   // Refs 和定时器
@@ -313,11 +321,41 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     if (isMoveModeActive) return; // 移动模式下不允许编辑
     setIsEditing(true);
     setLocalContent(note.content);
-  }, [note.content, isStreaming, isMoveModeActive]);
+
+    // 显示格式化工具栏
+    setShowFormatToolbar(true);
+    // 动态计算工具栏位置
+    setTimeout(() => {
+      const noteElement = document.querySelector(
+        `[data-note-id="${note.id}"]`
+      ) as HTMLElement;
+      if (noteElement) {
+        const rect = noteElement.getBoundingClientRect();
+        const toolbarHeight = 40;
+        const margin = 8;
+
+        // 检查上方是否有足够空间
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+
+        if (spaceAbove >= toolbarHeight + margin) {
+          // 上方有空间，放在便签上方
+          setToolbarPosition({ x: 0, y: -(toolbarHeight + margin) });
+        } else if (spaceBelow >= toolbarHeight + margin) {
+          // 下方有空间，放在便签下方
+          setToolbarPosition({ x: 0, y: rect.height + margin });
+        } else {
+          // 空间不足，放在便签内部顶部
+          setToolbarPosition({ x: 0, y: 8 });
+        }
+      }
+    }, 50);
+  }, [note.content, isStreaming, isMoveModeActive, useWysiwygEditor]);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
     setIsEditing(false);
+    setShowFormatToolbar(false); // 隐藏格式化工具栏
     // 清理防抖计时器
     if (contentUpdateTimerRef.current) {
       clearTimeout(contentUpdateTimerRef.current);
@@ -467,6 +505,62 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
     },
     [isTitleComposing, debouncedUpdateTitle]
+  );
+
+  // 处理 WysiwygEditor 内容变化
+  const handleWysiwygContentChange = useCallback(
+    (newContent: string) => {
+      setLocalContent(newContent);
+      debouncedUpdateContent(newContent);
+    },
+    [debouncedUpdateContent]
+  );
+
+  // 处理 WysiwygEditor 失焦
+  const handleWysiwygBlur = useCallback(() => {
+    // 延迟检查是否真的失焦（避免工具栏点击导致的误判）
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      const isToolbarFocused = activeElement?.closest(".format-toolbar");
+      const isEditorFocused = activeElement?.closest(".wysiwyg-editor");
+
+      if (!isToolbarFocused && !isEditorFocused) {
+        stopEditing();
+      }
+    }, 100);
+  }, [stopEditing]);
+
+  // 处理 WysiwygEditor 键盘事件
+  const handleWysiwygKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        stopEditing();
+        return true;
+      }
+
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        stopEditing();
+        return true;
+      }
+
+      return false;
+    },
+    [stopEditing]
+  );
+
+  // 处理编辑器实例准备就绪
+  const handleEditorReady = useCallback(
+    (editor: any) => {
+      setEditorInstance(editor);
+
+      // 如果当前处于编辑状态，确保编辑器聚焦
+      if (isEditing) {
+        setTimeout(() => {
+          editor.commands.focus();
+        }, 100);
+      }
+    },
+    [isEditing]
   );
 
   // 删除便签
@@ -1913,69 +2007,71 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         </div>
 
         <div className="sticky-note-content">
-          {isEditing ? (
-            <textarea
-              ref={textareaRef}
-              value={localContent}
-              onChange={handleContentChange}
-              onKeyDown={handleContentKeyDown}
-              onBlur={handleContentBlur}
-              onClick={handleTextareaClick}
-              onCompositionStart={handleContentCompositionStart}
-              onCompositionEnd={handleContentCompositionEnd}
-              placeholder="支持 Markdown 输入...&#10;&#10;⌨️ 快捷键：Esc 退出 | Ctrl+Enter 保存"
-              className="sticky-note-textarea"
-            />
-          ) : (
-            <div
-              ref={previewRef}
-              className="sticky-note-preview"
-              onMouseDown={handleNoteClickToFront}
-              onClick={(e) => {
-                // 阻止冒泡，让全局失焦检测处理编辑模式退出
-                e.stopPropagation();
-              }}
-              onDoubleClick={(e) => {
+          {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
+          <div
+            className="unified-editor-container"
+            onClick={(e) => {
+              // 只有在非编辑状态且不在移动模式下才启动编辑
+              if (!isEditing && !isMoveModeActive && !isTitleEditing) {
                 e.preventDefault();
                 e.stopPropagation();
-                // 移动模式下禁用编辑
-                if (isMoveModeActive) return;
-                // 如果不在编辑模式，双击开始编辑
-                if (!isEditing && !isTitleEditing) {
-                  startEditing();
-                }
-              }}
-              style={{
-                backgroundColor: "transparent",
-                cursor: isEditing || isTitleEditing ? "default" : "default",
-              }}
-              title={
-                isEditing || isTitleEditing
-                  ? "点击便签外部区域退出编辑模式"
-                  : "双击开始编辑内容"
+                startEditing();
               }
-            >
-              {displayContent.trim() ? (
-                <VirtualizedMarkdown
-                  content={displayContent}
-                  containerRef={previewRef}
-                  enableVirtualization={true}
-                  virtualizationThreshold={8000}
-                  isStreaming={isStreaming}
-                  streamingCursor={
-                    isStreaming && showCursor ? (
-                      <span className="streaming-cursor">|</span>
-                    ) : undefined
-                  }
-                />
-              ) : (
-                <div className="empty-note">
-                  {isStreaming ? "AI正在生成内容..." : "双击开始编辑内容"}
-                </div>
-              )}
-            </div>
-          )}
+            }}
+            onMouseDown={handleNoteClickToFront}
+            style={{
+              cursor:
+                !isEditing && !isMoveModeActive && !isTitleEditing
+                  ? "text"
+                  : "default",
+              height: "100%",
+              position: "relative",
+            }}
+            title={
+              !isEditing && !isMoveModeActive && !isTitleEditing
+                ? "点击开始编辑"
+                : isEditing
+                ? "正在编辑中"
+                : ""
+            }
+          >
+            <WysiwygEditor
+              content={isEditing ? localContent : note.content}
+              onChange={handleWysiwygContentChange}
+              onBlur={isEditing ? handleWysiwygBlur : undefined}
+              onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
+              onEditorReady={handleEditorReady}
+              placeholder={
+                note.content.trim()
+                  ? ""
+                  : isStreaming
+                  ? "AI正在生成内容..."
+                  : "点击开始编辑..."
+              }
+              autoFocus={isEditing}
+              disabled={!isEditing}
+              className={`unified-wysiwyg-editor ${
+                isEditing ? "editing" : "viewing"
+              }`}
+            />
+
+            {/* 流式生成光标 - 只在AI生成时显示 */}
+            {isStreaming && showCursor && (
+              <span className="streaming-cursor">|</span>
+            )}
+          </div>
         </div>
+
+        {/* 格式化工具栏 - 只在编辑时显示 */}
+        {isEditing && showFormatToolbar && editorInstance && (
+          <FormatToolbar
+            editor={editorInstance}
+            visible={showFormatToolbar}
+            position={toolbarPosition}
+            className="sticky-note-format-toolbar"
+            compact={true}
+          />
+        )}
 
         {!isEditing && (
           <>

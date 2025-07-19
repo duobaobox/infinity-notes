@@ -1,0 +1,249 @@
+/* 格式化工具栏样式 */
+.format-toolbar {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  user-select: none;
+  max-width: 600px;
+  overflow-x: auto;
+}
+
+.format-toolbar.compact {
+  padding: 6px 8px;
+  max-width: 300px;
+}
+
+.format-toolbar .toolbar-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.format-toolbar.compact .toolbar-content {
+  gap: 4px;
+}
+
+/* 工具栏分割线 */
+.format-toolbar .toolbar-divider {
+  height: 20px;
+  margin: 0 4px;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.format-toolbar.compact .toolbar-divider {
+  height: 16px;
+  margin: 0 2px;
+}
+
+/* 格式化按钮样式 */
+.format-toolbar .format-button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.8);
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.format-toolbar.compact .format-button {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+/* 按钮悬浮状态 */
+.format-toolbar .format-button:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 按钮激活状态 */
+.format-toolbar .format-button.active,
+.format-toolbar .format-button.ant-btn-primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.format-toolbar .format-button.active:hover,
+.format-toolbar .format-button.ant-btn-primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
+}
+
+/* 按钮按下状态 */
+.format-toolbar .format-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 按钮禁用状态 */
+.format-toolbar .format-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.format-toolbar .format-button:disabled:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.06);
+  color: #374151;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 标题按钮特殊样式 */
+.format-toolbar .format-button[data-heading] {
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+}
+
+/* 图标按钮样式调整 */
+.format-toolbar .format-button .anticon {
+  font-size: 14px;
+}
+
+.format-toolbar.compact .format-button .anticon {
+  font-size: 12px;
+}
+
+/* 工具栏动画效果 */
+.format-toolbar {
+  animation: toolbarSlideIn 0.2s ease-out;
+}
+
+@keyframes toolbarSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .format-toolbar {
+    padding: 6px 8px;
+    max-width: 90vw;
+  }
+  
+  .format-toolbar .format-button {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    font-size: 11px;
+  }
+  
+  .format-toolbar .toolbar-content {
+    gap: 4px;
+  }
+  
+  .format-toolbar .toolbar-divider {
+    height: 16px;
+    margin: 0 2px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .format-toolbar {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .format-toolbar .format-button {
+    background: rgba(60, 60, 60, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+  }
+  
+  .format-toolbar .format-button:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+  }
+  
+  .format-toolbar .format-button.active,
+  .format-toolbar .format-button.ant-btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+  }
+  
+  .format-toolbar .format-button.active:hover,
+  .format-toolbar .format-button.ant-btn-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+  
+  .format-toolbar .toolbar-divider {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* 滚动条样式 */
+.format-toolbar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.format-toolbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+}
+
+.format-toolbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.format-toolbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 工具栏位置调整 */
+.format-toolbar.top {
+  margin-bottom: 8px;
+}
+
+.format-toolbar.bottom {
+  margin-top: 8px;
+}
+
+.format-toolbar.floating {
+  position: absolute;
+  z-index: 1000;
+}
+
+/* 紧凑模式特殊调整 */
+.format-toolbar.compact .ant-space-item {
+  margin-right: 2px !important;
+}
+
+.format-toolbar.compact .ant-space-item:last-child {
+  margin-right: 0 !important;
+}
