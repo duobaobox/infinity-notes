@@ -513,6 +513,11 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             },
             onContentChunk: (_, __, fullContent) => {
               // 更新流式内容
+              console.log("🔄 收到流式内容块:", {
+                noteId: addedNote.id,
+                contentLength: fullContent.length,
+                contentPreview: fullContent.substring(0, 50) + "...",
+              });
               updateStreamingContent(addedNote.id, fullContent);
             },
             onNoteComplete: async (_, noteData) => {

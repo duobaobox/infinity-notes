@@ -394,11 +394,18 @@ export const useStickyNotesStore = create<
         const streamingNote = streamingNotes.get(noteId);
 
         if (streamingNote) {
+          console.log("📝 更新流式内容:", {
+            noteId,
+            contentLength: content.length,
+            contentPreview: content.substring(0, 50) + "...",
+          });
           streamingNotes.set(noteId, {
             ...streamingNote,
             streamingContent: content,
           });
           set({ streamingNotes: new Map(streamingNotes) });
+        } else {
+          console.warn("⚠️ 未找到流式便签:", noteId);
         }
       },
 

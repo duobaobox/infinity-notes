@@ -226,6 +226,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 处理流式完成回调（分离逻辑避免循环依赖）
   useEffect(() => {
     if (!isStreaming && streamingContent && streamingContent !== note.content) {
+      console.log("🔄 流式完成，更新便签内容:", {
+        noteId: note.id,
+        streamingContentLength: streamingContent.length,
+        noteContentLength: note.content.length,
+      });
       // 流式完成，更新便签内容
       onUpdate(note.id, { content: streamingContent });
       onStreamingComplete?.();
@@ -1270,13 +1275,19 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         <div className="sticky-note-content">
           {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
           <WysiwygEditor
-            content={isEditing ? localContent : note.content}
+            content={
+              isEditing
+                ? localContent
+                : isStreaming && streamingContent
+                ? streamingContent
+                : note.content
+            }
             onChange={handleWysiwygContentChange}
             onBlur={undefined}
             onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
             onEditorReady={handleEditorReady}
             placeholder={
-              note.content.trim()
+              note.content.trim() && !isStreaming
                 ? ""
                 : isStreaming
                 ? "AI正在生成内容..."
@@ -1286,7 +1297,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             disabled={!isEditing}
             className={`unified-wysiwyg-editor ${
               isEditing ? "editing" : "viewing"
-            }`}
+            } ${isStreaming ? "streaming" : ""}`}
             onClick={(e) => {
               // 只有在非编辑状态且不在移动模式下才启动编辑
               if (!isEditing && !isMoveModeActive && !isTitleEditing) {
