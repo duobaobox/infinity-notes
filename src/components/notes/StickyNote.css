@@ -119,17 +119,89 @@
   .unified-wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
   }
+
+  /* 深色模式下的工具栏按钮样式 */
+  .toolbar-button {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .toolbar-button.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .toolbar-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .toolbar-divider {
+    background: rgba(255, 255, 255, 0.15);
+    opacity: 0.5;
+  }
 }
 
-/* 便签格式化工具栏样式 */
-.sticky-note-format-toolbar {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1001;
-  width: fit-content;
-  max-width: calc(100vw - 20px);
-  pointer-events: auto;
+/* 简化的工具栏样式 - 直接使用toolbar-content */
+.toolbar-content {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 4px 16px;
+  min-height: 32px;
+  box-sizing: border-box;
+  margin: 2px 0;
+  gap: 6px;
+}
+
+/* 工具栏按钮组 */
+.toolbar-button-group {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+/* 工具栏按钮样式 - 小巧精致 */
+.toolbar-button {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* 工具栏按钮激活状态 */
+.toolbar-button.active {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.75);
+}
+
+/* 工具栏按钮悬停效果 */
+.toolbar-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* 工具栏按钮禁用状态 */
+.toolbar-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 工具栏分隔线 */
+.toolbar-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 0.6;
 }
 
 /* 工具栏在便签内部时的样式调整 */

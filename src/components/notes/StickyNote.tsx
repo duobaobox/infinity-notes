@@ -28,7 +28,6 @@ import SourceNotesModal from "../modals/SourceNotesModal";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
 import WysiwygEditor from "./WysiwygEditor";
-import FormatToolbar from "./FormatToolbar";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -77,9 +76,35 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [isBeingSourceConnected, setIsBeingSourceConnected] = useState(false);
 
   // 新编辑器相关状态
-  const [showFormatToolbar, setShowFormatToolbar] = useState(false); // 是否显示格式化工具栏
-  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 }); // 工具栏位置
   const [editorInstance, setEditorInstance] = useState<any>(null); // TipTap编辑器实例
+
+  // 工具栏交互状态 - 用于临时禁用失焦检测
+  const [isToolbarInteracting, setIsToolbarInteracting] = useState(false);
+
+  // 通用的工具栏按钮点击处理函数
+  const handleToolbarButtonClick = useCallback(
+    (e: React.MouseEvent, action: () => void) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // 设置工具栏交互状态，临时禁用失焦检测
+      setIsToolbarInteracting(true);
+
+      // 执行格式化操作
+      action();
+
+      // 延迟重新聚焦编辑器并清除交互状态
+      // 使用更长的延迟确保操作完成
+      setTimeout(() => {
+        editorInstance?.commands.focus();
+        // 再延迟一点清除交互状态，确保失焦检测不会误触发
+        setTimeout(() => {
+          setIsToolbarInteracting(false);
+        }, 50);
+      }, 100);
+    },
+    [editorInstance]
+  );
   const [sourceNotesModalVisible, setSourceNotesModalVisible] = useState(false);
 
   // Refs 和定时器
@@ -220,41 +245,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     if (isMoveModeActive) return; // 移动模式下不允许编辑
     setIsEditing(true);
     setLocalContent(note.content);
-
-    // 显示格式化工具栏
-    setShowFormatToolbar(true);
-    // 动态计算工具栏位置
-    setTimeout(() => {
-      const noteElement = document.querySelector(
-        `[data-note-id="${note.id}"]`
-      ) as HTMLElement;
-      if (noteElement) {
-        const rect = noteElement.getBoundingClientRect();
-        const toolbarHeight = 40;
-        const margin = 8;
-
-        // 检查上方是否有足够空间
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
-
-        if (spaceAbove >= toolbarHeight + margin) {
-          // 上方有空间，放在便签上方
-          setToolbarPosition({ x: 0, y: -(toolbarHeight + margin) });
-        } else if (spaceBelow >= toolbarHeight + margin) {
-          // 下方有空间，放在便签下方
-          setToolbarPosition({ x: 0, y: rect.height + margin });
-        } else {
-          // 空间不足，放在便签内部顶部
-          setToolbarPosition({ x: 0, y: 8 });
-        }
-      }
-    }, 50);
   }, [note.content, isStreaming, isMoveModeActive]);
 
   // 停止编辑内容
   const stopEditing = useCallback(() => {
     setIsEditing(false);
-    setShowFormatToolbar(false); // 隐藏格式化工具栏
     // 最后一次保存确保数据同步
     onUpdate(note.id, { content: localContent, updatedAt: new Date() });
   }, [note.id, onUpdate, localContent]);
@@ -326,19 +321,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note.id, onUpdate]
   );
 
-  // 处理 WysiwygEditor 失焦
-  const handleWysiwygBlur = useCallback(() => {
-    // 延迟检查是否真的失焦（避免工具栏点击导致的误判）
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      const isToolbarFocused = activeElement?.closest(".format-toolbar");
-      const isEditorFocused = activeElement?.closest(".wysiwyg-editor");
-
-      if (!isToolbarFocused && !isEditorFocused) {
-        stopEditing();
-      }
-    }, 100);
-  }, [stopEditing]);
+  // WysiwygEditor 失焦处理已移除，统一使用 handleGlobalClick 处理失焦检测
 
   // 处理 WysiwygEditor 键盘事件
   const handleWysiwygKeyDown = useCallback(
@@ -864,52 +847,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [stopTitleEditing, localTitle, debouncedUpdateTitle]
   );
 
-  // 焦点变化检测 - 更敏感的失焦检测
-  useEffect(() => {
-    const handleFocusChange = () => {
-      // 只有在编辑模式下才需要检测失焦
-      if (!isEditing && !isTitleEditing) return;
-
-      // 使用 setTimeout 让焦点变化完成后再检查
-      setTimeout(() => {
-        const activeElement = document.activeElement;
-
-        // 如果当前没有任何元素有焦点（例如点击了空白区域）
-        if (!activeElement || activeElement === document.body) {
-          if (isEditing) stopEditing();
-          if (isTitleEditing) stopTitleEditing();
-          return;
-        }
-
-        // 如果焦点不在当前便签内部，退出编辑模式
-        if (
-          noteRef.current &&
-          !noteRef.current.contains(activeElement as HTMLElement)
-        ) {
-          // 检查是否在设置工具栏内部
-          const isInsideToolbar = (activeElement as HTMLElement).closest(
-            ".settings-toolbar"
-          );
-
-          if (!isInsideToolbar) {
-            if (isEditing) stopEditing();
-            if (isTitleEditing) stopTitleEditing();
-          }
-        }
-      }, 10);
-    };
-
-    // 只有在编辑模式下才添加监听器
-    if (isEditing || isTitleEditing) {
-      document.addEventListener("focusin", handleFocusChange);
-      document.addEventListener("focusout", handleFocusChange);
-
-      return () => {
-        document.removeEventListener("focusin", handleFocusChange);
-        document.removeEventListener("focusout", handleFocusChange);
-      };
-    }
-  }, [isEditing, isTitleEditing, stopEditing, stopTitleEditing]);
+  // 焦点变化检测 - 已禁用，使用统一的失焦检测避免冲突
+  // 原来的焦点检测会与工具栏操作冲突，已移除
+  // 统一使用 handleGlobalClick 处理失焦检测
 
   // 计算标题的最大可用宽度 - 用于限制显示区域
   const getTitleMaxWidth = () => {
@@ -993,22 +933,60 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     };
   }, [note.id]);
 
-  // 便签级别的失焦检测 - 当点击便签外部时退出编辑模式
+  // 统一的失焦检测 - 当点击便签外部时退出编辑模式
   useEffect(() => {
     const handleGlobalClick = (event: MouseEvent) => {
       // 只有在编辑模式下才需要检测失焦
       if (!isEditing && !isTitleEditing) return;
+
+      // 如果正在进行工具栏交互，暂时跳过失焦检测
+      if (isToolbarInteracting) return;
 
       if (noteRef.current) {
         const target = event.target as HTMLElement;
 
         // 检查点击是否在当前便签内部
         const isInsideNote = noteRef.current.contains(target);
+
         // 检查是否在设置工具栏内部
         const isInsideToolbar = target.closest(".settings-toolbar");
 
-        // 如果点击的不是当前便签内部，也不是设置工具栏，退出编辑模式
-        if (!isInsideNote && !isInsideToolbar) {
+        // 更全面地检查是否在格式化工具栏内部
+        const isInsideFormatToolbar =
+          target.closest(".toolbar-content") || // 工具栏容器
+          target.classList.contains("toolbar-button") || // 工具栏按钮
+          target.classList.contains("toolbar-button-group") || // 按钮组
+          target.closest(".toolbar-button") || // 按钮内的子元素
+          target.closest(".toolbar-divider") || // 分割线
+          target.closest(".ProseMirror") || // TipTap编辑器内容区域
+          target.classList.contains("ProseMirror"); // TipTap编辑器根元素
+
+        // 检查是否在TipTap编辑器相关元素内部
+        const isInsideEditor =
+          target.closest(".wysiwyg-editor") ||
+          target.closest(".tiptap") ||
+          target.classList.contains("wysiwyg-editor") ||
+          target.classList.contains("tiptap");
+
+        // 额外检查：如果目标元素的父级链中包含当前便签，也认为是内部点击
+        let currentElement = target;
+        let isInsideCurrentNote = false;
+        while (currentElement && currentElement !== document.body) {
+          if (currentElement === noteRef.current) {
+            isInsideCurrentNote = true;
+            break;
+          }
+          currentElement = currentElement.parentElement as HTMLElement;
+        }
+
+        // 如果点击的不是当前便签内部，也不是任何工具栏或编辑器，退出编辑模式
+        if (
+          !isInsideNote &&
+          !isInsideCurrentNote &&
+          !isInsideToolbar &&
+          !isInsideFormatToolbar &&
+          !isInsideEditor
+        ) {
           if (isEditing) stopEditing();
           if (isTitleEditing) stopTitleEditing();
         }
@@ -1017,17 +995,23 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
     // 只有在编辑模式下才添加监听器
     if (isEditing || isTitleEditing) {
-      // 使用 setTimeout 延迟添加监听器，避免与开始编辑的点击事件冲突
+      // 使用更短的延迟，但确保不与工具栏点击冲突
       const timeoutId = setTimeout(() => {
-        document.addEventListener("click", handleGlobalClick);
-      }, 100);
+        document.addEventListener("click", handleGlobalClick, true); // 使用捕获阶段
+      }, 100); // 增加延迟确保工具栏交互状态正确设置
 
       return () => {
         clearTimeout(timeoutId);
-        document.removeEventListener("click", handleGlobalClick);
+        document.removeEventListener("click", handleGlobalClick, true);
       };
     }
-  }, [isEditing, isTitleEditing, stopEditing, stopTitleEditing]);
+  }, [
+    isEditing,
+    isTitleEditing,
+    stopEditing,
+    stopTitleEditing,
+    isToolbarInteracting,
+  ]);
 
   return (
     <>
@@ -1283,12 +1267,142 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         </div>
 
+        {/* 格式化工具栏 - 位于header和content之间，只在编辑时显示 */}
+        {isEditing && (
+          <div
+            className="toolbar-content"
+            onClick={(e) => {
+              // 阻止工具栏容器的点击事件冒泡，防止触发失焦检测
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onMouseDown={(e) => {
+              // 阻止鼠标按下事件冒泡，确保工具栏交互不会影响编辑状态
+              e.stopPropagation();
+              // 设置工具栏交互状态
+              setIsToolbarInteracting(true);
+              // 短暂延迟后清除状态
+              setTimeout(() => {
+                setIsToolbarInteracting(false);
+              }, 200);
+            }}
+          >
+            {/* 基础格式化按钮 */}
+            <div className="toolbar-button-group">
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("bold") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleBold().run();
+                  })
+                }
+                title="粗体 (Ctrl+B)"
+                disabled={!editorInstance}
+              >
+                <strong>B</strong>
+              </button>
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("italic") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleItalic().run();
+                  })
+                }
+                title="斜体 (Ctrl+I)"
+                disabled={!editorInstance}
+              >
+                <em>I</em>
+              </button>
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("strike") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleStrike().run();
+                  })
+                }
+                title="删除线"
+                disabled={!editorInstance}
+              >
+                <s>S</s>
+              </button>
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("code") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleCode().run();
+                  })
+                }
+                title="行内代码"
+                disabled={!editorInstance}
+              >
+                &lt;/&gt;
+              </button>
+            </div>
+
+            <div className="toolbar-divider"></div>
+
+            {/* 列表按钮 */}
+            <div className="toolbar-button-group">
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("bulletList") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleBulletList().run();
+                  })
+                }
+                title="无序列表"
+                disabled={!editorInstance}
+              >
+                •
+              </button>
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("orderedList") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleOrderedList().run();
+                  })
+                }
+                title="有序列表"
+                disabled={!editorInstance}
+              >
+                1.
+              </button>
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("taskList") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    editorInstance?.chain().focus().toggleTaskList().run();
+                  })
+                }
+                title="任务列表"
+                disabled={!editorInstance}
+              >
+                ☐
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="sticky-note-content">
           {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
           <WysiwygEditor
             content={isEditing ? localContent : note.content}
             onChange={handleWysiwygContentChange}
-            onBlur={isEditing ? handleWysiwygBlur : undefined}
+            onBlur={undefined}
             onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
             onEditorReady={handleEditorReady}
             placeholder={
@@ -1328,17 +1442,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }
           />
         </div>
-
-        {/* 格式化工具栏 - 只在编辑时显示 */}
-        {isEditing && showFormatToolbar && editorInstance && (
-          <FormatToolbar
-            editor={editorInstance}
-            visible={showFormatToolbar}
-            position={toolbarPosition}
-            className="sticky-note-format-toolbar"
-            compact={true}
-          />
-        )}
 
         {!isEditing && (
           <>

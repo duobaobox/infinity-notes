@@ -200,7 +200,7 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
   // 渲染按钮组
   const renderButtonGroup = (buttons: any[], showDivider = false) => (
     <>
-      <Space size={2}>
+      <Space size={1}>
         {buttons.map((button) => (
           <Tooltip key={button.key} title={button.tooltip} placement="top">
             <Button
@@ -209,13 +209,28 @@ const FormatToolbar: React.FC<FormatToolbarProps> = ({
               icon={button.icon}
               onClick={button.action}
               className={`format-button ${button.isActive() ? "active" : ""}`}
+              style={{
+                width: 22,
+                height: 22,
+                minWidth: 22,
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               {button.text}
             </Button>
           </Tooltip>
         ))}
       </Space>
-      {showDivider && <Divider type="vertical" className="toolbar-divider" />}
+      {showDivider && (
+        <Divider
+          type="vertical"
+          className="toolbar-divider"
+          style={{ height: 14, margin: "0 3px" }}
+        />
+      )}
     </>
   );
 
