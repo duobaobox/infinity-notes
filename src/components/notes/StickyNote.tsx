@@ -16,6 +16,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useDebounce } from "../../hooks";
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
@@ -85,7 +86,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const titleUpdateTimerRef = useRef<number | NodeJS.Timeout | null>(null);
 
   // Store hooks
   const {
@@ -267,31 +267,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     setLocalTitle(note.title);
   }, [note.title, isStreaming, isMoveModeActive]);
 
+  // 防抖更新标题到数据库
+  const [debouncedUpdateTitle, clearTitleDebounce] = useDebounce(
+    useCallback(
+      (newTitle: string) => {
+        onUpdate(note.id, { title: newTitle });
+      },
+      [note.id, onUpdate]
+    ),
+    300 // 300ms 防抖
+  );
+
   // 停止编辑标题
   const stopTitleEditing = useCallback(() => {
     setIsTitleEditing(false);
     // 清理防抖计时器
-    if (titleUpdateTimerRef.current) {
-      clearTimeout(titleUpdateTimerRef.current);
-      titleUpdateTimerRef.current = null;
-    }
+    clearTitleDebounce();
     // 最后一次保存确保数据同步
     onUpdate(note.id, { title: localTitle, updatedAt: new Date() });
-  }, [note.id, onUpdate, localTitle]);
-
-  // 防抖更新标题到数据库
-  const debouncedUpdateTitle = useCallback(
-    (newTitle: string) => {
-      if (titleUpdateTimerRef.current) {
-        clearTimeout(titleUpdateTimerRef.current);
-      }
-      titleUpdateTimerRef.current = setTimeout(() => {
-        onUpdate(note.id, { title: newTitle });
-        titleUpdateTimerRef.current = null;
-      }, 300); // 300ms 防抖
-    },
-    [note.id, onUpdate]
-  );
+  }, [note.id, onUpdate, localTitle, clearTitleDebounce]);
 
   // 标题合成事件处理
   const handleTitleCompositionStart = useCallback(() => {
@@ -828,11 +822,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 清理防抖计时器
   useEffect(() => {
     return () => {
-      if (titleUpdateTimerRef.current) {
-        clearTimeout(titleUpdateTimerRef.current);
-      }
+      clearTitleDebounce();
     };
-  }, []);
+  }, [clearTitleDebounce]);
 
   useEffect(() => {
     if (isTitleEditing && titleInputRef.current) {
@@ -982,10 +974,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       }
 
       // 清理所有定时器
-      if (titleUpdateTimerRef.current) {
-        clearTimeout(titleUpdateTimerRef.current);
-        titleUpdateTimerRef.current = null;
-      }
+      clearTitleDebounce();
 
       // 清理动画帧
       if (rafRef.current) {

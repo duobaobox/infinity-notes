@@ -64,19 +64,16 @@ const htmlToMarkdown = (html: string): string => {
         .map((child) => convertNode(child, listDepth))
         .join("");
 
-      switch (element.tagName.toLowerCase()) {
-        case "h1":
-          return `# ${children.trim()}\n\n`;
-        case "h2":
-          return `## ${children.trim()}\n\n`;
-        case "h3":
-          return `### ${children.trim()}\n\n`;
-        case "h4":
-          return `#### ${children.trim()}\n\n`;
-        case "h5":
-          return `##### ${children.trim()}\n\n`;
-        case "h6":
-          return `###### ${children.trim()}\n\n`;
+      const tagName = element.tagName.toLowerCase();
+
+      // 处理标题标签 - 统一逻辑
+      if (tagName.match(/^h[1-6]$/)) {
+        const level = parseInt(tagName.charAt(1));
+        const hashes = "#".repeat(level);
+        return `${hashes} ${children.trim()}\n\n`;
+      }
+
+      switch (tagName) {
         case "p":
           const trimmed = children.trim();
           return trimmed ? `${trimmed}\n\n` : "\n";
@@ -144,47 +141,78 @@ const htmlToMarkdown = (html: string): string => {
 };
 
 /**
+ * 代码处理工具类 - 提取公共的代码保护逻辑
+ */
+class CodeProcessor {
+  private codeBlocks: string[] = [];
+  private inlineCodes: string[] = [];
+
+  /**
+   * 保护代码块和行内代码，避免被其他转换影响
+   */
+  protect(text: string): string {
+    let result = text;
+
+    // 先处理代码块
+    result = result.replace(/```([\s\S]*?)```/g, (match, code) => {
+      const index = this.codeBlocks.length;
+      this.codeBlocks.push(code);
+      return `__CODE_BLOCK_${index}__`;
+    });
+
+    // 处理行内代码
+    result = result.replace(/`([^`]+)`/g, (match, code) => {
+      const index = this.inlineCodes.length;
+      this.inlineCodes.push(code);
+      return `__INLINE_CODE_${index}__`;
+    });
+
+    return result;
+  }
+
+  /**
+   * 恢复代码块和行内代码为HTML格式
+   */
+  restoreAsHtml(text: string): string {
+    let result = text;
+
+    // 恢复代码块
+    result = result.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+      return `<pre><code>${this.codeBlocks[parseInt(index)]}</code></pre>`;
+    });
+
+    // 恢复行内代码
+    result = result.replace(/__INLINE_CODE_(\d+)__/g, (match, index) => {
+      return `<code>${this.inlineCodes[parseInt(index)]}</code>`;
+    });
+
+    return result;
+  }
+
+  /**
+   * 重置处理器状态
+   */
+  reset(): void {
+    this.codeBlocks = [];
+    this.inlineCodes = [];
+  }
+}
+
+/**
  * 将Markdown转换为HTML的改进转换器
  * 用于将存储的Markdown转换为TipTap可以理解的HTML
  */
 const markdownToHtml = (markdown: string): string => {
   if (!markdown.trim()) return "<p></p>";
 
-  let html = markdown;
+  const codeProcessor = new CodeProcessor();
+  let html = codeProcessor.protect(markdown);
 
-  // 先处理代码块，避免其中的特殊字符被转义
-  const codeBlocks: string[] = [];
-  html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-    const index = codeBlocks.length;
-    codeBlocks.push(code);
-    return `__CODE_BLOCK_${index}__`;
+  // 标题转换 - 统一处理所有级别
+  html = html.replace(/^(#{1,6}) (.*$)/gm, (match, hashes, content) => {
+    const level = hashes.length;
+    return `<h${level}>${content}</h${level}>`;
   });
-
-  // 处理行内代码
-  const inlineCodes: string[] = [];
-  html = html.replace(/`([^`]+)`/g, (match, code) => {
-    const index = inlineCodes.length;
-    inlineCodes.push(code);
-    return `__INLINE_CODE_${index}__`;
-  });
-
-  // 恢复代码块
-  html = html.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
-    return `<pre><code>${codeBlocks[parseInt(index)]}</code></pre>`;
-  });
-
-  // 恢复行内代码
-  html = html.replace(/__INLINE_CODE_(\d+)__/g, (match, index) => {
-    return `<code>${inlineCodes[parseInt(index)]}</code>`;
-  });
-
-  // 标题转换
-  html = html.replace(/^# (.*$)/gm, "<h1>$1</h1>");
-  html = html.replace(/^## (.*$)/gm, "<h2>$1</h2>");
-  html = html.replace(/^### (.*$)/gm, "<h3>$1</h3>");
-  html = html.replace(/^#### (.*$)/gm, "<h4>$1</h4>");
-  html = html.replace(/^##### (.*$)/gm, "<h5>$1</h5>");
-  html = html.replace(/^###### (.*$)/gm, "<h6>$1</h6>");
 
   // 粗体和斜体（注意顺序，先处理粗体）
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -265,7 +293,10 @@ const markdownToHtml = (markdown: string): string => {
     })
     .filter((p) => p);
 
-  return processedParagraphs.join("") || "<p></p>";
+  // 恢复代码块和行内代码
+  const finalHtml = codeProcessor.restoreAsHtml(processedParagraphs.join(""));
+
+  return finalHtml || "<p></p>";
 };
 
 /**
