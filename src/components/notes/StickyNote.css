@@ -911,12 +911,17 @@
   padding-left: 0; /* 🎯 移除左内边距，由ProseMirror处理 */
   padding-right: 0; /* 🎯 移除右内边距，由ProseMirror处理 */
   /* padding-top: 16px; */
-  padding-bottom: 16px; /* 保持下内边距 */
+  padding-bottom: 16px; /* 非编辑状态的下内边距 */
   overflow: hidden; /* 修复：不允许内容溢出，确保高度约束生效 */
   display: flex;
   flex-direction: column;
   user-select: text; /* 允许选择内容区域的文本 */
   min-height: 0; /* 关键：允许flex子元素收缩 */
+}
+
+/* 编辑状态下的sticky-note-content - 移除下内边距 */
+.sticky-note.editing .sticky-note-content {
+  padding-bottom: 0; /* 编辑状态时移除下内边距，让工具栏紧贴内容 */
 }
 
 /* 基本的文本渲染优化 - 简化版本 */

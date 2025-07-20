@@ -1267,7 +1267,53 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         </div>
 
-        {/* 格式化工具栏 - 位于header和content之间，只在编辑时显示 */}
+        <div className="sticky-note-content">
+          {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
+          <WysiwygEditor
+            content={isEditing ? localContent : note.content}
+            onChange={handleWysiwygContentChange}
+            onBlur={undefined}
+            onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
+            onEditorReady={handleEditorReady}
+            placeholder={
+              note.content.trim()
+                ? ""
+                : isStreaming
+                ? "AI正在生成内容..."
+                : "点击开始编辑..."
+            }
+            autoFocus={isEditing}
+            disabled={!isEditing}
+            className={`unified-wysiwyg-editor ${
+              isEditing ? "editing" : "viewing"
+            }`}
+            onClick={(e) => {
+              // 只有在非编辑状态且不在移动模式下才启动编辑
+              if (!isEditing && !isMoveModeActive && !isTitleEditing) {
+                e.preventDefault();
+                e.stopPropagation();
+                startEditing();
+              }
+            }}
+            onMouseDown={handleNoteClickToFront}
+            style={{
+              cursor:
+                !isEditing && !isMoveModeActive && !isTitleEditing
+                  ? "text"
+                  : "default",
+              position: "relative",
+            }}
+            title={
+              !isEditing && !isMoveModeActive && !isTitleEditing
+                ? "点击开始编辑"
+                : isEditing
+                ? "正在编辑中"
+                : ""
+            }
+          />
+        </div>
+
+        {/* 格式化工具栏 - 位于content下方，只在编辑时显示 */}
         {isEditing && (
           <div
             className="toolbar-content"
@@ -1396,52 +1442,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             </div>
           </div>
         )}
-
-        <div className="sticky-note-content">
-          {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
-          <WysiwygEditor
-            content={isEditing ? localContent : note.content}
-            onChange={handleWysiwygContentChange}
-            onBlur={undefined}
-            onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
-            onEditorReady={handleEditorReady}
-            placeholder={
-              note.content.trim()
-                ? ""
-                : isStreaming
-                ? "AI正在生成内容..."
-                : "点击开始编辑..."
-            }
-            autoFocus={isEditing}
-            disabled={!isEditing}
-            className={`unified-wysiwyg-editor ${
-              isEditing ? "editing" : "viewing"
-            }`}
-            onClick={(e) => {
-              // 只有在非编辑状态且不在移动模式下才启动编辑
-              if (!isEditing && !isMoveModeActive && !isTitleEditing) {
-                e.preventDefault();
-                e.stopPropagation();
-                startEditing();
-              }
-            }}
-            onMouseDown={handleNoteClickToFront}
-            style={{
-              cursor:
-                !isEditing && !isMoveModeActive && !isTitleEditing
-                  ? "text"
-                  : "default",
-              position: "relative",
-            }}
-            title={
-              !isEditing && !isMoveModeActive && !isTitleEditing
-                ? "点击开始编辑"
-                : isEditing
-                ? "正在编辑中"
-                : ""
-            }
-          />
-        </div>
 
         {!isEditing && (
           <>
