@@ -31,6 +31,14 @@ interface WysiwygEditorProps {
   className?: string;
   /** 编辑器实例回调 */
   onEditorReady?: (editor: any) => void;
+  /** 点击事件回调 */
+  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  /** 鼠标按下事件回调 */
+  onMouseDown?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  /** 内联样式 */
+  style?: React.CSSProperties;
+  /** 标题属性 */
+  title?: string;
 }
 
 /**
@@ -274,6 +282,10 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   disabled = false,
   className = "",
   onEditorReady,
+  onClick,
+  onMouseDown,
+  style,
+  title,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -434,6 +446,10 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     <div
       ref={editorRef}
       className={`wysiwyg-editor ${className} ${disabled ? "disabled" : ""}`}
+      onClick={onClick}
+      onMouseDown={onMouseDown}
+      style={style}
+      title={title}
     >
       <EditorContent editor={editor} />
     </div>

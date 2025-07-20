@@ -40,49 +40,36 @@
   }
 }
 
-/* 🎯 无感一体化编辑器容器 */
-.unified-editor-container {
-  flex: 1; /* 使用flex而不是固定高度 */
+/* 🎯 完美滚动条布局 - 文本区域左右留白一致，滚动条在右侧留白内 */
+
+/* 一体化编辑器样式 - 现在直接是WysiwygEditor的根容器 */
+.unified-wysiwyg-editor {
+  flex: 1; /* 关键：使用flex占满可用空间 */
   width: 100%;
+  height: 100%; /* 确保占满父容器高度 */
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: all 0.2s ease;
   min-height: 0; /* 关键：允许flex子元素收缩 */
-  overflow: hidden; /* 确保容器不会溢出 */
+  overflow: hidden; /* 🎯 裁剪溢出内容，确保布局整洁 */
+  padding: 0; /* 移除padding，让内部元素完全控制布局 */
 }
 
-/* 一体化编辑器样式 */
-.unified-wysiwyg-editor {
-  flex: 1;
-  width: 100%;
-  overflow: hidden; /* 确保容器不会溢出 */
-  min-height: 0; /* 关键：允许flex子元素收缩 */
-  display: flex;
-  flex-direction: column;
-}
-
-.unified-wysiwyg-editor .wysiwyg-editor {
-  flex: 1; /* 关键：使用flex而不是height: 100% */
-  overflow: hidden; /* 确保容器不会溢出 */
-  min-height: 0; /* 关键：允许flex子元素收缩 */
-  display: flex;
-  flex-direction: column;
-}
-
-/* 修复EditorContent生成的包装div */
-.unified-wysiwyg-editor .wysiwyg-editor > div {
+/* 修复EditorContent生成的包装div - 现在直接在unified-wysiwyg-editor下 */
+.unified-wysiwyg-editor > div {
   flex: 1; /* 让EditorContent的包装div也使用flex */
   display: flex;
   flex-direction: column;
   min-height: 0; /* 允许收缩 */
-  overflow: hidden; /* 确保不溢出 */
+  overflow: hidden; /* 🎯 配合父容器裁剪 */
 }
 
 .unified-wysiwyg-editor .ProseMirror {
   flex: 1; /* 关键：使用flex占满可用空间 */
   height: 0; /* 关键：让flex完全控制高度 */
   max-height: 100%; /* 确保不超过容器高度 */
-  padding: 0;
+  padding: 0 16px; /* 🎯 完美方案：左右各16px内边距，文本区域居中 */
   margin: 0;
   outline: none;
   border: none;
@@ -96,13 +83,12 @@
   overflow-x: hidden; /* 隐藏水平滚动条 */
   word-wrap: break-word;
   white-space: pre-wrap;
-  /* 确保在便签大小改变时能正确调整 */
-  box-sizing: border-box;
+  box-sizing: border-box; /* 🎯 关键：padding计入总宽度 */
   resize: none;
 
-  /* 🎯 滚动条显示技术 - 滚动条可见 */
-  width: calc(100% - var(--scrollbar-width)); /* 使用负值，实际是100% + 16px */
-  margin-right: var(--scrollbar-offset); /* 使用-16px边距 */
+  /* 🎯 完美滚动条定位 - 滚动条自然出现在右侧padding区域内 */
+  width: 100%; /* 占满容器宽度 */
+  /* 移除所有负边距和宽度计算技巧，使用标准布局 */
 }
 
 /* 确保查看状态下也有滚动条 */
@@ -118,11 +104,11 @@
   height: 100% !important;
   max-height: 100% !important;
 
-  /* 🎯 滚动条显示技术 - 确保tiptap类名也应用相同效果 */
-  width: calc(
-    100% - var(--scrollbar-width)
-  ) !important; /* 使用负值，实际是100% + 16px */
-  margin-right: var(--scrollbar-offset) !important; /* 使用-16px边距 */
+  /* 🎯 完美滚动条定位 - 确保tiptap类名也使用标准布局 */
+  width: 100% !important; /* 占满容器宽度 */
+  padding: 0 16px !important; /* 🎯 左右各16px内边距，文本区域居中 */
+  box-sizing: border-box !important; /* padding计入总宽度 */
+  /* 移除所有负边距技巧 */
 }
 
 /* 修复调试样式 - 移除红色边框，确保滚动区域正确 */
@@ -146,18 +132,7 @@
   user-select: auto;
 }
 
-/* 悬浮效果 - 只在查看状态下显示 */
-.unified-editor-container:hover .unified-wysiwyg-editor.viewing {
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 4px;
-}
-
-/* 深色模式下的悬浮效果 */
-@media (prefers-color-scheme: dark) {
-  .unified-editor-container:hover .unified-wysiwyg-editor.viewing {
-    background: rgba(255, 255, 255, 0.05);
-  }
-}
+/* 悬浮效果已移除 - 文本区域悬浮时保持透明，无背景变化 */
 
 /* 🎯 滚动条隐藏技术 - 让滚动条退到容器外，完全不可见 */
 /* 注意：滚动条被推到容器外部，被overflow:hidden裁剪，用户完全看不到但功能保留 */
@@ -916,8 +891,8 @@
 
 .sticky-note-content {
   flex: 1;
-  padding-left: 16px; /* 明确左内边距 */
-  padding-right: 16px; /* 明确右内边距 */
+  padding-left: 0; /* 🎯 移除左内边距，由ProseMirror处理 */
+  padding-right: 0; /* 🎯 移除右内边距，由ProseMirror处理 */
   padding-top: 16px; /* 保持上内边距 */
   padding-bottom: 16px; /* 保持下内边距 */
   overflow: hidden; /* 修复：不允许内容溢出，确保高度约束生效 */

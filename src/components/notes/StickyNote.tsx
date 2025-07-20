@@ -1296,8 +1296,24 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         <div className="sticky-note-content">
           {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
-          <div
-            className="unified-editor-container"
+          <WysiwygEditor
+            content={isEditing ? localContent : note.content}
+            onChange={handleWysiwygContentChange}
+            onBlur={isEditing ? handleWysiwygBlur : undefined}
+            onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
+            onEditorReady={handleEditorReady}
+            placeholder={
+              note.content.trim()
+                ? ""
+                : isStreaming
+                ? "AI正在生成内容..."
+                : "点击开始编辑..."
+            }
+            autoFocus={isEditing}
+            disabled={!isEditing}
+            className={`unified-wysiwyg-editor ${
+              isEditing ? "editing" : "viewing"
+            }`}
             onClick={(e) => {
               // 只有在非编辑状态且不在移动模式下才启动编辑
               if (!isEditing && !isMoveModeActive && !isTitleEditing) {
@@ -1321,27 +1337,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 ? "正在编辑中"
                 : ""
             }
-          >
-            <WysiwygEditor
-              content={isEditing ? localContent : note.content}
-              onChange={handleWysiwygContentChange}
-              onBlur={isEditing ? handleWysiwygBlur : undefined}
-              onKeyDown={isEditing ? handleWysiwygKeyDown : undefined}
-              onEditorReady={handleEditorReady}
-              placeholder={
-                note.content.trim()
-                  ? ""
-                  : isStreaming
-                  ? "AI正在生成内容..."
-                  : "点击开始编辑..."
-              }
-              autoFocus={isEditing}
-              disabled={!isEditing}
-              className={`unified-wysiwyg-editor ${
-                isEditing ? "editing" : "viewing"
-              }`}
-            />
-          </div>
+          />
         </div>
 
         {/* 格式化工具栏 - 只在编辑时显示 */}
