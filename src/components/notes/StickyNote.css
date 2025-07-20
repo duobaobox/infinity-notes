@@ -69,7 +69,6 @@
   flex: 1; /* 关键：使用flex占满可用空间 */
   height: 0; /* 关键：让flex完全控制高度 */
   max-height: 100%; /* 确保不超过容器高度 */
-  padding: 0 16px; /* 🎯 完美方案：左右各16px内边距，文本区域居中 */
   margin: 0;
   outline: none;
   border: none;
@@ -86,9 +85,10 @@
   box-sizing: border-box; /* 🎯 关键：padding计入总宽度 */
   resize: none;
 
-  /* 🎯 完美滚动条定位 - 滚动条自然出现在右侧padding区域内 */
+  /* 🎯 方案2：为滚动条预留额外空间，保持文本区域对称 */
   width: 100%; /* 占满容器宽度 */
-  /* 移除所有负边距和宽度计算技巧，使用标准布局 */
+  padding-left: 16px; /* 左侧16px内边距 */
+  padding-right: 0px; /* 🧪 测试：移除右侧padding，观察滚动条效果 */
 }
 
 /* 确保查看状态下也有滚动条 */
@@ -104,11 +104,11 @@
   height: 100% !important;
   max-height: 100% !important;
 
-  /* 🎯 完美滚动条定位 - 确保tiptap类名也使用标准布局 */
+  /* 🎯 方案2：为滚动条预留额外空间，确保tiptap类名也使用相同布局 */
   width: 100% !important; /* 占满容器宽度 */
-  padding: 0 16px !important; /* 🎯 左右各16px内边距，文本区域居中 */
+  padding-left: 16px !important; /* 左侧16px内边距 */
+  padding-right: 0px !important; /* 🧪 测试：移除右侧padding，观察滚动条效果 */
   box-sizing: border-box !important; /* padding计入总宽度 */
-  /* 移除所有负边距技巧 */
 }
 
 /* 修复调试样式 - 移除红色边框，确保滚动区域正确 */
