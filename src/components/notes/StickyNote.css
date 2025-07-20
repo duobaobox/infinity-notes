@@ -11,6 +11,10 @@
     rgba(255, 255, 255, 0.7) 0%,
     rgba(248, 249, 250, 0.7) 100%
   );
+
+  /* 🎯 滚动条显示技术变量 */
+  --scrollbar-width: -16px; /* 滚动条要可见用负的16px */
+  --scrollbar-offset: var(--scrollbar-width); /* 直接使用负值 */
 }
 
 /* 深色模式下的便签磨砂效果 */
@@ -25,6 +29,14 @@
       rgba(40, 40, 40, 0.7) 0%,
       rgba(50, 50, 50, 0.7) 100%
     );
+  }
+}
+
+/* 🎯 macOS平台滚动条宽度优化 */
+@supports (-webkit-appearance: none) {
+  :root {
+    --scrollbar-width: -15px; /* macOS滚动条要可见用负的15px */
+    --scrollbar-offset: var(--scrollbar-width);
   }
 }
 
@@ -87,6 +99,10 @@
   /* 确保在便签大小改变时能正确调整 */
   box-sizing: border-box;
   resize: none;
+
+  /* 🎯 滚动条显示技术 - 滚动条可见 */
+  width: calc(100% - var(--scrollbar-width)); /* 使用负值，实际是100% + 16px */
+  margin-right: var(--scrollbar-offset); /* 使用-16px边距 */
 }
 
 /* 确保查看状态下也有滚动条 */
@@ -101,6 +117,12 @@
   overflow-x: hidden !important; /* 隐藏水平滚动条 */
   height: 100% !important;
   max-height: 100% !important;
+
+  /* 🎯 滚动条显示技术 - 确保tiptap类名也应用相同效果 */
+  width: calc(
+    100% - var(--scrollbar-width)
+  ) !important; /* 使用负值，实际是100% + 16px */
+  margin-right: var(--scrollbar-offset) !important; /* 使用-16px边距 */
 }
 
 /* 修复调试样式 - 移除红色边框，确保滚动区域正确 */
@@ -109,21 +131,7 @@
   min-height: 50px !important; /* 确保有最小高度 */
 }
 
-/* 临时调试样式 - 帮助看清容器边界 */
-.sticky-note-content {
-  /* 临时：添加淡蓝色边框来看清内容区域 */
-  border: 1px solid rgba(0, 123, 255, 0.3) !important;
-}
-
-.unified-editor-container {
-  /* 临时：添加淡绿色边框来看清编辑器容器 */
-  border: 1px solid rgba(40, 167, 69, 0.3) !important;
-}
-
-.unified-wysiwyg-editor .ProseMirror {
-  /* 临时：添加淡红色边框来看清文本区域 */
-  border: 1px solid rgba(220, 53, 69, 0.3) !important;
-}
+/* 🎯 滚动条隐藏技术实施完成 - 调试样式已清理 */
 
 /* 查看状态下的样式 */
 .unified-wysiwyg-editor.viewing .ProseMirror {
@@ -151,37 +159,19 @@
   }
 }
 
-/* 自定义滚动条样式 */
-.unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar {
-  width: 6px;
-}
+/* 🎯 滚动条隐藏技术 - 让滚动条退到容器外，完全不可见 */
+/* 注意：滚动条被推到容器外部，被overflow:hidden裁剪，用户完全看不到但功能保留 */
 
-.unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-
-.unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 3px;
-}
-
-.unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* 深色模式下的滚动条 */
+/* 深色模式下的滚动条样式 */
 @media (prefers-color-scheme: dark) {
-  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover {
+  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb,
+  .unified-wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
+  }
+
+  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover,
+  .unified-wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
   }
 }
 
