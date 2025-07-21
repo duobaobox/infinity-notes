@@ -318,8 +318,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             .substring(2, 11)}`,
           x: positionX,
           y: positionY,
-          width: 300, // 手动便签默认宽度
-          height: 200, // 手动便签默认高度
+          width: 350, // 手动便签默认宽度
+          height: 310, // 手动便签默认高度
           content: "",
           title: "新便签",
           color: randomColor,
@@ -482,7 +482,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           x: logicalX,
           y: logicalY,
           width: 400, // AI便签默认宽度
-          height: 300, // AI便签默认高度
+          height: 350, // AI便签默认高度
           content: "",
           title: generateTitleFromPrompt(prompt), // 🔧 使用用户的prompt作为标题
           color: randomColor, // 🔧 使用随机颜色

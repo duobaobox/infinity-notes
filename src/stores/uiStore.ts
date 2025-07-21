@@ -118,10 +118,10 @@ export interface UIActions {
 
 // 便签默认尺寸常量
 export const DEFAULT_NOTE_SIZES = {
-  manualNoteDefaultWidth: 250, // 手动便签默认宽度
-  manualNoteDefaultHeight: 200, // 手动便签默认高度
-  aiNoteDefaultWidth: 300, // AI便签默认宽度
-  aiNoteDefaultHeight: 250, // AI便签默认高度
+  manualNoteDefaultWidth: 350, // 手动便签默认宽度
+  manualNoteDefaultHeight: 310, // 手动便签默认高度
+  aiNoteDefaultWidth: 400, // AI便签默认宽度
+  aiNoteDefaultHeight: 350, // AI便签默认高度
 } as const;
 
 // 预制主题配置

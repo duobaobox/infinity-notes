@@ -357,14 +357,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 处理编辑器实例准备就绪 - 使用全局状态
   const handleEditorReady = useCallback(
     (editor: any) => {
-      setEditorInstance(editor);
+      // 使用 setTimeout 确保在组件完全挂载后再设置编辑器实例
+      setTimeout(() => {
+        setEditorInstance(editor);
 
-      // 如果当前处于编辑状态，确保编辑器聚焦
-      if (note.isEditing) {
-        setTimeout(() => {
+        // 如果当前处于编辑状态，确保编辑器聚焦
+        if (note.isEditing) {
           editor.commands.focus();
-        }, 100);
-      }
+        }
+      }, 0);
     },
     [note.isEditing]
   );
@@ -670,8 +671,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           // 调整大小的坐标计算也需要适应新模式
           const deltaX = (e.clientX - resizeStart.x) / canvasScale;
           const deltaY = (e.clientY - resizeStart.y) / canvasScale;
-          const newWidth = Math.max(200, resizeStart.width + deltaX);
-          const newHeight = Math.max(150, resizeStart.height + deltaY);
+          const newWidth = Math.max(350, resizeStart.width + deltaX);
+          const newHeight = Math.max(310, resizeStart.height + deltaY);
 
           setTempSize({ width: newWidth, height: newHeight });
           // 调整大小时也需要更新连接线位置，因为连接点位置会改变
@@ -1285,7 +1286,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         </div>
 
-        <div className="sticky-note-content">
+        <div
+          className={`sticky-note-content ${
+            note.thinkingChain ? "has-thinking-chain" : ""
+          }`}
+        >
           {/* 思维链组件 - 只在非编辑状态且有思维链数据时显示 */}
           {!note.isEditing && !isStreaming && note.thinkingChain && (
             <div style={{ marginBottom: "12px" }}>
@@ -1293,6 +1298,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 thinkingChain={note.thinkingChain}
                 defaultExpanded={false}
                 compact={true}
+                inNote={true}
               />
             </div>
           )}

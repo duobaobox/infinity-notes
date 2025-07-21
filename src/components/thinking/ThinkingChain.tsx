@@ -1,15 +1,12 @@
 import {
   BulbOutlined,
   ClockCircleOutlined,
-  DownOutlined,
   ExperimentOutlined,
   QuestionCircleOutlined,
-  RightOutlined,
   SearchOutlined,
   TrophyOutlined,
 } from "@ant-design/icons";
-import { Collapse, Tag, Timeline, Typography } from "antd";
-import type { CollapseProps } from "antd";
+import { Card, Tag, Timeline, Typography } from "antd";
 import React from "react";
 import type {
   ThinkingChain as ThinkingChainType,
@@ -24,6 +21,7 @@ interface ThinkingChainProps {
   thinkingChain: ThinkingChainType; // 思维链数据
   defaultExpanded?: boolean; // 默认是否展开
   compact?: boolean; // 紧凑模式
+  inNote?: boolean; // 是否在便签中显示
 }
 
 // 根据步骤类型获取对应的图标和颜色
@@ -82,52 +80,73 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
   thinkingChain,
   defaultExpanded = false,
   compact = false,
+  inNote = false,
 }) => {
+  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
+
   // 渲染思维链步骤时间线
   const renderThinkingSteps = () => {
+    // 将步骤数据转换为Timeline的items格式
+    const timelineItems = thinkingChain.steps.map((step) => {
+      const { icon, color } = getStepIcon(step.stepType);
+
+      return {
+        key: step.id,
+        dot: (
+          <div
+            className="thinking-step-icon"
+            style={{ backgroundColor: color }}
+          >
+            {icon}
+          </div>
+        ),
+        color: color,
+        children: (
+          <div className="thinking-step-content">
+            <div className="thinking-step-header">
+              <Tag color={color} className="thinking-step-tag">
+                {getStepTypeLabel(step.stepType)}
+              </Tag>
+              <Text type="secondary" className="thinking-step-time">
+                <ClockCircleOutlined style={{ marginRight: 4 }} />
+                {(() => {
+                  try {
+                    // 确保timestamp是Date对象，如果不是则转换
+                    const timestamp =
+                      step.timestamp instanceof Date
+                        ? step.timestamp
+                        : new Date(step.timestamp);
+                    return timestamp.toLocaleTimeString();
+                  } catch (error) {
+                    console.warn("时间戳格式化失败:", error);
+                    return "时间未知";
+                  }
+                })()}
+              </Text>
+            </div>
+            <Paragraph
+              className="thinking-step-text"
+              style={{ marginBottom: 0 }}
+            >
+              {step.content}
+            </Paragraph>
+          </div>
+        ),
+      };
+    });
+
     return (
       <Timeline
         mode="left"
         className={`thinking-timeline ${compact ? "compact" : ""}`}
-      >
-        {thinkingChain.steps.map((step) => {
-          const { icon, color } = getStepIcon(step.stepType);
-
-          return (
-            <Timeline.Item
-              key={step.id}
-              dot={
-                <div
-                  className="thinking-step-icon"
-                  style={{ backgroundColor: color }}
-                >
-                  {icon}
-                </div>
-              }
-              color={color}
-            >
-              <div className="thinking-step-content">
-                <div className="thinking-step-header">
-                  <Tag color={color} className="thinking-step-tag">
-                    {getStepTypeLabel(step.stepType)}
-                  </Tag>
-                  <Text type="secondary" className="thinking-step-time">
-                    <ClockCircleOutlined style={{ marginRight: 4 }} />
-                    {step.timestamp.toLocaleTimeString()}
-                  </Text>
-                </div>
-                <Paragraph
-                  className="thinking-step-text"
-                  style={{ marginBottom: 0 }}
-                >
-                  {step.content}
-                </Paragraph>
-              </div>
-            </Timeline.Item>
-          );
-        })}
-      </Timeline>
+        items={timelineItems}
+      />
     );
+  };
+
+  // 切换展开/折叠状态
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
   };
 
   // 渲染思维链统计信息
@@ -139,67 +158,48 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
 
     return (
       <div className="thinking-stats">
-        <div className="thinking-stats-item">
-          <Text strong>思考步骤：</Text>
-          <Text>{thinkingChain.steps.length}</Text>
-        </div>
-        <div className="thinking-stats-item">
-          <Text strong>思考时间：</Text>
-          <Text>{formatThinkingTime(thinkingChain.totalThinkingTime)}</Text>
-        </div>
-        <div className="thinking-stats-tags">
-          {Object.entries(stepCounts).map(([type, count]) => {
-            const { color } = getStepIcon(type as ThinkingStep["stepType"]);
-            return (
-              <Tag key={type} color={color}>
-                {getStepTypeLabel(type as ThinkingStep["stepType"])} {count}
-              </Tag>
-            );
-          })}
-        </div>
+        {Object.entries(stepCounts).map(([type, count]) => {
+          const { color } = getStepIcon(type as ThinkingStep["stepType"]);
+          return (
+            <Tag key={type} color={color} size="small">
+              {getStepTypeLabel(type as ThinkingStep["stepType"])} {count}
+            </Tag>
+          );
+        })}
       </div>
     );
   };
 
-  // 定义 Collapse 的 items 配置
-  const collapseItems: CollapseProps["items"] = [
-    {
-      key: "thinking",
-      label: (
-        <div className="thinking-header">
-          <div className="thinking-title">
-            <ExperimentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
-            <Text strong>AI思考过程</Text>
-            <Tag color="blue" style={{ marginLeft: 8 }}>
-              {thinkingChain.steps.length}步
-            </Tag>
-          </div>
+  return (
+    <div
+      className={`thinking-chain-container ${compact ? "compact" : ""} ${
+        inNote ? "thinking-chain-in-note" : ""
+      }`}
+    >
+      {/* 思维链头部 - 可点击展开/折叠 */}
+      <div className="thinking-header" onClick={toggleExpanded}>
+        <div className="thinking-title">
+          <ExperimentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+          <Text strong>AI思考过程</Text>
+          <Tag color="blue" style={{ marginLeft: 8 }}>
+            {thinkingChain.steps.length}步
+          </Tag>
           {!compact && (
             <Text type="secondary" className="thinking-time">
               {formatThinkingTime(thinkingChain.totalThinkingTime)}
             </Text>
           )}
         </div>
-      ),
-      children: (
-        <div className="thinking-process-section">{renderThinkingSteps()}</div>
-      ),
-      className: "thinking-panel",
-    },
-  ];
+        <div className="thinking-expand-icon">{isExpanded ? "▼" : "▶"}</div>
+      </div>
 
-  return (
-    <div className={`thinking-chain-container ${compact ? "compact" : ""}`}>
-      {/* 思维过程折叠面板 - 只包含思考步骤 */}
-      <Collapse
-        defaultActiveKey={defaultExpanded ? ["thinking"] : []}
-        ghost
-        expandIcon={({ isActive }) =>
-          isActive ? <DownOutlined /> : <RightOutlined />
-        }
-        className="thinking-collapse"
-        items={collapseItems}
-      />
+      {/* 思维链统计信息 */}
+      {isExpanded && !compact && renderThinkingStats()}
+
+      {/* 思维过程内容区域 */}
+      {isExpanded && (
+        <div className="thinking-process-section">{renderThinkingSteps()}</div>
+      )}
     </div>
   );
 };

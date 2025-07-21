@@ -1103,10 +1103,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         resetNoteDefaultSizes();
         // 更新临时设置为默认值
         const defaultSettings = {
-          manualNoteDefaultWidth: 250,
-          manualNoteDefaultHeight: 200,
-          aiNoteDefaultWidth: 300,
-          aiNoteDefaultHeight: 250,
+          manualNoteDefaultWidth: 350,
+          manualNoteDefaultHeight: 310,
+          aiNoteDefaultWidth: 400,
+          aiNoteDefaultHeight: 350,
         };
         setTempNoteSettings(defaultSettings);
         setNoteSettingsChanged(false);
@@ -1529,11 +1529,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         style={{ marginBottom: 8 }}
                       >
                         <InputNumber
-                          min={200}
+                          min={350}
                           max={500}
                           step={10}
                           style={{ width: "100%" }}
-                          placeholder="250"
+                          placeholder="350"
                         />
                       </Form.Item>
                     </Col>
@@ -1544,11 +1544,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         style={{ marginBottom: 8 }}
                       >
                         <InputNumber
-                          min={150}
-                          max={400}
+                          min={310}
+                          max={500}
                           step={10}
                           style={{ width: "100%" }}
-                          placeholder="200"
+                          placeholder="310"
                         />
                       </Form.Item>
                     </Col>
@@ -1568,11 +1568,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         style={{ marginBottom: 8 }}
                       >
                         <InputNumber
-                          min={200}
+                          min={350}
                           max={500}
                           step={10}
                           style={{ width: "100%" }}
-                          placeholder="300"
+                          placeholder="350"
                         />
                       </Form.Item>
                     </Col>
@@ -1583,11 +1583,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         style={{ marginBottom: 8 }}
                       >
                         <InputNumber
-                          min={150}
-                          max={400}
+                          min={310}
+                          max={500}
                           step={10}
                           style={{ width: "100%" }}
-                          placeholder="250"
+                          placeholder="310"
                         />
                       </Form.Item>
                     </Col>

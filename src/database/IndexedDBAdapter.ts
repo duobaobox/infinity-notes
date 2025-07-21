@@ -78,7 +78,27 @@ export class IndexedDBAdapter {
         | undefined,
       // 处理思维链数据（新增）
       thinkingChain: dbNote.thinking_chain
-        ? JSON.parse(dbNote.thinking_chain)
+        ? (() => {
+            const parsed = JSON.parse(dbNote.thinking_chain);
+            // 确保思维链中的时间戳字段是Date对象
+            if (parsed && parsed.steps && Array.isArray(parsed.steps)) {
+              parsed.steps = parsed.steps.map((step: any) => ({
+                ...step,
+                timestamp:
+                  step.timestamp instanceof Date
+                    ? step.timestamp
+                    : new Date(step.timestamp),
+              }));
+            }
+            // 确保createdAt也是Date对象
+            if (parsed && parsed.createdAt) {
+              parsed.createdAt =
+                parsed.createdAt instanceof Date
+                  ? parsed.createdAt
+                  : new Date(parsed.createdAt);
+            }
+            return parsed;
+          })()
         : undefined,
       hasThinking: dbNote.has_thinking || false,
     };

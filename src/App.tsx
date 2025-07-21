@@ -7,6 +7,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
 import MarkdownListTest from "./test/MarkdownListTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
+import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
 import VirtualizationStatusMonitorEnhanced from "./test/VirtualizationTestEnhanced";
 import StreamingDebug from "./components/debug/StreamingDebug";
 
@@ -29,6 +30,7 @@ function App() {
   const isTestMode =
     testMode === "prompt-template" ||
     testMode === "thinking-chain" ||
+    testMode === "thinking-chain-timestamp" ||
     testMode === "markdown-list";
 
   const canvasRef = useRef<{
@@ -174,6 +176,8 @@ function App() {
       return <AIPromptTemplateTest />;
     } else if (testMode === "thinking-chain") {
       return <ThinkingChainTest />;
+    } else if (testMode === "thinking-chain-timestamp") {
+      return <ThinkingChainTimestampTest />;
     } else if (testMode === "markdown-list") {
       return <MarkdownListTest />;
     }

@@ -105,8 +105,8 @@
   box-shadow: var(--note-glass-shadow);
 
   user-select: none;
-  min-width: 200px;
-  min-height: 150px;
+  min-width: 350px;
+  min-height: 310px;
   display: flex;
   flex-direction: column;
   font-size: var(--note-content-font-size, 14px); /* 使用CSS变量控制字体大小 */
@@ -795,6 +795,16 @@
   flex-direction: column;
   user-select: text; /* 允许选择内容区域的文本 */
   min-height: 0; /* 关键：允许flex子元素收缩 */
+}
+
+/* 包含思维链的便签内容区域特殊处理 */
+.sticky-note-content:has(.thinking-chain-in-note) {
+  overflow: visible; /* 允许思维链组件内部处理滚动 */
+}
+
+/* 如果浏览器不支持:has选择器，使用类名方式 */
+.sticky-note-content.has-thinking-chain {
+  overflow: visible; /* 允许思维链组件内部处理滚动 */
 }
 
 /* 编辑状态下的sticky-note-content - 移除下内边距 */
