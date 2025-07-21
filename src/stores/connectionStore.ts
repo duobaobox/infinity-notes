@@ -41,16 +41,11 @@ export interface ConnectionActions {
   isNoteConnected: (noteId: string) => boolean; // 检查便签是否已连接
   getConnectionIndex: (noteId: string) => number; // 获取便签在连接列表中的索引
   canAddConnection: () => boolean; // 检查是否可以添加更多连接
-  updateConnectionLines: () => void; // 更新所有连接线位置
-  updateNoteConnectionLines: (noteId: string) => void; // 更新特定便签的连接线位置
-  updateNoteConnectionLinesImmediate: (noteId: string) => void; // 立即更新特定便签的连接线位置
-  updateConnectionLinesImmediate: () => void; // 立即更新所有连接线位置
+  updateConnectionLines: (immediate?: boolean) => void; // 更新所有连接线位置，支持立即更新选项
+  updateNoteConnectionLines: (noteId: string, immediate?: boolean) => void; // 更新特定便签的连接线位置，支持立即更新选项
 
-  // 配置管理
-  updateExtractionConfig: (config: Partial<ContentExtractionConfig>) => void; // 更新内容提取配置
-  resetExtractionConfig: () => void; // 重置配置为默认值
+  // 简化的配置管理
   getExtractionConfig: () => ContentExtractionConfig; // 获取当前配置
-  setExtractionScenario: (scenario: "speed" | "accuracy" | "balanced") => void; // 设置优化场景
 }
 
 // 创建连接Store
@@ -190,58 +185,33 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
         return state.connectedNotes.length < state.maxConnections;
       },
 
-      // 连接线管理
-      updateConnectionLines: () => {
-        connectionLineManager.updateConnectionPositions();
+      // 优化后的连接线管理 - 统一接口，支持立即更新选项
+      updateConnectionLines: (immediate: boolean = false) => {
+        if (immediate) {
+          connectionLineManager.updateConnectionPositionsImmediate();
+        } else {
+          connectionLineManager.updateConnectionPositions();
+        }
       },
 
-      updateNoteConnectionLines: (noteId: string) => {
-        connectionLineManager.updateNoteConnections(noteId);
+      updateNoteConnectionLines: (
+        noteId: string,
+        immediate: boolean = false
+      ) => {
+        if (immediate) {
+          connectionLineManager.updateNoteConnectionsImmediate(noteId);
+        } else {
+          connectionLineManager.updateNoteConnections(noteId);
+        }
       },
 
-      updateNoteConnectionLinesImmediate: (noteId: string) => {
-        connectionLineManager.updateNoteConnectionsImmediate(noteId);
-      },
-
-      updateConnectionLinesImmediate: () => {
-        connectionLineManager.updateConnectionPositionsImmediate();
-      },
-
-      // 配置管理方法
-      updateExtractionConfig: (config: Partial<ContentExtractionConfig>) => {
-        const configManager = ContentExtractionConfigManager.getInstance();
-        configManager.updateConfig(config);
-        console.log("📋 内容提取配置已更新");
-      },
-
-      resetExtractionConfig: () => {
-        const configManager = ContentExtractionConfigManager.getInstance();
-        configManager.resetToDefault();
-        console.log("📋 内容提取配置已重置为默认值");
-      },
-
+      // 简化的配置管理方法
       getExtractionConfig: () => {
         return getContentExtractionConfig();
-      },
-
-      setExtractionScenario: (scenario: "speed" | "accuracy" | "balanced") => {
-        const configManager = ContentExtractionConfigManager.getInstance();
-        const optimizedConfig = configManager.getOptimizedConfig(scenario);
-        configManager.updateConfig(optimizedConfig);
-        console.log(`📋 已切换到 ${scenario} 优化模式`);
       },
     }),
     {
       name: "connection-store", // DevTools中的名称
-      onRehydrateStorage: () => (state) => {
-        // Store恢复后，确保使用平衡模式作为默认配置
-        if (state) {
-          const configManager = ContentExtractionConfigManager.getInstance();
-          const balancedConfig = configManager.getOptimizedConfig("balanced");
-          configManager.updateConfig(balancedConfig);
-          console.log("📋 Store恢复完成，已设置为平衡模式");
-        }
-      },
     }
   )
 );
@@ -591,38 +561,6 @@ export const connectionUtils = {
     const finalScore = Math.min(1, lengthScore + structureScore);
 
     return finalScore;
-  },
-
-  /**
-   * 验证单个便签连接的有效性
-   */
-  validateSingleConnection: (note: StickyNote): boolean => {
-    if (!note) {
-      console.warn("⚠️ 便签对象为空");
-      return false;
-    }
-
-    if (!note.id || typeof note.id !== "string") {
-      console.warn("⚠️ 便签ID无效:", note.id);
-      return false;
-    }
-
-    if (typeof note.content !== "string") {
-      console.warn("⚠️ 便签内容类型无效:", typeof note.content);
-      return false;
-    }
-
-    if (typeof note.title !== "string") {
-      console.warn("⚠️ 便签标题类型无效:", typeof note.title);
-      return false;
-    }
-
-    if (note.content.trim().length === 0) {
-      console.warn("⚠️ 便签内容为空:", note.id);
-      return false;
-    }
-
-    return true;
   },
 
   /**

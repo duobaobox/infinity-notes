@@ -352,24 +352,23 @@ export class AIService {
       let fullResponse = "";
       const decoder = new TextDecoder();
 
-      // 流式状态管理
-      const currentNoteIndex = 0;
-      let currentNoteContent = "";
-      let isStreamingNote = false;
-      // jsonBuffer 用于调试，当前版本暂时不使用
-      // let jsonBuffer = "";
-
-      // 思考过程状态管理
-      let thinkingContent = ""; // 存储思考过程内容
-      let hasStartedThinking = false; // 是否已开始显示思考过程
-      let hasFinishedThinking = false; // 是否已完成思考过程
-      let displayedContent = ""; // 当前显示的完整内容（思考过程 + 答案）
-      const showThinkingMode = options?.showThinkingMode ?? true; // 获取思维模式设置
+      // 优化后的统一流式状态管理
+      const streamingState = {
+        currentNoteIndex: 0,
+        currentNoteContent: "",
+        isStreamingNote: false,
+        // 思考过程相关状态
+        thinkingContent: "",
+        hasStartedThinking: false,
+        hasFinishedThinking: false,
+        displayedContent: "",
+        showThinkingMode: options?.showThinkingMode ?? true,
+      };
 
       try {
         // 先创建第一个便签开始流式显示
         callbacks.onNoteStart?.(0, "AI正在生成...");
-        isStreamingNote = true;
+        streamingState.isStreamingNote = true;
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -396,46 +395,48 @@ export class AIService {
 
                 if (content) {
                   fullResponse += content;
-                  // jsonBuffer 用于调试，但当前未使用
-                  // jsonBuffer += content;
 
                   // 现在统一使用直接显示原始AI回复的方式
                   // 因为我们使用了简化的系统提示词，AI回复的都是自然语言
                   if (
                     content &&
-                    content !== currentNoteContent.slice(-content.length)
+                    content !==
+                      streamingState.currentNoteContent.slice(-content.length)
                   ) {
-                    currentNoteContent += content;
+                    streamingState.currentNoteContent += content;
 
-                    if (isStreamingNote) {
+                    if (streamingState.isStreamingNote) {
                       // 如果开启了思维模式且有思考过程，需要在思考过程后显示答案
-                      if (showThinkingMode && hasStartedThinking) {
+                      if (
+                        streamingState.showThinkingMode &&
+                        streamingState.hasStartedThinking
+                      ) {
                         // 如果还没有添加分隔线，说明思考刚完成，添加分隔线
-                        if (!hasFinishedThinking) {
-                          hasFinishedThinking = true;
+                        if (!streamingState.hasFinishedThinking) {
+                          streamingState.hasFinishedThinking = true;
                           const separator = "\n\n---\n\n## ✨ 最终答案\n\n";
-                          displayedContent += separator;
+                          streamingState.displayedContent += separator;
                           callbacks.onContentChunk?.(
-                            currentNoteIndex,
+                            streamingState.currentNoteIndex,
                             separator,
-                            displayedContent
+                            streamingState.displayedContent
                           );
                         }
 
                         // 添加答案内容
-                        displayedContent += content;
+                        streamingState.displayedContent += content;
                         callbacks.onContentChunk?.(
-                          currentNoteIndex,
+                          streamingState.currentNoteIndex,
                           content,
-                          displayedContent
+                          streamingState.displayedContent
                         );
                       } else {
                         // 没有思考过程或关闭了思维模式，直接显示内容
-                        displayedContent += content;
+                        streamingState.displayedContent += content;
                         callbacks.onContentChunk?.(
-                          currentNoteIndex,
+                          streamingState.currentNoteIndex,
                           content,
-                          displayedContent
+                          streamingState.displayedContent
                         );
                       }
                     }
@@ -445,7 +446,7 @@ export class AIService {
                 // 如果有reasoning_content，根据思维模式设置决定是否显示
                 if (reasoningContent) {
                   // 只在第一次检测到时记录日志，避免重复输出
-                  if (!hasStartedThinking) {
+                  if (!streamingState.hasStartedThinking) {
                     console.log("🧠 检测到思维链内容，开始流式显示");
                   }
                   // 将reasoning_content添加到完整响应中
@@ -467,28 +468,34 @@ export class AIService {
                   }
 
                   // 只有在开启思维模式时才实时流式显示思考过程
-                  if (showThinkingMode) {
-                    thinkingContent += reasoningContent;
+                  if (streamingState.showThinkingMode) {
+                    streamingState.thinkingContent += reasoningContent;
 
-                    if (!hasStartedThinking && isStreamingNote) {
+                    if (
+                      !streamingState.hasStartedThinking &&
+                      streamingState.isStreamingNote
+                    ) {
                       // 第一次检测到思考内容，显示思考标题
-                      // 🔧 修改：使用与最终格式一致的标题，提示用户这是思考过程
-                      hasStartedThinking = true;
-                      displayedContent = "🤔 **AI正在思考中...**\n\n";
+                      streamingState.hasStartedThinking = true;
+                      streamingState.displayedContent =
+                        "🤔 **AI正在思考中...**\n\n";
                       callbacks.onContentChunk?.(
-                        currentNoteIndex,
-                        displayedContent,
-                        displayedContent
+                        streamingState.currentNoteIndex,
+                        streamingState.displayedContent,
+                        streamingState.displayedContent
                       );
                     }
 
-                    if (isStreamingNote && hasStartedThinking) {
+                    if (
+                      streamingState.isStreamingNote &&
+                      streamingState.hasStartedThinking
+                    ) {
                       // 实时追加思考内容，保持自然的流式体验
-                      displayedContent += reasoningContent;
+                      streamingState.displayedContent += reasoningContent;
                       callbacks.onContentChunk?.(
-                        currentNoteIndex,
+                        streamingState.currentNoteIndex,
                         reasoningContent,
-                        displayedContent
+                        streamingState.displayedContent
                       );
                     }
                   }
@@ -513,7 +520,7 @@ export class AIService {
         const finalNotes = this.parseResponseIntelligently(
           fullResponse,
           prompt,
-          showThinkingMode
+          streamingState.showThinkingMode
         );
 
         if (finalNotes.success && finalNotes.notes) {
@@ -534,7 +541,7 @@ export class AIService {
           } else {
             // 多个便签的情况，需要重新组织显示
             // 先完成当前流式便签
-            if (isStreamingNote && finalNotes.notes.length > 0) {
+            if (streamingState.isStreamingNote && finalNotes.notes.length > 0) {
               const firstNote = finalNotes.notes[0];
               callbacks.onNoteStart?.(0, firstNote.title);
               callbacks.onNoteComplete?.(0, firstNote);
@@ -567,9 +574,9 @@ export class AIService {
           // 解析失败，但流式内容已经显示，创建一个便签保存内容
           const fallbackNote: StickyNoteData = {
             title: this.generateTitleFromContent(
-              currentNoteContent || fullResponse
+              streamingState.currentNoteContent || fullResponse
             ),
-            content: currentNoteContent || fullResponse,
+            content: streamingState.currentNoteContent || fullResponse,
             // 🔧 不设置颜色，让前端使用临时便签的颜色
           };
 
@@ -737,7 +744,10 @@ export class AIService {
     return title || "AI便签";
   }
 
-  // 解析AI响应中的思维链内容并格式化为Markdown
+  /**
+   * 统一的思维链解析器 - 合并了原来的parseThinkingChain和parseThinkingSteps逻辑
+   * 减少重复代码，提高解析效率
+   */
   private parseThinkingChain(
     response: string,
     originalPrompt: string,
@@ -747,56 +757,49 @@ export class AIService {
     cleanContent: string;
   } {
     try {
-      // 如果不显示思维模式，直接返回清理后的内容
-      if (!showThinkingMode) {
-        // 移除思维链标记，只保留最终内容
-        let cleanContent = response
-          .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
-          .replace(/<think>[\s\S]*?<\/think>/gi, "")
-          .trim();
-
-        return {
-          cleanContent,
-        };
-      }
-
-      // 检查响应中是否包含思维链标记
-      // 支持多种格式：<thinking>、<think>（DeepSeek格式）
+      // 统一的思维链标记清理模式
       const thinkingPatterns = [
-        /<thinking>([\s\S]*?)<\/thinking>/i, // 通用格式
-        /<think>([\s\S]*?)<\/think>/i, // DeepSeek格式
+        /<thinking>([\s\S]*?)<\/thinking>/gi, // 通用格式
+        /<think>([\s\S]*?)<\/think>/gi, // DeepSeek格式
       ];
 
-      let thinkingMatch: RegExpMatchArray | null = null;
-      let usedPattern: RegExp | null = null;
+      // 如果不显示思维模式，直接清理并返回
+      if (!showThinkingMode) {
+        let cleanContent = response;
+        thinkingPatterns.forEach((pattern) => {
+          cleanContent = cleanContent.replace(pattern, "");
+        });
+        return { cleanContent: cleanContent.trim() };
+      }
 
-      // 尝试匹配不同的思维链格式
+      // 查找思维链内容
+      let thinkingContent = "";
+      let cleanContent = response;
+      let foundThinking = false;
+
       for (const pattern of thinkingPatterns) {
-        thinkingMatch = response.match(pattern);
-        if (thinkingMatch) {
-          usedPattern = pattern;
+        const match = response.match(pattern);
+        if (match && match[1]) {
+          thinkingContent = match[1].trim();
+          cleanContent = response.replace(pattern, "").trim();
+          foundThinking = true;
           break;
         }
       }
 
-      if (!thinkingMatch || !usedPattern) {
-        // 没有思维链，返回原始内容
+      if (!foundThinking || !thinkingContent) {
         console.log("💭 未检测到思维链标记");
         return { cleanContent: response };
       }
-
-      const thinkingContent = thinkingMatch[1].trim();
-      const cleanContent = response.replace(usedPattern, "").trim();
 
       console.log("🧠 解析思维链:", {
         thinkingLength: thinkingContent.length,
         cleanLength: cleanContent.length,
       });
 
-      // 解析思维链步骤
-      const steps = this.parseThinkingSteps(thinkingContent);
+      // 直接在这里解析思维链步骤，避免额外的方法调用
+      const steps = this.parseThinkingStepsInternal(thinkingContent);
 
-      // 如果思维链内容为空或步骤为0，但有<think>标签，说明AI没有进行复杂思考
       if (steps.length === 0) {
         console.log("⚠️ 思维链步骤解析失败或为空");
         return { cleanContent: response };
@@ -823,30 +826,39 @@ export class AIService {
     }
   }
 
-  // 解析思维链步骤
-  private parseThinkingSteps(thinkingContent: string): Array<{
+  /**
+   * 内部思维链步骤解析方法 - 优化后的版本
+   * 简化了步骤类型判断逻辑，提高性能
+   */
+  private parseThinkingStepsInternal(thinkingContent: string): Array<{
     id: string;
     content: string;
     stepType: "analysis" | "reasoning" | "conclusion" | "question" | "idea";
     timestamp: Date;
     order: number;
   }> {
-    const steps: Array<{
-      id: string;
-      content: string;
-      stepType: "analysis" | "reasoning" | "conclusion" | "question" | "idea";
-      timestamp: Date;
-      order: number;
-    }> = [];
-
     // 按段落分割思考内容
     const paragraphs = thinkingContent
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
 
-    paragraphs.forEach((paragraph, index) => {
-      // 根据内容特征判断步骤类型
+    // 优化的步骤类型判断规则
+    const stepTypeRules = [
+      { keywords: ["分析", "观察", "数据", "检查"], type: "analysis" as const },
+      {
+        keywords: ["结论", "总结", "因此", "所以"],
+        type: "conclusion" as const,
+      },
+      {
+        keywords: ["?", "？", "如何", "为什么", "是否"],
+        type: "question" as const,
+      },
+      { keywords: ["想法", "建议", "可以", "应该"], type: "idea" as const },
+    ];
+
+    return paragraphs.map((paragraph, index) => {
+      // 使用优化的规则匹配步骤类型
       let stepType:
         | "analysis"
         | "reasoning"
@@ -854,34 +866,14 @@ export class AIService {
         | "question"
         | "idea" = "reasoning";
 
-      if (
-        paragraph.includes("分析") ||
-        paragraph.includes("观察") ||
-        paragraph.includes("数据")
-      ) {
-        stepType = "analysis";
-      } else if (
-        paragraph.includes("结论") ||
-        paragraph.includes("总结") ||
-        paragraph.includes("因此")
-      ) {
-        stepType = "conclusion";
-      } else if (
-        paragraph.includes("?") ||
-        paragraph.includes("？") ||
-        paragraph.includes("如何") ||
-        paragraph.includes("为什么")
-      ) {
-        stepType = "question";
-      } else if (
-        paragraph.includes("想法") ||
-        paragraph.includes("建议") ||
-        paragraph.includes("可以")
-      ) {
-        stepType = "idea";
+      for (const rule of stepTypeRules) {
+        if (rule.keywords.some((keyword) => paragraph.includes(keyword))) {
+          stepType = rule.type;
+          break;
+        }
       }
 
-      steps.push({
+      return {
         id: `step-${Date.now()}-${index}-${Math.random()
           .toString(36)
           .substring(2, 8)}`,
@@ -889,10 +881,8 @@ export class AIService {
         stepType,
         timestamp: new Date(Date.now() + index * 100), // 模拟时间间隔
         order: index + 1,
-      });
+      };
     });
-
-    return steps;
   }
 
   // 获取步骤类型的图标文本
