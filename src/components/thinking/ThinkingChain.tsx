@@ -1,6 +1,5 @@
 import {
   BulbOutlined,
-  CheckCircleOutlined,
   ClockCircleOutlined,
   DownOutlined,
   ExperimentOutlined,
@@ -9,7 +8,7 @@ import {
   SearchOutlined,
   TrophyOutlined,
 } from "@ant-design/icons";
-import { Card, Collapse, Divider, Tag, Timeline, Typography } from "antd";
+import { Collapse, Tag, Timeline, Typography } from "antd";
 import type { CollapseProps } from "antd";
 import React from "react";
 import type {
@@ -183,69 +182,7 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
         </div>
       ),
       children: (
-        <div className="thinking-content">
-          {/* 原始提示词 */}
-          {thinkingChain.prompt && (
-            <Card size="small" className="thinking-prompt-card">
-              <Text strong>原始提示：</Text>
-              <Paragraph
-                style={{ marginBottom: 0, marginTop: 8 }}
-                type="secondary"
-              >
-                {thinkingChain.prompt}
-              </Paragraph>
-            </Card>
-          )}
-
-          {/* 思维链统计 */}
-          {!compact && renderThinkingStats()}
-
-          {/* 思考步骤时间线 */}
-          <div className="thinking-process-section">
-            {renderThinkingSteps()}
-          </div>
-
-          {/* 分隔线 - 区分思维过程和最终答案 */}
-          <Divider
-            style={{
-              margin: "24px 0 20px 0",
-              borderColor: "#52c41a",
-              borderWidth: "2px",
-            }}
-          >
-            <CheckCircleOutlined
-              style={{ color: "#52c41a", fontSize: "16px" }}
-            />
-          </Divider>
-
-          {/* 最终答案区域 */}
-          <div className="thinking-final-section">
-            <Card size="small" className="thinking-final-answer">
-              <div className="thinking-final-header">
-                <CheckCircleOutlined
-                  style={{
-                    marginRight: 8,
-                    color: "#52c41a",
-                    fontSize: "16px",
-                  }}
-                />
-                <Text strong style={{ color: "#52c41a", fontSize: "16px" }}>
-                  最终答案
-                </Text>
-              </div>
-              <Paragraph
-                style={{
-                  marginBottom: 0,
-                  marginTop: 12,
-                  fontSize: "14px",
-                  lineHeight: "1.6",
-                }}
-              >
-                {thinkingChain.finalAnswer}
-              </Paragraph>
-            </Card>
-          </div>
-        </div>
+        <div className="thinking-process-section">{renderThinkingSteps()}</div>
       ),
       className: "thinking-panel",
     },
@@ -253,6 +190,7 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
 
   return (
     <div className={`thinking-chain-container ${compact ? "compact" : ""}`}>
+      {/* 思维过程折叠面板 - 只包含思考步骤 */}
       <Collapse
         defaultActiveKey={defaultExpanded ? ["thinking"] : []}
         ghost
