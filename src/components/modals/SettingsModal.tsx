@@ -60,7 +60,7 @@ import { useStickyNotesStore, useUserStore } from "../../stores";
 import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import { AIConfigStatus } from "../ai/AIConfigStatus";
 import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
-import ContentExtractionSettings from "../ai/ContentExtractionSettings";
+import SimpleExtractionSettings from "../ai/SimpleExtractionSettings";
 import CardSectionTitle from "../common/CardSectionTitle";
 import "./SettingsModal.css";
 
@@ -2236,12 +2236,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </Form>
 
-              {/* 内容提取设置 */}
+              {/* 智能内容提取设置 */}
               <div style={{ marginTop: 24 }}>
-                <ContentExtractionSettings
-                  onConfigChange={(config) => {
-                    console.log("内容提取配置已更新:", config);
-                  }}
+                <SimpleExtractionSettings
+                  showAdvanced={false}
+                  showDemo={true}
                 />
               </div>
             </Spin>

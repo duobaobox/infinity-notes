@@ -1,14 +1,14 @@
-// 内容提取配置文件
-// 集中管理内容提取相关的参数和规则
+// 简化的内容提取配置文件
+// 🎯 基于1000字阈值策略，彻底简化配置复杂度
 
 /**
  * 简化的内容提取配置接口
- * 🎯 基于1000字阈值策略，大幅简化配置复杂度
+ * 只保留最核心的配置项
  */
-export interface ContentExtractionConfig {
+export interface SimpleContentExtractionConfig {
   // 核心阈值配置
   lengthThreshold: number; // 长短便签的分界线（默认1000字）
-
+  
   // 长便签提取配置（仅在超过阈值时使用）
   longNoteExtraction: {
     maxLength: number; // 提取结果的最大长度
@@ -24,13 +24,13 @@ export interface ContentExtractionConfig {
 }
 
 /**
- * 简化的默认内容提取配置
+ * 简化的默认配置
  * 🎯 基于1000字阈值策略
  */
-export const defaultContentExtractionConfig: ContentExtractionConfig = {
+export const defaultSimpleConfig: SimpleContentExtractionConfig = {
   // 核心阈值：1000字分界线
   lengthThreshold: 1000,
-
+  
   // 长便签提取配置
   longNoteExtraction: {
     maxLength: 300, // 长便签提取后的最大长度
@@ -66,46 +66,49 @@ export const defaultContentExtractionConfig: ContentExtractionConfig = {
 };
 
 /**
- * 内容提取配置管理器
+ * 简化的配置管理器
+ * 🎯 只提供最基本的配置功能，无复杂的模式切换
  */
-export class ContentExtractionConfigManager {
-  private static instance: ContentExtractionConfigManager;
-  private config: ContentExtractionConfig;
+export class SimpleConfigManager {
+  private static instance: SimpleConfigManager;
+  private config: SimpleContentExtractionConfig;
 
   private constructor() {
-    this.config = { ...defaultContentExtractionConfig };
+    this.config = { ...defaultSimpleConfig };
   }
 
-  static getInstance(): ContentExtractionConfigManager {
-    if (!ContentExtractionConfigManager.instance) {
-      ContentExtractionConfigManager.instance =
-        new ContentExtractionConfigManager();
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): SimpleConfigManager {
+    if (!SimpleConfigManager.instance) {
+      SimpleConfigManager.instance = new SimpleConfigManager();
     }
-    return ContentExtractionConfigManager.instance;
+    return SimpleConfigManager.instance;
   }
 
   /**
    * 获取当前配置
    */
-  getConfig(): ContentExtractionConfig {
+  getConfig(): SimpleContentExtractionConfig {
     return { ...this.config };
   }
 
   /**
    * 更新配置（简化版）
    */
-  updateConfig(newConfig: Partial<ContentExtractionConfig>): void {
+  updateConfig(newConfig: Partial<SimpleContentExtractionConfig>): void {
     this.config = {
       ...this.config,
       ...newConfig,
       // 深度合并嵌套对象
-      longNoteExtraction: {
-        ...this.config.longNoteExtraction,
-        ...newConfig.longNoteExtraction,
+      longNoteExtraction: { 
+        ...this.config.longNoteExtraction, 
+        ...newConfig.longNoteExtraction 
       },
-      patterns: {
-        ...this.config.patterns,
-        ...newConfig.patterns,
+      patterns: { 
+        ...this.config.patterns, 
+        ...newConfig.patterns 
       },
     };
 
@@ -116,8 +119,8 @@ export class ContentExtractionConfigManager {
    * 重置为默认配置
    */
   resetToDefault(): void {
-    this.config = { ...defaultContentExtractionConfig };
-    console.log("📋 内容提取配置已重置为默认值");
+    this.config = { ...defaultSimpleConfig };
+    console.log("📋 配置已重置为默认值");
   }
 
   /**
@@ -163,22 +166,22 @@ export class ContentExtractionConfigManager {
 /**
  * 便捷函数：获取配置
  */
-export const getConfig = (): ContentExtractionConfig => {
-  return ContentExtractionConfigManager.getInstance().getConfig();
+export const getSimpleConfig = (): SimpleContentExtractionConfig => {
+  return SimpleConfigManager.getInstance().getConfig();
 };
 
 /**
  * 便捷函数：获取阈值
  */
 export const getLengthThreshold = (): number => {
-  return ContentExtractionConfigManager.getInstance().getLengthThreshold();
+  return SimpleConfigManager.getInstance().getLengthThreshold();
 };
 
 /**
  * 便捷函数：设置阈值
  */
 export const setLengthThreshold = (threshold: number): void => {
-  ContentExtractionConfigManager.getInstance().setLengthThreshold(threshold);
+  SimpleConfigManager.getInstance().setLengthThreshold(threshold);
 };
 
 /**
@@ -194,20 +197,4 @@ export const isLongNote = (content: string): boolean => {
  */
 export const isShortNote = (content: string): boolean => {
   return !isLongNote(content);
-};
-
-/**
- * 获取内容提取配置的便捷函数
- */
-export const getContentExtractionConfig = (): ContentExtractionConfig => {
-  return ContentExtractionConfigManager.getInstance().getConfig();
-};
-
-/**
- * 更新内容提取配置的便捷函数
- */
-export const updateContentExtractionConfig = (
-  config: Partial<ContentExtractionConfig>
-): void => {
-  ContentExtractionConfigManager.getInstance().updateConfig(config);
 };
