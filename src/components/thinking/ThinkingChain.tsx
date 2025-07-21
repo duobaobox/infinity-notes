@@ -131,11 +131,6 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
                   {step.content}
                 </Paragraph>
               </div>
-
-              {/* 连接线（除了最后一个步骤） */}
-              {index < thinkingChain.steps.length - 1 && (
-                <div className="thinking-step-connector"></div>
-              )}
             </div>
           );
         })}

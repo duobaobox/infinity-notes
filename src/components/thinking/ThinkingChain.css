@@ -108,23 +108,6 @@
   margin-bottom: 12px;
 }
 
-/* 步骤连接线 */
-.thinking-step-connector {
-  position: absolute;
-  left: 12px;
-  top: 32px;
-  bottom: -16px;
-  width: 2px;
-  background: linear-gradient(to bottom, #e8e8e8, transparent);
-  border-radius: 1px;
-}
-
-.thinking-chain-container.compact .thinking-step-connector {
-  left: 10px;
-  top: 28px;
-  bottom: -12px;
-}
-
 /* 思维链步骤头部样式 */
 .thinking-step-header {
   display: flex;
@@ -422,10 +405,6 @@
   cursor: default;
 }
 
-.thinking-step-connector {
-  transition: opacity 0.3s ease;
-}
-
 /* 便签中的思维链特殊样式 */
 .thinking-chain-in-note {
   margin: 0; /* 移除外边距以节省空间 */
@@ -479,10 +458,6 @@
 
 .thinking-chain-in-note .thinking-step-tag-with-icon span:first-child {
   font-size: 12px; /* 便签中的图标也相应增大 */
-}
-
-.thinking-chain-in-note .thinking-step-connector {
-  left: 8px; /* 调整连接线位置 */
 }
 
 /* 深色主题支持 */
