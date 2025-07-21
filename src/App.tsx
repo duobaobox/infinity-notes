@@ -5,6 +5,7 @@ import InfiniteCanvas from "./components/canvas/InfiniteCanvasNew";
 import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
+import CardTitleUnificationTest from "./test/CardTitleUnificationTest";
 import MarkdownListTest from "./test/MarkdownListTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
@@ -31,7 +32,8 @@ function App() {
     testMode === "prompt-template" ||
     testMode === "thinking-chain" ||
     testMode === "thinking-chain-timestamp" ||
-    testMode === "markdown-list";
+    testMode === "markdown-list" ||
+    testMode === "card-title";
 
   const canvasRef = useRef<{
     createNote: () => void;
@@ -180,6 +182,8 @@ function App() {
       return <ThinkingChainTimestampTest />;
     } else if (testMode === "markdown-list") {
       return <MarkdownListTest />;
+    } else if (testMode === "card-title") {
+      return <CardTitleUnificationTest />;
     }
   }
 

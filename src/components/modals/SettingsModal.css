@@ -36,3 +36,107 @@
   border-top: 1px solid #f0f0f0;
   margin-top: 16px;
 }
+
+/* ========== 统一卡片标题样式规范 ========== */
+/*
+ * 用于统一所有设置页面中的卡片标题样式
+ * 确保视觉一致性和易于维护
+ */
+
+/* 主要卡片标题样式 */
+.card-section-title {
+  margin: 0 0 16px 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #262626 !important;
+  line-height: 1.4 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* 卡片标题中的图标样式 */
+.card-section-title .anticon {
+  font-size: 14px;
+  color: #1890ff;
+  margin-right: 8px;
+  flex-shrink: 0; /* 防止图标被压缩 */
+}
+
+/* 特殊颜色的图标 */
+.card-section-title .anticon.icon-success {
+  color: #52c41a;
+}
+
+.card-section-title .anticon.icon-warning {
+  color: #fa8c16;
+}
+
+.card-section-title .anticon.icon-danger {
+  color: #ff4d4f;
+}
+
+.card-section-title .anticon.icon-purple {
+  color: #722ed1;
+}
+
+/* 紧凑模式的卡片标题 */
+.card-section-title.compact {
+  margin: 0 0 12px 0 !important;
+  font-size: 13px !important;
+}
+
+.card-section-title.compact .anticon {
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .card-section-title {
+    margin: 0 0 12px 0 !important;
+    font-size: 13px !important;
+  }
+
+  .card-section-title .anticon {
+    font-size: 13px;
+    margin-right: 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .card-section-title {
+    font-size: 12px !important;
+  }
+
+  .card-section-title .anticon {
+    font-size: 12px;
+    margin-right: 4px;
+  }
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .card-section-title {
+    color: #f0f0f0 !important;
+  }
+
+  .card-section-title .anticon {
+    color: #69c0ff;
+  }
+
+  .card-section-title .anticon.icon-success {
+    color: #73d13d;
+  }
+
+  .card-section-title .anticon.icon-warning {
+    color: #ffc53d;
+  }
+
+  .card-section-title .anticon.icon-danger {
+    color: #ff7875;
+  }
+
+  .card-section-title .anticon.icon-purple {
+    color: #b37feb;
+  }
+}

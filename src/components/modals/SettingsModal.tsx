@@ -61,6 +61,7 @@ import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import { AIConfigStatus } from "../ai/AIConfigStatus";
 import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
 import ContentExtractionSettings from "../ai/ContentExtractionSettings";
+import CardSectionTitle from "../common/CardSectionTitle";
 import "./SettingsModal.css";
 
 /**
@@ -1255,10 +1256,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               }}
             >
               <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  <UserOutlined style={{ marginRight: 8 }} />
+                <CardSectionTitle icon={<UserOutlined />}>
                   个人信息
-                </Title>
+                </CardSectionTitle>
                 <Text
                   type="secondary"
                   style={{ display: "block", marginBottom: 16 }}
@@ -1378,10 +1378,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* 预制主题选择器 */}
               <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  <BgColorsOutlined style={{ marginRight: 8 }} />
+                <CardSectionTitle icon={<BgColorsOutlined />}>
                   选择预制主题
-                </Title>
+                </CardSectionTitle>
                 <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
                   {PRESET_THEMES.map((theme) => {
                     const isSelected =
@@ -1427,10 +1426,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </Card>
 
               <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  <BgColorsOutlined style={{ marginRight: 8 }} />
+                <CardSectionTitle icon={<BgColorsOutlined />}>
                   画布设置
-                </Title>
+                </CardSectionTitle>
                 <Form.Item label="画布背景色" name="canvasBackground">
                   <ColorPicker showText />
                 </Form.Item>
@@ -1506,10 +1504,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {/* 便签默认尺寸设置 */}
             <Card size="small" style={{ marginBottom: 16 }}>
-              <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                <SettingOutlined style={{ marginRight: 8 }} />
+              <CardSectionTitle icon={<SettingOutlined />}>
                 便签默认尺寸
-              </Title>
+              </CardSectionTitle>
 
               <Form
                 form={noteSettingsForm}
@@ -1649,10 +1646,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             <Spin spinning={loadingStats}>
               {/* 数据统计信息 */}
               <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  <HddOutlined style={{ marginRight: 8 }} />
+                <CardSectionTitle icon={<HddOutlined />}>
                   数据统计
-                </Title>
+                </CardSectionTitle>
                 {dataStats && (
                   <Row gutter={16}>
                     <Col span={12}>
@@ -1690,10 +1686,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* 数据操作 */}
               <Card size="small" style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                  <DatabaseOutlined style={{ marginRight: 8 }} />
+                <CardSectionTitle icon={<DatabaseOutlined />}>
                   数据操作
-                </Title>
+                </CardSectionTitle>
                 <Space
                   direction="vertical"
                   style={{ width: "100%" }}
@@ -1770,10 +1765,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="settings-modal-content">
             {/* 思维模式设置 */}
             <Card size="small" style={{ marginBottom: 16 }}>
-              <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                <RobotOutlined style={{ marginRight: 8 }} />
+              <CardSectionTitle icon={<RobotOutlined />} iconType="success">
                 思维模式设置
-              </Title>
+              </CardSectionTitle>
 
               <Form
                 form={thinkingModeForm}
@@ -1949,10 +1943,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 {/* AI供应商选择卡片 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
-                  <Title level={5} style={{ margin: "0 0 12px 0" }}>
-                    <RobotOutlined style={{ marginRight: 8 }} />
+                  <CardSectionTitle icon={<RobotOutlined />} iconType="success">
                     AI供应商
-                  </Title>
+                  </CardSectionTitle>
 
                   {/* AI供应商选择区域 - 使用网格布局展示所有可用的AI供应商 */}
                   <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
@@ -2054,10 +2047,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* AI配置详情卡片 - 显示具体的配置选项 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
-                  <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                    <SettingOutlined style={{ marginRight: 8 }} />
+                  <CardSectionTitle icon={<SettingOutlined />}>
                     配置详情
-                  </Title>
+                  </CardSectionTitle>
 
                   {/* AI模型选择区域 - 根据选择的供应商显示不同的输入方式 */}
                   <Form.Item
@@ -2184,10 +2176,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Card>
 
                 <Card size="small" style={{ marginBottom: 16 }}>
-                  <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                    <SettingOutlined style={{ marginRight: 8 }} />
+                  <CardSectionTitle icon={<SettingOutlined />}>
                     高级设置
-                  </Title>
+                  </CardSectionTitle>
 
                   <Form.Item
                     label="温度值"
@@ -2334,10 +2325,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* AI提示词模板选择器 */}
                 <Card size="small" style={{ marginBottom: 16 }}>
-                  <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                    <TeamOutlined style={{ marginRight: 8 }} />
+                  <CardSectionTitle icon={<TeamOutlined />} iconType="purple">
                     选择AI角色模板
-                  </Title>
+                  </CardSectionTitle>
                   <AIPromptTemplateSelector
                     selectedTemplate={selectedTemplate || undefined}
                     onTemplateSelect={handleTemplateSelect}
@@ -2352,10 +2342,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   preserve={true}
                 >
                   <Card size="small" style={{ marginBottom: 16 }}>
-                    <Title level={5} style={{ margin: "0 0 16px 0" }}>
-                      <EditOutlined style={{ marginRight: 8 }} />
+                    <CardSectionTitle icon={<EditOutlined />}>
                       AI角色设定
-                    </Title>
+                    </CardSectionTitle>
 
                     <Form.Item
                       label="AI角色设定"
@@ -2411,9 +2400,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         children: (
           <div className="settings-modal-content">
             <Card size="small" style={{ marginBottom: 16 }}>
-              <Title level={5} style={{ margin: "0 0 16px 0" }}>
+              <CardSectionTitle icon={<BulbOutlined />} iconType="warning">
                 无限便签
-              </Title>
+              </CardSectionTitle>
               <p>
                 <strong>无限便签</strong>{" "}
                 是一款创新的无限画布便签应用，支持AI智能汇总、连接线可视化和溯源追踪，让您自由组织思路和灵感。
@@ -2476,10 +2465,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <Divider />
               <div style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 12px 0" }}>
-                  <BookOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+                <CardSectionTitle icon={<BookOutlined />}>
                   使用教程
-                </Title>
+                </CardSectionTitle>
                 <p
                   style={{ marginBottom: 12, color: "#666", fontSize: "14px" }}
                 >
@@ -2502,12 +2490,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <Title level={5} style={{ margin: "0 0 12px 0" }}>
-                  <MessageOutlined
-                    style={{ marginRight: 8, color: "#52c41a" }}
-                  />
+                <CardSectionTitle icon={<MessageOutlined />} iconType="success">
                   问题反馈
-                </Title>
+                </CardSectionTitle>
                 <p
                   style={{ marginBottom: 12, color: "#666", fontSize: "14px" }}
                 >

@@ -10,6 +10,7 @@ import {
 } from "@ant-design/icons";
 import { useConnectionStore } from "../../stores/connectionStore";
 import type { ContentExtractionConfig } from "../../config/contentExtractionConfig";
+import CardSectionTitle from "../common/CardSectionTitle";
 
 const { Text } = Typography;
 
@@ -65,16 +66,10 @@ export const ContentExtractionSettings: React.FC<
   };
 
   return (
-    <Card
-      size="small"
-      title={
-        <Space>
-          <SettingOutlined />
-          <span>内容提取优化</span>
-        </Space>
-      }
-      style={{ marginBottom: 16 }}
-    >
+    <Card size="small" style={{ marginBottom: 16 }}>
+      <CardSectionTitle icon={<SettingOutlined />}>
+        内容提取优化
+      </CardSectionTitle>
       <div>
         <Text
           type="secondary"

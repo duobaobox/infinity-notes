@@ -14,6 +14,9 @@ export { default as SettingsModal } from "./modals/SettingsModal";
 // 布局组件
 export { default as Sidebar } from "./layout/Sidebar";
 
+// 通用组件
+export { default as CardSectionTitle } from "./common/CardSectionTitle";
+
 // 工具函数
 export * from "./utils/HighDPIUtils";
 

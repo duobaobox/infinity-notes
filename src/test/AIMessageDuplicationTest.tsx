@@ -1,6 +1,15 @@
 // AI消息重复提醒测试组件
 import { Button, Card, Space, Typography } from "antd";
+import {
+  ExperimentOutlined,
+  InfoCircleOutlined,
+  PlayCircleOutlined,
+  CheckCircleOutlined,
+  SettingOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
 import React, { useState } from "react";
+import CardSectionTitle from "../components/common/CardSectionTitle";
 import { useAISettings } from "../hooks/ai/useAISettings";
 import type { AIConfig } from "../services/ai/aiService";
 
@@ -82,14 +91,20 @@ export const AIMessageDuplicationTest: React.FC = () => {
     <div style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}>
       <Title level={2}>🔧 AI消息重复提醒修复测试</Title>
 
-      <Card title="测试说明" style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 16 }}>
+        <CardSectionTitle icon={<InfoCircleOutlined />}>
+          测试说明
+        </CardSectionTitle>
         <Text>
           此测试用于验证AI设置保存和测试连接功能是否还会出现重复的成功消息提醒。
           修复后，每个操作应该只显示一条消息。
         </Text>
       </Card>
 
-      <Card title="测试操作" style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 16 }}>
+        <CardSectionTitle icon={<PlayCircleOutlined />}>
+          测试操作
+        </CardSectionTitle>
         <Space>
           <Button type="primary" onClick={testSaveConfig} loading={loading}>
             测试保存配置
@@ -101,7 +116,10 @@ export const AIMessageDuplicationTest: React.FC = () => {
         </Space>
       </Card>
 
-      <Card title="测试结果" style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 16 }}>
+        <CardSectionTitle icon={<CheckCircleOutlined />} iconType="success">
+          测试结果
+        </CardSectionTitle>
         <div
           style={{
             maxHeight: "300px",
@@ -123,7 +141,10 @@ export const AIMessageDuplicationTest: React.FC = () => {
         </div>
       </Card>
 
-      <Card title="当前AI配置状态">
+      <Card>
+        <CardSectionTitle icon={<SettingOutlined />}>
+          当前AI配置状态
+        </CardSectionTitle>
         <Space direction="vertical">
           <Text>API地址: {config.apiUrl || "未设置"}</Text>
           <Text>API密钥: {config.apiKey ? "已设置" : "未设置"}</Text>
@@ -132,7 +153,10 @@ export const AIMessageDuplicationTest: React.FC = () => {
         </Space>
       </Card>
 
-      <Card title="预期行为" style={{ marginTop: 16 }}>
+      <Card style={{ marginTop: 16 }}>
+        <CardSectionTitle icon={<FileTextOutlined />}>
+          预期行为
+        </CardSectionTitle>
         <Space direction="vertical">
           <Text>• 点击"测试保存配置"后，应该只看到一条成功消息</Text>
           <Text>• 点击"测试连接"后，应该只看到一条成功或失败消息</Text>

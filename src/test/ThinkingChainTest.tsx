@@ -1,9 +1,11 @@
 import { Button, Card, Space, Typography } from "antd";
+import { ExperimentOutlined, FileTextOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import CardSectionTitle from "../components/common/CardSectionTitle";
 import ThinkingChain from "../components/thinking/ThinkingChain";
 import type { ThinkingChain as ThinkingChainType } from "../components/types";
 
@@ -349,19 +351,15 @@ const ThinkingChainTest: React.FC = () => {
       {/* 新版思维链组件测试 */}
       {showThinkingChain && (
         <Card
-          title="🎯 新版思维链组件 - 优化后的视觉效果"
           style={{
             marginBottom: "20px",
             border: "2px solid #52c41a",
             borderRadius: "8px",
           }}
-          styles={{
-            header: {
-              background: "#f6ffed",
-              borderBottom: "2px solid #52c41a",
-            },
-          }}
         >
+          <CardSectionTitle icon={<ExperimentOutlined />} iconType="success">
+            🎯 新版思维链组件 - 优化后的视觉效果
+          </CardSectionTitle>
           <div style={{ marginBottom: "16px" }}>
             <Text type="secondary">
               ✨ 优化亮点：思维过程和最终答案现在有明显的视觉区分，更容易阅读
@@ -376,7 +374,10 @@ const ThinkingChainTest: React.FC = () => {
       )}
 
       {testContent && (
-        <Card title="📝 渲染效果预览" style={{ marginTop: "20px" }}>
+        <Card style={{ marginTop: "20px" }}>
+          <CardSectionTitle icon={<FileTextOutlined />}>
+            📝 渲染效果预览
+          </CardSectionTitle>
           <div
             style={{
               border: "1px solid #d9d9d9",
@@ -395,7 +396,10 @@ const ThinkingChainTest: React.FC = () => {
         </Card>
       )}
 
-      <Card title="📋 测试说明" style={{ marginTop: "20px" }}>
+      <Card style={{ marginTop: "20px" }}>
+        <CardSectionTitle icon={<FileTextOutlined />}>
+          📋 测试说明
+        </CardSectionTitle>
         <ul>
           <li>✅ 思考过程应该默认折叠，只显示"点击展开思维链"</li>
           <li>✅ 点击摘要行可以展开/折叠思考内容</li>

@@ -1,5 +1,9 @@
 // AI设置表单组件 - 简化版本
-import { InfoCircleOutlined, SaveOutlined } from "@ant-design/icons";
+import {
+  InfoCircleOutlined,
+  SaveOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import {
   Button,
   Card,
@@ -14,6 +18,7 @@ import {
 import React, { useEffect } from "react";
 import type { AIConfig } from "../../services/ai/aiService";
 import { AIConfigValidator } from "../../utils/aiValidation";
+import CardSectionTitle from "../common/CardSectionTitle";
 import { AIConfigStatus } from "./AIConfigStatus";
 import ContentExtractionSettings from "./ContentExtractionSettings";
 
@@ -196,10 +201,12 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
         {/* 高级设置 */}
         <Card
           size="small"
-          title="高级设置"
           style={{ marginBottom: 16 }}
           bodyStyle={{ paddingTop: 16 }}
         >
+          <CardSectionTitle icon={<SettingOutlined />}>
+            高级设置
+          </CardSectionTitle>
           {/* 温度参数 */}
           <Form.Item
             label={

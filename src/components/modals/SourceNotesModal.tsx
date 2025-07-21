@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Card, Typography, Tag, Space, Divider } from "antd";
 import { ClockCircleOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { SourceNoteContent } from "../types";
+import CardSectionTitle from "../common/CardSectionTitle";
 import "./SourceNotesModal.css";
 
 const { Text, Paragraph } = Typography;
@@ -109,7 +110,8 @@ const SourceNotesModal: React.FC<SourceNotesModalProps> = ({
                 key={sourceNote.id}
                 className="source-note-card"
                 size="small"
-                title={
+              >
+                <CardSectionTitle compact style={{ marginBottom: 12 }}>
                   <Space>
                     <span className="note-index">#{index + 1}</span>
                     <span className="note-title">{sourceNote.title}</span>
@@ -117,8 +119,10 @@ const SourceNotesModal: React.FC<SourceNotesModalProps> = ({
                       {getColorName(sourceNote.color)}
                     </Tag>
                   </Space>
-                }
-                extra={
+                </CardSectionTitle>
+
+                {/* 时间信息 */}
+                <div style={{ marginBottom: 12 }}>
                   <Space direction="vertical" size={0} className="note-times">
                     <Text type="secondary" className="time-text">
                       <ClockCircleOutlined /> 创建：
@@ -129,8 +133,8 @@ const SourceNotesModal: React.FC<SourceNotesModalProps> = ({
                       {formatTime(sourceNote.deletedAt)}
                     </Text>
                   </Space>
-                }
-              >
+                </div>
+
                 <div className="note-content">
                   <Paragraph
                     className="content-text"
