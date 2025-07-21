@@ -95,13 +95,15 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
             <div key={step.id} className="thinking-step-item">
               {/* 步骤头部：包含图标的标签和时间 */}
               <div className="thinking-step-header">
-                <Tag
-                  color={color}
+                <div
                   className="thinking-step-tag-with-icon"
-                  icon={icon}
+                  style={{ color: color }}
                 >
-                  {getStepTypeLabel(step.stepType)}
-                </Tag>
+                  <span style={{ color: color }}>{icon}</span>
+                  <span style={{ color: color }}>
+                    {getStepTypeLabel(step.stepType)}
+                  </span>
+                </div>
                 <Text type="secondary" className="thinking-step-time">
                   <ClockCircleOutlined style={{ marginRight: 4 }} />
                   {(() => {

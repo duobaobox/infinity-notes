@@ -184,23 +184,55 @@
   margin-bottom: 3px;
 }
 
-/* 带图标的步骤标签样式 - 小而低调但可见 */
+/* 带图标的步骤标签样式 - 无背景，颜色在文本和图标上 */
 .thinking-step-tag-with-icon {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-weight: 400;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 11px;
-  /* 让Ant Design的Tag颜色正常显示，但降低饱和度 */
-  filter: saturate(0.7) brightness(1.1);
+  gap: 4px;
+  font-weight: 500;
+  padding: 0; /* 移除内边距 */
+  border-radius: 0; /* 移除圆角 */
+  font-size: 13px; /* 从11px增加到13px，比思维链文本稍小但更显眼 */
+  background: transparent !important; /* 强制透明背景 */
+  border: none !important; /* 移除边框 */
+  /* 覆盖Ant Design的默认样式 */
+}
+
+/* 覆盖Ant Design Tag的默认样式 */
+.thinking-step-tag-with-icon.ant-tag {
+  background: transparent !important;
+  border: none !important;
+  color: inherit !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .thinking-chain-container.compact .thinking-step-tag-with-icon {
-  padding: 1px 4px;
-  font-size: 10px;
-  gap: 2px;
+  font-size: 12px; /* 紧凑模式下也适当增大 */
+  gap: 3px;
+}
+
+.thinking-chain-container.compact
+  .thinking-step-tag-with-icon
+  span:first-child {
+  font-size: 13px; /* 紧凑模式下图标稍大于文字 */
+}
+
+/* 标签内的图标和文本样式 */
+.thinking-step-tag-with-icon span {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 图标样式 */
+.thinking-step-tag-with-icon span:first-child {
+  font-size: 14px; /* 图标比文字稍大一点 */
+}
+
+/* 文本样式 */
+.thinking-step-tag-with-icon span:last-child {
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 /* 保留原有的step-tag样式作为备用 */
@@ -386,9 +418,8 @@
 }
 
 .thinking-step-tag-with-icon:hover {
-  opacity: 1;
-  transform: none;
-  filter: brightness(1.1); /* 悬停时稍微提亮 */
+  opacity: 0.8; /* 悬停时稍微降低透明度 */
+  cursor: default;
 }
 
 .thinking-step-connector {
@@ -442,9 +473,12 @@
 }
 
 .thinking-chain-in-note .thinking-step-tag-with-icon {
-  font-size: 9px; /* 便签中使用更小的标签 */
-  padding: 1px 4px;
-  gap: 2px;
+  font-size: 11px; /* 便签中也适当增大 */
+  gap: 3px;
+}
+
+.thinking-chain-in-note .thinking-step-tag-with-icon span:first-child {
+  font-size: 12px; /* 便签中的图标也相应增大 */
 }
 
 .thinking-chain-in-note .thinking-step-connector {
