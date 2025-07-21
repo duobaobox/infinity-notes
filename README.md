@@ -180,8 +180,7 @@ src/
 │   │   └── StickyNoteSlots.tsx      # 便签插槽
 │   ├── notes/            # 便签组件
 │   │   ├── StickyNote.tsx           # 便签主组件
-│   │   ├── WysiwygEditor.tsx        # 所见即所得编辑器
-│   │   └── FormatToolbar.tsx        # 格式化工具栏
+│   │   └── WysiwygEditor.tsx        # 所见即所得编辑器
 │   ├── modals/           # 模态框组件
 │   │   ├── SettingsModal.tsx        # 设置模态框
 │   │   └── SourceNotesModal.tsx     # 溯源模态框

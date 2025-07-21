@@ -1,0 +1,77 @@
+/* 全局磨砂效果CSS变量定义 - 统一管理所有磨砂效果 */
+
+:root {
+  /* 侧边栏磨砂效果变量 */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(224, 224, 224, 0.6);
+  --glass-blur: blur(12px) saturate(180%);
+  --glass-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.2),
+    2px 0 8px rgba(0, 0, 0, 0.08);
+  --glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 250, 0.95) 100%
+  );
+
+  /* 便签磨砂效果变量 */
+  --note-glass-bg: rgba(255, 255, 255, 0.35);
+  --note-glass-border: rgba(0, 0, 0, 0.08);
+  --note-glass-blur: blur(8px) saturate(150%);
+  --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
+    0 4px 20px rgba(0, 0, 0, 0.06);
+  --note-glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(248, 249, 250, 0.7) 100%
+  );
+
+  /* 工具栏磨砂效果变量 */
+  --toolbar-glass-bg: rgba(255, 255, 255, 0.45);
+  --toolbar-glass-border: rgba(0, 0, 0, 0.06);
+  --toolbar-glass-blur: blur(12px) saturate(180%);
+  --toolbar-glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+  --toolbar-glass-fallback: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 250, 0.95) 100%
+  );
+}
+
+/* 深色模式下的磨砂效果 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 侧边栏深色模式 */
+    --glass-bg: rgba(30, 30, 30, 0.85);
+    --glass-border: rgba(60, 60, 60, 0.6);
+    --glass-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1),
+      2px 0 8px rgba(0, 0, 0, 0.2);
+    --glass-fallback: linear-gradient(
+      135deg,
+      rgba(30, 30, 30, 0.95) 0%,
+      rgba(40, 40, 40, 0.95) 100%
+    );
+
+    /* 便签深色模式 */
+    --note-glass-bg: rgba(40, 40, 40, 0.35);
+    --note-glass-border: rgba(255, 255, 255, 0.1);
+    --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+      0 4px 20px rgba(0, 0, 0, 0.2);
+    --note-glass-fallback: linear-gradient(
+      135deg,
+      rgba(40, 40, 40, 0.7) 0%,
+      rgba(50, 50, 50, 0.7) 100%
+    );
+
+    /* 工具栏深色模式 */
+    --toolbar-glass-bg: rgba(30, 30, 30, 0.85);
+    --toolbar-glass-border: rgba(255, 255, 255, 0.1);
+    --toolbar-glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
+      0 1px 4px rgba(0, 0, 0, 0.2);
+    --toolbar-glass-fallback: linear-gradient(
+      135deg,
+      rgba(30, 30, 30, 0.95) 0%,
+      rgba(40, 40, 40, 0.95) 100%
+    );
+  }
+}

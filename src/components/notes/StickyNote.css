@@ -1,125 +1,11 @@
-/* 便签磨砂效果CSS变量定义 */
-:root {
-  /* 便签磨砂效果变量 */
-  --note-glass-bg: rgba(255, 255, 255, 0.35);
-  --note-glass-border: rgba(0, 0, 0, 0.08);
-  --note-glass-blur: blur(8px) saturate(150%);
-  --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
-    0 4px 20px rgba(0, 0, 0, 0.06);
-  --note-glass-fallback: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(248, 249, 250, 0.7) 100%
-  );
-}
-
-/* 深色模式下的便签磨砂效果 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --note-glass-bg: rgba(40, 40, 40, 0.35);
-    --note-glass-border: rgba(255, 255, 255, 0.1);
-    --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
-      0 4px 20px rgba(0, 0, 0, 0.2);
-    --note-glass-fallback: linear-gradient(
-      135deg,
-      rgba(40, 40, 40, 0.7) 0%,
-      rgba(50, 50, 50, 0.7) 100%
-    );
-  }
-}
+/* 便签磨砂效果变量已移至全局 src/styles/glass-effects.css */
 
 /* 🎯 完美滚动条布局 - 文本区域左右留白一致，滚动条在右侧留白内 */
-
-/* 一体化编辑器样式 - 现在直接是WysiwygEditor的根容器 */
-.unified-wysiwyg-editor {
-  flex: 1; /* 关键：使用flex占满可用空间 */
-  width: 100%;
-  height: 100%; /* 确保占满父容器高度 */
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  transition: all 0.2s ease;
-  min-height: 0; /* 关键：允许flex子元素收缩 */
-  overflow: hidden; /* 🎯 裁剪溢出内容，确保布局整洁 */
-  padding: 0; /* 移除padding，让内部元素完全控制布局 */
-}
-
-/* 修复EditorContent生成的包装div - 现在直接在unified-wysiwyg-editor下 */
-.unified-wysiwyg-editor > div {
-  flex: 1; /* 让EditorContent的包装div也使用flex */
-  display: flex;
-  flex-direction: column;
-  min-height: 0; /* 允许收缩 */
-  overflow: hidden; /* 🎯 配合父容器裁剪 */
-}
-
-.unified-wysiwyg-editor .ProseMirror {
-  flex: 1; /* 关键：使用flex占满可用空间 */
-  height: 0; /* 关键：让flex完全控制高度 */
-  max-height: 100%; /* 确保不超过容器高度 */
-  margin: 0;
-  outline: none;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  transition: all 0.2s ease;
-  overflow-y: auto !important; /* 强制显示滚动条 */
-  overflow-x: hidden; /* 隐藏水平滚动条 */
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  box-sizing: border-box; /* 🎯 关键：padding计入总宽度 */
-  resize: none;
-
-  /* 🎯 完美滚动条布局：左侧16px留白，右侧滚动条在容器留白内 */
-  width: 100%; /* 占满容器宽度 */
-  padding-left: 16px; /* 左侧16px内边距 */
-  padding-right: 0px; /* 🎯 完美方案：右侧无padding，滚动条在留白区域 */
-}
-
-/* 查看状态下的样式 - 合并所有相关样式 */
-.unified-wysiwyg-editor.viewing .ProseMirror {
-  overflow-y: auto !important; /* 强制显示滚动条 */
-  overflow-x: hidden !important; /* 隐藏水平滚动条 */
-  min-height: 50px !important; /* 确保有最小高度 */
-  user-select: text; /* 允许选择文本但不能编辑 */
-  cursor: default; /* 显示默认光标而不是文本光标 */
-}
-
-/* 针对具体的tiptap类名强制设置滚动 */
-.unified-wysiwyg-editor .tiptap.ProseMirror {
-  overflow-y: auto !important; /* 强制显示滚动条 */
-  overflow-x: hidden !important; /* 隐藏水平滚动条 */
-  height: 100% !important;
-  max-height: 100% !important;
-  width: 100% !important; /* 占满容器宽度 */
-  padding-left: 16px !important; /* 左侧16px内边距 */
-  padding-right: 0px !important; /* 右侧无padding，滚动条在留白区域 */
-  box-sizing: border-box !important; /* padding计入总宽度 */
-}
-
-/* 编辑状态下的样式 */
-.unified-wysiwyg-editor.editing .ProseMirror {
-  pointer-events: auto;
-  user-select: auto;
-}
 
 /* 🎯 完美滚动条布局已实现 - 文本区域左右对称，滚动条在右侧留白内 */
 
 /* 深色模式下的滚动条样式 */
 @media (prefers-color-scheme: dark) {
-  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb,
-  .unified-wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-  }
-
-  .unified-wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover,
-  .unified-wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-  }
-
   /* 深色模式下的工具栏按钮样式 */
   .toolbar-button {
     color: rgba(255, 255, 255, 0.7);
@@ -204,12 +90,7 @@
   opacity: 0.6;
 }
 
-/* 工具栏在便签内部时的样式调整 */
-.sticky-note-format-toolbar.inside {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
+/* 已移除未使用的 .sticky-note-format-toolbar.inside 样式 */
 
 .sticky-note {
   position: absolute;
@@ -383,15 +264,6 @@
   display: inline-block;
   width: 100%;
   user-select: text; /* 允许选择流式内容中的文本 */
-}
-
-/* 流式状态下的编辑器样式 */
-.unified-wysiwyg-editor.streaming .ProseMirror::after {
-  content: "▋";
-  color: #1890ff;
-  font-weight: bold;
-  animation: cursorBlink 1s infinite;
-  margin-left: 2px;
 }
 
 /* 流式内容中的分割线样式 */
@@ -606,10 +478,7 @@
   box-sizing: border-box; /* 包含padding */
 }
 
-/* 移除悬停效果，因为背景色现在是永久显示的 */
-/* .sticky-note-title:hover {
-  background: rgba(0, 0, 0, 0.05);
-} */
+/* 标题悬停效果已移除 */
 
 .sticky-note-controls {
   display: flex;
@@ -917,8 +786,8 @@
 
 .sticky-note-content {
   flex: 1;
-  padding-left: 0; /* 🎯 移除左内边距，由ProseMirror处理 */
-  padding-right: 0; /* 🎯 移除右内边距，由ProseMirror处理 */
+  padding-left: 16px; /* 🎯 原生方案：左侧16px内边距 */
+  padding-right: 16px; /* 🎯 原生方案：右侧16px内边距，滚动条在此区域内 */
   /* padding-top: 16px; */
   padding-bottom: 16px; /* 非编辑状态的下内边距 */
   overflow: hidden; /* 修复：不允许内容溢出，确保高度约束生效 */
@@ -965,14 +834,7 @@
   /* transition: opacity 0.2s ease; */
 }
 
-/* 移除悬停效果，因为手柄现在是不可见的 */
-/* .sticky-note:hover .resize-handle {
-  opacity: 0.6;
-} */
-
-/* .resize-handle:hover {
-  opacity: 1;
-} */
+/* 缩放手柄悬停效果已移除 */
 
 /* 优雅的弧形缩放提示符号 - 位于便签外部右下角，保持3px间距 */
 .resize-indicator {
@@ -1111,10 +973,7 @@
   opacity: 1; /* 已连接时始终显示 */
 }
 
-/* 作为源便签被连接时的连接点 - 只在悬停时显示，不始终显示 */
-/* .connection-point.source-connected {
-  opacity: 1;
-} */
+/* 源便签连接点样式已优化 */
 
 /* 正在被溯源连接线连接时的连接点 - 始终显示 */
 .connection-point.being-source-connected {

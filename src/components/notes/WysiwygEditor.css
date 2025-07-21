@@ -1,9 +1,15 @@
 /* 所见即所得编辑器样式 */
 .wysiwyg-editor {
+  flex: 1; /* 关键：使用flex占满可用空间 */
   width: 100%;
-  height: 100%;
+  height: 100%; /* 确保占满父容器高度 */
   display: flex;
   flex-direction: column;
+  position: relative;
+  transition: all 0.2s ease;
+  min-height: 0; /* 关键：允许flex子元素收缩 */
+  overflow: hidden; /* 🎯 裁剪溢出内容，确保布局整洁 */
+  padding: 0; /* 移除padding，让内部元素完全控制布局 */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
     sans-serif;
@@ -27,8 +33,30 @@
 }
 
 /* 在便签中的禁用状态不应该有透明度 */
-.unified-wysiwyg-editor.viewing .wysiwyg-editor.disabled {
+.wysiwyg-editor.viewing.disabled {
   opacity: 1 !important;
+}
+
+/* 查看状态下的特殊样式 */
+.wysiwyg-editor.viewing .ProseMirror {
+  min-height: 50px; /* 确保有最小高度 */
+  user-select: text; /* 允许选择文本但不能编辑 */
+  cursor: default; /* 显示默认光标而不是文本光标 */
+}
+
+/* 编辑状态下的样式 */
+.wysiwyg-editor.editing .ProseMirror {
+  pointer-events: auto;
+  user-select: auto;
+}
+
+/* 流式状态下的编辑器样式 */
+.wysiwyg-editor.streaming .ProseMirror::after {
+  content: "▋";
+  color: #1890ff;
+  font-weight: bold;
+  animation: cursorBlink 1s infinite;
+  margin-left: 2px;
 }
 
 .wysiwyg-editor-loading {
@@ -40,23 +68,35 @@
   font-size: 14px;
 }
 
-/* ProseMirror 编辑器核心样式 */
-.wysiwyg-editor .ProseMirror {
+/* ProseMirror 编辑器核心样式 - 支持通用类名和 tiptap 特定类名 */
+.wysiwyg-editor .ProseMirror,
+.wysiwyg-editor .tiptap.ProseMirror {
   flex: 1; /* 关键：使用flex占满可用空间 */
-  outline: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  width: 100%;
   height: 0; /* 关键：让flex完全控制高度 */
   max-height: 100%; /* 确保不超过容器高度 */
-  overflow-y: auto !important; /* 强制显示滚动条 */
+  margin: 0;
+  outline: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  transition: all 0.2s ease;
+  overflow-y: auto; /* 显示垂直滚动条 */
   overflow-x: hidden; /* 隐藏水平滚动条 */
   word-wrap: break-word;
   white-space: pre-wrap;
+  box-sizing: border-box; /* 🎯 关键：padding计入总宽度 */
+  resize: none;
   -webkit-font-variant-ligatures: none;
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0;
+
+  /* 🎯 原生对称滚动条布局：由父容器提供内边距 */
+  width: 100%; /* 占满容器宽度 */
+  padding-left: 0; /* 移除左侧内边距，由父容器提供 */
+  padding-right: 0; /* 移除右侧内边距，由父容器提供 */
 }
 
 /* 空编辑器占位符样式 */
@@ -284,6 +324,18 @@
   }
 }
 
+/* 流式光标动画 */
+@keyframes cursorBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* 深色模式支持 */
 @media (prefers-color-scheme: dark) {
   .wysiwyg-editor {
@@ -325,5 +377,16 @@
 
   .wysiwyg-editor .ProseMirror table th {
     background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* 深色模式下的滚动条样式 */
+  .wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb,
+  .wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover,
+  .wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
   }
 }
