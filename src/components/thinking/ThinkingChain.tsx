@@ -1,5 +1,6 @@
 import {
   BulbOutlined,
+  CheckCircleOutlined,
   ClockCircleOutlined,
   DownOutlined,
   ExperimentOutlined,
@@ -8,7 +9,8 @@ import {
   SearchOutlined,
   TrophyOutlined,
 } from "@ant-design/icons";
-import { Card, Collapse, Tag, Timeline, Typography } from "antd";
+import { Card, Collapse, Divider, Tag, Timeline, Typography } from "antd";
+import type { CollapseProps } from "antd";
 import React from "react";
 import type {
   ThinkingChain as ThinkingChainType,
@@ -17,7 +19,6 @@ import type {
 import "./ThinkingChain.css";
 
 const { Text, Paragraph } = Typography;
-const { Panel } = Collapse;
 
 // 思维链组件属性接口
 interface ThinkingChainProps {
@@ -161,6 +162,95 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
     );
   };
 
+  // 定义 Collapse 的 items 配置
+  const collapseItems: CollapseProps["items"] = [
+    {
+      key: "thinking",
+      label: (
+        <div className="thinking-header">
+          <div className="thinking-title">
+            <ExperimentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+            <Text strong>AI思考过程</Text>
+            <Tag color="blue" style={{ marginLeft: 8 }}>
+              {thinkingChain.steps.length}步
+            </Tag>
+          </div>
+          {!compact && (
+            <Text type="secondary" className="thinking-time">
+              {formatThinkingTime(thinkingChain.totalThinkingTime)}
+            </Text>
+          )}
+        </div>
+      ),
+      children: (
+        <div className="thinking-content">
+          {/* 原始提示词 */}
+          {thinkingChain.prompt && (
+            <Card size="small" className="thinking-prompt-card">
+              <Text strong>原始提示：</Text>
+              <Paragraph
+                style={{ marginBottom: 0, marginTop: 8 }}
+                type="secondary"
+              >
+                {thinkingChain.prompt}
+              </Paragraph>
+            </Card>
+          )}
+
+          {/* 思维链统计 */}
+          {!compact && renderThinkingStats()}
+
+          {/* 思考步骤时间线 */}
+          <div className="thinking-process-section">
+            {renderThinkingSteps()}
+          </div>
+
+          {/* 分隔线 - 区分思维过程和最终答案 */}
+          <Divider
+            style={{
+              margin: "24px 0 20px 0",
+              borderColor: "#52c41a",
+              borderWidth: "2px",
+            }}
+          >
+            <CheckCircleOutlined
+              style={{ color: "#52c41a", fontSize: "16px" }}
+            />
+          </Divider>
+
+          {/* 最终答案区域 */}
+          <div className="thinking-final-section">
+            <Card size="small" className="thinking-final-answer">
+              <div className="thinking-final-header">
+                <CheckCircleOutlined
+                  style={{
+                    marginRight: 8,
+                    color: "#52c41a",
+                    fontSize: "16px",
+                  }}
+                />
+                <Text strong style={{ color: "#52c41a", fontSize: "16px" }}>
+                  最终答案
+                </Text>
+              </div>
+              <Paragraph
+                style={{
+                  marginBottom: 0,
+                  marginTop: 12,
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                }}
+              >
+                {thinkingChain.finalAnswer}
+              </Paragraph>
+            </Card>
+          </div>
+        </div>
+      ),
+      className: "thinking-panel",
+    },
+  ];
+
   return (
     <div className={`thinking-chain-container ${compact ? "compact" : ""}`}>
       <Collapse
@@ -170,59 +260,8 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
           isActive ? <DownOutlined /> : <RightOutlined />
         }
         className="thinking-collapse"
-      >
-        <Panel
-          header={
-            <div className="thinking-header">
-              <div className="thinking-title">
-                <ExperimentOutlined
-                  style={{ marginRight: 8, color: "#1890ff" }}
-                />
-                <Text strong>AI思考过程</Text>
-                <Tag color="blue" style={{ marginLeft: 8 }}>
-                  {thinkingChain.steps.length}步
-                </Tag>
-              </div>
-              {!compact && (
-                <Text type="secondary" className="thinking-time">
-                  {formatThinkingTime(thinkingChain.totalThinkingTime)}
-                </Text>
-              )}
-            </div>
-          }
-          key="thinking"
-          className="thinking-panel"
-        >
-          <div className="thinking-content">
-            {/* 原始提示词 */}
-            {thinkingChain.prompt && (
-              <Card size="small" className="thinking-prompt-card">
-                <Text strong>原始提示：</Text>
-                <Paragraph
-                  style={{ marginBottom: 0, marginTop: 8 }}
-                  type="secondary"
-                >
-                  {thinkingChain.prompt}
-                </Paragraph>
-              </Card>
-            )}
-
-            {/* 思维链统计 */}
-            {!compact && renderThinkingStats()}
-
-            {/* 思考步骤时间线 */}
-            {renderThinkingSteps()}
-
-            {/* 最终答案 */}
-            <Card size="small" className="thinking-final-answer">
-              <Text strong>最终答案：</Text>
-              <Paragraph style={{ marginBottom: 0, marginTop: 8 }}>
-                {thinkingChain.finalAnswer}
-              </Paragraph>
-            </Card>
-          </div>
-        </Panel>
-      </Collapse>
+        items={collapseItems}
+      />
     </div>
   );
 };

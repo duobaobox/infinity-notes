@@ -25,6 +25,7 @@ import {
   getPixelAlignedValue,
 } from "../../utils/fontScaleUtils";
 import SourceNotesModal from "../modals/SourceNotesModal";
+import ThinkingChain from "../thinking/ThinkingChain";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
 import WysiwygEditor from "./WysiwygEditor";
@@ -1285,6 +1286,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         </div>
 
         <div className="sticky-note-content">
+          {/* 思维链组件 - 只在非编辑状态且有思维链数据时显示 */}
+          {!note.isEditing && !isStreaming && note.thinkingChain && (
+            <div style={{ marginBottom: "12px" }}>
+              <ThinkingChain
+                thinkingChain={note.thinkingChain}
+                defaultExpanded={false}
+                compact={true}
+              />
+            </div>
+          )}
+
           {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
           <WysiwygEditor
             content={
@@ -1292,6 +1304,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 ? localContent
                 : isStreaming && streamingContent
                 ? streamingContent
+                : // 如果有思维链数据，只显示最终答案，否则显示完整内容
+                note.thinkingChain && !note.isEditing
+                ? note.thinkingChain.finalAnswer
                 : note.content
             }
             onChange={handleWysiwygContentChange}

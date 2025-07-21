@@ -1,10 +1,9 @@
 import { Badge, Button, Collapse, Divider } from "antd";
+import type { CollapseProps } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { usePerformanceOptimization } from "../hooks/usePerformanceOptimization";
 import { useStickyNotesStore } from "../stores/stickyNotesStore";
 import { connectionLineManager } from "../utils/connectionLineManager";
-
-const { Panel } = Collapse;
 
 /**
  * 连接线性能监控数据接口
@@ -120,6 +119,207 @@ const VirtualizationStatusMonitorEnhanced: React.FC = () => {
     updateConnectionPerformance();
   }, [updateConnectionPerformance]);
 
+  // 定义 Collapse 的 items 配置
+  const collapseItems: CollapseProps["items"] = [
+    {
+      key: "virtualization",
+      label: "📊 虚拟化状态",
+      children: (
+        <div
+          style={{
+            padding: "8px",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "4px",
+            border: "1px solid #e9ecef",
+          }}
+        >
+          {/* 状态指示器 */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "6px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "10px",
+                color: isDetecting
+                  ? "#faad14"
+                  : notes.length > virtualizationThreshold
+                  ? "#52c41a"
+                  : "#8c8c8c",
+                textAlign: "center",
+                lineHeight: "1.2",
+                padding: "2px 6px",
+                backgroundColor: "white",
+                borderRadius: "3px",
+                border: "1px solid #d9d9d9",
+                minWidth: "45px",
+              }}
+            >
+              <div style={{ fontSize: "12px" }}>
+                {isDetecting ? "🔍" : "📊"}
+              </div>
+              <div style={{ fontSize: "9px", marginTop: "1px" }}>
+                {notes.length > virtualizationThreshold
+                  ? `${Math.min(notes.length, 50)}/${notes.length}`
+                  : `${notes.length}/${notes.length}`}
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: "11px",
+                textAlign: "right",
+                flex: 1,
+                marginLeft: "8px",
+              }}
+            >
+              <div
+                style={{
+                  color:
+                    notes.length > virtualizationThreshold
+                      ? "#52c41a"
+                      : "#8c8c8c",
+                  fontWeight: "500",
+                }}
+              >
+                {notes.length > virtualizationThreshold ? "已启用" : "未启用"}
+              </div>
+            </div>
+          </div>
+
+          {/* 详细信息 */}
+          <div style={{ fontSize: "10px", lineHeight: "1.3", color: "#666" }}>
+            <div style={{ marginBottom: "2px" }}>
+              <Badge
+                color={getPerformanceLevelInfo()?.color || "#8c8c8c"}
+                text={`${getPerformanceLevelInfo()?.icon} ${
+                  getPerformanceLevelInfo()?.label || "检测中"
+                }`}
+                style={{ fontSize: "10px" }}
+              />
+            </div>
+            <div style={{ marginBottom: "1px" }}>
+              便签: {notes.length} / 阈值: {virtualizationThreshold}
+            </div>
+            <div style={{ marginBottom: "1px" }}>
+              性能: {performanceScore.toFixed(1)}/100
+            </div>
+            {isDetecting && (
+              <div
+                style={{
+                  color: "#faad14",
+                  marginTop: "3px",
+                  fontSize: "9px",
+                }}
+              >
+                🔍 检测设备性能中...
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "connections",
+      label: "🔗 连接线性能",
+      children: (
+        <div
+          style={{
+            padding: "8px",
+            backgroundColor: "#f0f8ff",
+            borderRadius: "4px",
+            border: "1px solid #d6e4ff",
+          }}
+        >
+          {/* 连接线统计 */}
+          <div style={{ fontSize: "10px", lineHeight: "1.4", color: "#666" }}>
+            <div
+              style={{
+                marginBottom: "3px",
+                fontWeight: "500",
+                color: "#1677ff",
+              }}
+            >
+              📈 连接线统计
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              总连接数: {connectionPerformance.totalConnections}
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              普通连接: {connectionPerformance.normalConnections}
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              溯源连接: {connectionPerformance.sourceConnections}
+            </div>
+
+            <Divider style={{ margin: "8px 0 6px 0" }} />
+
+            <div
+              style={{
+                marginBottom: "3px",
+                fontWeight: "500",
+                color: "#fa8c16",
+              }}
+            >
+              ⚡ 性能指标
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              更新频率: {connectionPerformance.updateFrequency.toFixed(1)} Hz
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              平均更新时间: {connectionPerformance.averageUpdateTime.toFixed(2)}{" "}
+              ms
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              最大更新时间: {connectionPerformance.maxUpdateTime.toFixed(2)} ms
+            </div>
+            <div style={{ marginBottom: "2px" }}>
+              节流命中次数: {connectionPerformance.throttleHits}
+            </div>
+          </div>
+
+          {/* 调试操作按钮 */}
+          <div
+            style={{
+              marginTop: "8px",
+              display: "flex",
+              gap: "4px",
+              flexWrap: "wrap",
+            }}
+          >
+            <Button
+              size="small"
+              type="primary"
+              onClick={forceUpdateConnections}
+              style={{ fontSize: "10px", height: "24px" }}
+            >
+              🔄 强制更新
+            </Button>
+            <Button
+              size="small"
+              onClick={resetPerformanceStats}
+              style={{ fontSize: "10px", height: "24px" }}
+            >
+              📊 重置统计
+            </Button>
+            <Button
+              size="small"
+              danger
+              onClick={clearAllConnections}
+              style={{ fontSize: "10px", height: "24px" }}
+            >
+              🧹 清理连接
+            </Button>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div
       style={{
@@ -147,201 +347,8 @@ const VirtualizationStatusMonitorEnhanced: React.FC = () => {
         onChange={setExpandedPanels}
         size="small"
         ghost
-      >
-        {/* 虚拟化监控面板 */}
-        <Panel header="📊 虚拟化状态" key="virtualization">
-          <div
-            style={{
-              padding: "8px",
-              backgroundColor: "#f8f9fa",
-              borderRadius: "4px",
-              border: "1px solid #e9ecef",
-            }}
-          >
-            {/* 状态指示器 */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "6px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: isDetecting
-                    ? "#faad14"
-                    : notes.length > virtualizationThreshold
-                    ? "#52c41a"
-                    : "#8c8c8c",
-                  textAlign: "center",
-                  lineHeight: "1.2",
-                  padding: "2px 6px",
-                  backgroundColor: "white",
-                  borderRadius: "3px",
-                  border: "1px solid #d9d9d9",
-                  minWidth: "45px",
-                }}
-              >
-                <div style={{ fontSize: "12px" }}>
-                  {isDetecting ? "🔍" : "📊"}
-                </div>
-                <div style={{ fontSize: "9px", marginTop: "1px" }}>
-                  {notes.length > virtualizationThreshold
-                    ? `${Math.min(notes.length, 50)}/${notes.length}`
-                    : `${notes.length}/${notes.length}`}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  fontSize: "11px",
-                  textAlign: "right",
-                  flex: 1,
-                  marginLeft: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    color:
-                      notes.length > virtualizationThreshold
-                        ? "#52c41a"
-                        : "#8c8c8c",
-                    fontWeight: "500",
-                  }}
-                >
-                  {notes.length > virtualizationThreshold ? "已启用" : "未启用"}
-                </div>
-              </div>
-            </div>
-
-            {/* 详细信息 */}
-            <div style={{ fontSize: "10px", lineHeight: "1.3", color: "#666" }}>
-              <div style={{ marginBottom: "2px" }}>
-                <Badge
-                  color={getPerformanceLevelInfo()?.color || "#8c8c8c"}
-                  text={`${getPerformanceLevelInfo()?.icon} ${
-                    getPerformanceLevelInfo()?.label || "检测中"
-                  }`}
-                  style={{ fontSize: "10px" }}
-                />
-              </div>
-              <div style={{ marginBottom: "1px" }}>
-                便签: {notes.length} / 阈值: {virtualizationThreshold}
-              </div>
-              <div style={{ marginBottom: "1px" }}>
-                性能: {performanceScore.toFixed(1)}/100
-              </div>
-              {isDetecting && (
-                <div
-                  style={{
-                    color: "#faad14",
-                    marginTop: "3px",
-                    fontSize: "9px",
-                  }}
-                >
-                  🔍 检测设备性能中...
-                </div>
-              )}
-            </div>
-          </div>
-        </Panel>
-
-        {/* 连接线性能监控面板 */}
-        <Panel header="🔗 连接线性能" key="connections">
-          <div
-            style={{
-              padding: "8px",
-              backgroundColor: "#f0f8ff",
-              borderRadius: "4px",
-              border: "1px solid #d6e4ff",
-            }}
-          >
-            {/* 连接线统计 */}
-            <div style={{ fontSize: "10px", lineHeight: "1.4", color: "#666" }}>
-              <div
-                style={{
-                  marginBottom: "3px",
-                  fontWeight: "500",
-                  color: "#1677ff",
-                }}
-              >
-                📈 连接线统计
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                总连接数: {connectionPerformance.totalConnections}
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                普通连接: {connectionPerformance.normalConnections}
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                溯源连接: {connectionPerformance.sourceConnections}
-              </div>
-
-              <Divider style={{ margin: "8px 0 6px 0" }} />
-
-              <div
-                style={{
-                  marginBottom: "3px",
-                  fontWeight: "500",
-                  color: "#fa8c16",
-                }}
-              >
-                ⚡ 性能指标
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                更新频率: {connectionPerformance.updateFrequency.toFixed(1)} Hz
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                平均更新时间:{" "}
-                {connectionPerformance.averageUpdateTime.toFixed(2)} ms
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                最大更新时间: {connectionPerformance.maxUpdateTime.toFixed(2)}{" "}
-                ms
-              </div>
-              <div style={{ marginBottom: "2px" }}>
-                节流命中次数: {connectionPerformance.throttleHits}
-              </div>
-            </div>
-
-            {/* 调试操作按钮 */}
-            <div
-              style={{
-                marginTop: "8px",
-                display: "flex",
-                gap: "4px",
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                size="small"
-                type="primary"
-                onClick={forceUpdateConnections}
-                style={{ fontSize: "10px", height: "24px" }}
-              >
-                🔄 强制更新
-              </Button>
-              <Button
-                size="small"
-                onClick={resetPerformanceStats}
-                style={{ fontSize: "10px", height: "24px" }}
-              >
-                📊 重置统计
-              </Button>
-              <Button
-                size="small"
-                danger
-                onClick={clearAllConnections}
-                style={{ fontSize: "10px", height: "24px" }}
-              >
-                🧹 清理连接
-              </Button>
-            </div>
-          </div>
-        </Panel>
-      </Collapse>
+        items={collapseItems}
+      />
 
       {/* 提示信息 */}
       <div

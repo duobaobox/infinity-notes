@@ -4,6 +4,8 @@ import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import ThinkingChain from "../components/thinking/ThinkingChain";
+import type { ThinkingChain as ThinkingChainType } from "../components/types";
 
 const { Title, Text } = Typography;
 
@@ -13,6 +15,97 @@ const { Title, Text } = Typography;
  */
 const ThinkingChainTest: React.FC = () => {
   const [testContent, setTestContent] = useState("");
+  const [showThinkingChain, setShowThinkingChain] = useState(false);
+
+  // 创建模拟的思维链数据
+  const createMockThinkingChain = (): ThinkingChainType => {
+    return {
+      id: "test-thinking-chain-1",
+      prompt: "帮我制定一个高效的工作计划，包含优先级排序和时间安排",
+      steps: [
+        {
+          id: "step-1",
+          content:
+            "首先分析工作计划的基本要素：任务列表、时间安排、优先级标记和具体步骤。一个好的工作计划应该结构化且可执行。",
+          stepType: "analysis",
+          timestamp: new Date(Date.now() - 5000),
+          order: 1,
+        },
+        {
+          id: "step-2",
+          content:
+            "考虑使用优先级矩阵来分类任务：高优先级（紧急且重要）、中优先级（重要但不紧急）、低优先级（不紧急不重要）。",
+          stepType: "reasoning",
+          timestamp: new Date(Date.now() - 4000),
+          order: 2,
+        },
+        {
+          id: "step-3",
+          content:
+            "时间管理方面，可以采用番茄工作法，将任务分解为25分钟的时间块，这样更容易专注和执行。",
+          stepType: "idea",
+          timestamp: new Date(Date.now() - 3000),
+          order: 3,
+        },
+        {
+          id: "step-4",
+          content:
+            "需要考虑任务之间的依赖关系和时间估算的准确性，避免过度乐观的时间安排。",
+          stepType: "question",
+          timestamp: new Date(Date.now() - 2000),
+          order: 4,
+        },
+        {
+          id: "step-5",
+          content:
+            "最终方案应该包含具体的时间安排、优先级分类、执行建议和灵活性考虑。",
+          stepType: "conclusion",
+          timestamp: new Date(Date.now() - 1000),
+          order: 5,
+        },
+      ],
+      finalAnswer: `## 📋 高效工作计划
+
+### 🔥 高优先级任务
+1. **完成项目报告** (预计2小时)
+   - 整理数据分析结果
+   - 撰写总结报告
+   - 准备演示文稿
+
+2. **客户会议准备** (预计1小时)
+   - 回顾客户需求
+   - 准备解决方案
+   - 整理相关资料
+
+### 📝 中优先级任务
+1. **邮件回复** (预计30分钟)
+   - 处理紧急邮件
+   - 回复合作伙伴询问
+
+2. **团队沟通** (预计45分钟)
+   - 参加例会
+   - 同步项目进度
+
+### 💡 低优先级任务
+1. **学习新技术** (预计1小时)
+   - 阅读技术文档
+   - 观看教程视频
+
+### ⏰ 建议时间安排
+- **上午 9:00-11:00**: 高优先级任务1
+- **上午 11:15-12:15**: 高优先级任务2
+- **下午 14:00-14:30**: 中优先级任务1
+- **下午 14:45-15:30**: 中优先级任务2
+- **下午 15:45-16:45**: 低优先级任务1
+
+### 📌 执行建议
+- 使用番茄工作法，每25分钟休息5分钟
+- 完成每个任务后及时标记
+- 保持计划的灵活性，应对突发情况`,
+      totalThinkingTime: 5000,
+      createdAt: new Date(),
+    };
+  };
 
   // 模拟思维链内容（使用 details/summary 标签）
   const generateTestContent = () => {
@@ -243,8 +336,44 @@ const ThinkingChainTest: React.FC = () => {
           生成简单测试内容
         </Button>
         <Button onClick={generateComplexTest}>生成复杂测试内容</Button>
+        <Button
+          type="primary"
+          onClick={() => setShowThinkingChain(!showThinkingChain)}
+          style={{ background: "#52c41a", borderColor: "#52c41a" }}
+        >
+          {showThinkingChain ? "隐藏" : "显示"}新版思维链组件
+        </Button>
         <Button onClick={() => setTestContent("")}>清空内容</Button>
       </Space>
+
+      {/* 新版思维链组件测试 */}
+      {showThinkingChain && (
+        <Card
+          title="🎯 新版思维链组件 - 优化后的视觉效果"
+          style={{
+            marginBottom: "20px",
+            border: "2px solid #52c41a",
+            borderRadius: "8px",
+          }}
+          styles={{
+            header: {
+              background: "#f6ffed",
+              borderBottom: "2px solid #52c41a",
+            },
+          }}
+        >
+          <div style={{ marginBottom: "16px" }}>
+            <Text type="secondary">
+              ✨ 优化亮点：思维过程和最终答案现在有明显的视觉区分，更容易阅读
+            </Text>
+          </div>
+          <ThinkingChain
+            thinkingChain={createMockThinkingChain()}
+            defaultExpanded={true}
+            compact={false}
+          />
+        </Card>
+      )}
 
       {testContent && (
         <Card title="📝 渲染效果预览" style={{ marginTop: "20px" }}>

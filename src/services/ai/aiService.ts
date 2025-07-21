@@ -689,19 +689,18 @@ export class AIService {
 
       // 使用自然语言解析（现在是主要方式）
       // 解析思维链内容
-      const { thinkingChain, cleanContent, contentWithThinking } =
-        this.parseThinkingChain(
-          cleanResponse,
-          originalPrompt,
-          showThinkingMode
-        );
+      const { thinkingChain, cleanContent } = this.parseThinkingChain(
+        cleanResponse,
+        originalPrompt,
+        showThinkingMode
+      );
 
       const note: StickyNoteData = {
         title: this.generateTitleFromContent(cleanContent),
-        // 使用包含思维链的内容，这样便签会直接显示思考过程
-        content: contentWithThinking,
-        // 🔧 不设置颜色，让前端使用临时便签的颜色
-        // 新增：思维链相关数据
+        // 🔧 修复：如果有思维链数据，只存储最终答案作为内容，思维链数据单独存储
+        // 这样可以让前端组件正确显示优化后的思维链界面
+        content: thinkingChain ? cleanContent : cleanResponse,
+        // 思维链相关数据
         thinkingChain,
         hasThinking: !!thinkingChain,
       };
@@ -742,11 +741,10 @@ export class AIService {
   private parseThinkingChain(
     response: string,
     originalPrompt: string,
-    showThinkingMode: boolean = true // 新增：是否显示思维模式的参数
+    showThinkingMode: boolean = true
   ): {
     thinkingChain?: StickyNoteData["thinkingChain"];
     cleanContent: string;
-    contentWithThinking: string; // 新增：包含思维链的完整内容
   } {
     try {
       // 如果不显示思维模式，直接返回清理后的内容
@@ -759,7 +757,6 @@ export class AIService {
 
         return {
           cleanContent,
-          contentWithThinking: cleanContent,
         };
       }
 
@@ -785,7 +782,7 @@ export class AIService {
       if (!thinkingMatch || !usedPattern) {
         // 没有思维链，返回原始内容
         console.log("💭 未检测到思维链标记");
-        return { cleanContent: response, contentWithThinking: response };
+        return { cleanContent: response };
       }
 
       const thinkingContent = thinkingMatch[1].trim();
@@ -802,7 +799,7 @@ export class AIService {
       // 如果思维链内容为空或步骤为0，但有<think>标签，说明AI没有进行复杂思考
       if (steps.length === 0) {
         console.log("⚠️ 思维链步骤解析失败或为空");
-        return { cleanContent: response, contentWithThinking: response };
+        return { cleanContent: response };
       }
 
       console.log("✅ 思维链步骤解析成功，步骤数:", steps.length);
@@ -819,16 +816,10 @@ export class AIService {
         createdAt: new Date(),
       };
 
-      // 生成包含思维链的Markdown内容
-      const contentWithThinking = this.formatThinkingChainAsMarkdown(
-        thinkingChain,
-        cleanContent
-      );
-
-      return { thinkingChain, cleanContent, contentWithThinking };
+      return { thinkingChain, cleanContent };
     } catch (error) {
       console.warn("解析思维链失败:", error);
-      return { cleanContent: response, contentWithThinking: response };
+      return { cleanContent: response };
     }
   }
 
@@ -902,49 +893,6 @@ export class AIService {
     });
 
     return steps;
-  }
-
-  // 将思维链格式化为Markdown内容（使用details/summary实现默认折叠）
-  private formatThinkingChainAsMarkdown(
-    thinkingChain: StickyNoteData["thinkingChain"],
-    finalAnswer: string
-  ): string {
-    if (!thinkingChain || thinkingChain.steps.length === 0) {
-      return finalAnswer;
-    }
-
-    let markdown = "";
-
-    // 🔧 修复：按照用户偏好格式，先添加思考过程标题
-    markdown += "## 🤔 AI思考过程\n\n";
-
-    // 使用details/summary标签实现默认折叠的思考过程
-    markdown += "<details>\n";
-    markdown += "<summary>点击展开思考过程</summary>\n\n";
-
-    // 将思考内容格式化为引用块（注释格式）
-    const originalThinkingContent = thinkingChain.steps
-      .map((step) => step.content)
-      .join("\n\n");
-
-    // 将每一行都添加引用前缀 "> "，形成统一的注释块
-    const quotedThinkingContent = originalThinkingContent
-      .split("\n")
-      .map((line) => (line.trim() === "" ? ">" : `> ${line}`))
-      .join("\n");
-
-    markdown += quotedThinkingContent + "\n\n";
-
-    markdown += "</details>\n\n";
-
-    // 添加分割线
-    markdown += "---\n\n";
-
-    // 添加最终答案
-    markdown += "## ✨ 最终答案\n\n";
-    markdown += finalAnswer;
-
-    return markdown;
   }
 
   // 获取步骤类型的图标文本

@@ -174,15 +174,68 @@
   margin: 0;
 }
 
+/* 思维过程区域样式 */
+.thinking-process-section {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+/* 最终答案区域样式 */
+.thinking-final-section {
+  position: relative;
+}
+
+.thinking-final-section::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #52c41a 50%,
+    transparent 100%
+  );
+  border-radius: 1px;
+}
+
 /* 最终答案卡片样式 */
 .thinking-final-answer {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #f6ffed 0%, #f0f9e8 100%);
+  border: 2px solid #52c41a;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.thinking-final-answer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #52c41a, #73d13d, #52c41a);
 }
 
 .thinking-final-answer .ant-card-body {
-  padding: 12px;
+  padding: 20px;
+  padding-top: 24px;
+}
+
+/* 最终答案标题样式 */
+.thinking-final-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #d9f7be;
 }
 
 /* 紧凑模式样式调整 */
@@ -199,9 +252,22 @@
   font-size: 12px;
 }
 
-.thinking-chain-container.compact .thinking-prompt-card .ant-card-body,
-.thinking-chain-container.compact .thinking-final-answer .ant-card-body {
+.thinking-chain-container.compact .thinking-prompt-card .ant-card-body {
   padding: 8px;
+}
+
+.thinking-chain-container.compact .thinking-final-answer .ant-card-body {
+  padding: 12px;
+  padding-top: 16px;
+}
+
+.thinking-chain-container.compact .thinking-process-section {
+  padding: 12px;
+}
+
+.thinking-chain-container.compact .thinking-final-header {
+  margin-bottom: 6px;
+  padding-bottom: 6px;
 }
 
 /* 响应式设计 */
@@ -211,16 +277,16 @@
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .thinking-stats-tags {
     margin-left: 0;
     margin-top: 4px;
   }
-  
+
   .thinking-step-content {
     margin-left: 8px;
   }
-  
+
   .thinking-step-header {
     flex-direction: column;
     align-items: flex-start;
@@ -247,26 +313,40 @@
     background: #1f1f1f;
     border-color: #303030;
   }
-  
+
   .thinking-collapse .ant-collapse-header:hover {
     background: #262626;
   }
-  
+
   .thinking-stats {
     background: #262626;
     border-color: #303030;
   }
-  
+
   .thinking-prompt-card {
     background: #111b26;
     border-color: #1668dc;
   }
-  
-  .thinking-final-answer {
-    background: #162312;
-    border-color: #389e0d;
+
+  .thinking-process-section {
+    background: #262626;
+    border-color: #434343;
   }
-  
+
+  .thinking-final-answer {
+    background: linear-gradient(135deg, #162312 0%, #1f2f1f 100%);
+    border-color: #389e0d;
+    box-shadow: 0 2px 8px rgba(56, 158, 13, 0.2);
+  }
+
+  .thinking-final-answer::before {
+    background: linear-gradient(90deg, #389e0d, #52c41a, #389e0d);
+  }
+
+  .thinking-final-header {
+    border-bottom-color: #274916;
+  }
+
   .thinking-step-text {
     color: #d9d9d9;
   }

@@ -2,11 +2,9 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
-import CodeBlock from "@tiptap/extension-code-block";
 import "./WysiwygEditor.css";
 
 /**
@@ -350,21 +348,23 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           keepMarks: true,
           keepAttributes: false,
         },
+        // 配置内置的 codeBlock 扩展
         codeBlock: {
           HTMLAttributes: {
             class: "code-block",
+          },
+        },
+        // 配置内置的 link 扩展
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: "editor-link",
           },
         },
       }),
       Placeholder.configure({
         placeholder,
         emptyEditorClass: "is-editor-empty",
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "editor-link",
-        },
       }),
       Image.configure({
         HTMLAttributes: {
@@ -380,11 +380,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         nested: true,
         HTMLAttributes: {
           class: "task-item",
-        },
-      }),
-      CodeBlock.configure({
-        HTMLAttributes: {
-          class: "code-block",
         },
       }),
     ],
@@ -414,9 +409,10 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   useEffect(() => {
     if (!editor || !onKeyDown) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
       // 如果外部处理了事件，则阻止默认行为
-      if (onKeyDown(event)) {
+      if (onKeyDown(keyboardEvent)) {
         event.preventDefault();
         return false;
       }
@@ -441,7 +437,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     if (content !== currentMarkdown) {
       const newHtml = markdownToHtml(content);
       // 使用 setContent 而不是 insertContent 来替换全部内容
-      editor.commands.setContent(newHtml, false); // false 表示不触发 onUpdate
+      editor.commands.setContent(newHtml, { emitUpdate: false }); // 不触发 onUpdate
     }
   }, [content, editor]);
 
