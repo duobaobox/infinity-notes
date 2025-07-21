@@ -249,19 +249,58 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
 // 导出便签连接相关的工具函数
 export const connectionUtils = {
   /**
+   * 获取便签在TipTap编辑器中实际显示的内容
+   * 这是用户在界面上看到和编辑的真实内容，不包含AI思考过程
+   * 🎯 核心逻辑：模拟StickyNote组件中WysiwygEditor的content属性逻辑
+   */
+  getDisplayedNoteContent: (note: StickyNote): string => {
+    // 如果便签正在编辑，返回编辑中的内容（但连接时通常不会是编辑状态）
+    if (note.isEditing) {
+      console.log(`📝 便签 "${note.title}" 处于编辑状态，使用完整内容`);
+      return note.content;
+    }
+
+    // 如果有思维链数据且不在编辑状态，只返回最终答案
+    if (note.thinkingChain && !note.isEditing) {
+      const finalAnswer = note.thinkingChain.finalAnswer || "";
+
+      // 如果最终答案为空，回退到完整内容
+      if (!finalAnswer.trim()) {
+        console.log(
+          `⚠️ 便签 "${note.title}" 思维链最终答案为空，回退到完整内容`
+        );
+        return note.content || "";
+      }
+
+      console.log(
+        `🤔 便签 "${note.title}" 有思维链，使用最终答案:`,
+        finalAnswer.substring(0, 50) + "..."
+      );
+      return finalAnswer;
+    }
+
+    // 否则返回完整内容
+    console.log(
+      `📄 便签 "${note.title}" 无思维链，使用完整内容:`,
+      (note.content || "").substring(0, 50) + "..."
+    );
+    return note.content || "";
+  },
+
+  /**
    * 智能提取便签的核心内容
    * 优先提取最终答案部分，过滤思维链内容
    * 增强版：使用配置化的匹配模式和错误恢复机制
+   * 🔧 修改：现在基于显示内容而不是原始内容进行提取
    */
   extractNoteContent: (note: StickyNote): string => {
-    const content = note.content;
+    // 🎯 关键修改：使用显示内容而不是原始内容
+    const content = connectionUtils.getDisplayedNoteContent(note);
     const config = getContentExtractionConfig();
 
     // 输入验证
     if (!content || typeof content !== "string") {
-      if (config.debug.enabled) {
-        console.warn(`⚠️ 便签 "${note.title}" 内容无效，返回空字符串`);
-      }
+      console.warn(`⚠️ 便签 "${note.title}" 显示内容无效，返回空字符串`);
       return "";
     }
 
@@ -275,12 +314,10 @@ export const connectionUtils = {
         if (match && match[1]) {
           const finalAnswer = match[1].trim();
           if (finalAnswer.length > 0) {
-            if (config.debug.logExtractionSteps) {
-              console.log(
-                `📝 从便签 "${note.title}" 提取最终答案内容 (模式匹配):`,
-                finalAnswer.substring(0, 50) + "..."
-              );
-            }
+            console.log(
+              `📝 从便签 "${note.title}" 提取最终答案内容 (模式匹配):`,
+              finalAnswer.substring(0, 50) + "..."
+            );
             return finalAnswer;
           }
         }
@@ -302,12 +339,10 @@ export const connectionUtils = {
           }
 
           if (afterDetails.length > 0) {
-            if (config.debug.logExtractionSteps) {
-              console.log(
-                `📝 从便签 "${note.title}" 提取折叠后内容:`,
-                afterDetails.substring(0, 50) + "..."
-              );
-            }
+            console.log(
+              `📝 从便签 "${note.title}" 提取折叠后内容:`,
+              afterDetails.substring(0, 50) + "..."
+            );
             return afterDetails;
           }
         }
@@ -317,19 +352,15 @@ export const connectionUtils = {
       const intelligentExtraction =
         connectionUtils.intelligentContentExtraction(content);
       if (intelligentExtraction && intelligentExtraction !== content) {
-        if (config.debug.logExtractionSteps) {
-          console.log(
-            `📝 从便签 "${note.title}" 智能提取核心内容:`,
-            intelligentExtraction.substring(0, 50) + "..."
-          );
-        }
+        console.log(
+          `📝 从便签 "${note.title}" 智能提取核心内容:`,
+          intelligentExtraction.substring(0, 50) + "..."
+        );
         return intelligentExtraction;
       }
 
       // 如果没有思维链格式，直接返回原内容
-      if (config.debug.logExtractionSteps) {
-        console.log(`📝 便签 "${note.title}" 无特殊格式，使用原始内容`);
-      }
+      console.log(`📝 便签 "${note.title}" 无特殊格式，使用原始内容`);
       return content;
     } catch (error) {
       console.error(`❌ 提取便签 "${note.title}" 内容时发生错误:`, error);
@@ -357,12 +388,20 @@ export const connectionUtils = {
       const coreStartIndex = Math.floor(paragraphs.length * 0.4); // 从40%位置开始查找
       const coreParagraphs = paragraphs.slice(coreStartIndex);
 
-      // 使用配置中的思维关键词进行过滤
+      // 🔧 简化版本：使用固定的思维关键词进行过滤
+      const thinkingKeywords = [
+        "思考",
+        "分析",
+        "推理",
+        "考虑",
+        "判断",
+        "评估",
+        "思路",
+        "想法",
+      ];
+
       const filteredParagraphs = coreParagraphs.filter((paragraph) => {
         const lowerParagraph = paragraph.toLowerCase();
-
-        // 使用配置中的思维过程关键词
-        const thinkingKeywords = config.patterns.thinkingKeywords;
 
         const hasThinkingKeywords = thinkingKeywords.some((keyword) =>
           lowerParagraph.includes(keyword.toLowerCase())
@@ -385,9 +424,7 @@ export const connectionUtils = {
       const lastParagraphs = paragraphs.slice(-2);
       return lastParagraphs.join("\n\n").trim();
     } catch (error) {
-      if (config.debug.enabled) {
-        console.warn("智能内容提取失败:", error);
-      }
+      console.warn("智能内容提取失败:", error);
       return content;
     }
   },
@@ -395,6 +432,7 @@ export const connectionUtils = {
   /**
    * 获取连接的便签内容摘要
    * 增强版：使用配置化的长度限制和质量评估
+   * 🔧 修改：基于显示内容生成摘要，确保不包含AI思考过程
    */
   getConnectionSummary: (
     connectedNotes: StickyNote[],
@@ -404,87 +442,66 @@ export const connectionUtils = {
 
     const config = getContentExtractionConfig();
 
-    // 验证输入数据
-    const validNotes = connectedNotes.filter((note) =>
-      connectionUtils.validateSingleConnection(note)
-    );
+    // 验证输入数据 - 检查显示内容而不是原始内容
+    const validNotes = connectedNotes.filter((note) => {
+      const displayedContent = connectionUtils.getDisplayedNoteContent(note);
+      return (
+        note.id &&
+        typeof displayedContent === "string" &&
+        displayedContent.trim().length > 0 &&
+        typeof note.title === "string"
+      );
+    });
 
     if (validNotes.length === 0) {
-      if (config.debug.enabled) {
-        console.warn("⚠️ 没有有效的连接便签");
-      }
+      console.warn("⚠️ 没有有效的连接便签（显示内容为空）");
       return "";
     }
 
-    if (validNotes.length !== connectedNotes.length && config.debug.enabled) {
+    if (validNotes.length !== connectedNotes.length) {
       console.warn(
-        `⚠️ ${connectedNotes.length - validNotes.length} 个便签数据无效，已过滤`
+        `⚠️ ${
+          connectedNotes.length - validNotes.length
+        } 个便签显示内容无效，已过滤`
       );
     }
 
     return validNotes
       .map((note, index) => {
         try {
-          // 根据配置决定内容提取方式
+          // 🔧 修改：根据配置决定内容提取方式，但都基于显示内容
           const coreContent =
             summaryMode === "final_answer_only"
-              ? connectionUtils.extractNoteContent(note)
-              : note.content; // 完整模式直接使用原内容
+              ? connectionUtils.extractNoteContent(note) // 这个函数内部已经使用显示内容
+              : connectionUtils.getDisplayedNoteContent(note); // 完整模式使用显示内容
 
-          // 使用配置中的长度限制
-          const baseMaxLength =
-            summaryMode === "final_answer_only"
-              ? config.lengthLimits.finalAnswerOnly
-              : config.lengthLimits.full;
-
-          let maxLength = baseMaxLength;
-
-          // 如果启用质量评估，进行动态调整
-          if (config.qualityAssessment.enabled) {
-            const qualityScore =
-              connectionUtils.assessContentQuality(coreContent);
-
-            // 高质量内容获得额外长度配额
-            if (qualityScore > config.qualityAssessment.qualityThreshold) {
-              maxLength += config.lengthLimits.qualityBonus;
-            }
-
-            const truncatedContent =
-              coreContent.length > maxLength
-                ? config.smartTruncation.enabled
-                  ? connectionUtils.smartTruncate(coreContent, maxLength)
-                  : coreContent.substring(0, maxLength) + "..."
-                : coreContent;
-
-            // 只在控制台输出质量指示器，不添加到便签文本中
-            if (config.debug.showQualityScores) {
-              console.log(
-                `📊 便签 "${note.title}" 质量评估: ${(
-                  qualityScore * 100
-                ).toFixed(0)}%`
-              );
-            }
-
-            return `${index + 1}. ${
-              note.title || "无标题"
-            }: ${truncatedContent}`;
-          } else {
-            // 不启用质量评估时的简化处理
-            const truncatedContent =
-              coreContent.length > maxLength
-                ? config.smartTruncation.enabled
-                  ? connectionUtils.smartTruncate(coreContent, maxLength)
-                  : coreContent.substring(0, maxLength) + "..."
-                : coreContent;
-
-            return `${index + 1}. ${
-              note.title || "无标题"
-            }: ${truncatedContent}`;
+          // 验证提取的内容
+          if (!coreContent || typeof coreContent !== "string") {
+            console.warn(
+              `⚠️ 便签 "${note.title}" 提取的核心内容无效:`,
+              coreContent
+            );
+            throw new Error(`提取的核心内容无效: ${typeof coreContent}`);
           }
+
+          // 🔧 适配简化配置：使用新的配置结构
+          const maxLength = config.longNoteExtraction.maxLength;
+
+          // 简化处理：直接使用配置的最大长度进行截断
+          const truncatedContent =
+            coreContent.length > maxLength
+              ? config.longNoteExtraction.enableSmartTruncation
+                ? connectionUtils.smartTruncate(coreContent, maxLength)
+                : coreContent.substring(0, maxLength) + "..."
+              : coreContent;
+
+          return `${index + 1}. ${note.title || "无标题"}: ${truncatedContent}`;
         } catch (error) {
           console.error(`❌ 处理便签 "${note.title}" 时出错:`, error);
-          // 错误恢复：使用基本格式
-          const fallbackContent = note.content.substring(0, 50) + "...";
+          // 错误恢复：使用显示内容作为基本格式
+          const displayedContent =
+            connectionUtils.getDisplayedNoteContent(note);
+          const fallbackContent = displayedContent.substring(0, 50) + "...";
           return `${index + 1}. ${
             note.title || "无标题"
           } [处理出错]: ${fallbackContent}`;
@@ -495,20 +512,15 @@ export const connectionUtils = {
 
   /**
    * 智能截断：在合适的位置截断文本，避免截断到句子中间
-   * 使用配置化的搜索范围参数
+   * 🔧 简化版本：使用固定的搜索范围参数
    */
   smartTruncate: (text: string, maxLength: number): string => {
     if (text.length <= maxLength) {
       return text;
     }
 
-    const config = getContentExtractionConfig();
-
-    // 使用配置中的搜索范围参数
-    const searchRange = Math.min(
-      config.smartTruncation.maxSearchRange,
-      Math.floor(maxLength * config.smartTruncation.searchRangeRatio)
-    );
+    // 🔧 简化配置：使用固定的搜索范围参数
+    const searchRange = Math.min(50, Math.floor(maxLength * 0.2)); // 最多搜索50字符或20%的长度
     const idealCutPoint = maxLength - searchRange;
 
     // 寻找句号、问号、感叹号等句子结束标记
@@ -553,7 +565,7 @@ export const connectionUtils = {
 
   /**
    * 评估内容质量：基于多个维度评估提取内容的质量
-   * 使用配置化的权重和调试设置
+   * 🔧 简化版本：使用固定的评估规则
    * 返回0-1之间的分数，1表示质量最高
    */
   assessContentQuality: (content: string): number => {
@@ -561,71 +573,24 @@ export const connectionUtils = {
       return 0;
     }
 
-    const config = getContentExtractionConfig();
-
-    // 如果质量评估被禁用，返回默认分数
-    if (!config.qualityAssessment.enabled) {
-      return 0.5; // 中等质量分数
-    }
-
-    let score = 0;
-    const factors = [];
-
-    // 1. 长度适中性
+    // 🔧 简化版本：直接返回基于长度和结构的简单评估
     const length = content.trim().length;
-    if (length >= 20 && length <= 500) {
-      const lengthScore =
-        Math.min(1, length / 200) * config.qualityAssessment.lengthWeight;
-      score += lengthScore;
-      factors.push(`长度: ${lengthScore.toFixed(2)}`);
-    }
+    if (length < 10) return 0.2; // 太短
+    if (length > 1000) return 0.6; // 太长
 
-    // 2. 结构完整性
+    // 基于长度的基础分数
+    const lengthScore = Math.min(1, length / 200) * 0.5;
+
+    // 结构完整性评估
     const hasCompleteStructure = /[。！？.!?]$/.test(content.trim());
-    const hasProperCapitalization = /^[A-Z\u4e00-\u9fff]/.test(content.trim());
+    const hasProperStart = /^[A-Z\u4e00-\u9fff]/.test(content.trim());
     const structureScore =
-      ((hasCompleteStructure ? 0.7 : 0) + (hasProperCapitalization ? 0.3 : 0)) *
-      config.qualityAssessment.structureWeight;
-    score += structureScore;
-    factors.push(`结构: ${structureScore.toFixed(2)}`);
+      (hasCompleteStructure ? 0.3 : 0) + (hasProperStart ? 0.2 : 0);
 
-    // 3. 信息密度
-    const sentences = content
-      .split(/[。！？.!?]/)
-      .filter((s) => s.trim().length > 0);
-    const avgSentenceLength =
-      sentences.length > 0 ? content.length / sentences.length : 0;
-    const densityScore =
-      (avgSentenceLength > 10 && avgSentenceLength < 100 ? 1 : 0.3) *
-      config.qualityAssessment.densityWeight;
-    score += densityScore;
-    factors.push(`密度: ${densityScore.toFixed(2)}`);
+    // 最终分数
+    const finalScore = Math.min(1, lengthScore + structureScore);
 
-    // 4. 关键词丰富度
-    const keywordPatterns = [
-      /\b(解决|方案|建议|结论|总结|分析|评估)\b/g,
-      /\b(因为|所以|因此|由于|导致|结果)\b/g,
-      /\b(首先|其次|最后|总之|综上)\b/g,
-    ];
-
-    let keywordCount = 0;
-    keywordPatterns.forEach((pattern) => {
-      const matches = content.match(pattern);
-      keywordCount += matches ? matches.length : 0;
-    });
-
-    const keywordScore =
-      Math.min(1, keywordCount * 0.25) * config.qualityAssessment.keywordWeight;
-    score += keywordScore;
-    factors.push(`关键词: ${keywordScore.toFixed(2)}`);
-
-    if (config.debug.enabled && config.debug.showQualityScores) {
-      console.log(
-        `📊 内容质量评估: ${score.toFixed(2)} (${factors.join(", ")})`
-      );
-    }
-
-    return Math.min(1, score);
+    return finalScore;
   },
 
   /**
@@ -692,13 +657,31 @@ ${connectionSummary}
 
   /**
    * 验证连接的便签是否有效
+   * 🔧 修改：检查显示内容而不是原始内容
    */
   validateConnections: (connectedNotes: StickyNote[]): boolean => {
-    return connectedNotes.every(
-      (note) =>
+    return connectedNotes.every((note) => {
+      const displayedContent = connectionUtils.getDisplayedNoteContent(note);
+      return (
         note.id &&
-        typeof note.content === "string" &&
+        typeof displayedContent === "string" &&
+        displayedContent.trim().length > 0 &&
         typeof note.title === "string"
+      );
+    });
+  },
+
+  /**
+   * 验证单个便签连接是否有效
+   * 🔧 修改：检查显示内容而不是原始内容
+   */
+  validateSingleConnection: (note: StickyNote): boolean => {
+    const displayedContent = connectionUtils.getDisplayedNoteContent(note);
+    return (
+      note.id &&
+      typeof displayedContent === "string" &&
+      displayedContent.trim().length > 0 &&
+      typeof note.title === "string"
     );
   },
 };

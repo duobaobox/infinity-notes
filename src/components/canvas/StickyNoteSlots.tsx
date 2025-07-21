@@ -1,6 +1,7 @@
 import React from "react";
 import { Tooltip } from "antd";
 import type { StickyNote } from "../types";
+import { connectionUtils } from "../../stores/connectionStore";
 import "./StickyNoteSlots.css";
 
 // 连接模式枚举
@@ -12,8 +13,10 @@ export const ConnectionMode = {
 // 插槽组件属性接口
 interface StickyNoteSlotsProps {
   connectedNotes: StickyNote[]; // 已连接的便签列表
-  connectionMode: typeof ConnectionMode[keyof typeof ConnectionMode]; // 连接模式
-  onModeChange: (mode: typeof ConnectionMode[keyof typeof ConnectionMode]) => void; // 模式切换回调
+  connectionMode: (typeof ConnectionMode)[keyof typeof ConnectionMode]; // 连接模式
+  onModeChange: (
+    mode: (typeof ConnectionMode)[keyof typeof ConnectionMode]
+  ) => void; // 模式切换回调
   onRemoveConnection: (noteId: string) => void; // 移除连接回调
   onClearAllConnections: () => void; // 清空所有连接回调
   visible?: boolean; // 是否显示插槽容器
@@ -38,7 +41,13 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
       : "替换模式：删除原始便签，只保留新生成的便签<br>汇总模式：保留原始便签，并自动将它们连接到新便签";
   };
 
-  return (    <div className={`slots-container ${visible && connectedNotes.length > 0 ? 'visible' : ''}`} id="slots-container">
+  return (
+    <div
+      className={`slots-container ${
+        visible && connectedNotes.length > 0 ? "visible" : ""
+      }`}
+      id="slots-container"
+    >
       {/* 插槽列表 */}
       <div className="slots-list" id="slots-list">
         {connectedNotes.length === 0 ? (
@@ -48,7 +57,10 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
             </div>
             <div className="empty-text-container">
               <span className="empty-text">暂无连接的便签</span>
-              <span className="empty-hint">悬停便签并点击左下角 <span className="connection-dot-demo">●</span> 连接点来建立连接</span>
+              <span className="empty-hint">
+                悬停便签并点击左下角{" "}
+                <span className="connection-dot-demo">●</span> 连接点来建立连接
+              </span>
             </div>
           </div>
         ) : (
@@ -58,7 +70,15 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
               className="note-slot connected"
               data-note-id={note.id}
               data-index={index + 1}
-              title={`${note.title || "无标题便签"}: ${note.content.substring(0, 50)}${note.content.length > 50 ? "..." : ""}`}
+              title={(() => {
+                const displayedContent =
+                  connectionUtils.getDisplayedNoteContent(note);
+                return `${
+                  note.title || "无标题便签"
+                }: ${displayedContent.substring(0, 50)}${
+                  displayedContent.length > 50 ? "..." : ""
+                }`;
+              })()}
             >
               {/* 圆形插槽 */}
               <div className="slot-circle">
@@ -86,13 +106,17 @@ const StickyNoteSlots: React.FC<StickyNoteSlotsProps> = ({
       >
         <div className="mode-selector" id="connection-mode-selector">
           <button
-            className={`mode-button ${connectionMode === ConnectionMode.SUMMARY ? 'active' : ''}`}
+            className={`mode-button ${
+              connectionMode === ConnectionMode.SUMMARY ? "active" : ""
+            }`}
             onClick={() => onModeChange(ConnectionMode.SUMMARY)}
           >
             汇总
           </button>
           <button
-            className={`mode-button ${connectionMode === ConnectionMode.REPLACE ? 'active' : ''}`}
+            className={`mode-button ${
+              connectionMode === ConnectionMode.REPLACE ? "active" : ""
+            }`}
             onClick={() => onModeChange(ConnectionMode.REPLACE)}
           >
             替换
