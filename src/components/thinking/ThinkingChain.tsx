@@ -6,7 +6,7 @@ import {
   SearchOutlined,
   TrophyOutlined,
 } from "@ant-design/icons";
-import { Card, Tag, Timeline, Typography } from "antd";
+import { Card, Tag, Typography, Space } from "antd";
 import React from "react";
 import type {
   ThinkingChain as ThinkingChainType,
@@ -84,63 +84,60 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
 
-  // 渲染思维链步骤时间线
+  // 渲染思维链步骤列表
   const renderThinkingSteps = () => {
-    // 将步骤数据转换为Timeline的items格式
-    const timelineItems = thinkingChain.steps.map((step) => {
-      const { icon, color } = getStepIcon(step.stepType);
-
-      return {
-        key: step.id,
-        dot: (
-          <div
-            className="thinking-step-icon"
-            style={{ backgroundColor: color }}
-          >
-            {icon}
-          </div>
-        ),
-        color: color,
-        children: (
-          <div className="thinking-step-content">
-            <div className="thinking-step-header">
-              <Tag color={color} className="thinking-step-tag">
-                {getStepTypeLabel(step.stepType)}
-              </Tag>
-              <Text type="secondary" className="thinking-step-time">
-                <ClockCircleOutlined style={{ marginRight: 4 }} />
-                {(() => {
-                  try {
-                    // 确保timestamp是Date对象，如果不是则转换
-                    const timestamp =
-                      step.timestamp instanceof Date
-                        ? step.timestamp
-                        : new Date(step.timestamp);
-                    return timestamp.toLocaleTimeString();
-                  } catch (error) {
-                    console.warn("时间戳格式化失败:", error);
-                    return "时间未知";
-                  }
-                })()}
-              </Text>
-            </div>
-            <Paragraph
-              className="thinking-step-text"
-              style={{ marginBottom: 0 }}
-            >
-              {step.content}
-            </Paragraph>
-          </div>
-        ),
-      };
-    });
-
     return (
-      <Timeline
-        mode="left"
-        className={`thinking-timeline ${compact ? "compact" : ""}`}
-        items={timelineItems}
-      />
+      <div className="thinking-steps-list">
+        {thinkingChain.steps.map((step, index) => {
+          const { icon, color } = getStepIcon(step.stepType);
+
+          return (
+            <div key={step.id} className="thinking-step-item">
+              {/* 步骤头部：包含图标的标签和时间 */}
+              <div className="thinking-step-header">
+                <Tag
+                  color={color}
+                  className="thinking-step-tag-with-icon"
+                  icon={icon}
+                >
+                  {getStepTypeLabel(step.stepType)}
+                </Tag>
+                <Text type="secondary" className="thinking-step-time">
+                  <ClockCircleOutlined style={{ marginRight: 4 }} />
+                  {(() => {
+                    try {
+                      // 确保timestamp是Date对象，如果不是则转换
+                      const timestamp =
+                        step.timestamp instanceof Date
+                          ? step.timestamp
+                          : new Date(step.timestamp);
+                      return timestamp.toLocaleTimeString();
+                    } catch (error) {
+                      console.warn("时间戳格式化失败:", error);
+                      return "时间未知";
+                    }
+                  })()}
+                </Text>
+              </div>
+
+              {/* 步骤内容 */}
+              <div className="thinking-step-content">
+                <Paragraph
+                  className="thinking-step-text"
+                  style={{ marginBottom: 0 }}
+                >
+                  {step.content}
+                </Paragraph>
+              </div>
+
+              {/* 连接线（除了最后一个步骤） */}
+              {index < thinkingChain.steps.length - 1 && (
+                <div className="thinking-step-connector"></div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     );
   };
 

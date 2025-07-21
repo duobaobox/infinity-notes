@@ -89,49 +89,121 @@
   margin: 0 16px 8px 16px;
 }
 
-/* 思维链时间线样式 */
-.thinking-timeline {
+/* 思维链步骤列表样式 */
+.thinking-steps-list {
   margin: 16px 0;
 }
 
-.thinking-timeline.compact {
+.thinking-chain-container.compact .thinking-steps-list {
   margin: 12px 0;
 }
 
-.thinking-timeline .ant-timeline-item {
-  padding-bottom: 16px;
+/* 思维链步骤项样式 */
+.thinking-step-item {
+  position: relative;
+  margin-bottom: 16px;
 }
 
-.thinking-timeline.compact .ant-timeline-item {
-  padding-bottom: 12px;
+.thinking-chain-container.compact .thinking-step-item {
+  margin-bottom: 12px;
 }
 
-/* 思维链步骤图标样式 */
-.thinking-step-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+/* 步骤连接线 */
+.thinking-step-connector {
+  position: absolute;
+  left: 12px;
+  top: 32px;
+  bottom: -16px;
+  width: 2px;
+  background: linear-gradient(to bottom, #e8e8e8, transparent);
+  border-radius: 1px;
+}
+
+.thinking-chain-container.compact .thinking-step-connector {
+  left: 10px;
+  top: 28px;
+  bottom: -12px;
+}
+
+/* 思维链步骤头部样式 */
+.thinking-step-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
 }
 
-/* 思维链步骤内容样式 */
+.thinking-chain-container.compact .thinking-step-header {
+  margin-bottom: 6px;
+}
+
+/* 带图标的步骤标签样式 */
+.thinking-step-tag-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+.thinking-chain-container.compact .thinking-step-tag-with-icon {
+  padding: 3px 10px;
+  font-size: 12px;
+  gap: 4px;
+}
+
+/* 思维链步骤内容样式 - 突出内容 */
 .thinking-step-content {
-  margin-left: 16px;
-  margin-top: -4px;
+  margin-left: 16px; /* 减少左边距，让内容更靠近连接线 */
+  margin-right: 8px;
+  padding: 6px 0;
+  padding-left: 12px; /* 添加左内边距，创建视觉层次 */
+  border-left: 2px solid #f0f0f0; /* 添加左边框，增强视觉引导 */
+}
+
+.thinking-chain-container.compact .thinking-step-content {
+  margin-left: 12px;
+  padding: 4px 0;
+  padding-left: 8px;
 }
 
 .thinking-step-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  justify-content: space-between;
+  margin-bottom: 4px; /* 减少底部边距，让标签更贴近内容 */
+  position: relative;
+  z-index: 1;
 }
 
+.thinking-chain-container.compact .thinking-step-header {
+  margin-bottom: 3px;
+}
+
+/* 带图标的步骤标签样式 - 小而低调但可见 */
+.thinking-step-tag-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 400;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  /* 让Ant Design的Tag颜色正常显示，但降低饱和度 */
+  filter: saturate(0.7) brightness(1.1);
+}
+
+.thinking-chain-container.compact .thinking-step-tag-with-icon {
+  padding: 1px 4px;
+  font-size: 10px;
+  gap: 2px;
+}
+
+/* 保留原有的step-tag样式作为备用 */
 .thinking-step-tag {
   font-size: 11px;
   padding: 2px 6px;
@@ -140,16 +212,29 @@
 }
 
 .thinking-step-time {
-  font-size: 11px;
+  font-size: 10px;
   display: flex;
   align-items: center;
+  color: #8c8c8c; /* 调整为适中的灰色 */
+  white-space: nowrap;
+  opacity: 1; /* 恢复完全不透明 */
+}
+
+.thinking-chain-container.compact .thinking-step-time {
+  font-size: 9px;
 }
 
 .thinking-step-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #262626; /* 更深的颜色，让内容更突出 */
+  margin: 0;
+  font-weight: 400;
+}
+
+.thinking-chain-container.compact .thinking-step-text {
   font-size: 13px;
   line-height: 1.5;
-  color: #595959;
-  margin: 0;
 }
 
 /* 思维过程区域样式 */
@@ -247,9 +332,7 @@
   gap: 12px;
 }
 
-.thinking-chain-container.compact .thinking-step-content {
-  margin-left: 12px;
-}
+/* 紧凑模式下的步骤内容样式已在上面定义 */
 
 .thinking-chain-container.compact .thinking-step-text {
   font-size: 12px;
@@ -298,16 +381,18 @@
 }
 
 /* 动画效果 */
-.thinking-collapse .ant-collapse-content {
-  transition: all 0.3s ease;
+.thinking-step-tag-with-icon {
+  transition: all 0.2s ease;
 }
 
-.thinking-step-icon {
-  transition: transform 0.2s ease;
+.thinking-step-tag-with-icon:hover {
+  opacity: 1;
+  transform: none;
+  filter: brightness(1.1); /* 悬停时稍微提亮 */
 }
 
-.thinking-step-icon:hover {
-  transform: scale(1.1);
+.thinking-step-connector {
+  transition: opacity 0.3s ease;
 }
 
 /* 便签中的思维链特殊样式 */
@@ -330,8 +415,8 @@
   padding: 8px;
 }
 
-/* 便签中的思维链时间线样式优化 */
-.thinking-chain-in-note .thinking-timeline {
+/* 便签中的思维链步骤列表样式优化 */
+.thinking-chain-in-note .thinking-steps-list {
   margin: 8px 0; /* 减少边距 */
 }
 
@@ -340,14 +425,30 @@
   padding: 6px 8px; /* 减少内边距 */
 }
 
-/* 便签中的思维链步骤内容优化 */
+/* 便签中的思维链步骤项优化 */
+.thinking-chain-in-note .thinking-step-item {
+  margin-bottom: 12px; /* 减少步骤间距 */
+}
+
 .thinking-chain-in-note .thinking-step-content {
-  margin-left: 12px; /* 减少左边距 */
+  margin-left: 20px; /* 便签中使用更紧凑的左边距 */
+  margin-right: 6px; /* 添加右边距保持平衡 */
+  padding: 6px 0; /* 减少内边距 */
 }
 
 .thinking-chain-in-note .thinking-step-text {
   font-size: 12px; /* 稍微减小字体 */
   line-height: 1.4; /* 调整行高 */
+}
+
+.thinking-chain-in-note .thinking-step-tag-with-icon {
+  font-size: 9px; /* 便签中使用更小的标签 */
+  padding: 1px 4px;
+  gap: 2px;
+}
+
+.thinking-chain-in-note .thinking-step-connector {
+  left: 8px; /* 调整连接线位置 */
 }
 
 /* 深色主题支持 */
