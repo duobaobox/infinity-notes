@@ -15,6 +15,7 @@ import React, { useEffect } from "react";
 import type { AIConfig } from "../../services/ai/aiService";
 import { AIConfigValidator } from "../../utils/aiValidation";
 import { AIConfigStatus } from "./AIConfigStatus";
+import ContentExtractionSettings from "./ContentExtractionSettings";
 
 const { Text } = Typography;
 
@@ -295,6 +296,15 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
             </Radio.Group>
           </Form.Item>
         </Card>
+
+        {/* 内容提取设置 */}
+        <div style={{ marginTop: 24 }}>
+          <ContentExtractionSettings
+            onConfigChange={(config) => {
+              console.log("内容提取配置已更新:", config);
+            }}
+          />
+        </div>
 
         {/* 操作按钮 */}
         <Form.Item>
