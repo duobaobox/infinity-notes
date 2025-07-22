@@ -187,14 +187,30 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   );
 
   // 便签虚拟化渲染 - 基于设备性能动态调整阈值
+  // 节流日志输出，避免拖动时的频繁日志
+  const logVirtualizationSkip = useMemo(() => {
+    let lastLogTime = 0;
+    return (noteCount: number) => {
+      const now = Date.now();
+      if (now - lastLogTime > 1000) {
+        // 每秒最多输出一次
+        console.log(
+          `📝 便签数量较少(${noteCount}个)，跳过虚拟化，直接显示所有便签`
+        );
+        lastLogTime = now;
+      }
+    };
+  }, []);
+
   const visibleNotes = useMemo(() => {
     // 如果便签数量少于动态虚拟化阈值，直接返回所有便签
     // 修复：提高阈值判断的容错性，避免少量便签被意外虚拟化
     if (stickyNotes.length <= Math.max(virtualizationThreshold, 10)) {
-      if (process.env.NODE_ENV === "development") {
-        console.log(
-          `📝 便签数量较少(${stickyNotes.length}个)，跳过虚拟化，直接显示所有便签`
-        );
+      if (
+        process.env.NODE_ENV === "development" &&
+        import.meta.env.VITE_DEBUG_VIRTUALIZATION === "true"
+      ) {
+        logVirtualizationSkip(stickyNotes.length);
       }
       return stickyNotes;
     }
@@ -604,12 +620,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           hasDragged: false,
         };
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("🖱️ 鼠标中键：开始拖拽画布", {
-            x: e.clientX,
-            y: e.clientY,
-          });
-        }
+        // 减少拖拽日志输出
+        // if (process.env.NODE_ENV === "development") {
+        //   console.log("🖱️ 鼠标中键：开始拖拽画布", {
+        //     x: e.clientX,
+        //     y: e.clientY,
+        //   });
+        // }
         startDrag(e.clientX, e.clientY, true); // 传递true表示中键拖拽
         return;
       }
@@ -632,20 +649,22 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 移动模式下，直接开始拖拽画布，不进行其他操作
       if (isMoveModeActive) {
         e.preventDefault();
-        if (process.env.NODE_ENV === "development") {
-          console.log("🖱️ 移动模式：开始拖拽画布", {
-            x: e.clientX,
-            y: e.clientY,
-          });
-        }
+        // 减少拖拽日志输出
+        // if (process.env.NODE_ENV === "development") {
+        //   console.log("🖱️ 移动模式：开始拖拽画布", {
+        //     x: e.clientX,
+        //     y: e.clientY,
+        //   });
+        // }
         startDrag(e.clientX, e.clientY);
         return;
       }
 
       e.preventDefault();
-      if (process.env.NODE_ENV === "development") {
-        console.log("🖱️ 开始拖拽画布", { x: e.clientX, y: e.clientY });
-      }
+      // 减少拖拽日志输出
+      // if (process.env.NODE_ENV === "development") {
+      //   console.log("🖱️ 开始拖拽画布", { x: e.clientX, y: e.clientY });
+      // }
       startDrag(e.clientX, e.clientY);
     },
     [startDrag, isMoveModeActive]
@@ -749,9 +768,10 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       // 检查是否发生了拖拽行为
       // 如果发生了拖拽，则忽略此次点击，避免误清除选中状态
       if (dragDetectionRef.current.hasDragged) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("🖱️ 检测到拖拽行为，忽略点击事件，保持便签选中状态");
-        }
+        // 减少拖拽日志输出
+        // if (process.env.NODE_ENV === "development") {
+        //   console.log("🖱️ 检测到拖拽行为，忽略点击事件，保持便签选中状态");
+        // }
         return;
       }
 

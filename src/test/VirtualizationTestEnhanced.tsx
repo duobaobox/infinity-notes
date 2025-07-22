@@ -1,6 +1,6 @@
 import { Badge, Button, Collapse, Divider } from "antd";
 import type { CollapseProps } from "antd";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { usePerformanceOptimization } from "../hooks/usePerformanceOptimization";
 import { useStickyNotesStore } from "../stores/stickyNotesStore";
 import { connectionLineManager } from "../utils/connectionLineManager";
@@ -77,21 +77,40 @@ const VirtualizationStatusMonitorEnhanced: React.FC = () => {
   }, [updateConnectionPerformance]);
 
   // 显示当前统计信息和性能建议
+  // 大幅减少日志输出，只在重要变化时输出
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      const advice = getVirtualizationAdvice(notes.length);
-      const levelInfo = getPerformanceLevelInfo();
-      console.log(
-        `📊 当前便签数量: ${notes.length}, 阈值: ${virtualizationThreshold}, 性能: ${levelInfo?.label}`
-      );
-      if (advice) {
-        console.log(`💡 性能建议: ${advice.recommendedAction}`);
-      }
+    if (
+      process.env.NODE_ENV === "development" &&
+      import.meta.env.VITE_DEBUG_PERFORMANCE === "true"
+    ) {
+      // 只在便签数量发生显著变化时才输出日志
+      const significantChange =
+        Math.abs(notes.length - (lastLoggedCount.current || 0)) >= 5;
 
-      // 连接线性能日志
-      console.log(
-        `🔗 连接线统计: 总数=${connectionPerformance.totalConnections}, 普通=${connectionPerformance.normalConnections}, 溯源=${connectionPerformance.sourceConnections}`
-      );
+      if (significantChange || !lastLoggedCount.current) {
+        const logThrottleDelay = 5000; // 5秒节流
+        const timeoutId = setTimeout(() => {
+          const advice = getVirtualizationAdvice(notes.length);
+          const levelInfo = getPerformanceLevelInfo();
+          console.log(
+            `📊 便签数量变化: ${notes.length}, 阈值: ${virtualizationThreshold}, 性能: ${levelInfo?.label}`
+          );
+          if (advice && advice.recommendedAction !== "性能良好") {
+            console.log(`💡 性能建议: ${advice.recommendedAction}`);
+          }
+
+          // 只在有连接线时才输出连接线统计
+          if (connectionPerformance.totalConnections > 0) {
+            console.log(
+              `🔗 连接线统计: 总数=${connectionPerformance.totalConnections}, 普通=${connectionPerformance.normalConnections}, 溯源=${connectionPerformance.sourceConnections}`
+            );
+          }
+
+          lastLoggedCount.current = notes.length;
+        }, logThrottleDelay);
+
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [
     notes.length,
@@ -100,6 +119,9 @@ const VirtualizationStatusMonitorEnhanced: React.FC = () => {
     getPerformanceLevelInfo,
     connectionPerformance,
   ]);
+
+  // 用于跟踪上次日志输出的便签数量
+  const lastLoggedCount = useRef<number>(0);
 
   // 强制更新所有连接线位置
   const forceUpdateConnections = useCallback(() => {

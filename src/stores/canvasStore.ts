@@ -313,14 +313,15 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         const roundedOffsetX = Math.round(offsetX * dpr) / dpr;
         const roundedOffsetY = Math.round(offsetY * dpr) / dpr;
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("🖱️ 结束拖拽画布", {
-            finalOffset: {
-              x: roundedOffsetX.toFixed(1),
-              y: roundedOffsetY.toFixed(1),
-            },
-          });
-        }
+        // 减少拖拽日志输出
+        // if (process.env.NODE_ENV === "development") {
+        //   console.log("🖱️ 结束拖拽画布", {
+        //     finalOffset: {
+        //       x: roundedOffsetX.toFixed(1),
+        //       y: roundedOffsetY.toFixed(1),
+        //     },
+        //   });
+        // }
 
         set({
           offsetX: roundedOffsetX,
