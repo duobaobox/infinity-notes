@@ -20,7 +20,7 @@ import type { AIConfig } from "../../services/ai/aiService";
 import { AIConfigValidator } from "../../utils/aiValidation";
 import CardSectionTitle from "../common/CardSectionTitle";
 import { AIConfigStatus } from "./AIConfigStatus";
-import SimpleExtractionSettings from "./SimpleExtractionSettings";
+import ContentExtractionSettings from "./ContentExtractionSettings";
 
 const { Text } = Typography;
 
@@ -306,7 +306,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
 
         {/* 简化版内容提取设置 */}
         <div style={{ marginTop: 24 }}>
-          <SimpleExtractionSettings showAdvanced={false} />
+          <ContentExtractionSettings />
         </div>
 
         {/* 操作按钮 */}

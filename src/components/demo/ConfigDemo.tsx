@@ -32,12 +32,7 @@ export const ConfigDemo: React.FC = () => {
   const [demoResult, setDemoResult] = useState<string>("");
   const [currentScenario, setCurrentScenario] = useState<string>("balanced");
 
-  const {
-    getExtractionConfig,
-    setExtractionScenario,
-    updateExtractionConfig,
-    resetExtractionConfig,
-  } = useConnectionStore();
+  const { getExtractionConfig } = useConnectionStore();
 
   // 模拟便签数据
   const mockNotes: StickyNote[] = [
@@ -107,18 +102,17 @@ export const ConfigDemo: React.FC = () => {
     scenario: "speed" | "accuracy" | "balanced"
   ) => {
     try {
-      // 切换到指定场景
-      setExtractionScenario(scenario);
+      // 只更新本地状态，不调用不存在的函数
       setCurrentScenario(scenario);
 
       // 获取当前配置
       const config = getExtractionConfig();
 
       // 模拟内容提取
-      const { connectionUtils } = useConnectionStore.getState();
       const extractedContents = mockNotes.map((note) => {
-        const extracted = connectionUtils.extractNoteContent(note);
-        const quality = connectionUtils.assessContentQuality(extracted);
+        // 简化的内容提取模拟
+        const extracted = note.content.substring(0, 200) + "...";
+        const quality = Math.random() * 0.3 + 0.7; // 模拟70-100%的质量分数
         return {
           title: note.title,
           original: note.content,
@@ -127,11 +121,8 @@ export const ConfigDemo: React.FC = () => {
         };
       });
 
-      // 生成摘要
-      const summary = connectionUtils.getConnectionSummary(
-        mockNotes,
-        "final_answer_only"
-      );
+      // 生成摘要（模拟）
+      const summary = "这是一个模拟的连接摘要，展示了便签之间的关联内容。";
 
       const result = `
 🎯 场景: ${
@@ -143,9 +134,9 @@ export const ConfigDemo: React.FC = () => {
       }
 
 📋 当前配置:
-- 长度限制: ${config.lengthLimits.finalAnswerOnly} / ${config.lengthLimits.full}
-- 质量评估: ${config.qualityAssessment.enabled ? "启用" : "禁用"}
-- 智能截断: ${config.smartTruncation.enabled ? "启用" : "禁用"}
+- 长度阈值: ${config.lengthThreshold}字
+- 最大提取长度: ${config.longNoteExtraction.maxLength}字
+- 智能截断: ${config.longNoteExtraction.enableSmartTruncation ? "启用" : "禁用"}
 
 📝 提取结果:
 ${extractedContents
@@ -183,30 +174,9 @@ ${summary}
   // 自定义配置演示
   const demonstrateCustomConfig = () => {
     try {
-      // 应用自定义配置
-      updateExtractionConfig({
-        lengthLimits: {
-          finalAnswerOnly: 150,
-          full: 80,
-          qualityBonus: 30,
-        },
-        qualityAssessment: {
-          enabled: true,
-          lengthWeight: 0.1,
-          structureWeight: 0.4,
-          densityWeight: 0.3,
-          keywordWeight: 0.2,
-          qualityThreshold: 0.8,
-        },
-        debug: {
-          enabled: true,
-          showQualityScores: true,
-          logExtractionSteps: true,
-        },
-      });
-
+      // 模拟自定义配置应用
       setCurrentScenario("custom");
-      message.success("已应用自定义配置");
+      message.success("已应用自定义配置（演示模式）");
 
       // 重新演示
       demonstrateScenario("balanced");
@@ -218,10 +188,10 @@ ${summary}
   // 重置配置
   const handleReset = () => {
     try {
-      resetExtractionConfig();
+      // 模拟重置配置
       setCurrentScenario("balanced");
       setDemoResult("");
-      message.success("配置已重置");
+      message.success("配置已重置（演示模式）");
     } catch (error) {
       message.error("重置失败: " + error);
     }

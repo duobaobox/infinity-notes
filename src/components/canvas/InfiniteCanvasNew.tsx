@@ -149,7 +149,6 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     setConnectionMode,
     isNoteConnected,
     updateConnectionLines,
-    updateConnectionLinesImmediate,
   } = useConnectionStore();
 
   // 处理清空所有连接的函数
@@ -163,13 +162,13 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       clearAllConnections();
 
       // 更新画布状态
-      updateConnectionLinesImmediate();
+      updateConnectionLines(true);
     } catch (error) {
       console.error("清空连接失败:", error);
       // 显示错误消息
       message.error("清空连接失败，请重试");
     }
-  }, [connectedNotes, clearAllConnections, updateConnectionLinesImmediate]);
+  }, [connectedNotes, clearAllConnections, updateConnectionLines]);
 
   // 获取完整AI配置
   const fullAIConfig = useMemo(() => {
@@ -665,9 +664,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const throttledConnectionUpdate = useMemo(
     () =>
       throttle(() => {
-        updateConnectionLinesImmediate();
+        updateConnectionLines(true);
       }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS),
-    [updateConnectionLinesImmediate]
+    [updateConnectionLines]
   );
 
   const handleMouseMove = useCallback(

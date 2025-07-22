@@ -28,7 +28,7 @@ import SourceNotesModal from "../modals/SourceNotesModal";
 import ThinkingChain from "../thinking/ThinkingChain";
 import type { StickyNoteProps } from "../types";
 import "./StickyNote.css";
-import WysiwygEditor from "./WysiwygEditor";
+import WysiwygEditor, { safeEditorCommand } from "./WysiwygEditor";
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -98,7 +98,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 延迟重新聚焦编辑器并清除交互状态
       // 使用更长的延迟确保操作完成
       setTimeout(() => {
-        editorInstance?.commands.focus();
+        safeEditorCommand(
+          editorInstance,
+          () => editorInstance.commands.focus(),
+          "工具栏操作后聚焦失败"
+        );
         // 再延迟一点清除交互状态，确保失焦检测不会误触发
         setTimeout(() => {
           setIsToolbarInteracting(false);
@@ -116,7 +120,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // Store hooks
   const {
-    updateNoteConnectionLinesImmediate,
+    updateNoteConnectionLines,
     removeConnection: removeConnectionFromStore,
   } = useConnectionStore();
 
@@ -363,7 +367,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
         // 如果当前处于编辑状态，确保编辑器聚焦
         if (note.isEditing) {
-          editor.commands.focus();
+          // 使用更长的延迟确保编辑器完全准备就绪
+          setTimeout(() => {
+            safeEditorCommand(
+              editor,
+              () => editor.commands.focus(),
+              "编辑器聚焦失败"
+            );
+          }, 250);
         }
       }, 0);
     },
@@ -634,11 +645,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
       // 使用requestAnimationFrame确保在下一帧更新，避免阻塞当前帧
       requestAnimationFrame(() => {
-        updateNoteConnectionLinesImmediate(note.id);
+        updateNoteConnectionLines(note.id, true);
         updateScheduled = false;
       });
     };
-  }, [updateNoteConnectionLinesImmediate, note.id]);
+  }, [updateNoteConnectionLines, note.id]);
 
   // 全局鼠标移动处理
   useEffect(() => {
@@ -754,7 +765,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 拖拽结束后立即更新连接线位置，确保最终位置准确
       // 使用单个 requestAnimationFrame 减少延迟，提高最终位置同步精度
       requestAnimationFrame(() => {
-        updateNoteConnectionLinesImmediate(note.id);
+        updateNoteConnectionLines(note.id, true);
       });
     }
   }, [
@@ -764,7 +775,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempPosition.y,
     isSyncingPosition,
     note.id,
-    updateNoteConnectionLinesImmediate,
+    updateNoteConnectionLines,
   ]);
 
   // 处理尺寸同步
@@ -778,7 +789,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 调整大小结束后立即更新连接线位置，确保连接点位置准确
       // 因为连接点位置相对于便签左下角，大小改变会影响连接点的绝对位置
       requestAnimationFrame(() => {
-        updateNoteConnectionLinesImmediate(note.id);
+        updateNoteConnectionLines(note.id, true);
       });
     }
   }, [
@@ -788,7 +799,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     tempSize.height,
     isSyncingSize,
     note.id,
-    updateNoteConnectionLinesImmediate,
+    updateNoteConnectionLines,
   ]);
 
   // 同步外部状态到本地状态 - 使用全局状态

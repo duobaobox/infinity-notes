@@ -8,6 +8,40 @@ import TaskItem from "@tiptap/extension-task-item";
 import "./WysiwygEditor.css";
 
 /**
+ * 安全地执行编辑器命令，避免在编辑器未挂载时出错
+ * 使用简单但可靠的检查机制
+ */
+const safeEditorCommand = (
+  editor: any,
+  command: () => void,
+  errorMessage: string = "编辑器命令执行失败"
+) => {
+  // 基本检查
+  if (!editor) {
+    return false;
+  }
+
+  try {
+    // 检查编辑器是否已销毁
+    if (editor.isDestroyed) {
+      return false;
+    }
+
+    // 检查编辑器命令是否可用
+    if (!editor.commands) {
+      return false;
+    }
+
+    // 直接执行命令，让TipTap内部处理错误
+    command();
+    return true;
+  } catch (error) {
+    // 静默处理错误，避免控制台噪音
+    return false;
+  }
+};
+
+/**
  * 所见即所得编辑器组件属性接口
  */
 interface WysiwygEditorProps {
@@ -398,7 +432,14 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     onCreate: ({ editor }) => {
       // 编辑器创建后的初始化
       if (autoFocus) {
-        editor.commands.focus();
+        // 使用更长的延迟确保编辑器完全挂载
+        setTimeout(() => {
+          safeEditorCommand(
+            editor,
+            () => editor.commands.focus(),
+            "编辑器创建时聚焦失败"
+          );
+        }, 200);
       }
       // 将编辑器实例传递给父组件
       onEditorReady?.(editor);
@@ -450,8 +491,12 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     // 如果启用编辑且需要自动聚焦
     if (!disabled && autoFocus) {
       setTimeout(() => {
-        editor.commands.focus();
-      }, 50);
+        safeEditorCommand(
+          editor,
+          () => editor.commands.focus(),
+          "编辑器自动聚焦失败"
+        );
+      }, 200);
     }
   }, [disabled, autoFocus, editor]);
 
@@ -484,3 +529,4 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
 };
 
 export default WysiwygEditor;
+export { safeEditorCommand };

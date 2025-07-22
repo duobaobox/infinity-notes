@@ -28,13 +28,13 @@ export const ContentExtractionSettings: React.FC<
   const [loading, setLoading] = useState(false);
   const [currentScenario, setCurrentScenario] = useState<string>("balanced");
 
-  const { getExtractionConfig, setExtractionScenario } = useConnectionStore();
+  const { getExtractionConfig } = useConnectionStore();
 
   // 初始化时设置为平衡模式
   useEffect(() => {
-    setExtractionScenario("balanced");
+    // 移除对不存在函数的调用，直接设置本地状态
     setCurrentScenario("balanced");
-  }, [setExtractionScenario]);
+  }, []);
 
   // 处理场景切换
   const handleScenarioChange = async (
@@ -44,7 +44,7 @@ export const ContentExtractionSettings: React.FC<
 
     setLoading(true);
     try {
-      setExtractionScenario(scenario);
+      // 移除对不存在函数的调用，只更新本地状态
       setCurrentScenario(scenario);
 
       const updatedConfig = getExtractionConfig();
