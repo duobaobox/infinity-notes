@@ -1502,17 +1502,16 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         )}
 
-        {!note.isEditing && (
-          <>
-            <div
-              className="resize-handle"
-              onMouseDown={handleResizeMouseDown}
-              title="拖拽调整大小"
-            />
-            {/* macOS风格的缩放提示符号 */}
-            <div className="resize-indicator" />
-          </>
-        )}
+        {/* 缩放功能在编辑和非编辑状态下都可用 */}
+        <>
+          <div
+            className="resize-handle"
+            onMouseDown={handleResizeMouseDown}
+            title="拖拽调整大小"
+          />
+          {/* macOS风格的缩放提示符号 - 只在非编辑状态下显示 */}
+          {!note.isEditing && <div className="resize-indicator" />}
+        </>
 
         {/* AI生成加载状态指示器 - 只在等待生成时显示 */}
         {isStreaming && !streamingContent && (

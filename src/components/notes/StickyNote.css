@@ -836,12 +836,9 @@
   width: 16px;
   height: 16px;
   cursor: nw-resize;
-  /* 移除背景使其透明 */
+  /* 保持透明，但功能可用 */
   background: transparent;
-  /* 始终保持透明 */
-  opacity: 0;
-  /* 移除过渡效果，因为它不再可见 */
-  /* transition: opacity 0.2s ease; */
+  opacity: 1; /* 始终可用，但透明 */
 }
 
 /* 缩放手柄悬停效果已移除 */
