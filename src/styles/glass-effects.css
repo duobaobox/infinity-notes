@@ -13,16 +13,17 @@
     rgba(248, 249, 250, 0.95) 100%
   );
 
-  /* 便签磨砂效果变量 */
-  --note-glass-bg: rgba(255, 255, 255, 0.35);
-  --note-glass-border: rgba(0, 0, 0, 0.08);
+  /* 便签磨砂效果变量 - 优化边界感和阅读体验 */
+  --note-glass-bg: rgba(255, 255, 255, 0.4); /* 稍微增加背景不透明度 */
+  --note-glass-border: rgba(0, 0, 0, 0.12); /* 增强边框对比度 */
   --note-glass-blur: blur(8px) saturate(150%);
-  --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.1),
-    0 4px 20px rgba(0, 0, 0, 0.06);
+  --note-glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.12),
+    /* 近距离锐利阴影，增强边界 */ 0 4px 12px rgba(0, 0, 0, 0.08),
+    /* 中距离阴影，增强层次 */ 0 8px 24px rgba(0, 0, 0, 0.04); /* 远距离柔和阴影，保持优雅 */
   --note-glass-fallback: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(248, 249, 250, 0.7) 100%
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(248, 249, 250, 0.75) 100%
   );
 
   /* 工具栏磨砂效果变量 */
@@ -52,15 +53,16 @@
       rgba(40, 40, 40, 0.95) 100%
     );
 
-    /* 便签深色模式 */
-    --note-glass-bg: rgba(40, 40, 40, 0.35);
-    --note-glass-border: rgba(255, 255, 255, 0.1);
-    --note-glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
-      0 4px 20px rgba(0, 0, 0, 0.2);
+    /* 便签深色模式 - 优化边界感和阅读体验 */
+    --note-glass-bg: rgba(40, 40, 40, 0.4); /* 稍微增加背景不透明度 */
+    --note-glass-border: rgba(255, 255, 255, 0.15); /* 增强边框对比度 */
+    --note-glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.4),
+      /* 近距离锐利阴影，增强边界 */ 0 4px 12px rgba(0, 0, 0, 0.25),
+      /* 中距离阴影，增强层次 */ 0 8px 24px rgba(0, 0, 0, 0.15); /* 远距离柔和阴影，保持优雅 */
     --note-glass-fallback: linear-gradient(
       135deg,
-      rgba(40, 40, 40, 0.7) 0%,
-      rgba(50, 50, 50, 0.7) 100%
+      rgba(40, 40, 40, 0.75) 0%,
+      rgba(50, 50, 50, 0.75) 100%
     );
 
     /* 工具栏深色模式 */

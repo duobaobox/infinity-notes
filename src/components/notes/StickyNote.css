@@ -388,17 +388,20 @@
   }
 }
 
-/* 悬浮效果 - 增强磨砂效果 */
+/* 悬浮效果 - 增强磨砂效果和边界感 */
 .sticky-note:hover:not(.selected) {
   backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px); /* 轻微上浮效果 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15),
+    /* 近距离锐利阴影 */ 0 6px 20px rgba(0, 0, 0, 0.1),
+    /* 中距离阴影 */ 0 12px 40px rgba(0, 0, 0, 0.06); /* 远距离柔和阴影 */
+  transform: translateY(-2px); /* 增强上浮效果 */
   transition: all 0.2s ease;
 }
 
-/* 选中状态下的悬浮效果 - 增强选中边框的发光 */
-.sticky-note.selected:hover {
+/* 选中状态和编辑状态的悬浮效果 - 统一样式 */
+.sticky-note.selected:hover,
+.sticky-note.editing:hover {
   box-shadow: inset 0 0 0 2px #1890ff,
     /* 内边框效果 */ 0 0 0 3px rgba(24, 144, 255, 0.3),
     /* 增强外发光效果 */ 0 4px 16px rgba(0, 0, 0, 0.12),
@@ -408,7 +411,9 @@
 .sticky-note.dragging {
   cursor: move;
   z-index: 1000;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.1); /* 简化阴影效果 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+    /* 近距离强阴影，突出拖拽状态 */ 0 8px 24px rgba(0, 0, 0, 0.15),
+    /* 中距离阴影 */ 0 16px 48px rgba(0, 0, 0, 0.08); /* 远距离柔和阴影 */
   /* 拖拽时禁用所有过渡效果，确保流畅性能 */
   transition: none !important;
 }
@@ -418,9 +423,12 @@
   transition: none !important;
 }
 
+/* 编辑状态样式 - 统一使用选中状态的样式 */
 .sticky-note.editing {
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15),
-    0 8px 32px rgba(59, 130, 246, 0.1), 0 0 0 2px rgba(59, 130, 246, 0.2); /* 编辑时蓝色阴影+焦点环 */
+  box-shadow: inset 0 0 0 2px #1890ff,
+    /* 内边框效果 */ 0 0 0 2px rgba(24, 144, 255, 0.2),
+    /* 外发光效果 */ 0 2px 8px rgba(0, 0, 0, 0.1),
+    /* 原有阴影 */ 0 4px 20px rgba(0, 0, 0, 0.06); /* 原有阴影 */
 }
 
 .sticky-note.new {
@@ -1018,6 +1026,13 @@
   50% {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(82, 196, 26, 0.2);
   }
+}
+
+/* 编辑状态下的连接点 - 隐藏但保留在DOM中 */
+.connection-point.editing-hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 /* 连接点在不同便签颜色下的适配 */

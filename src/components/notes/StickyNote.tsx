@@ -7,7 +7,7 @@ import {
   MessageOutlined,
   TagOutlined,
 } from "@ant-design/icons";
-import { Button } from "antd";
+import { Button, message } from "antd";
 import React, {
   memo,
   useCallback,
@@ -254,9 +254,30 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const startEditing = useCallback(() => {
     if (isStreaming) return; // 流式过程中不允许编辑
     if (isMoveModeActive) return; // 移动模式下不允许编辑
+
+    // 编辑状态下自动断开连接，避免影响AI处理效果
+    if (isConnected) {
+      try {
+        connectionLineManager.removeConnection(note.id);
+        removeConnectionFromStore(note.id);
+        console.log(`📝 便签 ${note.id} 进入编辑状态，已自动断开连接`);
+        message.info("便签进入编辑状态，已自动断开连接", 2);
+      } catch (error) {
+        console.error("自动断开连接失败:", error);
+      }
+    }
+
     onUpdate(note.id, { isEditing: true });
     setLocalContent(note.content);
-  }, [note.id, note.content, onUpdate, isStreaming, isMoveModeActive]);
+  }, [
+    note.id,
+    note.content,
+    onUpdate,
+    isStreaming,
+    isMoveModeActive,
+    isConnected,
+    removeConnectionFromStore,
+  ]);
 
   // 停止编辑内容 - 使用全局状态管理
   const stopEditing = useCallback(() => {
@@ -1521,9 +1542,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         )}
 
-        {/* 连接点 - 只在非编辑和非流式状态下显示 */}
-        {!note.isEditing &&
-          !isStreaming &&
+        {/* 连接点 - 编辑状态下隐藏但保留在DOM中，确保连接线能正常更新 */}
+        {!isStreaming &&
           (onConnect || sourceConnectionsVisible || isBeingSourceConnected) && (
             <div
               className={`connection-point ${isConnected ? "connected" : ""} ${
@@ -1532,15 +1552,22 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   : ""
               } ${sourceConnectionsVisible ? "source-active" : ""} ${
                 isSourceConnected ? "source-connected" : ""
-              } ${isBeingSourceConnected ? "being-source-connected" : ""}`}
-              onClick={handleConnectionClick}
+              } ${isBeingSourceConnected ? "being-source-connected" : ""} ${
+                note.isEditing ? "editing-hidden" : ""
+              }`}
+              onClick={note.isEditing ? undefined : handleConnectionClick}
               title={
-                isConnected
+                note.isEditing
+                  ? ""
+                  : isConnected
                   ? "已连接到插槽"
                   : isSourceConnected
                   ? "作为源便签被其他便签引用"
                   : "点击连接到插槽"
               }
+              style={{
+                pointerEvents: note.isEditing ? "none" : "auto",
+              }}
             >
               <div className="connection-dot"></div>
             </div>
