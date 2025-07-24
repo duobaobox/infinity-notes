@@ -30,6 +30,7 @@ import {
   useUIStore,
 } from "../../stores";
 import { connectionUtils } from "../../stores/connectionStore";
+import { ExtractionMode } from "../../config/contentExtractionConfig";
 
 // AI服务导入
 import { getAIService } from "../../services/ai/aiService";
@@ -400,15 +401,28 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         startGeneration();
 
         // 如果有连接的便签，将其内容包含在提示中
-        // 使用AI配置中的总结模式设置
-        const finalPrompt =
-          connectedNotes.length > 0
-            ? connectionUtils.generateAIPromptWithConnections(
-                prompt,
-                connectedNotes,
-                aiService.getConfig().summaryMode || "final_answer_only"
-              )
-            : prompt;
+        // 🎯 新逻辑：自动根据字数选择精准模式或智能模式，并显示用户提醒
+        let finalPrompt = prompt;
+        if (connectedNotes.length > 0) {
+          const {
+            prompt: generatedPrompt,
+            mode,
+            totalLength,
+            noteCount,
+          } = connectionUtils.generateAIPromptWithConnections(
+            prompt,
+            connectedNotes
+          );
+
+          finalPrompt = generatedPrompt;
+
+          // 🎯 智能模式提醒：当启用智能模式时，给用户友好提醒
+          if (mode === ExtractionMode.SMART) {
+            message.info(
+              `🧠 智能模式已启用：检测到${noteCount}个便签共${totalLength}字，将智能提取核心内容进行处理`
+            );
+          }
+        }
 
         // 计算便签创建位置（画布中心附近）
         const rect = canvasRef.current?.getBoundingClientRect();

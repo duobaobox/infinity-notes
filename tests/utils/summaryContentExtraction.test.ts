@@ -140,26 +140,37 @@ describe("便签总结内容提取功能", () => {
   });
 
   test("生成AI提示词时应该包含模式描述", () => {
-    const connectedNotes = [noteWithThinkingChain];
+    // 测试短内容（精准模式）
+    const shortNotes = [
+      {
+        ...noteWithThinkingChain,
+        content: "短内容", // 短内容应该触发精准模式
+      },
+    ];
 
-    const promptFinalAnswerOnly =
-      connectionUtils.generateAIPromptWithConnections(
-        "请总结这些内容",
-        connectedNotes,
-        "final_answer_only"
-      );
-
-    const promptFull = connectionUtils.generateAIPromptWithConnections(
+    const shortResult = connectionUtils.generateAIPromptWithConnections(
       "请总结这些内容",
-      connectedNotes,
-      "full"
+      shortNotes
     );
 
-    // 应该包含相应的模式描述
-    expect(promptFinalAnswerOnly).toContain(
-      "（已智能提取核心内容，过滤思维链）"
+    // 短内容应该使用精准模式
+    expect(shortResult.prompt).toContain("（精准模式：完整内容）");
+
+    // 测试长内容（智能模式）
+    const longNotes = [
+      {
+        ...noteWithThinkingChain,
+        content: "很长的内容".repeat(200), // 长内容应该触发智能模式
+      },
+    ];
+
+    const longResult = connectionUtils.generateAIPromptWithConnections(
+      "请总结这些内容",
+      longNotes
     );
-    expect(promptFull).toContain("（完整内容）");
+
+    // 长内容应该使用智能模式
+    expect(longResult.prompt).toContain("（智能模式：已提取核心内容）");
   });
 
   // 新增：增强版内容提取准确性测试

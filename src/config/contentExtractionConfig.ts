@@ -2,20 +2,28 @@
 // 集中管理内容提取相关的参数和规则
 
 /**
- * 简化的内容提取配置接口
- * 🎯 基于1000字阈值策略，大幅简化配置复杂度
+ * 内容提取模式枚举
+ */
+export enum ExtractionMode {
+  PRECISE = "precise", // 精准模式：直接使用原始内容，不进行智能提取
+  SMART = "smart", // 智能模式：使用智能算法提取核心内容
+}
+
+/**
+ * 极简化的内容提取配置接口
+ * 🎯 只保留两种模式：精准模式和智能模式
  */
 export interface ContentExtractionConfig {
-  // 核心阈值配置
-  lengthThreshold: number; // 长短便签的分界线（默认1000字）
+  // 核心阈值配置：超过此字数自动切换到智能模式
+  lengthThreshold: number; // 默认1000字
 
-  // 长便签提取配置（仅在超过阈值时使用）
-  longNoteExtraction: {
-    maxLength: number; // 提取结果的最大长度
+  // 智能模式配置（仅在超过阈值时使用）
+  smartMode: {
+    maxLength: number; // 智能提取后的最大长度
     enableSmartTruncation: boolean; // 是否启用智能截断
   };
 
-  // 正则表达式模式（用于长便签的智能提取）
+  // 正则表达式模式（用于智能模式的内容提取）
   patterns: {
     finalAnswerPatterns: RegExp[]; // 最终答案匹配模式
     detailsPatterns: RegExp[]; // Details标签匹配模式
@@ -24,20 +32,20 @@ export interface ContentExtractionConfig {
 }
 
 /**
- * 简化的默认内容提取配置
- * 🎯 基于1000字阈值策略
+ * 极简化的默认内容提取配置
+ * 🎯 默认精准模式，超过1000字自动切换智能模式
  */
 export const defaultContentExtractionConfig: ContentExtractionConfig = {
   // 核心阈值：1000字分界线
   lengthThreshold: 1000,
 
-  // 长便签提取配置
-  longNoteExtraction: {
-    maxLength: 300, // 长便签提取后的最大长度
+  // 智能模式配置（仅在超过阈值时使用）
+  smartMode: {
+    maxLength: 300, // 智能提取后的最大长度
     enableSmartTruncation: true, // 启用智能截断
   },
 
-  // 正则表达式模式（仅用于长便签智能提取）
+  // 正则表达式模式（仅用于智能模式的内容提取）
   patterns: {
     finalAnswerPatterns: [
       /## ✨ 最终答案\s*\n\n([\s\S]*?)(?=\n##|$)/i, // 标准格式
@@ -92,16 +100,16 @@ export class ContentExtractionConfigManager {
   }
 
   /**
-   * 更新配置（简化版）
+   * 更新配置（极简化版）
    */
   updateConfig(newConfig: Partial<ContentExtractionConfig>): void {
     this.config = {
       ...this.config,
       ...newConfig,
       // 深度合并嵌套对象
-      longNoteExtraction: {
-        ...this.config.longNoteExtraction,
-        ...newConfig.longNoteExtraction,
+      smartMode: {
+        ...this.config.smartMode,
+        ...newConfig.smartMode,
       },
       patterns: {
         ...this.config.patterns,
@@ -136,6 +144,25 @@ export class ContentExtractionConfigManager {
       console.log(`📏 长度阈值已设置为: ${threshold}字`);
     }
   }
+
+  /**
+   * 根据总字数判断应该使用的模式
+   * @param totalLength 所有连接便签的总字数
+   * @returns 提取模式
+   */
+  getExtractionMode(totalLength: number): ExtractionMode {
+    const mode =
+      totalLength > this.config.lengthThreshold
+        ? ExtractionMode.SMART
+        : ExtractionMode.PRECISE;
+
+    console.log(
+      `📊 字数检测: ${totalLength}字 -> ${
+        mode === ExtractionMode.SMART ? "智能模式" : "精准模式"
+      }`
+    );
+    return mode;
+  }
 }
 
 /**
@@ -146,17 +173,14 @@ export const getContentExtractionConfig = (): ContentExtractionConfig => {
 };
 
 /**
- * 便捷函数：检查是否为长便签
+ * 便捷函数：根据总字数获取提取模式
+ * @param totalLength 总字数
+ * @returns 提取模式
  */
-export const isLongNote = (content: string): boolean => {
-  const threshold =
-    ContentExtractionConfigManager.getInstance().getLengthThreshold();
-  return content.length > threshold;
-};
-
-/**
- * 便捷函数：检查是否为短便签
- */
-export const isShortNote = (content: string): boolean => {
-  return !isLongNote(content);
+export const getExtractionModeForLength = (
+  totalLength: number
+): ExtractionMode => {
+  return ContentExtractionConfigManager.getInstance().getExtractionMode(
+    totalLength
+  );
 };

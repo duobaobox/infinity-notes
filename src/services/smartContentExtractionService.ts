@@ -108,10 +108,10 @@ export class SmartContentExtractionService {
         let extracted = match[1].trim();
 
         // 应用长度限制
-        if (extracted.length > config.lengthLimits.finalAnswerOnly) {
+        if (extracted.length > config.smartMode.maxLength) {
           extracted = this.smartTruncate(
             extracted,
-            config.lengthLimits.finalAnswerOnly,
+            config.smartMode.maxLength,
             config
           );
         }
@@ -126,10 +126,10 @@ export class SmartContentExtractionService {
       if (match && match[1]) {
         let extracted = match[1].trim();
 
-        if (extracted.length > config.lengthLimits.full) {
+        if (extracted.length > config.smartMode.maxLength) {
           extracted = this.smartTruncate(
             extracted,
-            config.lengthLimits.full,
+            config.smartMode.maxLength,
             config
           );
         }
@@ -140,7 +140,7 @@ export class SmartContentExtractionService {
 
     // 基础提取：选择最有价值的部分
     const cleanContent = this.cleanupContent(content);
-    const targetLength = config.lengthLimits.full;
+    const targetLength = config.smartMode.maxLength;
 
     if (cleanContent.length <= targetLength) {
       return cleanContent;

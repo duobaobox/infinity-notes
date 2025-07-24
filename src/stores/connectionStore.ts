@@ -7,6 +7,8 @@ import {
   getContentExtractionConfig,
   ContentExtractionConfigManager,
   type ContentExtractionConfig,
+  ExtractionMode,
+  getExtractionModeForLength,
 } from "../config/contentExtractionConfig";
 
 // 连接模式类型
@@ -455,12 +457,12 @@ export const connectionUtils = {
           }
 
           // 🔧 适配简化配置：使用新的配置结构
-          const maxLength = config.longNoteExtraction.maxLength;
+          const maxLength = config.smartMode.maxLength;
 
           // 简化处理：直接使用配置的最大长度进行截断
           const truncatedContent =
             coreContent.length > maxLength
-              ? config.longNoteExtraction.enableSmartTruncation
+              ? config.smartMode.enableSmartTruncation
                 ? connectionUtils.smartTruncate(coreContent, maxLength)
                 : coreContent.substring(0, maxLength) + "..."
               : coreContent;
@@ -565,32 +567,59 @@ export const connectionUtils = {
 
   /**
    * 生成AI提示词，包含连接的便签内容
-   * 支持配置驱动的内容提取模式
+   * 🎯 统一函数：自动根据字数选择精准模式或智能模式，并返回详细信息
    */
   generateAIPromptWithConnections: (
     userPrompt: string,
-    connectedNotes: StickyNote[],
-    summaryMode: "full" | "final_answer_only" = "final_answer_only"
-  ): string => {
-    if (connectedNotes.length === 0) return userPrompt;
+    connectedNotes: StickyNote[]
+  ): {
+    prompt: string;
+    mode: ExtractionMode | null;
+    totalLength: number;
+    noteCount: number;
+  } => {
+    if (connectedNotes.length === 0) {
+      return {
+        prompt: userPrompt,
+        mode: null,
+        totalLength: 0,
+        noteCount: 0,
+      };
+    }
 
+    // 计算总字数
+    const totalLength = connectionUtils.calculateTotalLength(connectedNotes);
+
+    // 自动选择模式
+    const selectedMode = connectionUtils.getAutoExtractionMode(connectedNotes);
+
+    // 根据模式选择处理方式
+    const summaryMode =
+      selectedMode === ExtractionMode.SMART ? "final_answer_only" : "full";
     const connectionSummary = connectionUtils.getConnectionSummary(
       connectedNotes,
       summaryMode
     );
 
     const modeDescription =
-      summaryMode === "final_answer_only"
-        ? "（已智能提取核心内容，过滤思维链）"
-        : "（完整内容）";
+      selectedMode === ExtractionMode.SMART
+        ? "（智能模式：已提取核心内容）"
+        : "（精准模式：完整内容）";
 
-    return `基于以下已连接的便签内容${modeDescription}：
+    const finalPrompt = `基于以下已连接的便签内容${modeDescription}：
 
 ${connectionSummary}
 
 用户请求：${userPrompt}
 
 请根据上述便签内容和用户请求，生成相关的便签内容。`;
+
+    return {
+      prompt: finalPrompt,
+      mode: selectedMode,
+      totalLength,
+      noteCount: connectedNotes.length,
+    };
   },
 
   /**
@@ -621,5 +650,43 @@ ${connectionSummary}
       displayedContent.trim().length > 0 &&
       typeof note.title === "string"
     );
+  },
+
+  /**
+   * 计算所有连接便签的总字数
+   * 🎯 新功能：用于自动选择精准模式或智能模式
+   * @param connectedNotes 连接的便签列表
+   * @returns 总字数
+   */
+  calculateTotalLength: (connectedNotes: StickyNote[]): number => {
+    if (connectedNotes.length === 0) return 0;
+
+    const totalLength = connectedNotes.reduce((total, note) => {
+      const displayedContent = connectionUtils.getDisplayedNoteContent(note);
+      return total + displayedContent.length;
+    }, 0);
+
+    console.log(
+      `📊 连接便签总字数: ${totalLength}字 (共${connectedNotes.length}个便签)`
+    );
+    return totalLength;
+  },
+
+  /**
+   * 根据连接便签的总字数自动选择提取模式
+   * 🎯 核心功能：超过1000字自动切换智能模式，否则使用精准模式
+   * @param connectedNotes 连接的便签列表
+   * @returns 提取模式
+   */
+  getAutoExtractionMode: (connectedNotes: StickyNote[]): ExtractionMode => {
+    const totalLength = connectionUtils.calculateTotalLength(connectedNotes);
+    const mode = getExtractionModeForLength(totalLength);
+
+    console.log(
+      `🎯 自动选择模式: ${
+        mode === ExtractionMode.SMART ? "智能模式" : "精准模式"
+      } (基于${totalLength}字)`
+    );
+    return mode;
   },
 };
