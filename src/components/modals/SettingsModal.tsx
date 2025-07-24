@@ -1178,7 +1178,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleResetThinkingMode = React.useCallback(
     createFormHandler(
       () => {
-        const defaultSettings = { showThinkingMode: true };
+        const defaultSettings = { showThinkingMode: false };
         setBasicSettings(defaultSettings);
         setTempThinkingMode(defaultSettings);
         setThinkingModeChanged(false);

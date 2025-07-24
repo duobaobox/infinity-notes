@@ -261,7 +261,7 @@ export const useUIStore = create<UIState & UIActions>()(
         ...DEFAULT_NOTE_SIZES,
       },
       basicSettings: {
-        showThinkingMode: true, // 默认开启思维模式显示
+        showThinkingMode: false, // 默认关闭思维模式显示
       },
 
       sidebarCollapsed: true, // 默认折叠，将从持久化存储中加载

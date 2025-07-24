@@ -586,7 +586,7 @@ export class IndexedDBService {
     const now = new Date().toISOString();
     const note: StickyNote = {
       ...noteData,
-      title: noteData.title || "新便签",
+      title: noteData.title || "便签",
       content: noteData.content || "",
       width: noteData.width || 250,
       height: noteData.height || 200,

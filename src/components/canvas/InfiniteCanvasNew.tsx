@@ -336,7 +336,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           width: 350, // 手动便签默认宽度
           height: 310, // 手动便签默认高度
           content: "",
-          title: "新便签",
+          title: "便签",
           color: randomColor,
           isNew: true,
           zIndex: maxZ + 1,
