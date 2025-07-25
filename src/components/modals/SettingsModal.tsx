@@ -60,8 +60,8 @@ import { useStickyNotesStore, useUserStore } from "../../stores";
 import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
 import { AIConfigStatus } from "../ai/AIConfigStatus";
 import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
-import ContentExtractionSettings from "../ai/ContentExtractionSettings";
 import CardSectionTitle from "../common/CardSectionTitle";
+import NoteSettings from "../notes/NoteSettings";
 import "./SettingsModal.css";
 
 /**
@@ -85,12 +85,7 @@ const STYLES = {
     alignItems: "center" as const,
     textAlign: "center" as const,
   },
-  // 当前使用标签样式
-  currentUsageCard: {
-    marginBottom: 16,
-    background: "linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)",
-    border: "1px solid #1890ff",
-  },
+
   // 配置状态指示器样式
   configIndicator: {
     position: "absolute" as const,
@@ -1328,58 +1323,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               onValuesChange={handleAppearanceChange}
               initialValues={appearance}
             >
-              {/* 当前使用的主题显示区域 */}
-              {(() => {
-                // 查找当前正在使用的主题
-                // 通过比较画布背景色来确定当前主题
-                const currentTheme = PRESET_THEMES.find(
-                  (theme) =>
-                    theme.colors.canvasBackground ===
-                    appearance.canvasBackground
-                );
-                // 如果找到匹配的主题，显示当前主题信息
-                return currentTheme ? (
-                  <Card size="small" style={STYLES.currentUsageCard}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <Tag
-                        color="blue"
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          borderRadius: "12px",
-                        }}
-                      >
-                        当前使用
-                      </Tag>
-                      <div>
-                        <Text strong style={{ color: "#1890ff" }}>
-                          {currentTheme.name}
-                        </Text>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#666",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {currentTheme.description}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ) : null;
-              })()}
-
               {/* 预制主题选择器 */}
               <Card size="small" style={{ marginBottom: 16 }}>
                 <CardSectionTitle icon={<BgColorsOutlined />}>
-                  选择预制主题
+                  主题设置
                 </CardSectionTitle>
                 <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
                   {PRESET_THEMES.map((theme) => {
@@ -1866,16 +1813,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         children: (
           <div className="settings-modal-content">
             <Spin spinning={aiLoading}>
-              {/* AI配置状态指示器 */}
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <AIConfigStatus
-                  config={aiConfig}
-                  showProgress={true}
-                  showDetails={true}
-                />
-              </Card>
-
-              {/* 当前使用的AI供应商显示 */}
+              {/* 当前使用的AI供应商显示 - 移动到顶部 */}
               {getCurrentProvider() && (
                 <Card
                   size="small"
@@ -2235,13 +2173,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   </Space>
                 </div>
               </Form>
-
-              {/* 智能内容提取设置 */}
-              <div style={{ marginTop: 24 }}>
-                <ContentExtractionSettings />
-              </div>
             </Spin>
           </div>
+        ),
+      },
+      {
+        key: "notes",
+        label: (
+          <span>
+            <FileTextOutlined />
+            便签设置
+          </span>
+        ),
+        children: (
+          <NoteSettings
+            form={noteSettingsForm}
+            onValuesChange={handleNoteSettingsChange}
+            initialValues={tempNoteSettings}
+            hasChanges={noteSettingsChanged}
+            onSave={handleSaveNoteSettings}
+            onReset={handleResetNoteSettings}
+          />
         ),
       },
     ];

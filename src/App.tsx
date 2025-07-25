@@ -7,6 +7,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
 import CardTitleUnificationTest from "./test/CardTitleUnificationTest";
 import MarkdownListTest from "./test/MarkdownListTest";
+import NoteSettingsTest from "./test/NoteSettingsTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
 import VirtualizationStatusMonitorEnhanced from "./test/VirtualizationTestEnhanced";
@@ -32,7 +33,8 @@ function App() {
     testMode === "thinking-chain" ||
     testMode === "thinking-chain-timestamp" ||
     testMode === "markdown-list" ||
-    testMode === "card-title";
+    testMode === "card-title" ||
+    testMode === "note-settings";
 
   const canvasRef = useRef<{
     createNote: () => void;
@@ -183,6 +185,8 @@ function App() {
       return <MarkdownListTest />;
     } else if (testMode === "card-title") {
       return <CardTitleUnificationTest />;
+    } else if (testMode === "note-settings") {
+      return <NoteSettingsTest />;
     }
   }
 

@@ -7,6 +7,7 @@ export { default as CanvasConsole } from "./canvas/CanvasConsole";
 
 // 便签相关组件
 export { default as StickyNote } from "./notes/StickyNote";
+export { default as NoteSettings } from "./notes/NoteSettings";
 
 // 模态框组件
 export { default as SettingsModal } from "./modals/SettingsModal";
