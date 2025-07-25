@@ -5,7 +5,6 @@ import type { StickyNote } from "../components/types";
 import { ConnectionMode } from "../components/canvas/StickyNoteSlots";
 import {
   getContentExtractionConfig,
-  ContentExtractionConfigManager,
   type ContentExtractionConfig,
   ExtractionMode,
   getExtractionModeForLength,
@@ -346,8 +345,6 @@ export const connectionUtils = {
    * 作为正则匹配失败时的备选方案，使用配置化的关键词过滤
    */
   intelligentContentExtraction: (content: string): string => {
-    const config = getContentExtractionConfig();
-
     try {
       // 按段落分割内容
       const paragraphs = content.split(/\n\s*\n/).filter((p) => p.trim());
@@ -645,7 +642,7 @@ ${connectionSummary}
   validateSingleConnection: (note: StickyNote): boolean => {
     const displayedContent = connectionUtils.getDisplayedNoteContent(note);
     return (
-      note.id &&
+      !!note.id &&
       typeof displayedContent === "string" &&
       displayedContent.trim().length > 0 &&
       typeof note.title === "string"

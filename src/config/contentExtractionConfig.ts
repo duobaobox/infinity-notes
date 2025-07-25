@@ -2,12 +2,15 @@
 // 集中管理内容提取相关的参数和规则
 
 /**
- * 内容提取模式枚举
+ * 内容提取模式常量
  */
-export enum ExtractionMode {
-  PRECISE = "precise", // 精准模式：直接使用原始内容，不进行智能提取
-  SMART = "smart", // 智能模式：使用智能算法提取核心内容
-}
+export const ExtractionMode = {
+  PRECISE: "precise", // 精准模式：直接使用原始内容，不进行智能提取
+  SMART: "smart", // 智能模式：使用智能算法提取核心内容
+} as const;
+
+export type ExtractionMode =
+  (typeof ExtractionMode)[keyof typeof ExtractionMode];
 
 /**
  * 极简化的内容提取配置接口
@@ -183,4 +186,39 @@ export const getExtractionModeForLength = (
   return ContentExtractionConfigManager.getInstance().getExtractionMode(
     totalLength
   );
+};
+
+/**
+ * 获取配置的便捷函数
+ */
+export const getConfig = (): ContentExtractionConfig => {
+  return ContentExtractionConfigManager.getInstance().getConfig();
+};
+
+/**
+ * 获取长度阈值的便捷函数
+ */
+export const getLengthThreshold = (): number => {
+  return ContentExtractionConfigManager.getInstance().getLengthThreshold();
+};
+
+/**
+ * 设置长度阈值的便捷函数
+ */
+export const setLengthThreshold = (threshold: number): void => {
+  ContentExtractionConfigManager.getInstance().setLengthThreshold(threshold);
+};
+
+/**
+ * 判断是否为短便签的便捷函数
+ */
+export const isShortNote = (length: number): boolean => {
+  return length <= getLengthThreshold();
+};
+
+/**
+ * 判断是否为长便签的便捷函数
+ */
+export const isLongNote = (length: number): boolean => {
+  return length > getLengthThreshold();
 };

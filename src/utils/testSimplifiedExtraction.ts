@@ -22,7 +22,7 @@ const createTestNote = (
   y: 0,
   width: 200,
   height: 150,
-  color: "#fff",
+  color: "yellow",
   zIndex: 1,
   isNew: false,
   isEditing: false,

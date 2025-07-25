@@ -68,7 +68,7 @@ export const testDisplayedContentExtraction = () => {
     connectionUtils.getDisplayedNoteContent(thinkingNote);
   console.log("🤔 思维链便签显示内容:", thinkingDisplayed);
   console.assert(
-    thinkingDisplayed === thinkingNote.thinkingChain.finalAnswer,
+    thinkingDisplayed === thinkingNote.thinkingChain?.finalAnswer,
     "思维链便签应该只显示最终答案"
   );
 

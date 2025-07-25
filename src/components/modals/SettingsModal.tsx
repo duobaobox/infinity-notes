@@ -140,7 +140,7 @@ if (typeof document !== "undefined") {
   }
 }
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 /**
  * AI供应商配置接口定义

@@ -249,7 +249,7 @@ export const extractContentSmart = async (content: string): Promise<string> => {
   // 🚀 使用简化配置的长度判断策略
   const { isShortNote } = await import("../config/contentExtractionConfig");
 
-  if (isShortNote(content)) {
+  if (isShortNote(content.length)) {
     // 短便签：直接返回完整内容，无需智能处理
     return content.trim();
   }
@@ -273,7 +273,7 @@ export const extractContentWithMetadata = async (
 ) => {
   const { isShortNote } = await import("../config/contentExtractionConfig");
 
-  if (isShortNote(content)) {
+  if (isShortNote(content.length)) {
     // 短便签：返回完整内容和基础元数据
     return {
       extracted: content.trim(),

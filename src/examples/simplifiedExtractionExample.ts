@@ -3,12 +3,14 @@
  * 🎯 展示1000字阈值策略的简单有效性
  */
 
-import {
-  extractContentSmart,
-  extractContentWithMetadata,
-} from "../services/smartContentExtractionService";
+import { extractContentSmart } from "../services/smartContentExtractionService";
 
-import { isShortNote, isLongNote } from "../config/contentExtractionConfig";
+import {
+  isShortNote,
+  isLongNote,
+  getLengthThreshold,
+  setLengthThreshold,
+} from "../config/contentExtractionConfig";
 
 /**
  * 基础使用示例 - 完全无配置
@@ -25,7 +27,7 @@ export async function basicSimplifiedExample() {
 `;
 
   console.log("📝 短便签测试:", shortNote.length, "字符");
-  console.log("📏 是否为短便签:", isShortNote(shortNote));
+  console.log("📏 是否为短便签:", isShortNote(shortNote.length));
 
   const shortResult = await extractContentSmart(shortNote);
   console.log(
@@ -50,7 +52,7 @@ ${Array(50).fill("这是一段很长的分析内容。").join(" ")}
 `;
 
   console.log("📝 长便签测试:", longNote.length, "字符");
-  console.log("📏 是否为长便签:", isLongNote(longNote));
+  console.log("📏 是否为长便签:", isLongNote(longNote.length));
 
   const longResult = await extractContentSmart(longNote);
   console.log("🎯 长便签结果:", longResult.length, "字符");
@@ -81,7 +83,7 @@ export function thresholdConfigExample() {
 
   testContents.forEach((content, index) => {
     console.log(`📝 测试内容${index + 1}:`, content.length, "字符");
-    console.log("📏 分类:", isShortNote(content) ? "短便签" : "长便签");
+    console.log("📏 分类:", isShortNote(content.length) ? "短便签" : "长便签");
   });
 
   // 动态调整阈值（如果需要）
@@ -161,7 +163,7 @@ export class SimplifiedBusinessUsage {
       searchResults.map(async (content) => ({
         original: content,
         preview: await extractContentSmart(content),
-        isShort: isShortNote(content),
+        isShort: isShortNote(content.length),
       }))
     );
   }

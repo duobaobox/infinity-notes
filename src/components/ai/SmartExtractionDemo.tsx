@@ -16,7 +16,7 @@ interface SmartExtractionDemoProps {
  * 智能提取演示组件
  */
 export const SmartExtractionDemo: React.FC<SmartExtractionDemoProps> = ({
-  onClose,
+  onClose: _onClose,
 }) => {
   const [currentDemo, setCurrentDemo] = useState<"short" | "long" | null>(null);
 

@@ -135,8 +135,8 @@ export const ConfigDemo: React.FC = () => {
 
 📋 当前配置:
 - 长度阈值: ${config.lengthThreshold}字
-- 最大提取长度: ${config.longNoteExtraction.maxLength}字
-- 智能截断: ${config.longNoteExtraction.enableSmartTruncation ? "启用" : "禁用"}
+- 智能模式最大长度: ${config.smartMode.maxLength}字
+- 智能截断: ${config.smartMode.enableSmartTruncation ? "启用" : "禁用"}
 
 📝 提取结果:
 ${extractedContents

@@ -1,7 +1,6 @@
 // AI消息重复提醒测试组件
 import { Button, Card, Space, Typography } from "antd";
 import {
-  ExperimentOutlined,
   InfoCircleOutlined,
   PlayCircleOutlined,
   CheckCircleOutlined,

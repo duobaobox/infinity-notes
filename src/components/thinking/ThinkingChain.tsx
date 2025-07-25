@@ -6,7 +6,7 @@ import {
   SearchOutlined,
   TrophyOutlined,
 } from "@ant-design/icons";
-import { Card, Tag, Typography, Space } from "antd";
+import { Tag, Typography } from "antd";
 import React from "react";
 import type {
   ThinkingChain as ThinkingChainType,
@@ -88,7 +88,7 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
   const renderThinkingSteps = () => {
     return (
       <div className="thinking-steps-list">
-        {thinkingChain.steps.map((step, index) => {
+        {thinkingChain.steps.map((step) => {
           const { icon, color } = getStepIcon(step.stepType);
 
           return (
@@ -155,7 +155,7 @@ const ThinkingChain: React.FC<ThinkingChainProps> = ({
         {Object.entries(stepCounts).map(([type, count]) => {
           const { color } = getStepIcon(type as ThinkingStep["stepType"]);
           return (
-            <Tag key={type} color={color} size="small">
+            <Tag key={type} color={color}>
               {getStepTypeLabel(type as ThinkingStep["stepType"])} {count}
             </Tag>
           );

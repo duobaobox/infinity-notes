@@ -14,7 +14,7 @@ import "./WysiwygEditor.css";
 const safeEditorCommand = (
   editor: any,
   command: () => void,
-  errorMessage: string = "编辑器命令执行失败"
+  _errorMessage: string = "编辑器命令执行失败"
 ) => {
   // 基本检查
   if (!editor) {
@@ -186,14 +186,14 @@ class CodeProcessor {
     let result = text;
 
     // 先处理代码块
-    result = result.replace(/```([\s\S]*?)```/g, (match, code) => {
+    result = result.replace(/```([\s\S]*?)```/g, (_match, code) => {
       const index = this.codeBlocks.length;
       this.codeBlocks.push(code);
       return `__CODE_BLOCK_${index}__`;
     });
 
     // 处理行内代码
-    result = result.replace(/`([^`]+)`/g, (match, code) => {
+    result = result.replace(/`([^`]+)`/g, (_match, code) => {
       const index = this.inlineCodes.length;
       this.inlineCodes.push(code);
       return `__INLINE_CODE_${index}__`;
@@ -209,12 +209,12 @@ class CodeProcessor {
     let result = text;
 
     // 恢复代码块
-    result = result.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+    result = result.replace(/__CODE_BLOCK_(\d+)__/g, (_match, index) => {
       return `<pre><code>${this.codeBlocks[parseInt(index)]}</code></pre>`;
     });
 
     // 恢复行内代码
-    result = result.replace(/__INLINE_CODE_(\d+)__/g, (match, index) => {
+    result = result.replace(/__INLINE_CODE_(\d+)__/g, (_match, index) => {
       return `<code>${this.inlineCodes[parseInt(index)]}</code>`;
     });
 
@@ -241,7 +241,7 @@ const markdownToHtml = (markdown: string): string => {
   let html = codeProcessor.protect(markdown);
 
   // 标题转换 - 统一处理所有级别
-  html = html.replace(/^(#{1,6}) (.*$)/gm, (match, hashes, content) => {
+  html = html.replace(/^(#{1,6}) (.*$)/gm, (_match, hashes, content) => {
     const level = hashes.length;
     return `<h${level}>${content}</h${level}>`;
   });
