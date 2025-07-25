@@ -10,7 +10,6 @@ import MarkdownListTest from "./test/MarkdownListTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
 import VirtualizationStatusMonitorEnhanced from "./test/VirtualizationTestEnhanced";
-import StreamingDebug from "./components/debug/StreamingDebug";
 
 // 导入全局状态管理
 import {
@@ -225,9 +224,6 @@ function App() {
             <span>处理中...</span>
           </div>
         )}
-
-        {/* 流式输出调试组件 */}
-        <StreamingDebug />
       </Content>
     </Layout>
   );
