@@ -48,6 +48,7 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [localHasValidConfig, setLocalHasValidConfig] = useState(false);
+    const [isComposing, setIsComposing] = useState(false); // 添加中文输入法合成状态
     const inputRef = useRef<any>(null);
     const preconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -176,9 +177,28 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      // 如果正在进行中文输入法合成，不处理Enter键
+      if (e.key === "Enter" && !e.shiftKey && !isComposing) {
         e.preventDefault();
         handleSend();
+      }
+    };
+
+    // 中文输入法合成事件处理
+    const handleCompositionStart = () => {
+      setIsComposing(true);
+    };
+
+    const handleCompositionEnd = (
+      e: React.CompositionEvent<HTMLInputElement>
+    ) => {
+      setIsComposing(false);
+      // 合成结束后更新输入值
+      const newValue = e.currentTarget.value;
+      setInputValue(newValue);
+      // 用户输入时触发预连接
+      if (newValue.trim()) {
+        triggerPreconnect();
       }
     };
 
@@ -197,12 +217,18 @@ const CanvasConsole = forwardRef<CanvasConsoleRef, CanvasConsoleProps>(
               ref={inputRef}
               value={inputValue}
               onChange={(e) => {
-                setInputValue(e.target.value);
-                // 用户输入时触发预连接
-                if (e.target.value.trim()) {
-                  triggerPreconnect();
+                const newValue = e.target.value;
+                setInputValue(newValue);
+                // 如果不是合成事件期间，则正常处理输入
+                if (!isComposing) {
+                  // 用户输入时触发预连接
+                  if (newValue.trim()) {
+                    triggerPreconnect();
+                  }
                 }
               }}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
               onKeyDown={handleKeyDown}
               onFocus={handleFocus}
               onBlur={handleBlur}

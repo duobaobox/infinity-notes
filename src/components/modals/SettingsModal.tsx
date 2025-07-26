@@ -8,7 +8,6 @@ import {
   EditOutlined,
   ExclamationCircleOutlined,
   FileTextOutlined,
-  GlobalOutlined,
   HddOutlined,
   InfoCircleOutlined,
   MessageOutlined,
@@ -58,7 +57,6 @@ import type { AIPromptTemplate } from "../../services/ai/aiService";
 import { systemPromptTemplates } from "../../services/ai/aiService";
 import { useStickyNotesStore, useUserStore } from "../../stores";
 import { PRESET_THEMES, useUIStore } from "../../stores/uiStore";
-import { AIConfigStatus } from "../ai/AIConfigStatus";
 import AIPromptTemplateSelector from "../ai/AIPromptTemplateSelector";
 import CardSectionTitle from "../common/CardSectionTitle";
 import NoteSettings from "../notes/NoteSettings";
@@ -317,7 +315,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [exportLoading, setExportLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
 
-  // 使用UIStore获取和设置外观设置和基础设置
+  // 使用UIStore获取和设置外观设置和高级设置
   const {
     appearance,
     setAppearance,
@@ -1108,12 +1106,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         setTempNoteSettings(defaultSettings);
         setNoteSettingsChanged(false);
         // 同步表单值
-        appearanceForm.setFieldsValue(defaultSettings);
+        noteSettingsForm.setFieldsValue(defaultSettings);
       },
       "便签设置已重置为默认值",
       "重置便签设置失败"
     ),
-    [createFormHandler, resetNoteDefaultSizes, appearanceForm]
+    [createFormHandler, resetNoteDefaultSizes, noteSettingsForm]
   );
 
   // 同步便签设置表单值
@@ -1389,16 +1387,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Form.Item>
 
                 <Form.Item label="网格大小" name="gridSize">
-                  <Slider
-                    min={10}
-                    max={50}
-                    marks={{
-                      10: "10px",
-                      20: "20px",
-                      30: "30px",
-                      50: "50px",
-                    }}
-                  />
+                  <div style={{ paddingLeft: 8, paddingRight: 8 }}>
+                    <Slider
+                      min={10}
+                      max={50}
+                      marks={{
+                        10: "10px",
+                        20: "20px",
+                        30: "30px",
+                        50: "50px",
+                      }}
+                      style={{ marginBottom: 8 }}
+                    />
+                  </div>
                 </Form.Item>
 
                 <Form.Item
@@ -1448,135 +1449,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Form.Item>
               </Card>
             </Form>
-
-            {/* 便签默认尺寸设置 */}
-            <Card size="small" style={{ marginBottom: 16 }}>
-              <CardSectionTitle icon={<SettingOutlined />}>
-                便签默认尺寸
-              </CardSectionTitle>
-
-              <Form
-                form={noteSettingsForm}
-                layout="vertical"
-                onValuesChange={handleNoteSettingsChange}
-                initialValues={tempNoteSettings}
-              >
-                {/* 手动便签尺寸设置 */}
-                <div style={{ marginBottom: 20 }}>
-                  <Text strong style={{ display: "block", marginBottom: 8 }}>
-                    手动便签默认尺寸
-                  </Text>
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Form.Item
-                        label="宽度 (px)"
-                        name="manualNoteDefaultWidth"
-                        style={{ marginBottom: 8 }}
-                      >
-                        <InputNumber
-                          min={350}
-                          max={500}
-                          step={10}
-                          style={{ width: "100%" }}
-                          placeholder="350"
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                      <Form.Item
-                        label="高度 (px)"
-                        name="manualNoteDefaultHeight"
-                        style={{ marginBottom: 8 }}
-                      >
-                        <InputNumber
-                          min={310}
-                          max={500}
-                          step={10}
-                          style={{ width: "100%" }}
-                          placeholder="310"
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-                </div>
-
-                {/* AI便签尺寸设置 */}
-                <div style={{ marginBottom: 16 }}>
-                  <Text strong style={{ display: "block", marginBottom: 8 }}>
-                    AI便签默认尺寸
-                  </Text>
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Form.Item
-                        label="宽度 (px)"
-                        name="aiNoteDefaultWidth"
-                        style={{ marginBottom: 8 }}
-                      >
-                        <InputNumber
-                          min={350}
-                          max={500}
-                          step={10}
-                          style={{ width: "100%" }}
-                          placeholder="350"
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                      <Form.Item
-                        label="高度 (px)"
-                        name="aiNoteDefaultHeight"
-                        style={{ marginBottom: 8 }}
-                      >
-                        <InputNumber
-                          min={310}
-                          max={500}
-                          step={10}
-                          style={{ width: "100%" }}
-                          placeholder="310"
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-                </div>
-              </Form>
-
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                <BulbOutlined style={{ marginRight: 4 }} />
-                设置新建便签时的默认尺寸，可以根据使用习惯调整
-              </Text>
-
-              {/* 设置变更状态提示 */}
-              {noteSettingsChanged && (
-                <div style={STYLES.changeNotification}>
-                  <Text style={{ fontSize: "12px", color: "#d46b08" }}>
-                    <ExclamationCircleOutlined style={{ marginRight: 4 }} />
-                    设置已修改，请点击"保存设置"按钮保存更改
-                  </Text>
-                </div>
-              )}
-
-              {/* 便签设置操作按钮 */}
-              <div
-                style={{
-                  marginTop: 16,
-                  display: "flex",
-                  gap: 8,
-                  justifyContent: "flex-end",
-                }}
-              >
-                <Button onClick={handleResetNoteSettings} size="small">
-                  重置默认值
-                </Button>
-                <Button
-                  type="primary"
-                  onClick={handleSaveNoteSettings}
-                  disabled={!noteSettingsChanged}
-                  size="small"
-                >
-                  保存设置
-                </Button>
-              </div>
-            </Card>
           </div>
         ),
       },
@@ -1705,7 +1577,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         label: (
           <span>
             <SettingOutlined />
-            基础设置
+            高级设置
           </span>
         ),
         children: (
@@ -2333,10 +2205,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         }
       : null;
 
-    // 返回所有标签页，过滤掉null项并转换类型
+    // 按照使用频率和逻辑关联性重新排列标签页顺序
+    // 1. 外观设置 - 最常用，用户体验相关
+    // 2. AI设置 - 核心功能，使用频率高
+    // 3. AI提示词 - 与AI设置相关联
+    // 4. 便签设置 - 便签相关配置
+    // 5. 高级设置 - 其他功能设置
+    // 6. 用户设置 - 个人信息（使用频率较低）
+    // 7. 数据管理 - 高级功能，使用频率低
+    // 8. 关于 - 保持在最后
+
+    const appearanceTab = baseItems.find((item) => item.key === "appearance");
+    const aiTab = baseItems.find((item) => item.key === "ai");
+    const notesTab = baseItems.find((item) => item.key === "notes");
+    const basicTab = baseItems.find((item) => item.key === "basic");
+    const userTab = baseItems.find((item) => item.key === "user");
+    const dataTab = baseItems.find((item) => item.key === "data");
+
     return [
-      ...baseItems,
+      appearanceTab,
+      aiTab,
       aiPromptTab,
+      notesTab,
+      basicTab,
+      userTab,
+      dataTab,
       {
         key: "about",
         label: (
@@ -2393,21 +2286,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               <Divider />
               <Space direction="vertical" style={{ width: "100%" }}>
                 <Button
-                  type="primary"
-                  size="large"
                   onClick={() => window.open("./landing.html", "_blank")}
                   block
-                  icon={<GlobalOutlined />}
                 >
                   访问官网了解更多
-                </Button>
-                <Button
-                  type="default"
-                  onClick={() => window.open("./app.html", "_blank")}
-                  block
-                  icon={<GlobalOutlined />}
-                >
-                  在新窗口打开应用
                 </Button>
               </Space>
 
@@ -2472,6 +2354,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </p>
               <p>
                 <strong> 邮箱:</strong> 2385561331@qq.com
+              </p>
+              <p>
+                <strong> 哔哩哔哩:</strong> 慌张的多宝
               </p>
               <p>
                 <strong> 小红书号:</strong> 7429489345

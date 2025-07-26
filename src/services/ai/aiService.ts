@@ -276,10 +276,12 @@ export class AIService {
         messages.push({ role: "system", content: currentSystemPrompt });
         console.log(
           "📝 使用自定义prompt模式，提示词长度:",
-          currentSystemPrompt.length
+          currentSystemPrompt.length,
+          "提示词预览:",
+          currentSystemPrompt.substring(0, 100) + "..."
         );
       } else {
-        console.log("💬 使用正常对话模式");
+        console.log("💬 使用正常对话模式（无系统提示词）");
       }
 
       messages.push({ role: "user", content: prompt });

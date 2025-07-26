@@ -1,4 +1,35 @@
 /* 设置弹窗 - 遵循 Ant Design 标准规范 */
+
+/* 设置弹窗背景色 - 使用常见的设置页面灰色 */
+:where(.css-dev-only-do-not-override-5uvb3z).ant-modal .ant-modal-content {
+  position: relative;
+  background-color: #f5f5f5; /* 设置页面常见的浅灰色背景 */
+  background-clip: padding-box;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  pointer-events: auto;
+  padding: 20px 24px;
+}
+
+/* 设置弹窗标题头部背景透明 */
+.ant-modal-header {
+  background: transparent !important; /* 设置标题头部背景为透明 */
+  border-bottom: none !important; /* 移除底部边框 */
+  padding: 0 0 16px 0 !important; /* 调整内边距 */
+}
+
+/* 更具体的样式覆盖，去掉注释的margin-bottom */
+:where(.css-dev-only-do-not-override-5uvb3z).ant-modal .ant-modal-header {
+  color: rgba(0, 0, 0, 0.88);
+  background: transparent !important; /* 覆盖背景为透明 */
+  border-radius: 8px 8px 0 0;
+  padding: 0;
+  border-bottom: none;
+  /* 移除了 margin-bottom: 8px; 注释 */
+}
+
 .settings-modal .ant-tabs {
   height: 100%;
 }
@@ -27,7 +58,6 @@
 .settings-modal-content {
   height: 100%;
   overflow-y: auto;
-  padding: 24px 0;
 }
 
 /* 表单操作按钮区域 */

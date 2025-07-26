@@ -283,3 +283,48 @@ export const useAIStore = create<AIState & AIActions>()(
     }
   )
 );
+
+// 🔧 修复：监听来自其他组件的AI配置更新事件
+// 确保aiStore能够及时同步最新的配置状态，解决角色提示词不生效的问题
+if (typeof window !== "undefined") {
+  window.addEventListener("ai-config-updated", (event: any) => {
+    const { config, source } = event.detail;
+
+    // 避免循环更新：如果更新来源是aiStore自己，则跳过
+    if (source === "ai-store-config") {
+      return;
+    }
+
+    console.log("🔄 AIStore: 收到外部配置更新事件", {
+      source,
+      hasSystemPrompt: !!config.systemPrompt,
+      systemPromptLength: config.systemPrompt?.length || 0,
+    });
+
+    // 更新aiStore中的配置状态
+    useAIStore.setState((state) => {
+      const hasValidConfig = !!(
+        config.apiKey &&
+        config.apiUrl &&
+        config.aiModel
+      );
+
+      return {
+        ...state,
+        config,
+        hasValidConfig,
+        error: null, // 清除之前的错误状态
+      };
+    });
+
+    // 更新AI服务实例
+    if (config.apiKey && config.apiUrl && config.aiModel) {
+      try {
+        getAIService(config);
+        console.log("🔄 AIStore: AI服务实例已更新");
+      } catch (error) {
+        console.warn("🔄 AIStore: 更新AI服务实例失败", error);
+      }
+    }
+  });
+}

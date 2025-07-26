@@ -353,7 +353,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 防抖更新函数
+  // 防抖更新函数 - 优化防抖时间以减少快速输入时的乱输入问题
   const debouncedOnChange = useCallback(
     (markdown: string) => {
       if (updateTimeoutRef.current) {
@@ -361,7 +361,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       }
       updateTimeoutRef.current = setTimeout(() => {
         onChange(markdown);
-      }, 150); // 150ms 防抖
+      }, 100); // 减少到100ms防抖，提高响应性同时避免过于频繁的更新
     },
     [onChange]
   );

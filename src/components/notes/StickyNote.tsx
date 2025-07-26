@@ -279,24 +279,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     removeConnectionFromStore,
   ]);
 
-  // 停止编辑内容 - 使用全局状态管理
-  const stopEditing = useCallback(() => {
-    // 最后一次保存确保数据同步，同时停止编辑状态
-    onUpdate(note.id, {
-      content: localContent,
-      isEditing: false,
-      updatedAt: new Date(),
-    });
-  }, [note.id, onUpdate, localContent]);
-
-  // 开始编辑标题 - 使用全局状态管理
-  const startTitleEditing = useCallback(() => {
-    if (isStreaming) return; // 流式过程中不允许编辑
-    if (isMoveModeActive) return; // 移动模式下不允许编辑
-    onUpdate(note.id, { isTitleEditing: true });
-    setLocalTitle(note.title);
-  }, [note.id, note.title, onUpdate, isStreaming, isMoveModeActive]);
-
   // 防抖更新标题到数据库
   const [debouncedUpdateTitle, clearTitleDebounce] = useDebounce(
     useCallback(
@@ -307,6 +289,37 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     ),
     300 // 300ms 防抖
   );
+
+  // 防抖更新内容到数据库 - 添加额外的防抖层以防止快速输入时的乱输入
+  const [debouncedUpdateContent, clearContentDebounce] = useDebounce(
+    useCallback(
+      (newContent: string) => {
+        onUpdate(note.id, { content: newContent });
+      },
+      [note.id, onUpdate]
+    ),
+    200 // 200ms 防抖，比编辑器内部的150ms稍长一些
+  );
+
+  // 停止编辑内容 - 使用全局状态管理
+  const stopEditing = useCallback(() => {
+    // 清理内容防抖计时器
+    clearContentDebounce();
+    // 最后一次保存确保数据同步，同时停止编辑状态
+    onUpdate(note.id, {
+      content: localContent,
+      isEditing: false,
+      updatedAt: new Date(),
+    });
+  }, [note.id, onUpdate, localContent, clearContentDebounce]);
+
+  // 开始编辑标题 - 使用全局状态管理
+  const startTitleEditing = useCallback(() => {
+    if (isStreaming) return; // 流式过程中不允许编辑
+    if (isMoveModeActive) return; // 移动模式下不允许编辑
+    onUpdate(note.id, { isTitleEditing: true });
+    setLocalTitle(note.title);
+  }, [note.id, note.title, onUpdate, isStreaming, isMoveModeActive]);
 
   // 停止编辑标题 - 使用全局状态管理
   const stopTitleEditing = useCallback(() => {
@@ -353,10 +366,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleWysiwygContentChange = useCallback(
     (newContent: string) => {
       setLocalContent(newContent);
-      // 直接更新，WysiwygEditor内部已有防抖机制
-      onUpdate(note.id, { content: newContent });
+      // 使用防抖更新，避免快速输入时的乱输入问题
+      debouncedUpdateContent(newContent);
     },
-    [note.id, onUpdate]
+    [debouncedUpdateContent]
   );
 
   // WysiwygEditor 失焦处理已移除，统一使用 handleGlobalClick 处理失焦检测
