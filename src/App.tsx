@@ -22,6 +22,11 @@ import {
 
 // 导入内存管理器
 
+// 在开发环境中导入测试
+if (process.env.NODE_ENV === "development") {
+  import("./test/environmentDetector.test");
+}
+
 const { Content } = Layout;
 
 function App() {

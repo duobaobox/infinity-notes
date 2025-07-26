@@ -51,6 +51,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useDatabase } from "../../database";
 import { IndexedDBAIProviderStorage } from "../../database/IndexedDBAIProviderStorage"; // IndexedDB AI Provider Storage - AI供应商配置存储
 import { initializeDatabase } from "../../database/useIndexedDB";
+import {
+  getStorageDescription,
+  getDataLocationDescription,
+  getPrivacyDescription,
+  getFeatureDescription,
+} from "../../utils/environmentDetector";
 import { useAIPromptSettings } from "../../hooks/ai/useAIPromptSettings";
 import { useAISettings } from "../../hooks/ai/useAISettings";
 import type { AIPromptTemplate } from "../../services/ai/aiService";
@@ -130,6 +136,34 @@ if (typeof document !== "undefined") {
   if (!document.head.querySelector("style[data-provider-cards]")) {
     styleElement.setAttribute("data-provider-cards", "true");
     document.head.appendChild(styleElement);
+  }
+}
+
+// 动态注入设置弹窗背景色样式 - 确保在Electron环境中正确应用
+const settingsModalStyles = `
+  /* 强制设置弹窗背景色 - 针对Electron环境优化 */
+  .settings-modal .ant-modal-content,
+  .ant-modal.settings-modal .ant-modal-content,
+  .ant-modal-wrap .settings-modal .ant-modal-content,
+  .ant-modal-root .settings-modal .ant-modal-content,
+  div[class*="ant-modal"] .settings-modal .ant-modal-content {
+    background-color: #f5f5f5 !important;
+  }
+
+  /* 确保标题区域背景透明 */
+  .settings-modal .ant-modal-header,
+  .ant-modal.settings-modal .ant-modal-header {
+    background: transparent !important;
+    border-bottom: none !important;
+  }
+`;
+
+if (typeof document !== "undefined") {
+  const settingsStyleElement = document.createElement("style");
+  settingsStyleElement.textContent = settingsModalStyles;
+  if (!document.head.querySelector("style[data-settings-modal]")) {
+    settingsStyleElement.setAttribute("data-settings-modal", "true");
+    document.head.appendChild(settingsStyleElement);
   }
 }
 
@@ -1503,6 +1537,47 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </Card>
 
+              {/* 数据存储信息 */}
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <CardSectionTitle icon={<SafetyOutlined />} iconType="success">
+                  数据存储与隐私
+                </CardSectionTitle>
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size="middle"
+                >
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <HddOutlined
+                        style={{ color: "#52c41a", marginRight: 8 }}
+                      />
+                      <Text strong>存储方式：{getStorageDescription()}</Text>
+                    </div>
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: "13px", lineHeight: "1.5" }}
+                    >
+                      {getPrivacyDescription()}
+                    </Text>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: "12px", fontStyle: "italic" }}
+                    >
+                      💡 数据位置：{getDataLocationDescription()}
+                    </Text>
+                  </div>
+                </Space>
+              </Card>
+
               {/* 数据操作 */}
               <Card size="small" style={{ marginBottom: 16 }}>
                 <CardSectionTitle icon={<DatabaseOutlined />}>
@@ -2280,7 +2355,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <SafetyOutlined
                     style={{ marginRight: 8, color: "#13c2c2" }}
                   />
-                  本地存储 - 保护隐私安全
+                  {getFeatureDescription()}
                 </li>
               </ul>
               <Divider />
@@ -2360,9 +2435,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </p>
               <p>
                 <strong> 小红书号:</strong> 7429489345
-              </p>
-              <p>
-                <strong>数据存储:</strong> 本地 IndexedDB（保护隐私）
               </p>
               <Divider />
               <p style={{ textAlign: "center", color: "#666" }}>
