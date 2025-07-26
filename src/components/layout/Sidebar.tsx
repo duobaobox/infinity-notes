@@ -135,10 +135,26 @@ const Sidebar: React.FC = () => {
     handleCollapseChange(!collapsed);
   }, [collapsed, handleCollapseChange]);
 
+  // 生成唯一的画布名称
+  const generateUniqueCanvasName = useCallback(() => {
+    const existingNames = canvasList.map((canvas) => canvas.name);
+    let counter = 1;
+    let newName = `画布 ${counter}`;
+
+    // 找到第一个不重复的名称
+    while (existingNames.includes(newName)) {
+      counter++;
+      newName = `画布 ${counter}`;
+    }
+
+    return newName;
+  }, [canvasList]);
+
   // 创建新画布
   const handleCreateCanvas = useCallback(async () => {
     try {
-      const canvasId = await createCanvas(`画布 ${canvasList.length + 1}`);
+      const uniqueName = generateUniqueCanvasName();
+      const canvasId = await createCanvas(uniqueName);
 
       // createCanvas 方法已经会自动切换到新画布，这里只需要更新本地状态
       setSelectedCanvas(canvasId);
@@ -148,7 +164,7 @@ const Sidebar: React.FC = () => {
       console.error("❌ Sidebar: 创建画布失败:", error);
       message.error("创建画布失败");
     }
-  }, [canvasList.length, createCanvas]);
+  }, [generateUniqueCanvasName, createCanvas]);
 
   // 删除画布
   const handleDeleteCanvas = useCallback(

@@ -46,10 +46,10 @@
     "electron": "electron .",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:build": "npm run build && electron-builder",
-    "dist": "npm run build && electron-builder --publish=never",
-    "dist:mac": "npm run build && electron-builder --mac",
-    "dist:win": "npm run build && electron-builder --win",
-    "dist:linux": "npm run build && electron-builder --linux"
+    "dist": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --publish=never",
+    "dist:mac": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --mac",
+    "dist:win": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --win",
+    "dist:linux": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
