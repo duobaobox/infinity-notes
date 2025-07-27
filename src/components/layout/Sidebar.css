@@ -64,10 +64,10 @@
   -webkit-backdrop-filter: blur(16px) saturate(200%);
 }
 
-/* 便签列表项磨砂效果 - 轻量级实现 */
+/* 便签列表项磨砂效果 - 保持原有设计，优化结构 */
 .note-list-item {
   background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05) !important; /* 强制应用边框，确保所有便签都有统一的边框 */
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   transition: all 0.2s ease;
@@ -75,9 +75,19 @@
 
 .note-list-item:hover {
   background: rgba(24, 144, 255, 0.08);
-  border-color: rgba(24, 144, 255, 0.3);
+  border-color: rgba(
+    24,
+    144,
+    255,
+    0.3
+  ) !important; /* 确保悬停时边框颜色也能正确应用 */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+/* 确保最后一个便签项也有完整的边框 */
+.note-list-item:last-child {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 /* 浏览器降级方案 - 统一处理不支持 backdrop-filter 的情况 */
@@ -100,12 +110,74 @@
 @media (prefers-color-scheme: dark) {
   .note-list-item {
     background: rgba(40, 40, 40, 0.6);
-    border-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.05) !important;
   }
 
   .note-list-item:hover {
     background: rgba(24, 144, 255, 0.15);
+    border-color: rgba(24, 144, 255, 0.4) !important;
+  }
+
+  /* 深色模式下确保最后一个便签项也有完整的边框 */
+  .note-list-item:last-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  }
+}
+
+/* 搜索输入框样式 */
+.notes-search-input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.notes-search-input:hover {
+  border-color: rgba(24, 144, 255, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.notes-search-input:focus,
+.notes-search-input.ant-input-focused {
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* 搜索高亮样式 */
+.search-highlight {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 1px 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+/* 深色模式下的搜索输入框和高亮样式 */
+@media (prefers-color-scheme: dark) {
+  .notes-search-input {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  .notes-search-input:hover {
     border-color: rgba(24, 144, 255, 0.4);
+    background: rgba(40, 40, 40, 0.9);
+  }
+
+  .notes-search-input:focus,
+  .notes-search-input.ant-input-focused {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+    background: rgba(40, 40, 40, 0.95);
+  }
+
+  /* 深色模式下的搜索高亮 */
+  .search-highlight {
+    background-color: rgba(255, 193, 7, 0.3);
+    color: #ffc107;
   }
 }
 
@@ -113,7 +185,8 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .sidebar-toggle,
-  .note-list-item {
+  .note-list-item,
+  .notes-search-input {
     transition: none !important;
   }
 }

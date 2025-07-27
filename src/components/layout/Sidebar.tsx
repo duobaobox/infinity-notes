@@ -3,6 +3,7 @@ import {
   FolderOutlined,
   MenuOutlined,
   PlusOutlined,
+  SearchOutlined,
   SettingOutlined,
   StarFilled,
 } from "@ant-design/icons";
@@ -73,6 +74,11 @@ const Sidebar: React.FC = () => {
   const [canvasNotesCounts, setCanvasNotesCounts] = useState<
     Record<string, number>
   >({});
+
+  // 搜索相关状态
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const searchInputRef = useRef<any>(null);
 
   // 使用全局状态管理获取便签数据和画布数据
   const {
@@ -302,6 +308,64 @@ const Sidebar: React.FC = () => {
     }
   }, [currentCanvasId, selectedCanvas]);
 
+  // 键盘快捷键监听器 - Ctrl/Cmd + F 聚焦搜索框
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 检查是否按下了 Ctrl+F (Windows) 或 Cmd+F (Mac)
+      if ((event.ctrlKey || event.metaKey) && event.key === "f") {
+        // 只有在侧边栏展开时才响应快捷键
+        if (!collapsed && searchInputRef.current) {
+          event.preventDefault(); // 阻止浏览器默认的查找功能
+          searchInputRef.current.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [collapsed]);
+
+  // 处理搜索查询变化，添加到搜索历史
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+
+    // 如果搜索查询不为空且长度大于1，添加到搜索历史
+    if (value.trim() && value.trim().length > 1) {
+      setSearchHistory((prev) => {
+        const newHistory = [
+          value.trim(),
+          ...prev.filter((item) => item !== value.trim()),
+        ];
+        // 只保留最近的5个搜索记录
+        return newHistory.slice(0, 5);
+      });
+    }
+  }, []);
+
+  // 从本地存储加载搜索历史
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("notes-search-history");
+    if (savedHistory) {
+      try {
+        setSearchHistory(JSON.parse(savedHistory));
+      } catch (error) {
+        console.warn("Failed to load search history:", error);
+      }
+    }
+  }, []);
+
+  // 保存搜索历史到本地存储
+  useEffect(() => {
+    if (searchHistory.length > 0) {
+      localStorage.setItem(
+        "notes-search-history",
+        JSON.stringify(searchHistory)
+      );
+    }
+  }, [searchHistory]);
+
   // 注意：移除数据库事件监听，使用全局状态管理
   // 便签数量变化会通过全局状态自动更新，不需要重新加载画布列表
   // useEffect(() => {
@@ -314,8 +378,22 @@ const Sidebar: React.FC = () => {
   //   };
   // }, [loadCanvases]);
 
-  // 直接使用便签数据，不再过滤
-  const filteredNotes = stickyNotes;
+  // 根据搜索查询过滤便签数据
+  const filteredNotes = stickyNotes.filter((note) => {
+    if (!searchQuery.trim()) {
+      return true; // 如果没有搜索查询，显示所有便签
+    }
+
+    const query = searchQuery.toLowerCase();
+
+    // 搜索便签标题（不区分大小写）
+    const titleMatch = note.title?.toLowerCase().includes(query);
+
+    // 搜索便签内容（不区分大小写）
+    const contentMatch = note.content?.toLowerCase().includes(query);
+
+    return titleMatch || contentMatch;
+  });
 
   // 颜色映射函数
   const getColorHex = (color: string): string => {
@@ -371,6 +449,33 @@ const Sidebar: React.FC = () => {
       width: note.width,
       height: note.height,
     })
+  );
+
+  // 高亮搜索文本的工具函数
+  const highlightSearchText = useCallback(
+    (text: string, searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        return text;
+      }
+
+      const regex = new RegExp(
+        `(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+        "gi"
+      );
+      const parts = text.split(regex);
+
+      return parts.map((part, index) => {
+        if (part.toLowerCase() === searchQuery.toLowerCase()) {
+          return (
+            <span key={index} className="search-highlight">
+              {part}
+            </span>
+          );
+        }
+        return part;
+      });
+    },
+    []
   );
 
   // 处理便签点击事件 - 定位到画布中的便签并添加选中效果
@@ -630,6 +735,12 @@ const Sidebar: React.FC = () => {
                                     border: "1px solid #1677ff",
                                     borderRadius: "4px",
                                     flex: 1,
+                                    // 为非默认画布的删除按钮留出空间，避免编辑框与删除按钮重叠
+                                    marginRight:
+                                      !canvas.is_default &&
+                                      canvasList.length > 1
+                                        ? "32px"
+                                        : "0",
                                   }}
                                   size="small"
                                 />
@@ -763,8 +874,44 @@ const Sidebar: React.FC = () => {
                     }}
                   >
                     {currentCanvas?.name || ""}中的便签
+                    {searchQuery.trim() && (
+                      <Text
+                        type="secondary"
+                        style={{
+                          fontSize: "12px",
+                          marginLeft: "8px",
+                          fontWeight: 400,
+                        }}
+                      >
+                        ({filteredNotes.length} 个结果)
+                      </Text>
+                    )}
                   </Title>
                 </div>
+
+                {/* 搜索输入框 */}
+                <Input
+                  ref={searchInputRef}
+                  className="notes-search-input"
+                  placeholder="搜索便签... (Ctrl+F)"
+                  prefix={<SearchOutlined style={{ color: "#8c8c8c" }} />}
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    // 按 Escape 键清除搜索
+                    if (e.key === "Escape") {
+                      setSearchQuery("");
+                      searchInputRef.current?.blur();
+                    }
+                  }}
+                  allowClear
+                  style={{
+                    marginTop: "8px",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                  }}
+                  size="small"
+                />
               </div>
               <div
                 style={{
@@ -780,6 +927,8 @@ const Sidebar: React.FC = () => {
                   locale={{
                     emptyText: notesError
                       ? `加载失败: ${notesError}`
+                      : searchQuery.trim()
+                      ? `未找到包含"${searchQuery}"的便签`
                       : "暂无便签，双击画布或点击工具栏的 + 创建",
                   }}
                   renderItem={(note: {
@@ -795,13 +944,14 @@ const Sidebar: React.FC = () => {
                       className="note-list-item"
                       onClick={() => handleNoteClick(note)}
                       style={{
-                        padding: "4px 8px", // 减小内边距让便签项更紧凑
+                        padding: "4px 8px", // 保持原有内边距
                         cursor: "pointer",
-                        marginBottom: "6px", // 减小间距
-                        borderRadius: "6px", // 稍微减小圆角
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)", // 保留轻微阴影
+                        marginBottom: "6px", // 保持原有间距
+                        borderRadius: "6px", // 保持原有圆角
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)", // 保持原有阴影
                       }}
                     >
+                      {/* 优化结构：使用单个 flex 容器，但保持原有的颜色条设计 */}
                       <div
                         style={{
                           display: "flex",
@@ -809,28 +959,34 @@ const Sidebar: React.FC = () => {
                           width: "100%",
                         }}
                       >
+                        {/* 保持原有的颜色条设计 */}
                         <div
                           style={{
-                            width: "3px", // 稍微减小颜色条宽度
+                            width: "3px",
                             alignSelf: "stretch",
                             backgroundColor: note.color,
-                            borderRadius: "2px 0 0 2px", // Rounded only on one side
-                            marginRight: "8px", // 减小右边距
+                            borderRadius: "2px 0 0 2px",
+                            marginRight: "8px",
                           }}
                         />
-                        <div style={{ flex: 1, overflow: "hidden" }}>
-                          {/* 便签标题 - 去掉时间显示，让布局更紧凑 */}
-                          <Text
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 500,
-                              color: "#262626",
-                            }}
-                            ellipsis
-                          >
-                            {note.title}
-                          </Text>
-                        </div>
+                        {/* 便签标题容器 */}
+                        <Text
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "#262626",
+                            flex: 1, // 占满剩余空间
+                          }}
+                          ellipsis={{
+                            tooltip: searchQuery.trim()
+                              ? `${note.title} - 点击定位到便签`
+                              : note.title,
+                          }}
+                        >
+                          {searchQuery.trim()
+                            ? highlightSearchText(note.title, searchQuery)
+                            : note.title}
+                        </Text>
                       </div>
                     </List.Item>
                   )}
