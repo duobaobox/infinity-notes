@@ -105,6 +105,7 @@
   box-shadow: var(--note-glass-shadow);
 
   user-select: none;
+  /* 默认最小尺寸 - 适用于100%及以上缩放 */
   min-width: 250px;
   min-height: 230px;
   display: flex;
@@ -616,11 +617,54 @@
   border-radius: 3px !important;
 }
 
+/* 不同缩放级别的最小尺寸适配 */
 /* 25%缩放时的完整解决方案 */
 .sticky-note[data-scale="0.25"] {
   /* 确保便签本身有足够的空间容纳控件 */
   min-width: 50px !important; /* 最小宽度确保控件有空间 */
   min-height: 38px !important; /* 最小高度确保控件不会溢出 */
+}
+
+/* 50%缩放时的最小尺寸 - 关键修复 */
+.sticky-note[data-scale="0.5"] {
+  /* 50%缩放时，最小尺寸也应该按比例缩放 */
+  min-width: 125px !important; /* 250px * 0.5 = 125px */
+  min-height: 115px !important; /* 230px * 0.5 = 115px */
+}
+
+/* 75%缩放时的最小尺寸 */
+.sticky-note[data-scale="0.75"] {
+  /* 75%缩放时，最小尺寸也应该按比例缩放 */
+  min-width: 188px !important; /* 250px * 0.75 = 187.5px，向上取整 */
+  min-height: 173px !important; /* 230px * 0.75 = 172.5px，向上取整 */
+}
+
+/* 125%缩放时的最小尺寸 */
+.sticky-note[data-scale="1.25"] {
+  /* 125%缩放时，最小尺寸也应该按比例缩放 */
+  min-width: 313px !important; /* 250px * 1.25 = 312.5px，向上取整 */
+  min-height: 288px !important; /* 230px * 1.25 = 287.5px，向上取整 */
+}
+
+/* 150%缩放时的最小尺寸 */
+.sticky-note[data-scale="1.5"] {
+  /* 150%缩放时，最小尺寸也应该按比例缩放 */
+  min-width: 375px !important; /* 250px * 1.5 = 375px */
+  min-height: 345px !important; /* 230px * 1.5 = 345px */
+}
+
+/* 175%缩放时的最小尺寸 */
+.sticky-note[data-scale="1.75"] {
+  /* 175%缩放时，最小尺寸也应该按比例缩放 */
+  min-width: 438px !important; /* 250px * 1.75 = 437.5px，向上取整 */
+  min-height: 403px !important; /* 230px * 1.75 = 402.5px，向上取整 */
+}
+
+/* 200%缩放时的最小尺寸 */
+.sticky-note[data-scale="2"] {
+  /* 200%缩放时，最小尺寸也应该按比例缩放 */
+  min-width: 500px !important; /* 250px * 2 = 500px */
+  min-height: 460px !important; /* 230px * 2 = 460px */
 }
 
 .sticky-note[data-scale="0.25"] .sticky-note-header {
