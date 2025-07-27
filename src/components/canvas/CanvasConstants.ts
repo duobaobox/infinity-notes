@@ -28,11 +28,11 @@ export const CANVAS_CONSTANTS = {
 
 // 性能优化常量
 export const PERFORMANCE_CONSTANTS = {
-  DRAG_THROTTLE_MS: 8, // 拖拽事件节流时间 (ms) - 120fps，提升响应性
+  DRAG_THROTTLE_MS: 4, // 拖拽事件节流时间 (ms) - 250fps，极高响应性，确保工具栏位置同步
   CSS_UPDATE_DEBOUNCE_MS: 0, // CSS变量更新防抖时间 (ms) - 立即更新，避免延迟
   RENDER_THROTTLE_MS: 16, // 渲染节流时间 (ms)
   CONNECTION_UPDATE_THROTTLE_MS: 32, // 连接线更新节流时间 (ms) - 降低频率，减少卡顿
-  CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS: 16, // 立即连接线更新节流时间 (ms) - 拖拽时使用
+  CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS: 8, // 立即连接线更新节流时间 (ms) - 拖拽时使用，提高响应性
 
   // 虚拟化相关常量 - 现在支持动态调整
   DEFAULT_MAX_VISIBLE_NOTES: 100, // 默认最大可见便签数量（虚拟化阈值）

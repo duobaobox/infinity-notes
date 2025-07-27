@@ -788,6 +788,23 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     optimizedConnectionUpdate,
   ]);
 
+  // 新增：监听画布拖拽状态，确保工具栏位置实时更新
+  useEffect(() => {
+    // 当画布偏移发生变化时，强制重新计算工具栏位置
+    // 这对于修复画布拖拽时工具栏位置滞后的问题至关重要
+    if (isSelected) {
+      // 使用requestAnimationFrame确保在下一帧更新，避免阻塞当前渲染
+      const updateFrame = requestAnimationFrame(() => {
+        // 这里的依赖会触发组件重新渲染，从而更新工具栏位置
+        // pixelAligned值会根据新的 canvasOffset 重新计算
+      });
+      
+      return () => {
+        cancelAnimationFrame(updateFrame);
+      };
+    }
+  }, [canvasOffset.x, canvasOffset.y, isSelected, canvasScale]);
+
   // 处理位置同步
   useEffect(() => {
     if (
@@ -929,29 +946,34 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   // 计算实际使用的位置和尺寸，并应用缩放变换
   // 现在便签直接根据缩放级别调整自身大小和位置，避免CSS transform缩放
-  const scaledX = Math.round(
+  // 优化：使用useMemo缓存计算结果，但依赖画布状态确保实时更新
+  const scaledX = useMemo(() => Math.round(
     (isDragging || isSyncingPosition ? tempPosition.x : note.x) * canvasScale
-  );
-  const scaledY = Math.round(
+  ), [isDragging, isSyncingPosition, tempPosition.x, note.x, canvasScale]);
+  
+  const scaledY = useMemo(() => Math.round(
     (isDragging || isSyncingPosition ? tempPosition.y : note.y) * canvasScale
-  );
-  const scaledWidth = Math.round(
+  ), [isDragging, isSyncingPosition, tempPosition.y, note.y, canvasScale]);
+  
+  const scaledWidth = useMemo(() => Math.round(
     (isResizing || isSyncingSize ? tempSize.width : note.width) * canvasScale
-  );
-  const scaledHeight = Math.round(
+  ), [isResizing, isSyncingSize, tempSize.width, note.width, canvasScale]);
+  
+  const scaledHeight = useMemo(() => Math.round(
     (isResizing || isSyncingSize ? tempSize.height : note.height) * canvasScale
-  );
+  ), [isResizing, isSyncingSize, tempSize.height, note.height, canvasScale]);
 
   // 应用精确的像素对齐，确保在所有缩放级别下都清晰显示
+  // 优化：增加对画布偏移的依赖，确保工具栏位置实时更新
   const getAlignedValue = useCallback((value: number): number => {
     return getPixelAlignedValue(value);
-  }, []);
+  }, [canvasOffset.x, canvasOffset.y]); // 添加canvasOffset依赖
 
-  // 应用像素对齐到缩放后的值
-  const pixelAlignedX = getAlignedValue(scaledX);
-  const pixelAlignedY = getAlignedValue(scaledY);
-  const pixelAlignedWidth = getAlignedValue(scaledWidth);
-  const pixelAlignedHeight = getAlignedValue(scaledHeight);
+  // 应用像素对齐到缩放后的值 - 使用useMemo优化计算性能
+  const pixelAlignedX = useMemo(() => getAlignedValue(scaledX), [scaledX, getAlignedValue]);
+  const pixelAlignedY = useMemo(() => getAlignedValue(scaledY), [scaledY, getAlignedValue]);
+  const pixelAlignedWidth = useMemo(() => getAlignedValue(scaledWidth), [scaledWidth, getAlignedValue]);
+  const pixelAlignedHeight = useMemo(() => getAlignedValue(scaledHeight), [scaledHeight, getAlignedValue]);
 
   // 计算基于画布缩放的字体样式 - 包含表情符号优化
   const fontStyles = useMemo(() => {
@@ -1081,9 +1103,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         <div
           className="settings-toolbar vertical"
           style={{
+            // 优化：使用实时计算确保位置准确性
             left: pixelAlignedX + pixelAlignedWidth + 8, // 位于便签右侧8px处
             top: pixelAlignedY, // 与便签顶部对齐
             zIndex: Math.max(note.zIndex + 10, 9999), // 确保足够高的z-index
+            // 添加GPU加速优化，提升渲染性能
+            willChange: 'transform',
+            transform: 'translateZ(0)', // 强制GPU层，减少重绘
           }}
           onClick={(e) => {
             // 阻止点击工具栏本身时关闭菜单

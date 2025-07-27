@@ -944,8 +944,16 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       debouncedLogUpdate(scale, offsetX, offsetY);
     }
 
-    // 只在拖拽结束后更新连接线位置，避免拖拽过程中的频繁更新
-    if (!dragState.isDragging) {
+    // 修复：拖拽时也要更新连接线位置，但使用更高频率的节流
+    // 确保工具栏等UI元素的位置实时更新
+    if (dragState.isDragging) {
+      // 拖拽时使用立即更新，但节流频率更高
+      const throttledUpdate = setTimeout(() => {
+        updateConnectionLines(true);
+      }, PERFORMANCE_CONSTANTS.CONNECTION_UPDATE_IMMEDIATE_THROTTLE_MS);
+      return () => clearTimeout(throttledUpdate);
+    } else {
+      // 拖拽结束后进行完整更新
       updateConnectionLines();
     }
   }, [

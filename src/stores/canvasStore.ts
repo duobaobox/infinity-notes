@@ -297,7 +297,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           const deltaY = currentY - dragState.startY;
 
           // 关键优化：在拖拽过程中实时将偏移量四舍五入到整数像素
-          // 这可以显著减少拖拽时的文本模糊，但可能会在低性能设备上引入微小的“抖动”感
+          // 这可以显著减少拖拽时的文本模糊，但可能会在低性能设备上引入微小的"抖动"感
           // 引入设备像素比以在高清屏上获得更精确的对齐
           const dpr = window.devicePixelRatio || 1;
           const newOffsetX =
@@ -305,10 +305,22 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           const newOffsetY =
             Math.round((dragState.startOffsetY + deltaY) * dpr) / dpr;
 
+          // 修复：立即更新状态，确保工具栏位置同步
           set({
             offsetX: newOffsetX,
             offsetY: newOffsetY,
           });
+
+          // 强制同步CSS变量更新，确保便签和工具栏位置立即响应
+          if (typeof window !== 'undefined') {
+            const container = document.querySelector('.infinite-canvas-container') as HTMLElement;
+            if (container) {
+              container.style.setProperty('--canvas-offset-x', `${newOffsetX}px`);
+              container.style.setProperty('--canvas-offset-y', `${newOffsetY}px`);
+              container.style.setProperty('--content-offset-x', `${newOffsetX}px`);
+              container.style.setProperty('--content-offset-y', `${newOffsetY}px`);
+            }
+          }
         }
       },
 
