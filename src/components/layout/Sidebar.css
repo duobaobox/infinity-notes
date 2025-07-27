@@ -13,7 +13,7 @@
   /* 基础布局 */
   position: fixed;
   top: 0;
-  width: 220px;
+  width: 200px; /* 调整侧边栏宽度为200px */
   height: 100vh;
   z-index: 1000;
   overflow: hidden;

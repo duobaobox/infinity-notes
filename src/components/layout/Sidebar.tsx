@@ -1,5 +1,4 @@
 import {
-  ClockCircleOutlined,
   CloseOutlined,
   FolderOutlined,
   MenuOutlined,
@@ -404,7 +403,7 @@ const Sidebar: React.FC = () => {
         onClick={toggleSidebar}
         aria-label={collapsed ? "打开侧边栏" : "关闭侧边栏"}
         style={{
-          left: collapsed ? "0" : "220px", // 只保留动态位置控制
+          left: collapsed ? "0" : "200px", // 更新为新的侧边栏宽度
           boxShadow: collapsed
             ? "2px 0 8px rgba(0, 0, 0, 0.08)"
             : "2px 0 4px rgba(0, 0, 0, 0.04)", // 保留动态阴影效果
@@ -423,7 +422,7 @@ const Sidebar: React.FC = () => {
         className="sidebar"
         data-sidebar="true"
         style={{
-          left: collapsed ? "-220px" : "0", // 只保留动态位置控制
+          left: collapsed ? "-200px" : "0", // 更新为新的侧边栏宽度
         }}
         ref={sidebarRef as React.RefObject<HTMLDivElement>}
       >
@@ -708,30 +707,17 @@ const Sidebar: React.FC = () => {
                               </Popconfirm>
                             )}
 
-                            {/* 便签数量和时间信息 */}
+                            {/* 便签数量信息 - 去掉时间显示 */}
                             <Text
                               type="secondary"
                               style={{
                                 fontSize: "12px",
                                 marginTop: "2px",
-                                display: "flex",
-                                alignItems: "center",
                                 color: isSelected ? "#1677ff" : "#8c8c8c", // Consistent color logic
+                                fontWeight: isSelected ? 500 : 400,
                               }}
                             >
-                              <span
-                                style={{
-                                  fontWeight: isSelected ? 500 : 400,
-                                  marginRight: "12px",
-                                }}
-                              >
-                                {notesCount} 便签
-                              </span>
-                              <ClockCircleOutlined
-                                style={{ fontSize: "11px", marginRight: "4px" }}
-                              />
-                              {canvas.updated_at &&
-                                formatDate(canvas.updated_at)}
+                              {notesCount} 便签
                             </Text>
                           </div>
                         </div>
@@ -771,8 +757,8 @@ const Sidebar: React.FC = () => {
                     level={5}
                     style={{
                       margin: 0,
-                      fontSize: "15px",
-                      fontWeight: 500,
+                      fontSize: "14px", // 与便签列表项字体大小保持一致
+                      fontWeight: 400, // 减轻字体粗细，让标题更协调
                       color: "#1f1f1f",
                     }}
                   >
@@ -800,7 +786,6 @@ const Sidebar: React.FC = () => {
                     id: string;
                     color: string;
                     title: string;
-                    lastEdited: string;
                     x: number;
                     y: number;
                     width: number;
@@ -810,10 +795,10 @@ const Sidebar: React.FC = () => {
                       className="note-list-item"
                       onClick={() => handleNoteClick(note)}
                       style={{
-                        padding: "6px 12px",
+                        padding: "4px 8px", // 减小内边距让便签项更紧凑
                         cursor: "pointer",
-                        marginBottom: "8px",
-                        borderRadius: "8px",
+                        marginBottom: "6px", // 减小间距
+                        borderRadius: "6px", // 稍微减小圆角
                         boxShadow: "0 1px 3px rgba(0,0,0,0.02)", // 保留轻微阴影
                       }}
                     >
@@ -826,38 +811,24 @@ const Sidebar: React.FC = () => {
                       >
                         <div
                           style={{
-                            width: "4px",
+                            width: "3px", // 稍微减小颜色条宽度
                             alignSelf: "stretch",
                             backgroundColor: note.color,
                             borderRadius: "2px 0 0 2px", // Rounded only on one side
-                            marginRight: "10px",
+                            marginRight: "8px", // 减小右边距
                           }}
                         />
                         <div style={{ flex: 1, overflow: "hidden" }}>
-                          <div style={{ marginBottom: "4px" }}>
-                            <Text
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 500,
-                                color: "#262626",
-                              }}
-                              ellipsis
-                            >
-                              {note.title}
-                            </Text>
-                          </div>
-
+                          {/* 便签标题 - 去掉时间显示，让布局更紧凑 */}
                           <Text
-                            type="secondary"
                             style={{
-                              fontSize: "12px",
-                              color: "#8c8c8c",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "#262626",
                             }}
+                            ellipsis
                           >
-                            <ClockCircleOutlined
-                              style={{ fontSize: "11px", marginRight: "4px" }}
-                            />
-                            {note.lastEdited}
+                            {note.title}
                           </Text>
                         </div>
                       </div>

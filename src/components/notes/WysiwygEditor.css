@@ -50,6 +50,11 @@
   user-select: auto;
 }
 
+/* 编辑状态下的自定义光标样式 - 与AI生成时保持一致 */
+.wysiwyg-editor.editing .ProseMirror {
+  caret-color: #1890ff; /* 设置光标颜色为蓝色 */
+}
+
 /* 流式状态下的编辑器样式 */
 .wysiwyg-editor.streaming .ProseMirror::after {
   content: "▋";

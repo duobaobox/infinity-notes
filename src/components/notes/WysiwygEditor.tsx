@@ -517,7 +517,9 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   return (
     <div
       ref={editorRef}
-      className={`wysiwyg-editor ${className} ${disabled ? "disabled" : ""}`}
+      className={`wysiwyg-editor ${className} ${
+        disabled ? "disabled" : "editing"
+      }`}
       onClick={onClick}
       onMouseDown={onMouseDown}
       style={style}
