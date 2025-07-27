@@ -5,6 +5,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import { useCanvasStore } from "../../stores/canvasStore";
 import "./WysiwygEditor.css";
 
 /**
@@ -354,6 +355,9 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const proseMirrorRef = useRef<HTMLElement | null>(null);
 
+  // 监听画布缩放状态
+  const canvasScale = useCanvasStore((state) => state.scale);
+
   // 检测滚动条状态的函数
   const checkScrollbarState = useCallback(() => {
     if (proseMirrorRef.current) {
@@ -573,6 +577,18 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       mutationObserver.disconnect();
     };
   }, [editor, checkScrollbarState]);
+
+  // 监听画布缩放变化，重新检测滚动条状态
+  useEffect(() => {
+    // 当画布缩放发生变化时，字体大小会改变，内容高度也会改变
+    // 需要重新检测是否需要滚动条
+    if (proseMirrorRef.current) {
+      // 使用延迟确保字体大小变化已经应用到DOM
+      setTimeout(() => {
+        checkScrollbarState();
+      }, 100);
+    }
+  }, [canvasScale, checkScrollbarState]);
 
   // 组件卸载时销毁编辑器和清理定时器
   useEffect(() => {
