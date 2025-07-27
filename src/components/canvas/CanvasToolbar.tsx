@@ -5,7 +5,7 @@ import {
 } from "@ant-design/icons";
 import { Move } from "@icon-park/react";
 import { Button, Space, Tooltip } from "antd";
-import React, { memo } from "react";
+import React, { memo, useCallback, useRef } from "react";
 
 interface CanvasToolbarProps {
   scale: number;
@@ -15,6 +15,8 @@ interface CanvasToolbarProps {
   onReset: () => void;
   isMoveModeActive: boolean;
   onToggleMoveMode: () => void;
+  isWheelZoomDisabled: boolean;
+  onToggleWheelZoom: () => void;
 
   minScale: number;
   maxScale: number;
@@ -29,10 +31,50 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     onReset,
     isMoveModeActive,
     onToggleMoveMode,
+    isWheelZoomDisabled,
+    onToggleWheelZoom,
 
     minScale,
     maxScale,
   }) => {
+    // 重置按钮连续点击计数器
+    const resetClickCountRef = useRef(0);
+    const resetClickTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 处理重置按钮点击，实现连续点击5次切换滚轮缩放功能
+    const handleResetClick = useCallback(() => {
+      // 执行正常的重置功能
+      onReset();
+
+      // 增加点击计数
+      resetClickCountRef.current += 1;
+
+      // 清除之前的定时器
+      if (resetClickTimerRef.current) {
+        clearTimeout(resetClickTimerRef.current);
+      }
+
+      // 检查是否达到5次点击
+      if (resetClickCountRef.current >= 5) {
+        // 切换滚轮缩放功能
+        onToggleWheelZoom();
+
+        // 重置计数器
+        resetClickCountRef.current = 0;
+
+        console.log("🖱️ 重置按钮连续点击5次，切换滚轮缩放功能", {
+          newState: !isWheelZoomDisabled ? "禁用" : "启用",
+        });
+      } else {
+        console.log(`🖱️ 重置按钮点击计数: ${resetClickCountRef.current}/5`);
+
+        // 设置2秒后重置计数器
+        resetClickTimerRef.current = setTimeout(() => {
+          resetClickCountRef.current = 0;
+          console.log("🖱️ 重置按钮点击计数器已重置");
+        }, 2000);
+      }
+    }, [onReset, onToggleWheelZoom]);
     return (
       <div className="canvas-toolbar">
         {" "}
@@ -57,12 +99,28 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
               shape="circle"
             />
           </Tooltip>
-          <Tooltip title="重置画布位置和缩放 (Ctrl/⌘ 0)" placement="left">
+          <Tooltip
+            title={
+              isWheelZoomDisabled
+                ? "重置画布位置和缩放 (Ctrl/⌘ 0)\n💡 鼠标滚轮缩放已禁用，连续点击5次可恢复"
+                : "重置画布位置和缩放 (Ctrl/⌘ 0)\n💡 连续点击5次可禁用鼠标滚轮缩放"
+            }
+            placement="left"
+          >
             <Button
               icon={<RedoOutlined />}
-              onClick={onReset}
+              onClick={handleResetClick}
               type="text"
               shape="circle"
+              style={{
+                // 当滚轮缩放被禁用时，给重置按钮添加视觉提示
+                backgroundColor: isWheelZoomDisabled
+                  ? "rgba(255, 193, 7, 0.1)"
+                  : undefined,
+                borderColor: isWheelZoomDisabled
+                  ? "rgba(255, 193, 7, 0.3)"
+                  : undefined,
+              }}
             />
           </Tooltip>
           {/* 分隔线 */}

@@ -37,6 +37,9 @@ export interface CanvasState {
   // 网格显示
   showGrid: boolean;
   showAxis: boolean;
+
+  // 鼠标滚轮控制状态
+  isWheelZoomDisabled: boolean;
 }
 
 // 画布操作接口
@@ -93,6 +96,9 @@ export interface CanvasActions {
     noteHeight: number,
     noteId?: string
   ) => void;
+
+  // 鼠标滚轮控制
+  toggleWheelZoom: () => void;
 }
 
 // 创建画布Store
@@ -117,6 +123,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       showGrid: true,
       showAxis: false,
       isMoveModeActive: false, // 初始为false，表示默认是正常模式
+      isWheelZoomDisabled: false, // 初始为false，表示鼠标滚轮缩放功能启用
 
       // 缩放操作 - 简化的单级缩放
       zoomIn: (centerX = 0, centerY = 0) => {
@@ -535,6 +542,18 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             noteSize: { width: noteWidth, height: noteHeight },
             newOffset: { x: newOffsetX.toFixed(1), y: newOffsetY.toFixed(1) },
             bringToFront: !!noteId,
+          });
+        }
+      },
+
+      // 切换鼠标滚轮缩放功能
+      toggleWheelZoom: () => {
+        const { isWheelZoomDisabled } = get();
+        set({ isWheelZoomDisabled: !isWheelZoomDisabled });
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("🖱️ 鼠标滚轮缩放状态切换:", {
+            disabled: !isWheelZoomDisabled,
           });
         }
       },

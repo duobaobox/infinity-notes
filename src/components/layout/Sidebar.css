@@ -124,6 +124,17 @@
   }
 }
 
+/* 用户卡片样式 */
+.user-card {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.user-card:hover {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 /* 现代化搜索输入框样式 */
 .notes-search-input {
   background: rgba(255, 255, 255, 0.9);
@@ -160,6 +171,25 @@
 
 /* 深色模式样式 */
 @media (prefers-color-scheme: dark) {
+  /* 用户卡片 - 深色模式 */
+  .user-card {
+    background: linear-gradient(
+      135deg,
+      rgba(30, 41, 59, 0.8) 0%,
+      rgba(15, 23, 42, 0.9) 100%
+    ) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .user-card:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(51, 65, 85, 0.9) 0%,
+      rgba(30, 41, 59, 0.95) 100%
+    ) !important;
+    border-color: rgba(22, 119, 255, 0.3) !important;
+  }
+
   /* 搜索输入框 - 深色模式 */
   .notes-search-input {
     background: rgba(40, 40, 40, 0.9);
@@ -255,7 +285,8 @@
   .sidebar-toggle,
   .note-list-item,
   .notes-search-input,
-  .search-highlight {
+  .search-highlight,
+  .user-card {
     transition: none !important;
     animation: none !important;
   }

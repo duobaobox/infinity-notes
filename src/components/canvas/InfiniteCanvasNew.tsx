@@ -112,6 +112,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     dragState,
     zoomAnimating,
     isMoveModeActive,
+    isWheelZoomDisabled,
     zoomIn,
     zoomOut,
     startDrag,
@@ -120,6 +121,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     resetView,
     getCanvasCenter,
     toggleMoveMode,
+    toggleWheelZoom,
   } = useCanvasStore();
 
   // 全局状态管理 - AI状态
@@ -868,6 +870,12 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   // 实时滚轮缩放处理 - 移除延迟，但加入节流优化
   const handleWheel = useCallback(
     (e: WheelEvent) => {
+      // 如果滚轮缩放被禁用，直接返回不处理
+      if (isWheelZoomDisabled) {
+        console.log("🖱️ 滚轮缩放已禁用，忽略滚轮事件");
+        return;
+      }
+
       e.preventDefault();
 
       // 使用容器的边界来计算缩放中心点
@@ -889,7 +897,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         throttledZoom("out", centerX, centerY);
       }
     },
-    [throttledZoom]
+    [throttledZoom, isWheelZoomDisabled]
   );
 
   // 即时更新CSS变量 - 确保画布和便签同步
@@ -1067,7 +1075,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         scale={scale}
         zoomAnimating={zoomAnimating}
         isMoveModeActive={isMoveModeActive}
+        isWheelZoomDisabled={isWheelZoomDisabled}
         onToggleMoveMode={toggleMoveMode}
+        onToggleWheelZoom={toggleWheelZoom}
         onZoomIn={() => {
           // 以画布中心为缩放中心
           const center = getCanvasCenter();
