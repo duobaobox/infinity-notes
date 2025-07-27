@@ -352,6 +352,28 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const proseMirrorRef = useRef<HTMLElement | null>(null);
+
+  // 检测滚动条状态的函数
+  const checkScrollbarState = useCallback(() => {
+    if (proseMirrorRef.current) {
+      const element = proseMirrorRef.current;
+      const hasVerticalScrollbar = element.scrollHeight > element.clientHeight;
+
+      // 设置data属性用于CSS选择器
+      element.setAttribute("data-scrollable", hasVerticalScrollbar.toString());
+
+      // 为父容器添加/移除类名（兼容不支持:has()的浏览器）
+      const contentContainer = element.closest(".sticky-note-content");
+      if (contentContainer) {
+        if (hasVerticalScrollbar) {
+          contentContainer.classList.add("has-scrollbar");
+        } else {
+          contentContainer.classList.remove("has-scrollbar");
+        }
+      }
+    }
+  }, []);
 
   // 防抖更新函数 - 优化防抖时间以减少快速输入时的乱输入问题
   const debouncedOnChange = useCallback(
@@ -425,6 +447,9 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       const html = editor.getHTML();
       const markdown = htmlToMarkdown(html);
       debouncedOnChange(markdown);
+
+      // 内容更新后检测滚动条状态
+      setTimeout(checkScrollbarState, 50);
     },
     onBlur: () => {
       onBlur?.();
@@ -441,6 +466,16 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           );
         }, 200);
       }
+
+      // 获取ProseMirror元素引用
+      setTimeout(() => {
+        const proseMirrorElement = editor.view.dom;
+        proseMirrorRef.current = proseMirrorElement;
+
+        // 初始检测滚动条状态
+        checkScrollbarState();
+      }, 100);
+
       // 将编辑器实例传递给父组件
       onEditorReady?.(editor);
     },
@@ -479,8 +514,11 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       const newHtml = markdownToHtml(content);
       // 使用 setContent 而不是 insertContent 来替换全部内容
       editor.commands.setContent(newHtml, { emitUpdate: false }); // 不触发 onUpdate
+
+      // 内容更新后检测滚动条状态
+      setTimeout(checkScrollbarState, 50);
     }
-  }, [content, editor]);
+  }, [content, editor, checkScrollbarState]);
 
   // 当 disabled 状态变化时更新编辑器的可编辑状态
   useEffect(() => {
@@ -499,6 +537,42 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       }, 200);
     }
   }, [disabled, autoFocus, editor]);
+
+  // 监听编辑器尺寸变化以检测滚动条状态
+  useEffect(() => {
+    if (!editor || !proseMirrorRef.current) return;
+
+    const element = proseMirrorRef.current;
+
+    // 创建ResizeObserver监听尺寸变化
+    const resizeObserver = new ResizeObserver(() => {
+      // 使用 requestAnimationFrame 确保在DOM更新后检测
+      requestAnimationFrame(() => {
+        checkScrollbarState();
+      });
+    });
+
+    resizeObserver.observe(element);
+
+    // 也监听内容变化
+    const mutationObserver = new MutationObserver(() => {
+      requestAnimationFrame(() => {
+        checkScrollbarState();
+      });
+    });
+
+    mutationObserver.observe(element, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    // 清理函数
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [editor, checkScrollbarState]);
 
   // 组件卸载时销毁编辑器和清理定时器
   useEffect(() => {
