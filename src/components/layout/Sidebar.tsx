@@ -80,6 +80,9 @@ const Sidebar: React.FC = () => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const searchInputRef = useRef<any>(null);
 
+  // 防抖更新便签数量的引用
+  const updateNotesCountTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 使用全局状态管理获取便签数据和画布数据
   const {
     notes: stickyNotes,
@@ -197,6 +200,19 @@ const Sidebar: React.FC = () => {
           // 立即更新本地选中状态，提供即时反馈
           setSelectedCanvas(canvasId);
 
+          // 预先获取目标画布的便签数量，避免显示闪动
+          if (!canvasNotesCounts[canvasId]) {
+            try {
+              const count = await getCanvasNotesCount(canvasId);
+              setCanvasNotesCounts((prev) => ({
+                ...prev,
+                [canvasId]: count,
+              }));
+            } catch (error) {
+              console.warn("获取画布便签数量失败:", error);
+            }
+          }
+
           // 异步执行画布切换，不阻塞UI
           switchCanvas(canvasId)
             .then(() => {
@@ -215,7 +231,7 @@ const Sidebar: React.FC = () => {
         }
       }
     },
-    [selectedCanvas, switchCanvas]
+    [selectedCanvas, switchCanvas, canvasNotesCounts, getCanvasNotesCount]
   );
 
   // 开始编辑画布名称
@@ -285,13 +301,33 @@ const Sidebar: React.FC = () => {
     loadCanvasNotesCounts();
   }, [canvasList, getCanvasNotesCount]);
 
-  // 监听当前画布便签数量变化，并直接更新状态
+  // 监听当前画布便签数量变化，使用防抖机制避免闪动
   useEffect(() => {
     if (currentCanvasId) {
-      setCanvasNotesCounts((prev) => ({
-        ...prev,
-        [currentCanvasId]: stickyNotes.length,
-      }));
+      // 清除之前的定时器
+      if (updateNotesCountTimeoutRef.current) {
+        clearTimeout(updateNotesCountTimeoutRef.current);
+      }
+
+      // 设置新的防抖定时器
+      updateNotesCountTimeoutRef.current = setTimeout(() => {
+        setCanvasNotesCounts((prev) => {
+          // 只有当数量真正发生变化时才更新
+          if (prev[currentCanvasId] !== stickyNotes.length) {
+            return {
+              ...prev,
+              [currentCanvasId]: stickyNotes.length,
+            };
+          }
+          return prev;
+        });
+      }, 150); // 150ms 防抖延迟
+
+      return () => {
+        if (updateNotesCountTimeoutRef.current) {
+          clearTimeout(updateNotesCountTimeoutRef.current);
+        }
+      };
     }
   }, [stickyNotes.length, currentCanvasId]);
 
@@ -365,6 +401,15 @@ const Sidebar: React.FC = () => {
       );
     }
   }, [searchHistory]);
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (updateNotesCountTimeoutRef.current) {
+        clearTimeout(updateNotesCountTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 注意：移除数据库事件监听，使用全局状态管理
   // 便签数量变化会通过全局状态自动更新，不需要重新加载画布列表
@@ -850,55 +895,101 @@ const Sidebar: React.FC = () => {
                 background: "transparent", // Make panel background transparent
               }}
             >
+              {/* 便签区域头部 - 重新设计 */}
               <div
                 style={{
-                  padding: "16px 16px 12px",
-                  borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                  padding: "20px 16px 16px",
+                  borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
+                  background: "rgba(255, 255, 255, 0.02)",
                 }}
               >
+                {/* 标题区域 */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    marginBottom: "14px",
+                    marginBottom: "16px",
                   }}
                 >
-                  <Title
-                    level={5}
+                  <div
                     style={{
-                      margin: 0,
-                      fontSize: "14px", // 与便签列表项字体大小保持一致
-                      fontWeight: 400, // 减轻字体粗细，让标题更协调
-                      color: "#1f1f1f",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
                     }}
                   >
-                    {currentCanvas?.name || ""}中的便签
-                    {searchQuery.trim() && (
-                      <Text
-                        type="secondary"
-                        style={{
-                          fontSize: "12px",
-                          marginLeft: "8px",
-                          fontWeight: 400,
-                        }}
-                      >
-                        ({filteredNotes.length} 个结果)
-                      </Text>
-                    )}
-                  </Title>
+                    <Title
+                      level={5}
+                      style={{
+                        margin: 0,
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        color: "#1a1a1a",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      便签
+                    </Title>
+                    {/* 便签数量徽章 */}
+                    <div
+                      style={{
+                        background: searchQuery.trim()
+                          ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                          : "rgba(0, 0, 0, 0.06)",
+                        color: searchQuery.trim() ? "#fff" : "#666",
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        minWidth: "20px",
+                        textAlign: "center",
+                        lineHeight: "16px",
+                        transition: "all 0.2s ease", // 添加平滑过渡
+                      }}
+                    >
+                      {searchQuery.trim()
+                        ? filteredNotes.length
+                        : currentCanvasId &&
+                          canvasNotesCounts[currentCanvasId] !== undefined
+                        ? canvasNotesCounts[currentCanvasId]
+                        : stickyNotes.length}
+                    </div>
+                  </div>
+
+                  {/* 画布名称标签 */}
+                  {currentCanvas?.name && (
+                    <Text
+                      style={{
+                        fontSize: "11px",
+                        color: "#8c8c8c",
+                        background: "rgba(0, 0, 0, 0.04)",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {currentCanvas.name}
+                    </Text>
+                  )}
                 </div>
 
-                {/* 搜索输入框 */}
+                {/* 搜索输入框 - 重新设计 */}
                 <Input
                   ref={searchInputRef}
                   className="notes-search-input"
-                  placeholder="搜索便签... (Ctrl+F)"
-                  prefix={<SearchOutlined style={{ color: "#8c8c8c" }} />}
+                  placeholder="搜索便签标题或内容..."
+                  prefix={
+                    <SearchOutlined
+                      style={{
+                        color: "#a0a0a0",
+                        fontSize: "14px",
+                      }}
+                    />
+                  }
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyDown={(e) => {
-                    // 按 Escape 键清除搜索
                     if (e.key === "Escape") {
                       setSearchQuery("");
                       searchInputRef.current?.blur();
@@ -906,18 +997,48 @@ const Sidebar: React.FC = () => {
                   }}
                   allowClear
                   style={{
-                    marginTop: "8px",
-                    borderRadius: "6px",
+                    borderRadius: "8px",
                     fontSize: "13px",
+                    height: "36px",
                   }}
-                  size="small"
+                  suffix={
+                    <Text
+                      style={{
+                        fontSize: "10px",
+                        color: "#bbb",
+                        fontWeight: 500,
+                      }}
+                    >
+                      ⌘F
+                    </Text>
+                  }
                 />
+
+                {/* 搜索结果提示 */}
+                {searchQuery.trim() && (
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      fontSize: "12px",
+                      color: "#666",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span>找到 {filteredNotes.length} 个匹配的便签</span>
+                    {filteredNotes.length > 0 && (
+                      <span style={{ color: "#52c41a" }}>✓</span>
+                    )}
+                  </div>
+                )}
               </div>
+              {/* 便签列表容器 - 重新设计 */}
               <div
                 style={{
                   flex: 1,
                   overflow: "auto",
-                  padding: "12px 8px",
+                  padding: "8px 12px 16px",
                 }}
               >
                 <List
@@ -925,11 +1046,75 @@ const Sidebar: React.FC = () => {
                   dataSource={displayNotes}
                   loading={notesLoading}
                   locale={{
-                    emptyText: notesError
-                      ? `加载失败: ${notesError}`
-                      : searchQuery.trim()
-                      ? `未找到包含"${searchQuery}"的便签`
-                      : "暂无便签，双击画布或点击工具栏的 + 创建",
+                    emptyText: (
+                      <div
+                        style={{
+                          padding: "32px 16px",
+                          textAlign: "center",
+                          color: "#8c8c8c",
+                        }}
+                      >
+                        {notesError ? (
+                          <div>
+                            <div
+                              style={{ fontSize: "24px", marginBottom: "8px" }}
+                            >
+                              ⚠️
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                marginBottom: "4px",
+                              }}
+                            >
+                              加载失败
+                            </div>
+                            <div style={{ fontSize: "12px" }}>{notesError}</div>
+                          </div>
+                        ) : searchQuery.trim() ? (
+                          <div>
+                            <div
+                              style={{ fontSize: "24px", marginBottom: "8px" }}
+                            >
+                              🔍
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                marginBottom: "4px",
+                              }}
+                            >
+                              未找到匹配的便签
+                            </div>
+                            <div style={{ fontSize: "12px" }}>
+                              尝试使用不同的关键词搜索
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div
+                              style={{ fontSize: "24px", marginBottom: "8px" }}
+                            >
+                              📝
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                marginBottom: "4px",
+                              }}
+                            >
+                              还没有便签
+                            </div>
+                            <div style={{ fontSize: "12px" }}>
+                              双击画布或点击工具栏的 + 创建第一个便签
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ),
                   }}
                   renderItem={(note: {
                     id: string;
@@ -944,14 +1129,14 @@ const Sidebar: React.FC = () => {
                       className="note-list-item"
                       onClick={() => handleNoteClick(note)}
                       style={{
-                        padding: "4px 8px", // 保持原有内边距
+                        padding: "4px 8px",
                         cursor: "pointer",
-                        marginBottom: "6px", // 保持原有间距
-                        borderRadius: "6px", // 保持原有圆角
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)", // 保持原有阴影
+                        marginBottom: "6px",
+                        borderRadius: "6px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
                       }}
                     >
-                      {/* 优化结构：使用单个 flex 容器，但保持原有的颜色条设计 */}
+                      {/* 保持原有的设计结构 */}
                       <div
                         style={{
                           display: "flex",
@@ -959,7 +1144,7 @@ const Sidebar: React.FC = () => {
                           width: "100%",
                         }}
                       >
-                        {/* 保持原有的颜色条设计 */}
+                        {/* 原有的颜色条设计 */}
                         <div
                           style={{
                             width: "3px",
@@ -975,7 +1160,7 @@ const Sidebar: React.FC = () => {
                             fontSize: "14px",
                             fontWeight: 500,
                             color: "#262626",
-                            flex: 1, // 占满剩余空间
+                            flex: 1,
                           }}
                           ellipsis={{
                             tooltip: searchQuery.trim()
