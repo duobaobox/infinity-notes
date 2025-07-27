@@ -136,26 +136,26 @@
     width: 95% !important;
     margin: 10px auto;
   }
-  
+
   .source-notes-modal .ant-modal-body {
     padding: 16px;
     max-height: 80vh;
   }
-  
+
   .source-note-card .ant-card-head {
     padding: 8px 12px;
   }
-  
+
   .source-note-card .ant-card-extra {
     display: none; /* 在小屏幕上隐藏时间信息 */
   }
-  
+
   .note-content {
     padding: 8px 12px;
   }
 }
 
-/* 滚动条样式优化 */
+/* 滚动条样式优化 - 默认显示 */
 .source-notes-modal .ant-modal-body::-webkit-scrollbar {
   width: 6px;
 }
@@ -166,12 +166,12 @@
 }
 
 .source-notes-modal .ant-modal-body::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #c1c1c1; /* 默认显示滚动条 */
   border-radius: 3px;
 }
 
 .source-notes-modal .ant-modal-body::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #a8a8a8; /* 悬浮时加深颜色 */
 }
 
 .content-text::-webkit-scrollbar {
@@ -184,10 +184,10 @@
 }
 
 .content-text::-webkit-scrollbar-thumb {
-  background: #d1d1d1;
+  background: #d1d1d1; /* 默认显示滚动条 */
   border-radius: 2px;
 }
 
 .content-text::-webkit-scrollbar-thumb:hover {
-  background: #b8b8b8;
+  background: #b8b8b8; /* 悬浮时加深颜色 */
 }

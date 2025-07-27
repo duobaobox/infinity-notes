@@ -261,7 +261,7 @@
   animation: pulse 1.5s ease-in-out;
 }
 
-/* 滚动条样式优化 */
+/* 滚动条样式优化 - 默认显示 */
 .ant-list::-webkit-scrollbar {
   width: 4px;
 }
@@ -271,12 +271,12 @@
 }
 
 .ant-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.15); /* 默认显示滚动条 */
   border-radius: 2px;
 }
 
 .ant-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25); /* 悬浮时加深颜色 */
 }
 
 /* 性能优化 - 减少动画对低性能设备的影响 */
