@@ -716,8 +716,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           // 调整大小的坐标计算也需要适应新模式
           const deltaX = (e.clientX - resizeStart.x) / canvasScale;
           const deltaY = (e.clientY - resizeStart.y) / canvasScale;
-          const newWidth = Math.max(350, resizeStart.width + deltaX);
-          const newHeight = Math.max(310, resizeStart.height + deltaY);
+          const newWidth = Math.max(250, resizeStart.width + deltaX);
+          const newHeight = Math.max(230, resizeStart.height + deltaY);
 
           setTempSize({ width: newWidth, height: newHeight });
           // 调整大小时也需要更新连接线位置，因为连接点位置会改变

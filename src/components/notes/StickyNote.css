@@ -105,8 +105,8 @@
   box-shadow: var(--note-glass-shadow);
 
   user-select: none;
-  min-width: 350px;
-  min-height: 310px;
+  min-width: 250px;
+  min-height: 230px;
   display: flex;
   flex-direction: column;
   font-size: var(--note-content-font-size, 14px); /* 使用CSS变量控制字体大小 */

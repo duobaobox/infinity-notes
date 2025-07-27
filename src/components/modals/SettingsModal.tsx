@@ -1132,10 +1132,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         resetNoteDefaultSizes();
         // 更新临时设置为默认值
         const defaultSettings = {
-          manualNoteDefaultWidth: 350,
-          manualNoteDefaultHeight: 310,
-          aiNoteDefaultWidth: 400,
-          aiNoteDefaultHeight: 350,
+          manualNoteDefaultWidth: 330,
+          manualNoteDefaultHeight: 290,
+          aiNoteDefaultWidth: 380,
+          aiNoteDefaultHeight: 330,
         };
         setTempNoteSettings(defaultSettings);
         setNoteSettingsChanged(false);

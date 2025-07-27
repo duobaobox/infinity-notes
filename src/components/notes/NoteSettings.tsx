@@ -89,18 +89,18 @@ const NoteSettings: React.FC<NoteSettingsProps> = ({
                     { required: true, message: "请输入宽度" },
                     {
                       type: "number",
-                      min: 350,
+                      min: 250,
                       max: 500,
-                      message: "宽度范围：350-500px",
+                      message: "宽度范围：250-500px",
                     },
                   ]}
                 >
                   <InputNumber
-                    min={350}
+                    min={250}
                     max={500}
                     step={10}
                     style={{ width: "100%" }}
-                    placeholder="350"
+                    placeholder="330"
                   />
                 </Form.Item>
               </Col>
@@ -113,18 +113,18 @@ const NoteSettings: React.FC<NoteSettingsProps> = ({
                     { required: true, message: "请输入高度" },
                     {
                       type: "number",
-                      min: 310,
+                      min: 230,
                       max: 500,
-                      message: "高度范围：310-500px",
+                      message: "高度范围：230-500px",
                     },
                   ]}
                 >
                   <InputNumber
-                    min={310}
+                    min={230}
                     max={500}
                     step={10}
                     style={{ width: "100%" }}
-                    placeholder="310"
+                    placeholder="290"
                   />
                 </Form.Item>
               </Col>
@@ -146,18 +146,18 @@ const NoteSettings: React.FC<NoteSettingsProps> = ({
                     { required: true, message: "请输入宽度" },
                     {
                       type: "number",
-                      min: 350,
+                      min: 250,
                       max: 500,
-                      message: "宽度范围：350-500px",
+                      message: "宽度范围：250-500px",
                     },
                   ]}
                 >
                   <InputNumber
-                    min={350}
+                    min={250}
                     max={500}
                     step={10}
                     style={{ width: "100%" }}
-                    placeholder="400"
+                    placeholder="380"
                   />
                 </Form.Item>
               </Col>
@@ -170,18 +170,18 @@ const NoteSettings: React.FC<NoteSettingsProps> = ({
                     { required: true, message: "请输入高度" },
                     {
                       type: "number",
-                      min: 310,
+                      min: 230,
                       max: 500,
-                      message: "高度范围：310-500px",
+                      message: "高度范围：230-500px",
                     },
                   ]}
                 >
                   <InputNumber
-                    min={310}
+                    min={230}
                     max={500}
                     step={10}
                     style={{ width: "100%" }}
-                    placeholder="350"
+                    placeholder="330"
                   />
                 </Form.Item>
               </Col>

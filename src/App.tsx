@@ -10,7 +10,7 @@ import MarkdownListTest from "./test/MarkdownListTest";
 import NoteSettingsTest from "./test/NoteSettingsTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
-import VirtualizationStatusMonitorEnhanced from "./test/VirtualizationTestEnhanced";
+import { DebugDrawer } from "./components/debug";
 
 // 导入全局状态管理
 import {
@@ -206,10 +206,8 @@ function App() {
         {/* 悬浮侧边栏 */}
         <Sidebar />
 
-        {/* 开发环境下显示增强版虚拟化状态监控 */}
-        {process.env.NODE_ENV === "development" && (
-          <VirtualizationStatusMonitorEnhanced />
-        )}
+        {/* 开发环境下显示调试抽屉 */}
+        <DebugDrawer />
 
         {/* 操作加载指示器 - 小的、不阻塞的加载提示 */}
         {operationInProgress && (
