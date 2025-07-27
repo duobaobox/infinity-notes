@@ -794,7 +794,7 @@ const Sidebar: React.FC = () => {
                   locale={{
                     emptyText: notesError
                       ? `加载失败: ${notesError}`
-                      : "暂无便签，三击画布或点击工具栏的 + 创建",
+                      : "暂无便签，双击画布或点击工具栏的 + 创建",
                   }}
                   renderItem={(note: {
                     id: string;

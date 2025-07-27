@@ -745,8 +745,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     [dragState.isDragging, endDrag]
   );
 
-  // 三击检测状态
-  const tripleClickStateRef = useRef({
+  // 双击检测状态
+  const doubleClickStateRef = useRef({
     clickCount: 0,
     lastClickTime: 0,
     lastClickPos: { x: 0, y: 0 },
@@ -760,7 +760,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     }
   }, []);
 
-  // 处理画布点击事件（包括三击创建便签和清除选中状态）
+  // 处理画布点击事件（包括双击创建便签和清除选中状态）
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
       // 忽略中键点击
@@ -792,7 +792,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
       const now = Date.now();
 
       const clickPos = { x: e.clientX, y: e.clientY };
-      const state = tripleClickStateRef.current;
+      const state = doubleClickStateRef.current;
 
       // 检查时间间隔（400ms内）和位置距离（20px内）
       const timeDiff = now - state.lastClickTime;
@@ -808,8 +808,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         if (state.clickCount === 1) {
           // 第一次点击，清除便签选中状态
           clearSelection();
-        } else if (state.clickCount === 3) {
-          // 第三次点击，创建便签
+        } else if (state.clickCount === 2) {
+          // 第二次点击（双击），创建便签
           e.preventDefault();
 
           // 使用容器的边界来计算坐标
@@ -819,7 +819,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
           const canvasY = (e.clientY - rect.top - offsetY) / scale;
 
           if (process.env.NODE_ENV === "development") {
-            console.log("🖱️ 三击创建便签", {
+            console.log("🖱️ 双击创建便签", {
               clientX: e.clientX,
               clientY: e.clientY,
               canvasX: canvasX.toFixed(1),
