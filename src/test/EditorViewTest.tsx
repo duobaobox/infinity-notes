@@ -216,7 +216,7 @@ const EditorViewTest: React.FC = () => {
                         );
                       }}
                       placeholder="开始编辑..."
-                      onEditorReady={(editorInstance) => {
+                      onEditorReady={(_editorInstance) => {
                         addTestResult(`📝 编辑器 ${editor.id} 初始化完成`);
                       }}
                     />

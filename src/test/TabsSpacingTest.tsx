@@ -7,8 +7,6 @@ import {
   SkinOutlined,
   InfoCircleOutlined,
   DatabaseOutlined,
-  FileTextOutlined,
-  BgColorsOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;

@@ -609,45 +609,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     [note.isEditing, note.isTitleEditing, onBringToFront, selectNote, note.id]
   );
 
-  // 开始拖拽 - 使用全局状态
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (note.isEditing || note.isTitleEditing) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      // 由于现在便签直接根据缩放调整大小，需要重新计算坐标
-      // 将屏幕坐标转换为画布坐标（不需要除以缩放，因为便签已经缩放）
-      const canvasX = e.clientX - canvasOffset.x;
-      const canvasY = e.clientY - canvasOffset.y;
-
-      // 计算拖拽偏移（基于缩放后的便签尺寸）
-      const scaledNoteX = note.x * canvasScale;
-      const scaledNoteY = note.y * canvasScale;
-
-      setDragOffset({
-        x: (canvasX - scaledNoteX) / canvasScale, // 转换回原始坐标系
-        y: (canvasY - scaledNoteY) / canvasScale,
-      });
-      setTempPosition({ x: note.x, y: note.y });
-      setIsDragging(true);
-      onBringToFront(note.id); // 置顶
-      selectNote(note.id); // 选中
-    },
-    [
-      note.isEditing,
-      note.isTitleEditing,
-      note.id,
-      note.x,
-      note.y,
-      onBringToFront,
-      selectNote,
-      canvasScale,
-      canvasOffset,
-    ]
-  );
-
   // 专门用于头部拖拽区域的处理函数 - 允许在编辑状态下拖动
   const handleHeaderMouseDown = useCallback(
     (e: React.MouseEvent) => {

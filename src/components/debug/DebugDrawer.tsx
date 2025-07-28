@@ -16,7 +16,6 @@ import {
 } from "antd";
 import {
   BugOutlined,
-  SettingOutlined,
   LineChartOutlined,
   DatabaseOutlined,
   CloseOutlined,
