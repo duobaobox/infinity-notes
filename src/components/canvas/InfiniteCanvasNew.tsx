@@ -643,7 +643,27 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         //     y: e.clientY,
         //   });
         // }
-        startDrag(e.clientX, e.clientY, true); // 传递true表示中键拖拽
+        startDrag(e.clientX, e.clientY, true, "middle"); // 中键拖拽
+        return;
+      }
+
+      // 处理鼠标右键拖拽（按钮值为2）
+      if (e.button === 2) {
+        e.preventDefault(); // 防止浏览器默认的右键菜单
+
+        // 记录鼠标按下位置并重置拖拽标记
+        dragDetectionRef.current = {
+          mouseDownPos: { x: e.clientX, y: e.clientY },
+          hasDragged: false,
+        };
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("🖱️ 鼠标右键：开始拖拽画布", {
+            x: e.clientX,
+            y: e.clientY,
+          });
+        }
+        startDrag(e.clientX, e.clientY, true, "right"); // 右键拖拽
         return;
       }
 
@@ -737,8 +757,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
       if (dragState.isDragging) {
-        // 处理左键和中键的释放
-        if (e.button === 0 || e.button === 1) {
+        // 处理左键、中键和右键的释放
+        if (e.button === 0 || e.button === 1 || e.button === 2) {
           e.preventDefault();
           endDrag();
         }
@@ -754,19 +774,21 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
     lastClickPos: { x: 0, y: 0 },
   });
 
-  // 阻止鼠标中键的上下文菜单
+  // 阻止右键上下文菜单，支持右键拖动画布
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    // 如果是中键触发的上下文菜单，阻止它
-    if (e.button === 1) {
-      e.preventDefault();
+    // 完全阻止右键菜单，支持右键拖动画布功能
+    e.preventDefault();
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("🖱️ 右键菜单被阻止，支持右键拖动画布");
     }
   }, []);
 
   // 处理画布点击事件（包括双击创建便签和清除选中状态）
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
-      // 忽略中键点击
-      if (e.button === 1) {
+      // 忽略中键和右键点击
+      if (e.button === 1 || e.button === 2) {
         return;
       }
 
@@ -1071,6 +1093,8 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
         dragState.isDragging
           ? dragState.isMiddleButtonDrag
             ? "middle-button-dragging"
+            : dragState.isRightButtonDrag
+            ? "right-button-dragging"
             : "dragging"
           : ""
       } ${isMoveModeActive ? "move-mode" : ""}`}

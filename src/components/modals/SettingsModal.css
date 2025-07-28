@@ -108,6 +108,94 @@ div[class*="ant-modal"] .settings-modal .ant-modal-content {
   flex-shrink: 0; /* 防止图标被压缩 */
 }
 
+/* ========== 设置模态框 Tabs 图标和文字间距优化 ========== */
+
+/* 设置模态框tabs标签优化 */
+.settings-modal .ant-tabs-tab {
+  padding: 12px 16px !important; /* 增加内边距，提升点击体验 */
+  margin: 0 0 4px 0 !important; /* 标签间距 */
+  border-radius: 6px 0 0 6px !important; /* 左侧圆角 */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 预留右侧边框空间，防止激活时位移 */
+  border-right: 3px solid transparent !important;
+  position: relative;
+}
+
+/* 设置模态框tabs标签按钮内容 */
+.settings-modal .ant-tabs-tab .ant-tabs-tab-btn {
+  padding: 0 !important;
+  width: 100%;
+  text-align: left;
+}
+
+/* 设置模态框tabs标签文字和图标容器 */
+.settings-modal .ant-tabs-tab .ant-tabs-tab-btn span {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important; /* 图标和文字间距 */
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #595959 !important;
+  width: 100%;
+  justify-content: flex-start;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 添加文字颜色过渡 */
+}
+
+/* 设置模态框tabs图标样式 */
+.settings-modal .ant-tabs-tab .ant-tabs-tab-btn span .anticon {
+  font-size: 16px !important; /* 稍大的图标 */
+  color: #8c8c8c !important; /* 默认图标颜色 */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  flex-shrink: 0 !important;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 设置模态框tabs悬停效果 */
+.settings-modal .ant-tabs-tab:hover:not(.ant-tabs-tab-active) {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border-right: 3px solid rgba(24, 144, 255, 0.3) !important;
+}
+
+.settings-modal
+  .ant-tabs-tab:hover:not(.ant-tabs-tab-active)
+  .ant-tabs-tab-btn
+  span {
+  color: #262626 !important;
+}
+
+.settings-modal
+  .ant-tabs-tab:hover:not(.ant-tabs-tab-active)
+  .ant-tabs-tab-btn
+  span
+  .anticon {
+  color: #1890ff !important;
+  transform: scale(1.05);
+}
+
+/* 设置模态框tabs激活状态 */
+.settings-modal .ant-tabs-tab.ant-tabs-tab-active {
+  background-color: #ffffff !important;
+  border-right: 3px solid #1890ff !important;
+}
+
+.settings-modal .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn span {
+  color: #1890ff !important;
+  font-weight: 600 !important;
+}
+
+.settings-modal
+  .ant-tabs-tab.ant-tabs-tab-active
+  .ant-tabs-tab-btn
+  span
+  .anticon {
+  color: #1890ff !important;
+  transform: scale(1.1);
+}
+
 /* 特殊颜色的图标 */
 .card-section-title .anticon.icon-success {
   color: #52c41a;

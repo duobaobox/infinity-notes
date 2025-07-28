@@ -135,6 +135,156 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* 侧边栏按钮图标和文字间距优化 */
+.sidebar .ant-btn {
+  /* 为带图标和文字的按钮设置优雅间距 */
+  gap: 8px; /* 图标和文字之间的间距 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 带文字的按钮样式优化 */
+.sidebar .ant-btn:not(.ant-btn-icon-only) {
+  gap: 8px; /* 图标和文字间距 */
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* 只有图标的按钮保持紧凑 */
+.sidebar .ant-btn.ant-btn-icon-only {
+  gap: 0;
+  padding: 0;
+}
+
+/* 新建画布按钮特殊样式 */
+.sidebar .create-canvas-btn {
+  gap: 6px; /* 稍微紧凑一点的间距，适合较长的文字 */
+}
+
+/* 新建画布按钮图标样式 */
+.sidebar .create-canvas-btn .anticon {
+  font-size: 14px; /* 图标大小 */
+  margin-right: 2px; /* 额外的右边距，增强视觉分离 */
+}
+
+/* 设置按钮图标大小优化 */
+.sidebar .settings-btn .anticon {
+  font-size: 13px; /* 稍微增大图标尺寸，提升视觉平衡 */
+}
+
+/* 通用图标样式优化 */
+.sidebar .ant-btn .anticon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* 更流畅的过渡动画 */
+  line-height: 1; /* 确保图标垂直居中 */
+}
+
+/* 按钮悬停时图标的微妙动效 */
+.sidebar .ant-btn:hover .anticon {
+  transform: scale(1.05); /* 轻微放大图标 */
+}
+
+/* 按钮文字样式优化 */
+.sidebar .ant-btn .ant-btn-content {
+  display: flex;
+  align-items: center;
+  gap: inherit; /* 继承父元素的gap设置 */
+}
+
+/* 确保按钮内容垂直居中 */
+.sidebar .ant-btn > span {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+}
+
+/* 画布列表项图标和文字间距优化 */
+.sidebar .ant-list-item {
+  /* 确保列表项内容对齐 */
+  display: flex;
+  align-items: center;
+}
+
+/* 画布列表项Avatar图标优化 */
+.sidebar .ant-avatar {
+  /* 确保Avatar图标居中对齐 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* 防止图标被压缩 */
+}
+
+/* 画布列表项文字容器优化 */
+.sidebar .ant-list-item .ant-avatar + div {
+  /* Avatar后面的文字容器 */
+  margin-left: 12px; /* 与Avatar的marginRight保持一致 */
+  flex: 1;
+  min-width: 0; /* 允许文字容器收缩 */
+}
+
+/* 便签列表项颜色条和文字间距优化 */
+.sidebar .note-list-item .ant-typography {
+  /* 便签标题文字样式 */
+  margin-left: 8px; /* 与颜色条的marginRight保持一致 */
+}
+
+/* ========== Ant Design Tabs 图标和文字间距优化 ========== */
+
+/* 通用tabs标签图标和文字间距 */
+.ant-tabs-tab .ant-tabs-tab-btn span {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 图标和文字之间的优雅间距 */
+}
+
+/* 设置模态框中的tabs特殊优化 */
+.settings-modal .ant-tabs-tab .ant-tabs-tab-btn span {
+  gap: 8px; /* 设置页面中稍大的间距，提升可读性 */
+  font-size: 14px; /* 统一字体大小 */
+  font-weight: 500; /* 适中的字重 */
+}
+
+/* tabs图标样式优化 */
+.ant-tabs-tab .ant-tabs-tab-btn span .anticon {
+  font-size: 14px; /* 图标大小 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0; /* 防止图标被压缩 */
+}
+
+/* 设置模态框tabs图标特殊样式 */
+.settings-modal .ant-tabs-tab .ant-tabs-tab-btn span .anticon {
+  font-size: 15px; /* 设置页面中稍大的图标 */
+}
+
+/* tabs悬停效果优化 */
+.ant-tabs-tab:hover .ant-tabs-tab-btn span .anticon {
+  transform: scale(1.05); /* 轻微放大图标 */
+}
+
+/* 激活状态的tabs样式 */
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn span .anticon {
+  transform: scale(1.1); /* 激活时图标稍大 */
+}
+
+/* 左侧tabs特殊优化（如设置模态框） */
+.ant-tabs-left .ant-tabs-tab .ant-tabs-tab-btn span {
+  justify-content: flex-start; /* 左对齐 */
+  padding: 4px 0; /* 增加垂直内边距 */
+}
+
+/* 确保tabs文字不换行 */
+.ant-tabs-tab .ant-tabs-tab-btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 现代化搜索输入框样式 */
 .notes-search-input {
   background: rgba(255, 255, 255, 0.9);

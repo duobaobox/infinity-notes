@@ -384,14 +384,87 @@
     background: rgba(255, 255, 255, 0.05);
   }
 
-  /* 深色模式下的滚动条样式 */
+  /* 深色模式下的滚动条样式 - 悬浮显示 */
   .wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb,
   .wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
+    background: transparent !important; /* 默认隐藏，覆盖浅色模式样式 */
+    transition: background 0.2s ease; /* 添加过渡动画 */
+  }
+
+  .wysiwyg-editor .ProseMirror:hover::-webkit-scrollbar-thumb,
+  .wysiwyg-editor .tiptap.ProseMirror:hover::-webkit-scrollbar-thumb {
+    background: rgba(
+      255,
+      255,
+      255,
+      0.3
+    ) !important; /* 悬浮时显示，覆盖浅色模式样式 */
   }
 
   .wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover,
   .wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(
+      255,
+      255,
+      255,
+      0.5
+    ) !important; /* 滚动条本身悬浮时加深，覆盖浅色模式样式 */
   }
+
+  /* 深色模式下的 Firefox 滚动条样式 */
+  .wysiwyg-editor .ProseMirror,
+  .wysiwyg-editor .tiptap.ProseMirror {
+    scrollbar-color: transparent transparent !important; /* 默认隐藏，覆盖浅色模式样式 */
+  }
+
+  .wysiwyg-editor .ProseMirror:hover,
+  .wysiwyg-editor .tiptap.ProseMirror:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent !important; /* 悬浮时显示，覆盖浅色模式样式 */
+  }
+}
+
+/* 浅色模式下的便签编辑器滚动条样式 - 悬浮显示 */
+.wysiwyg-editor .ProseMirror::-webkit-scrollbar,
+.wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar {
+  width: 17px; /* 与全局滚动条宽度保持一致 */
+}
+
+.wysiwyg-editor .ProseMirror::-webkit-scrollbar-track,
+.wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 默认状态：滚动条透明（隐藏） */
+.wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb,
+.wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb {
+  background-color: transparent; /* 默认隐藏滚动条 */
+  border-radius: 4px;
+  border: 4px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease; /* 添加过渡动画 */
+}
+
+/* 鼠标悬浮在编辑器上时显示滚动条 */
+.wysiwyg-editor .ProseMirror:hover::-webkit-scrollbar-thumb,
+.wysiwyg-editor .tiptap.ProseMirror:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15); /* 悬浮时显示滚动条 */
+}
+
+/* 鼠标悬浮在滚动条本身时加深颜色 */
+.wysiwyg-editor .ProseMirror::-webkit-scrollbar-thumb:hover,
+.wysiwyg-editor .tiptap.ProseMirror::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25) !important; /* 滚动条本身悬浮时加深 */
+}
+
+/* Firefox 浏览器的便签编辑器滚动条样式 */
+.wysiwyg-editor .ProseMirror,
+.wysiwyg-editor .tiptap.ProseMirror {
+  scrollbar-width: thin; /* 使用细滚动条 */
+  scrollbar-color: transparent transparent; /* 默认隐藏滚动条 */
+  transition: scrollbar-color 0.2s ease; /* 添加过渡动画 */
+}
+
+.wysiwyg-editor .ProseMirror:hover,
+.wysiwyg-editor .tiptap.ProseMirror:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent; /* 悬浮时显示滚动条 */
 }

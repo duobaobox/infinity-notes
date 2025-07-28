@@ -11,7 +11,8 @@ export interface DragState {
   startY: number;
   startOffsetX: number;
   startOffsetY: number;
-  isMiddleButtonDrag: boolean; // 新增：标记是否为中键拖拽
+  isMiddleButtonDrag: boolean; // 标记是否为中键拖拽
+  isRightButtonDrag: boolean; // 新增：标记是否为右键拖拽
 }
 
 // 画布状态接口
@@ -54,7 +55,12 @@ export interface CanvasActions {
   panTo: (x: number, y: number) => void;
 
   // 拖拽操作
-  startDrag: (startX: number, startY: number, isMiddleButton?: boolean) => void;
+  startDrag: (
+    startX: number,
+    startY: number,
+    isSpecialButton?: boolean,
+    buttonType?: "middle" | "right"
+  ) => void;
   updateDrag: (currentX: number, currentY: number) => void;
   endDrag: () => void;
 
@@ -116,6 +122,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
         startOffsetX: 0,
         startOffsetY: 0,
         isMiddleButtonDrag: false,
+        isRightButtonDrag: false,
       },
       zoomAnimating: false,
       minScale: CANVAS_CONSTANTS.MIN_SCALE,
@@ -276,7 +283,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       },
 
       // 拖拽操作
-      startDrag: (startX, startY, isMiddleButton = false) => {
+      startDrag: (
+        startX,
+        startY,
+        isSpecialButton = false,
+        buttonType = "middle"
+      ) => {
         const { offsetX, offsetY } = get();
         set({
           dragState: {
@@ -285,7 +297,8 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             startY,
             startOffsetX: offsetX,
             startOffsetY: offsetY,
-            isMiddleButtonDrag: isMiddleButton,
+            isMiddleButtonDrag: isSpecialButton && buttonType === "middle",
+            isRightButtonDrag: isSpecialButton && buttonType === "right",
           },
         });
       },
@@ -312,13 +325,27 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
           });
 
           // 强制同步CSS变量更新，确保便签和工具栏位置立即响应
-          if (typeof window !== 'undefined') {
-            const container = document.querySelector('.infinite-canvas-container') as HTMLElement;
+          if (typeof window !== "undefined") {
+            const container = document.querySelector(
+              ".infinite-canvas-container"
+            ) as HTMLElement;
             if (container) {
-              container.style.setProperty('--canvas-offset-x', `${newOffsetX}px`);
-              container.style.setProperty('--canvas-offset-y', `${newOffsetY}px`);
-              container.style.setProperty('--content-offset-x', `${newOffsetX}px`);
-              container.style.setProperty('--content-offset-y', `${newOffsetY}px`);
+              container.style.setProperty(
+                "--canvas-offset-x",
+                `${newOffsetX}px`
+              );
+              container.style.setProperty(
+                "--canvas-offset-y",
+                `${newOffsetY}px`
+              );
+              container.style.setProperty(
+                "--content-offset-x",
+                `${newOffsetX}px`
+              );
+              container.style.setProperty(
+                "--content-offset-y",
+                `${newOffsetY}px`
+              );
             }
           }
         }
@@ -352,6 +379,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
             startOffsetX: 0,
             startOffsetY: 0,
             isMiddleButtonDrag: false,
+            isRightButtonDrag: false,
           },
         });
       },

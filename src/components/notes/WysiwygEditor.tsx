@@ -10,7 +10,7 @@ import "./WysiwygEditor.css";
 
 /**
  * 安全地执行编辑器命令，避免在编辑器未挂载时出错
- * 使用简单但可靠的检查机制
+ * 使用严格的检查机制确保编辑器完全可用
  */
 const safeEditorCommand = (
   editor: any,
@@ -30,6 +30,16 @@ const safeEditorCommand = (
 
     // 检查编辑器命令是否可用
     if (!editor.commands) {
+      return false;
+    }
+
+    // 更严格的视图检查：确保视图完全可用且已挂载到DOM
+    if (
+      !editor.view ||
+      !editor.view.dom ||
+      !editor.view.dom.parentNode ||
+      !editor.view.state
+    ) {
       return false;
     }
 
@@ -354,6 +364,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const proseMirrorRef = useRef<HTMLElement | null>(null);
+  const viewReadyRef = useRef<boolean>(false); // 标记视图是否已准备好
 
   // 监听画布缩放状态
   const canvasScale = useCanvasStore((state) => state.scale);
@@ -362,7 +373,29 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const checkScrollbarState = useCallback(() => {
     if (proseMirrorRef.current) {
       const element = proseMirrorRef.current;
+
+      // 确保元素已经完全渲染
+      if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+        // 如果元素尺寸为0，延迟重试
+        setTimeout(() => checkScrollbarState(), 10);
+        return;
+      }
+
       const hasVerticalScrollbar = element.scrollHeight > element.clientHeight;
+
+      // 开发环境下的调试信息
+      if (process.env.NODE_ENV === "development") {
+        console.log("🔍 滚动条状态检测:", {
+          scrollHeight: element.scrollHeight,
+          clientHeight: element.clientHeight,
+          hasScrollbar: hasVerticalScrollbar,
+          canvasScale,
+          elementSize: {
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+          },
+        });
+      }
 
       // 设置data属性用于CSS选择器
       element.setAttribute("data-scrollable", hasVerticalScrollbar.toString());
@@ -377,7 +410,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         }
       }
     }
-  }, []);
+  }, [canvasScale]);
 
   // 防抖更新函数 - 优化防抖时间以减少快速输入时的乱输入问题
   const debouncedOnChange = useCallback(
@@ -458,6 +491,28 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     onBlur: () => {
       onBlur?.();
     },
+    onTransaction: ({ editor }) => {
+      // 在第一次事务时，视图应该已经完全准备好
+      if (
+        !viewReadyRef.current &&
+        editor.view &&
+        editor.view.dom &&
+        editor.view.dom.parentNode
+      ) {
+        viewReadyRef.current = true;
+
+        // 安全地获取ProseMirror元素引用
+        try {
+          const proseMirrorElement = editor.view.dom;
+          proseMirrorRef.current = proseMirrorElement;
+
+          // 初始检测滚动条状态
+          checkScrollbarState();
+        } catch (error) {
+          console.warn("在事务回调中获取编辑器视图失败:", error);
+        }
+      }
+    },
     onCreate: ({ editor }) => {
       // 编辑器创建后的初始化
       if (autoFocus) {
@@ -471,14 +526,50 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         }, 200);
       }
 
-      // 获取ProseMirror元素引用
+      // 备用方案：如果onTransaction没有成功获取视图，则使用重试机制
+      // 延迟检查，给onTransaction一些时间先尝试
       setTimeout(() => {
-        const proseMirrorElement = editor.view.dom;
-        proseMirrorRef.current = proseMirrorElement;
+        if (!viewReadyRef.current) {
+          const tryGetEditorView = (attempt = 1, maxAttempts = 3) => {
+            try {
+              // 更严格的检查：确保编辑器没有被销毁且视图完全可用
+              if (
+                editor &&
+                !editor.isDestroyed &&
+                editor.view &&
+                editor.view.dom &&
+                editor.view.dom.parentNode
+              ) {
+                viewReadyRef.current = true;
+                const proseMirrorElement = editor.view.dom;
+                proseMirrorRef.current = proseMirrorElement;
 
-        // 初始检测滚动条状态
-        checkScrollbarState();
-      }, 100);
+                // 初始检测滚动条状态
+                checkScrollbarState();
+                return; // 成功获取，退出重试
+              }
+
+              // 如果还没达到最大重试次数，继续重试
+              if (attempt < maxAttempts) {
+                const delay = attempt * 200; // 递增延迟：200ms, 400ms
+                setTimeout(() => {
+                  tryGetEditorView(attempt + 1, maxAttempts);
+                }, delay);
+              }
+            } catch (error) {
+              // 如果还没达到最大重试次数，继续重试
+              if (attempt < maxAttempts) {
+                const delay = attempt * 200;
+                setTimeout(() => {
+                  tryGetEditorView(attempt + 1, maxAttempts);
+                }, delay);
+              }
+            }
+          };
+
+          tryGetEditorView();
+        }
+      }, 300); // 给onTransaction 300ms的时间先尝试
 
       // 将编辑器实例传递给父组件
       onEditorReady?.(editor);
@@ -583,10 +674,19 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     // 当画布缩放发生变化时，字体大小会改变，内容高度也会改变
     // 需要重新检测是否需要滚动条
     if (proseMirrorRef.current) {
-      // 使用延迟确保字体大小变化已经应用到DOM
+      // 使用多次检测确保字体大小变化已经完全应用到DOM
+      // 第一次检测：立即检测
+      checkScrollbarState();
+
+      // 第二次检测：短延迟后检测，确保CSS变量已应用
       setTimeout(() => {
         checkScrollbarState();
-      }, 100);
+      }, 50);
+
+      // 第三次检测：较长延迟后检测，确保所有渲染完成
+      setTimeout(() => {
+        checkScrollbarState();
+      }, 150);
     }
   }, [canvasScale, checkScrollbarState]);
 
@@ -596,6 +696,9 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
+      // 重置视图准备状态
+      viewReadyRef.current = false;
+      proseMirrorRef.current = null;
       editor?.destroy();
     };
   }, [editor]);

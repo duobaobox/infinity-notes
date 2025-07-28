@@ -710,6 +710,7 @@ const Sidebar: React.FC = () => {
                     type="text"
                     icon={<PlusOutlined />}
                     onClick={handleCreateCanvas}
+                    className="create-canvas-btn"
                     style={{
                       width: "100%",
                       borderRadius: "6px",
@@ -1247,9 +1248,10 @@ const Sidebar: React.FC = () => {
               type="text"
               icon={<SettingOutlined />}
               size="small"
+              className="settings-btn"
               style={{
-                width: "26px", // 缩小尺寸
-                height: "26px",
+                width: "28px", // 稍微增大尺寸以适应新的图标大小
+                height: "28px",
                 borderRadius: "6px", // 适中的边角
                 color: "#555", // 更深的灰色图标
                 fontSize: "12px", // 较小的图标

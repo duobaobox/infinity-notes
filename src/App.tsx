@@ -6,8 +6,11 @@ import Sidebar from "./components/layout/Sidebar";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import AIPromptTemplateTest from "./test/AIPromptTemplateTest";
 import CardTitleUnificationTest from "./test/CardTitleUnificationTest";
+import EditorViewTest from "./test/EditorViewTest";
 import MarkdownListTest from "./test/MarkdownListTest";
 import NoteSettingsTest from "./test/NoteSettingsTest";
+import RightClickDragTest from "./test/RightClickDragTest";
+import TabsSpacingTest from "./test/TabsSpacingTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
 import { DebugDrawer } from "./components/debug";
@@ -39,7 +42,10 @@ function App() {
     testMode === "thinking-chain-timestamp" ||
     testMode === "markdown-list" ||
     testMode === "card-title" ||
-    testMode === "note-settings";
+    testMode === "note-settings" ||
+    testMode === "tabs-spacing" ||
+    testMode === "right-click-drag" ||
+    testMode === "editor-view";
 
   const canvasRef = useRef<{
     createNote: () => void;
@@ -192,6 +198,12 @@ function App() {
       return <CardTitleUnificationTest />;
     } else if (testMode === "note-settings") {
       return <NoteSettingsTest />;
+    } else if (testMode === "tabs-spacing") {
+      return <TabsSpacingTest />;
+    } else if (testMode === "right-click-drag") {
+      return <RightClickDragTest />;
+    } else if (testMode === "editor-view") {
+      return <EditorViewTest />;
     }
   }
 
