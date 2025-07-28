@@ -551,10 +551,12 @@ const DebugDrawer: React.FC<DebugDrawerProps> = ({
         mask={false}
         maskClosable={false}
         zIndex={998}
-        bodyStyle={{ padding: "16px" }}
-        headerStyle={{
-          borderBottom: "1px solid #f0f0f0",
-          paddingBottom: "12px",
+        styles={{
+          body: { padding: "16px" },
+          header: {
+            borderBottom: "1px solid #f0f0f0",
+            paddingBottom: "12px",
+          },
         }}
       >
         <div style={{ height: "100%", overflow: "auto" }}>

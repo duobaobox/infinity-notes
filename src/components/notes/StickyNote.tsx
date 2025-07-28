@@ -648,6 +648,41 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     ]
   );
 
+  // 专门用于头部拖拽区域的处理函数 - 允许在编辑状态下拖动
+  const handleHeaderMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // 由于现在便签直接根据缩放调整大小，需要重新计算坐标
+      // 将屏幕坐标转换为画布坐标（不需要除以缩放，因为便签已经缩放）
+      const canvasX = e.clientX - canvasOffset.x;
+      const canvasY = e.clientY - canvasOffset.y;
+
+      // 计算拖拽偏移（基于缩放后的便签尺寸）
+      const scaledNoteX = note.x * canvasScale;
+      const scaledNoteY = note.y * canvasScale;
+
+      setDragOffset({
+        x: (canvasX - scaledNoteX) / canvasScale, // 转换回原始坐标系
+        y: (canvasY - scaledNoteY) / canvasScale,
+      });
+      setTempPosition({ x: note.x, y: note.y });
+      setIsDragging(true);
+      onBringToFront(note.id); // 置顶
+      selectNote(note.id); // 选中
+    },
+    [
+      note.id,
+      note.x,
+      note.y,
+      onBringToFront,
+      selectNote,
+      canvasScale,
+      canvasOffset,
+    ]
+  );
+
   // 开始调整大小
   const handleResizeMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -1289,7 +1324,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             className="drag-handle"
             onMouseDown={(e) => {
               e.stopPropagation(); // 阻止冒泡，避免触发容器的置顶事件
-              handleMouseDown(e);
+              handleHeaderMouseDown(e); // 使用专门的头部拖拽处理函数
             }}
             onClick={(e) => {
               // 阻止冒泡，让全局失焦检测处理编辑模式退出
@@ -1297,18 +1332,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }}
             style={{
               flexGrow: 1,
-              cursor: isDragging
-                ? "move"
-                : note.isEditing || note.isTitleEditing
-                ? "default"
-                : "move",
+              cursor: isDragging ? "move" : "move", // 始终显示可拖拽的光标，即使在编辑状态下
               minHeight: "20px",
               display: "flex",
               alignItems: "center",
             }}
             title={
               note.isEditing || note.isTitleEditing
-                ? "点击便签外部区域退出编辑模式"
+                ? "拖拽移动便签（编辑状态下也可拖拽）"
                 : "拖拽移动便签"
             }
           >
