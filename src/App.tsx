@@ -10,6 +10,7 @@ import EditorViewTest from "./test/EditorViewTest";
 import MarkdownListTest from "./test/MarkdownListTest";
 import NoteSettingsTest from "./test/NoteSettingsTest";
 import RightClickDragTest from "./test/RightClickDragTest";
+import RightClickSelectionTest from "./test/RightClickSelectionTest";
 import StickyNoteDragTest from "./test/StickyNoteDragTest";
 import TabsSpacingTest from "./test/TabsSpacingTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
@@ -46,6 +47,7 @@ function App() {
     testMode === "note-settings" ||
     testMode === "tabs-spacing" ||
     testMode === "right-click-drag" ||
+    testMode === "right-click-selection" ||
     testMode === "sticky-note-drag" ||
     testMode === "editor-view";
 
@@ -204,6 +206,8 @@ function App() {
       return <TabsSpacingTest />;
     } else if (testMode === "right-click-drag") {
       return <RightClickDragTest />;
+    } else if (testMode === "right-click-selection") {
+      return <RightClickSelectionTest />;
     } else if (testMode === "sticky-note-drag") {
       return <StickyNoteDragTest />;
     } else if (testMode === "editor-view") {

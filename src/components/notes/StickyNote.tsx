@@ -594,20 +594,20 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const { selectNote, selectedNoteId } = useStickyNotesStore();
   const isSelected = selectedNoteId === note.id;
 
-  // 新增：处理便签点击置顶和选中 - 使用全局状态
-  const handleNoteClickToFront = useCallback(() => {
-    // 只有在预览模式（非编辑状态）下才触发置顶和选中
-    if (!note.isEditing && !note.isTitleEditing) {
-      onBringToFront(note.id); // 置顶
-      selectNote(note.id); // 选中（会自动取消其他便签的选中状态）
-    }
-  }, [
-    note.isEditing,
-    note.isTitleEditing,
-    onBringToFront,
-    selectNote,
-    note.id,
-  ]);
+  // 新增：处理便签点击置顶和选中 - 使用全局状态，只响应左键点击
+  const handleNoteClickToFront = useCallback(
+    (e: React.MouseEvent) => {
+      // 只响应左键点击（button === 0），忽略右键和中键
+      if (e.button !== 0) return;
+
+      // 只有在预览模式（非编辑状态）下才触发置顶和选中
+      if (!note.isEditing && !note.isTitleEditing) {
+        onBringToFront(note.id); // 置顶
+        selectNote(note.id); // 选中（会自动取消其他便签的选中状态）
+      }
+    },
+    [note.isEditing, note.isTitleEditing, onBringToFront, selectNote, note.id]
+  );
 
   // 开始拖拽 - 使用全局状态
   const handleMouseDown = useCallback(
