@@ -1459,6 +1459,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }
             autoFocus={note.isEditing}
             disabled={!note.isEditing}
+            isStreaming={isStreaming}
             className={`${note.isEditing ? "editing" : "viewing"} ${
               isStreaming ? "streaming" : ""
             }`}

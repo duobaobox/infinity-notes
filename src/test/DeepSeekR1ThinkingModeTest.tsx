@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Card, Space, Typography, Alert } from "antd";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title } = Typography;
 
 /**
  * DeepSeek-R1 思维模式测试组件
@@ -34,8 +34,7 @@ const DeepSeekR1ThinkingModeTest: React.FC = () => {
   // 模拟 createNoteWithoutThinkingChain 方法的逻辑
   const simulateCreateNoteWithoutThinkingChain = (
     streamingState: any,
-    fullResponse: string,
-    originalPrompt: string
+    fullResponse: string
   ) => {
     const results: string[] = [];
     results.push("🔍 模拟创建无思维链便签过程:");
@@ -129,13 +128,12 @@ const DeepSeekR1ThinkingModeTest: React.FC = () => {
     const allResults: string[] = [];
 
     allResults.push("🚀 开始测试 DeepSeek-R1 关闭思维模式的显示逻辑");
-    allResults.push("=" * 50);
+    allResults.push("=".repeat(50));
 
     // 测试1：模拟创建无思维链便签
     const { results: createResults, note } = simulateCreateNoteWithoutThinkingChain(
       mockDeepSeekR1Response.streamingState,
-      mockDeepSeekR1Response.fullResponse,
-      mockDeepSeekR1Response.originalPrompt
+      mockDeepSeekR1Response.fullResponse
     );
     allResults.push(...createResults);
     allResults.push("");

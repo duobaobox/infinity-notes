@@ -814,17 +814,54 @@ export class AIService {
       // 从displayedContent中提取最终答案（去掉思维链部分）
       let finalAnswer = "";
       if (streamingState.displayedContent) {
-        // 找到最终答案的开始位置（在分隔线之后）
-        const separatorIndex =
-          streamingState.displayedContent.lastIndexOf("---");
-        if (separatorIndex !== -1) {
-          // 提取分隔线后的内容，并清理标题
-          const afterSeparator =
-            streamingState.displayedContent.substring(separatorIndex);
-          finalAnswer = afterSeparator
-            .replace(/^---\s*/, "")
-            .replace(/^##\s*[^\n]*\n*/, "") // 移除标题行
+        console.log("🔍 分析displayedContent结构:", {
+          totalLength: streamingState.displayedContent.length,
+          hasSeparator: streamingState.displayedContent.includes("---"),
+          hasFinalAnswerMarker:
+            streamingState.displayedContent.includes("## ✨ 最终答案"),
+          separatorPositions: [
+            ...streamingState.displayedContent.matchAll(/---/g),
+          ].map((m) => m.index),
+          contentPreview:
+            streamingState.displayedContent.substring(0, 300) + "...",
+          contentEnd:
+            "..." +
+            streamingState.displayedContent.substring(
+              streamingState.displayedContent.length - 300
+            ),
+        });
+
+        // 🔧 修复：找到"## ✨ 最终答案"标记，而不是最后一个分隔符
+        const finalAnswerMarker = "## ✨ 最终答案";
+        const finalAnswerIndex =
+          streamingState.displayedContent.indexOf(finalAnswerMarker);
+
+        if (finalAnswerIndex !== -1) {
+          // 从"## ✨ 最终答案"标记开始提取内容
+          const afterMarker =
+            streamingState.displayedContent.substring(finalAnswerIndex);
+          console.log("🔍 最终答案标记后的内容:", {
+            finalAnswerIndex,
+            afterMarkerLength: afterMarker.length,
+            afterMarkerPreview: afterMarker.substring(0, 300) + "...",
+          });
+
+          // 移除标题行，保留完整的最终答案内容
+          finalAnswer = afterMarker
+            .replace(/^##\s*✨\s*最终答案\s*\n*/, "") // 移除标题行
             .trim();
+        } else {
+          // 如果没有找到标记，尝试使用分隔符方法（兜底）
+          const separatorIndex =
+            streamingState.displayedContent.lastIndexOf("---");
+          if (separatorIndex !== -1) {
+            const afterSeparator =
+              streamingState.displayedContent.substring(separatorIndex);
+            finalAnswer = afterSeparator
+              .replace(/^---\s*/, "")
+              .replace(/^##\s*[^\n]*\n*/, "")
+              .trim();
+          }
         }
       }
 
@@ -843,6 +880,10 @@ export class AIService {
         finalAnswerLength: finalAnswer.length,
         thinkingPreview: thinkingContent.substring(0, 100) + "...",
         finalAnswerPreview: finalAnswer.substring(0, 100) + "...",
+        displayedContentLength: streamingState.displayedContent?.length || 0,
+        fullResponseLength: fullResponse.length,
+        separatorFound:
+          streamingState.displayedContent?.includes("---") || false,
       });
 
       // 解析思维链步骤

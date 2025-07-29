@@ -82,6 +82,8 @@ interface WysiwygEditorProps {
   style?: React.CSSProperties;
   /** 标题属性 */
   title?: string;
+  /** 是否正在流式输入（用于智能滚动） */
+  isStreaming?: boolean;
 }
 
 /**
@@ -360,14 +362,40 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   onMouseDown,
   style,
   title,
+  isStreaming = false,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const proseMirrorRef = useRef<HTMLElement | null>(null);
   const viewReadyRef = useRef<boolean>(false); // 标记视图是否已准备好
+  const lastContentLengthRef = useRef<number>(0); // 记录上次内容长度，用于检测内容增长
 
   // 监听画布缩放状态
   const canvasScale = useCanvasStore((state) => state.scale);
+
+  // 智能滚动到底部的函数
+  const scrollToBottom = useCallback((smooth: boolean = true) => {
+    if (proseMirrorRef.current) {
+      const element = proseMirrorRef.current;
+
+      // 检查是否需要滚动（内容超出可视区域）
+      if (element.scrollHeight > element.clientHeight) {
+        element.scrollTo({
+          top: element.scrollHeight,
+          behavior: smooth ? "smooth" : "auto",
+        });
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("📜 自动滚动到底部:", {
+            scrollHeight: element.scrollHeight,
+            clientHeight: element.clientHeight,
+            scrollTop: element.scrollTop,
+            smooth,
+          });
+        }
+      }
+    }
+  }, []);
 
   // 检测滚动条状态的函数
   const checkScrollbarState = useCallback(() => {
@@ -487,6 +515,20 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
 
       // 内容更新后检测滚动条状态
       setTimeout(checkScrollbarState, 50);
+
+      // 🎯 智能滚动逻辑：检测内容是否增长（用于流式输入场景）
+      const currentContentLength = markdown.length;
+      const isContentGrowing =
+        currentContentLength > lastContentLengthRef.current;
+
+      if (isContentGrowing && isStreaming) {
+        // 流式输入时自动滚动到底部，使用延迟确保DOM更新完成
+        setTimeout(() => {
+          scrollToBottom(true); // 使用平滑滚动
+        }, 100);
+      }
+
+      lastContentLengthRef.current = currentContentLength;
     },
     onBlur: () => {
       onBlur?.();
@@ -607,13 +649,26 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     // 只有当内容真正不同时才更新，避免无限循环
     if (content !== currentMarkdown) {
       const newHtml = markdownToHtml(content);
+
+      // 🎯 检测是否是流式输入：使用传入的isStreaming属性
+      const isContentGrowing = content.length > lastContentLengthRef.current;
+
       // 使用 setContent 而不是 insertContent 来替换全部内容
       editor.commands.setContent(newHtml, { emitUpdate: false }); // 不触发 onUpdate
 
       // 内容更新后检测滚动条状态
       setTimeout(checkScrollbarState, 50);
+
+      // 🎯 流式输入时自动滚动到底部
+      if (isContentGrowing && isStreaming) {
+        setTimeout(() => {
+          scrollToBottom(true); // 使用平滑滚动
+        }, 100);
+      }
+
+      lastContentLengthRef.current = content.length;
     }
-  }, [content, editor, checkScrollbarState]);
+  }, [content, editor, checkScrollbarState, scrollToBottom, isStreaming]);
 
   // 当 disabled 状态变化时更新编辑器的可编辑状态
   useEffect(() => {
