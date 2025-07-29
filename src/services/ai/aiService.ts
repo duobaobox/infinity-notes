@@ -531,8 +531,21 @@ export class AIService {
 
         // 现在统一使用智能解析方式
         // 先尝试JSON解析，失败则使用自然语言解析
+        // 🔧 修复：如果有流式显示的内容，优先使用displayedContent（包含标识符）
+        const contentToAnalyze =
+          streamingState.displayedContent || fullResponse;
+        console.log("🔍 选择解析内容:", {
+          useDisplayedContent: !!streamingState.displayedContent,
+          displayedLength: streamingState.displayedContent.length,
+          fullResponseLength: fullResponse.length,
+          hasThinkingInDisplayed:
+            streamingState.displayedContent.includes("🤔 **AI正在思考中...**"),
+          hasFinalAnswerInDisplayed:
+            streamingState.displayedContent.includes("## ✨ 最终答案"),
+        });
+
         const finalNotes = this.parseResponseIntelligently(
-          fullResponse,
+          contentToAnalyze,
           prompt,
           streamingState.showThinkingMode
         );
@@ -707,11 +720,26 @@ export class AIService {
 
       // 使用自然语言解析（现在是主要方式）
       // 解析思维链内容
+      console.log("🔍 开始解析思维链:", {
+        responseLength: cleanResponse.length,
+        showThinkingMode,
+        hasThinkingMarker: cleanResponse.includes("🤔 **AI正在思考中...**"),
+        hasFinalAnswerMarker: cleanResponse.includes("## ✨ 最终答案"),
+        responsePreview: cleanResponse.substring(0, 200) + "...",
+      });
+
       const { thinkingChain, cleanContent } = this.parseThinkingChain(
         cleanResponse,
         originalPrompt,
         showThinkingMode
       );
+
+      console.log("🧠 思维链解析结果:", {
+        hasThinkingChain: !!thinkingChain,
+        cleanContentLength: cleanContent.length,
+        thinkingSteps: thinkingChain?.steps?.length || 0,
+        finalAnswerLength: thinkingChain?.finalAnswer?.length || 0,
+      });
 
       const note: StickyNoteData = {
         title: this.generateTitleFromContent(cleanContent),
@@ -781,6 +809,7 @@ export class AIService {
       let foundThinking = false;
 
       if (hasThinkingMarker && hasFinalAnswerMarker) {
+        console.log("🎯 检测到思维链标识符，开始分离内容");
         // 根据标识符分离思维链和最终答案
         const parts = response.split("## ✨ 最终答案");
         if (parts.length >= 2) {
@@ -793,6 +822,13 @@ export class AIService {
           // 提取最终答案内容
           cleanContent = parts[1].trim();
           foundThinking = true;
+
+          console.log("✅ 内容分离成功:", {
+            thinkingLength: thinkingContent.length,
+            cleanLength: cleanContent.length,
+            thinkingPreview: thinkingContent.substring(0, 100) + "...",
+            cleanPreview: cleanContent.substring(0, 100) + "...",
+          });
         }
       } else {
         // 兼容旧格式：检查XML标签格式
