@@ -169,22 +169,66 @@ export const useStickyNotesStore = create<
             throw new Error("便签不存在");
           }
 
+          // 🔧 编辑状态冲突处理：确保同时只有一个便签处于编辑状态
+          let notesToUpdate = [...currentNotes];
+
+          // 如果当前更新要将便签设置为编辑状态
+          if (updates.isEditing === true || updates.isTitleEditing === true) {
+            console.log(`📝 便签 ${id} 开始编辑，检查其他便签的编辑状态...`);
+
+            // 退出其他所有便签的编辑状态
+            notesToUpdate = notesToUpdate.map((note) => {
+              if (note.id !== id && (note.isEditing || note.isTitleEditing)) {
+                console.log(`📝 自动退出便签 ${note.id} 的编辑状态`);
+                return {
+                  ...note,
+                  isEditing: false,
+                  isTitleEditing: false,
+                  updatedAt: new Date(),
+                };
+              }
+              return note;
+            });
+          }
+
+          // 更新目标便签
           const updatedNote = {
-            ...currentNotes[noteIndex],
+            ...notesToUpdate[noteIndex],
             ...updates,
             updatedAt: new Date(),
           };
+          notesToUpdate[noteIndex] = updatedNote;
 
-          // 保存到数据库
+          // 批量保存到数据库
           const adapter = getDatabaseAdapter();
+
+          // 先保存目标便签
           await adapter.updateNote(updatedNote);
 
+          // 如果有其他便签需要退出编辑状态，也要保存它们
+          const otherNotesToSave = notesToUpdate.filter((note, index) => {
+            if (index === noteIndex) return false; // 跳过目标便签，已经单独保存
+            const originalNote = currentNotes[index];
+            // 检查编辑状态是否发生变化
+            return (
+              originalNote &&
+              (note.isEditing !== originalNote.isEditing ||
+                note.isTitleEditing !== originalNote.isTitleEditing)
+            );
+          });
+
+          for (const noteToSave of otherNotesToSave) {
+            await adapter.updateNote(noteToSave);
+          }
+
           // 更新状态
-          set((state) => ({
-            notes: state.notes.map((note) =>
-              note.id === id ? updatedNote : note
-            ),
-          }));
+          set({ notes: notesToUpdate });
+
+          if (otherNotesToSave.length > 0) {
+            console.log(
+              `📝 已自动退出 ${otherNotesToSave.length} 个便签的编辑状态`
+            );
+          }
         } catch (error) {
           const errorMsg =
             error instanceof Error ? error.message : "更新便签失败";
