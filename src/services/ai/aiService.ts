@@ -420,14 +420,26 @@ export class AIService {
                     streamingState.currentNoteContent += content;
 
                     if (streamingState.isStreamingNote) {
+                      // 🔧 修复：如果有思维链内容，无论是否显示都要标记完成状态
+                      if (
+                        streamingState.hasStartedThinking &&
+                        !streamingState.hasFinishedThinking
+                      ) {
+                        streamingState.hasFinishedThinking = true;
+                        console.log("🎯 思维链完成，开始处理最终答案");
+                      }
+
                       // 如果开启了思维模式且有思考过程，需要在思考过程后显示答案
                       if (
                         streamingState.showThinkingMode &&
                         streamingState.hasStartedThinking
                       ) {
                         // 如果还没有添加分隔线，说明思考刚完成，添加分隔线
-                        if (!streamingState.hasFinishedThinking) {
-                          streamingState.hasFinishedThinking = true;
+                        if (
+                          !streamingState.displayedContent.includes(
+                            "## ✨ 最终答案"
+                          )
+                        ) {
                           const separator = "\n\n---\n\n## ✨ 最终答案\n\n";
                           streamingState.displayedContent += separator;
                           callbacks.onContentChunk?.(
@@ -459,10 +471,12 @@ export class AIService {
 
                 // 如果有reasoning_content，根据思维模式设置决定是否显示
                 if (reasoningContent) {
-                  // 只在第一次检测到时记录日志，避免重复输出
+                  // 🔧 修复：无论是否显示思维链，都要跟踪思维链的存在状态
                   if (!streamingState.hasStartedThinking) {
-                    console.log("🧠 检测到思维链内容，开始流式显示");
+                    console.log("🧠 检测到思维链内容，开始跟踪状态");
+                    streamingState.hasStartedThinking = true;
                   }
+
                   // 将reasoning_content添加到完整响应中
                   if (!fullResponse.includes("<think>")) {
                     fullResponse =
@@ -481,36 +495,35 @@ export class AIService {
                     }
                   }
 
+                  // 无论是否显示，都要收集思维链内容
+                  streamingState.thinkingContent += reasoningContent;
+
                   // 只有在开启思维模式时才实时流式显示思考过程
                   if (streamingState.showThinkingMode) {
-                    streamingState.thinkingContent += reasoningContent;
-
-                    if (
-                      !streamingState.hasStartedThinking &&
-                      streamingState.isStreamingNote
-                    ) {
+                    if (streamingState.isStreamingNote) {
                       // 第一次检测到思考内容，显示思考标题
-                      streamingState.hasStartedThinking = true;
-                      streamingState.displayedContent =
-                        "🤔 **AI正在思考中...**\n\n";
-                      callbacks.onContentChunk?.(
-                        streamingState.currentNoteIndex,
-                        streamingState.displayedContent,
-                        streamingState.displayedContent
-                      );
-                    }
+                      if (!streamingState.displayedContent) {
+                        streamingState.displayedContent =
+                          "🤔 **AI正在思考中...**\n\n";
+                        callbacks.onContentChunk?.(
+                          streamingState.currentNoteIndex,
+                          streamingState.displayedContent,
+                          streamingState.displayedContent
+                        );
+                      }
 
-                    if (
-                      streamingState.isStreamingNote &&
-                      streamingState.hasStartedThinking
-                    ) {
-                      // 实时追加思考内容，保持自然的流式体验
-                      streamingState.displayedContent += reasoningContent;
-                      callbacks.onContentChunk?.(
-                        streamingState.currentNoteIndex,
-                        reasoningContent,
-                        streamingState.displayedContent
-                      );
+                      if (
+                        streamingState.isStreamingNote &&
+                        streamingState.hasStartedThinking
+                      ) {
+                        // 实时追加思考内容，保持自然的流式体验
+                        streamingState.displayedContent += reasoningContent;
+                        callbacks.onContentChunk?.(
+                          streamingState.currentNoteIndex,
+                          reasoningContent,
+                          streamingState.displayedContent
+                        );
+                      }
                     }
                   }
                 }
@@ -541,16 +554,24 @@ export class AIService {
         let finalNotes;
         if (
           streamingState.hasStartedThinking &&
-          streamingState.hasFinishedThinking &&
-          streamingState.showThinkingMode
+          streamingState.hasFinishedThinking
         ) {
-          // 有完整的思维链流程，直接构造便签数据
-          console.log("🧠 检测到完整思维链流程，直接构造便签");
-          finalNotes = this.createNoteFromStreamingState(
-            streamingState,
-            fullResponse,
-            prompt
-          );
+          // 有完整的思维链流程，根据显示模式决定如何处理
+          if (streamingState.showThinkingMode) {
+            console.log("🧠 检测到完整思维链流程，构造带思维链的便签");
+            finalNotes = this.createNoteFromStreamingState(
+              streamingState,
+              fullResponse,
+              prompt
+            );
+          } else {
+            console.log("📝 检测到思维链但关闭显示模式，只使用最终答案");
+            finalNotes = this.createNoteWithoutThinkingChain(
+              streamingState,
+              fullResponse,
+              prompt
+            );
+          }
         } else {
           // 没有思维链或流程不完整，使用传统解析
           console.log("📝 使用传统解析方式");
@@ -863,6 +884,114 @@ export class AIService {
         fullResponse,
         originalPrompt,
         streamingState.showThinkingMode
+      );
+    }
+  }
+
+  /**
+   * 创建不包含思维链的便签数据（关闭思维链显示模式时使用）
+   * @param streamingState 流式生成状态
+   * @param fullResponse 完整的AI响应
+   * @param originalPrompt 用户的原始提示词
+   * @returns 解析结果
+   */
+  private createNoteWithoutThinkingChain(
+    streamingState: any,
+    fullResponse: string,
+    originalPrompt: string
+  ): { success: boolean; notes?: StickyNoteData[]; error?: string } {
+    try {
+      console.log("🔍 创建无思维链便签 - 输入数据:", {
+        hasDisplayedContent: !!streamingState.displayedContent,
+        displayedContentLength: streamingState.displayedContent?.length || 0,
+        displayedContentPreview:
+          streamingState.displayedContent?.substring(0, 200) + "...",
+        fullResponseLength: fullResponse.length,
+        fullResponsePreview: fullResponse.substring(0, 200) + "...",
+        hasThinkTag: fullResponse.includes("<think>"),
+        hasThinkingTag: fullResponse.includes("<thinking>"),
+      });
+
+      // 🔧 修复：确保在关闭思维模式时，只保存最终答案内容
+      let finalAnswer = "";
+
+      // 方法1：从displayedContent中提取最终答案（去掉思维链部分）
+      if (streamingState.displayedContent) {
+        // 找到最终答案的开始位置（在分隔线之后）
+        const separatorIndex =
+          streamingState.displayedContent.lastIndexOf("---");
+        if (separatorIndex !== -1) {
+          // 提取分隔线后的内容，并清理标题
+          const afterSeparator =
+            streamingState.displayedContent.substring(separatorIndex);
+          finalAnswer = afterSeparator
+            .replace(/^---\s*/, "")
+            .replace(/^##\s*[^\n]*\n*/, "") // 移除标题行
+            .trim();
+        } else {
+          // 如果没有分隔线，可能是纯最终答案内容
+          // 检查是否包含思维链标识符，如果包含则需要清理
+          const content = streamingState.displayedContent;
+          if (content.includes("🤔 **AI正在思考中...**")) {
+            // 移除思维链标识符，只保留最终答案
+            finalAnswer = content
+              .replace(/🤔 \*\*AI正在思考中\.\.\.\*\*/g, "")
+              .replace(/^[\s\n]*---[\s\n]*/g, "") // 移除分隔线
+              .replace(/^##\s*✨\s*最终答案[\s\n]*/g, "") // 移除最终答案标题
+              .trim();
+          } else {
+            // 纯最终答案内容
+            finalAnswer = content.trim();
+          }
+        }
+      }
+
+      // 方法2：如果没有提取到最终答案，从原始响应中提取（去掉思维链标签）
+      if (!finalAnswer) {
+        console.log("⚠️ 从displayedContent提取失败，尝试从fullResponse提取");
+        const { cleanContent } = this.parseThinkingChain(
+          fullResponse,
+          originalPrompt,
+          false // 不显示思维模式，只提取干净内容
+        );
+        finalAnswer = cleanContent;
+      }
+
+      // 方法3：最后的兜底处理 - 如果仍然没有内容，使用原始响应但移除思维链标签
+      if (!finalAnswer || finalAnswer.trim().length === 0) {
+        console.log("⚠️ 所有提取方法失败，使用兜底处理");
+        // 移除所有可能的思维链标签格式
+        finalAnswer = fullResponse
+          .replace(/<think>[\s\S]*?<\/think>/gi, "") // 移除 <think> 标签
+          .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "") // 移除 <thinking> 标签
+          .replace(/🤔 \*\*AI正在思考中\.\.\.\*\*/g, "") // 移除思维链标识符
+          .replace(/^[\s\n]*---[\s\n]*/g, "") // 移除分隔线
+          .replace(/^##\s*✨\s*最终答案[\s\n]*/g, "") // 移除最终答案标题
+          .trim();
+      }
+
+      console.log("🔧 创建无思维链便签 - 最终结果:", {
+        finalAnswerLength: finalAnswer.length,
+        finalAnswerPreview: finalAnswer.substring(0, 100) + "...",
+        containsThinkingMarkers:
+          finalAnswer.includes("🤔") || finalAnswer.includes("<think"),
+      });
+
+      // 🎯 关键修复：确保 content 字段只包含最终答案，不包含任何思维链内容
+      const note: StickyNoteData = {
+        title: this.generateTitleFromContent(finalAnswer),
+        content: finalAnswer, // 只包含干净的最终答案，不包含思维链
+        // 🔧 重要：不设置 thinkingChain，这样 StickyNote 组件会直接显示 content
+      };
+
+      return { success: true, notes: [note] };
+    } catch (error) {
+      console.error("❌ 创建无思维链便签失败:", error);
+      // 回退到传统解析
+      return this.parseResponseIntelligently(
+        fullResponse,
+        originalPrompt,
+        false
       );
     }
   }

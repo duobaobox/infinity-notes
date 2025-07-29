@@ -43,7 +43,6 @@ function App() {
     testMode === "prompt-template" ||
     testMode === "thinking-chain" ||
     testMode === "thinking-chain-timestamp" ||
-    testMode === "thinking-mode" ||
     testMode === "markdown-list" ||
     testMode === "card-title" ||
     testMode === "note-settings" ||
