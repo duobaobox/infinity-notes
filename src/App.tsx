@@ -15,6 +15,7 @@ import StickyNoteDragTest from "./test/StickyNoteDragTest";
 import TabsSpacingTest from "./test/TabsSpacingTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
+import ThinkingModeTest from "./test/ThinkingModeTest";
 import { DebugDrawer } from "./components/debug";
 
 // 导入全局状态管理
@@ -196,6 +197,8 @@ function App() {
       return <ThinkingChainTest />;
     } else if (testMode === "thinking-chain-timestamp") {
       return <ThinkingChainTimestampTest />;
+    } else if (testMode === "thinking-mode") {
+      return <ThinkingModeTest />;
     } else if (testMode === "markdown-list") {
       return <MarkdownListTest />;
     } else if (testMode === "card-title") {

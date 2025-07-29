@@ -19,6 +19,7 @@ import React, {
 import { useDebounce } from "../../hooks";
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useStickyNotesStore } from "../../stores/stickyNotesStore";
+import { useUIStore } from "../../stores/uiStore";
 import { connectionLineManager } from "../../utils/connectionLineManager";
 import {
   getFontSizeStyles,
@@ -125,6 +126,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   } = useConnectionStore();
 
   const allNotes = useStickyNotesStore((state) => state.notes);
+
+  // 获取基础设置，特别是思维模式显示设置
+  const { basicSettings } = useUIStore();
 
   // 检查当前便签是否作为源便签被引用
   const isSourceConnected = useMemo(() => {
@@ -1400,17 +1404,25 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             note.thinkingChain ? "has-thinking-chain" : ""
           }`}
         >
-          {/* 思维链组件 - 只在非编辑状态且有思维链数据时显示 */}
-          {!note.isEditing && !isStreaming && note.thinkingChain && (
-            <div style={{ marginBottom: "12px" }}>
-              <ThinkingChain
-                thinkingChain={note.thinkingChain}
-                defaultExpanded={false}
-                compact={true}
-                inNote={true}
-              />
-            </div>
-          )}
+          {/* 思维链组件 - 只在非编辑状态、有思维链数据且开启思维模式时显示 */}
+          {(() => {
+            const shouldShowThinking =
+              !note.isEditing &&
+              !isStreaming &&
+              note.thinkingChain &&
+              basicSettings.showThinkingMode;
+
+            return shouldShowThinking ? (
+              <div style={{ marginBottom: "12px" }}>
+                <ThinkingChain
+                  thinkingChain={note.thinkingChain!}
+                  defaultExpanded={false}
+                  compact={true}
+                  inNote={true}
+                />
+              </div>
+            ) : null;
+          })()}
 
           {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
           <WysiwygEditor
@@ -1419,7 +1431,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 ? localContent
                 : isStreaming && streamingContent
                 ? streamingContent
-                : // 如果有思维链数据，只显示最终答案，否则显示完整内容
+                : // 思维链数据处理：如果有思维链且非编辑状态，显示最终答案；否则显示完整内容
                 note.thinkingChain && !note.isEditing
                 ? note.thinkingChain.finalAnswer
                 : note.content

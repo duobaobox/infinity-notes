@@ -1,4 +1,16 @@
 // AI服务模块 - 处理AI API调用和便签生成
+//
+// 思维链功能说明：
+// 1. 支持解析AI回复中的思维过程，分离思考内容和最终答案
+// 2. 支持两种思维链格式：
+//    - 标准格式：<thinking>...</thinking> 或 <think>...</think>
+//    - 自然语言格式：包含"首先"、"然后"、"因此"等思维过程关键词
+// 3. 数据存储策略：
+//    - 开启思维模式：note.content存储最终答案，note.thinkingChain存储思考过程
+//    - 关闭思维模式：note.content存储完整原始内容，note.thinkingChain为undefined
+// 4. 前端显示：
+//    - ThinkingChain组件：显示可折叠的思考过程（仅在开启思维模式时显示）
+//    - WysiwygEditor：始终显示干净的最终答案内容
 
 export interface AIConfig {
   apiUrl: string;
@@ -531,10 +543,7 @@ export class AIService {
           if (finalNotes.notes.length === 1) {
             const note = finalNotes.notes[0];
 
-            // 🔧 修复：始终使用解析后的标准格式化内容，确保折叠功能生效
-            // 不再使用流式显示的临时内容，而是使用经过formatThinkingChainAsMarkdown格式化的内容
-            console.log("📝 使用解析后的标准格式化内容（支持折叠）");
-            // note.content 已经是经过 formatThinkingChainAsMarkdown 处理的内容
+            // 使用解析后的内容完成便签创建
 
             // 更新标题
             callbacks.onNoteStart?.(0, note.title);
@@ -706,18 +715,18 @@ export class AIService {
 
       const note: StickyNoteData = {
         title: this.generateTitleFromContent(cleanContent),
-        // 🔧 修复：如果有思维链数据，只存储最终答案作为内容，思维链数据单独存储
-        // 这样可以让前端组件正确显示优化后的思维链界面
-        content: thinkingChain ? cleanContent : cleanResponse,
+        // 🔧 思维链数据处理逻辑：
+        // - 开启思维模式：content存储最终答案，thinkingChain存储思考过程，前端会分别显示
+        // - 关闭思维模式：content存储完整原始内容，thinkingChain为undefined
+        // - 无思维链：content存储原始响应内容
+        content:
+          thinkingChain && showThinkingMode
+            ? thinkingChain.finalAnswer
+            : cleanContent,
         // 思维链相关数据
         thinkingChain,
         hasThinking: !!thinkingChain,
       };
-
-      console.log("✅ 自然语言解析完成:", {
-        hasThinking: note.hasThinking,
-        thinkingSteps: thinkingChain?.steps.length || 0,
-      });
 
       return { success: true, notes: [note] };
     } catch (error) {
@@ -747,8 +756,11 @@ export class AIService {
   }
 
   /**
-   * 统一的思维链解析器 - 合并了原来的parseThinkingChain和parseThinkingSteps逻辑
-   * 减少重复代码，提高解析效率
+   * 思维链解析器 - 从AI回复中分离思维过程和最终答案
+   * @param response AI的原始回复内容
+   * @param originalPrompt 用户的原始提示词
+   * @param showThinkingMode 是否开启思维模式显示
+   * @returns 包含思维链数据和干净内容的解析结果
    */
   private parseThinkingChain(
     response: string,
@@ -759,55 +771,62 @@ export class AIService {
     cleanContent: string;
   } {
     try {
-      // 统一的思维链标记清理模式
-      const thinkingPatterns = [
-        /<thinking>([\s\S]*?)<\/thinking>/gi, // 通用格式
-        /<think>([\s\S]*?)<\/think>/gi, // DeepSeek格式
-      ];
+      // 🎯 简化逻辑：根据流式生成过程中的标识符来分离内容
+      // 检查是否包含思维链标识符
+      const hasThinkingMarker = response.includes("🤔 **AI正在思考中...**");
+      const hasFinalAnswerMarker = response.includes("## ✨ 最终答案");
 
-      // 如果不显示思维模式，直接清理并返回
-      if (!showThinkingMode) {
-        let cleanContent = response;
-        thinkingPatterns.forEach((pattern) => {
-          cleanContent = cleanContent.replace(pattern, "");
-        });
-        return { cleanContent: cleanContent.trim() };
-      }
-
-      // 查找思维链内容
       let thinkingContent = "";
       let cleanContent = response;
       let foundThinking = false;
 
-      for (const pattern of thinkingPatterns) {
-        const match = response.match(pattern);
-        if (match && match[1]) {
-          thinkingContent = match[1].trim();
-          cleanContent = response.replace(pattern, "").trim();
+      if (hasThinkingMarker && hasFinalAnswerMarker) {
+        // 根据标识符分离思维链和最终答案
+        const parts = response.split("## ✨ 最终答案");
+        if (parts.length >= 2) {
+          // 提取思维链内容（去掉标题）
+          thinkingContent = parts[0]
+            .replace("🤔 **AI正在思考中...**", "")
+            .replace(/^[\s\n]*---[\s\n]*/, "") // 移除分隔线
+            .trim();
+
+          // 提取最终答案内容
+          cleanContent = parts[1].trim();
           foundThinking = true;
-          break;
+        }
+      } else {
+        // 兼容旧格式：检查XML标签格式
+        const thinkingPatterns = [
+          /<thinking>([\s\S]*?)<\/thinking>/gi, // 通用格式
+          /<think>([\s\S]*?)<\/think>/gi, // DeepSeek格式
+        ];
+
+        for (const pattern of thinkingPatterns) {
+          const match = response.match(pattern);
+          if (match && match[1]) {
+            thinkingContent = match[1].trim();
+            cleanContent = response.replace(pattern, "").trim();
+            foundThinking = true;
+            break;
+          }
         }
       }
 
       if (!foundThinking || !thinkingContent) {
-        console.log("💭 未检测到思维链标记");
         return { cleanContent: response };
       }
 
-      console.log("🧠 解析思维链:", {
-        thinkingLength: thinkingContent.length,
-        cleanLength: cleanContent.length,
-      });
+      // 如果不显示思维模式，只返回干净的最终答案，不返回思维链数据
+      if (!showThinkingMode) {
+        return { cleanContent: cleanContent.trim() };
+      }
 
-      // 直接在这里解析思维链步骤，避免额外的方法调用
+      // 解析思维链步骤
       const steps = this.parseThinkingStepsInternal(thinkingContent);
 
       if (steps.length === 0) {
-        console.log("⚠️ 思维链步骤解析失败或为空");
         return { cleanContent: response };
       }
-
-      console.log("✅ 思维链步骤解析成功，步骤数:", steps.length);
 
       // 创建思维链对象
       const thinkingChain: StickyNoteData["thinkingChain"] = {
@@ -829,8 +848,9 @@ export class AIService {
   }
 
   /**
-   * 内部思维链步骤解析方法 - 优化后的版本
-   * 简化了步骤类型判断逻辑，提高性能
+   * 思维链步骤解析器 - 将思维过程文本转换为结构化步骤
+   * @param thinkingContent 从AI回复中提取的思维过程内容
+   * @returns 结构化的思维步骤数组
    */
   private parseThinkingStepsInternal(thinkingContent: string): Array<{
     id: string;

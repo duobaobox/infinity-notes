@@ -672,3 +672,8 @@ export const useUIStore = create<UIState & UIActions>()(
     }
   )
 );
+
+// 设置全局引用，供其他模块使用（避免循环依赖）
+if (typeof window !== "undefined") {
+  (window as any).__uiStore = useUIStore;
+}

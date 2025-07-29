@@ -217,21 +217,50 @@ export const useConnectionStore = create<ConnectionState & ConnectionActions>()(
   )
 );
 
+// 获取当前思维模式设置的辅助函数
+const getCurrentShowThinkingMode = (): boolean => {
+  try {
+    // 尝试从window对象获取UIStore的状态
+    // 这是一个临时解决方案，避免循环依赖
+    if (typeof window !== "undefined" && (window as any).__uiStore) {
+      return (window as any).__uiStore.getState().basicSettings
+        .showThinkingMode;
+    }
+    // 如果无法获取，默认返回false（关闭思维模式）
+    return false;
+  } catch (error) {
+    console.warn("无法获取思维模式设置，使用默认值false");
+    return false;
+  }
+};
+
 // 导出便签连接相关的工具函数
 export const connectionUtils = {
   /**
    * 获取便签在TipTap编辑器中实际显示的内容
-   * 这是用户在界面上看到和编辑的真实内容，不包含AI思考过程
+   * 这是用户在界面上看到和编辑的真实内容，根据思维模式设置决定是否包含AI思考过程
    * 🎯 核心逻辑：模拟StickyNote组件中WysiwygEditor的content属性逻辑
+   * @param note 便签对象
+   * @param showThinkingMode 是否显示思维模式（可选，如果不提供则尝试从UIStore获取）
    */
-  getDisplayedNoteContent: (note: StickyNote): string => {
+  getDisplayedNoteContent: (
+    note: StickyNote,
+    showThinkingMode?: boolean
+  ): string => {
     // 如果便签正在编辑，返回编辑中的内容（但连接时通常不会是编辑状态）
     if (note.isEditing) {
       console.log(`📝 便签 "${note.title}" 处于编辑状态，使用完整内容`);
       return note.content;
     }
 
-    // 如果有思维链数据且不在编辑状态，只返回最终答案
+    // 获取思维模式设置
+    const shouldShowThinking =
+      showThinkingMode !== undefined
+        ? showThinkingMode
+        : getCurrentShowThinkingMode();
+
+    // 🔧 修复：如果有思维链数据且不在编辑状态，总是返回最终答案（干净内容）
+    // 无论思维模式开启还是关闭，连接时都应该使用干净的内容
     if (note.thinkingChain && !note.isEditing) {
       const finalAnswer = note.thinkingChain.finalAnswer || "";
 
@@ -244,7 +273,7 @@ export const connectionUtils = {
       }
 
       console.log(
-        `🤔 便签 "${note.title}" 有思维链，使用最终答案:`,
+        `🤔 便签 "${note.title}" 有思维链，使用干净的最终答案:`,
         finalAnswer.substring(0, 50) + "..."
       );
       return finalAnswer;
@@ -252,7 +281,7 @@ export const connectionUtils = {
 
     // 否则返回完整内容
     console.log(
-      `📄 便签 "${note.title}" 无思维链，使用完整内容:`,
+      `📄 便签 "${note.title}" 使用完整内容:`,
       (note.content || "").substring(0, 50) + "..."
     );
     return note.content || "";
@@ -263,10 +292,18 @@ export const connectionUtils = {
    * 优先提取最终答案部分，过滤思维链内容
    * 增强版：使用配置化的匹配模式和错误恢复机制
    * 🔧 修改：现在基于显示内容而不是原始内容进行提取
+   * @param note 便签对象
+   * @param showThinkingMode 是否显示思维模式（可选）
    */
-  extractNoteContent: (note: StickyNote): string => {
+  extractNoteContent: (
+    note: StickyNote,
+    showThinkingMode?: boolean
+  ): string => {
     // 🎯 关键修改：使用显示内容而不是原始内容
-    const content = connectionUtils.getDisplayedNoteContent(note);
+    const content = connectionUtils.getDisplayedNoteContent(
+      note,
+      showThinkingMode
+    );
     const config = getContentExtractionConfig();
 
     // 输入验证
@@ -402,10 +439,14 @@ export const connectionUtils = {
    * 获取连接的便签内容摘要
    * 增强版：使用配置化的长度限制和质量评估
    * 🔧 修改：基于显示内容生成摘要，确保不包含AI思考过程
+   * @param connectedNotes 连接的便签列表
+   * @param summaryMode 摘要模式
+   * @param showThinkingMode 是否显示思维模式（可选）
    */
   getConnectionSummary: (
     connectedNotes: StickyNote[],
-    summaryMode: "full" | "final_answer_only" = "final_answer_only"
+    summaryMode: "full" | "final_answer_only" = "final_answer_only",
+    showThinkingMode?: boolean
   ): string => {
     if (connectedNotes.length === 0) return "";
 
@@ -413,7 +454,10 @@ export const connectionUtils = {
 
     // 验证输入数据 - 检查显示内容而不是原始内容
     const validNotes = connectedNotes.filter((note) => {
-      const displayedContent = connectionUtils.getDisplayedNoteContent(note);
+      const displayedContent = connectionUtils.getDisplayedNoteContent(
+        note,
+        showThinkingMode
+      );
       return (
         note.id &&
         typeof displayedContent === "string" &&
@@ -441,8 +485,8 @@ export const connectionUtils = {
           // 🔧 修改：根据配置决定内容提取方式，但都基于显示内容
           const coreContent =
             summaryMode === "final_answer_only"
-              ? connectionUtils.extractNoteContent(note) // 这个函数内部已经使用显示内容
-              : connectionUtils.getDisplayedNoteContent(note); // 完整模式使用显示内容
+              ? connectionUtils.extractNoteContent(note, showThinkingMode) // 这个函数内部已经使用显示内容
+              : connectionUtils.getDisplayedNoteContent(note, showThinkingMode); // 完整模式使用显示内容
 
           // 验证提取的内容
           if (!coreContent || typeof coreContent !== "string") {

@@ -552,13 +552,9 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               updateStreamingContent(addedNote.id, fullContent);
             },
             onNoteComplete: async (_, noteData) => {
-              // 完成流式生成，更新最终内容
-              await finishStreamingNote(addedNote.id, noteData.content);
-
-              // 🔧 修复：保持临时便签的颜色和标题，不使用AI返回的
-              // 这样确保生成过程中和最终的便签颜色和标题保持一致
-              // 新增：同时更新思维链数据
+              // 🔧 修复：一次性更新所有数据，避免多次数据库操作
               const updateData: any = {
+                content: noteData.content, // 最终内容
                 color: tempNote.color, // 保持临时便签的颜色
                 title: tempNote.title, // 🔧 保持用户prompt作为标题，不被AI覆盖
                 updatedAt: new Date(),
@@ -568,8 +564,16 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
               if (noteData.thinkingChain) {
                 updateData.thinkingChain = noteData.thinkingChain;
                 updateData.hasThinking = true;
+                console.log("🧠 设置思维链数据:", {
+                  noteId: addedNote.id,
+                  hasThinking: true,
+                  stepsCount: noteData.thinkingChain.steps.length,
+                  finalAnswerLength: noteData.thinkingChain.finalAnswer.length,
+                });
               }
 
+              // 一次性完成流式生成并更新所有数据
+              await finishStreamingNote(addedNote.id, updateData.content);
               await updateStickyNote(addedNote.id, updateData);
             },
             onAllComplete: (notes) => {
