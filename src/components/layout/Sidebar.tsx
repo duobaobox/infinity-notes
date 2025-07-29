@@ -577,671 +577,696 @@ const Sidebar: React.FC = () => {
       >
         {/* 侧边栏主要内容区域 */}
         <div
-          style={{ height: "100%", display: "flex", flexDirection: "column" }}
+          style={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            position: "relative", // 为绝对定位的设置按钮提供定位上下文
+          }}
         >
-          <Splitter layout="vertical" style={{ flex: 1 }}>
-            <Splitter.Panel>
-              {/* 上部区域：画布列表 */}
-              <div
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                  background: "transparent", // Make panel background transparent to show Sidebar gradient
-                }}
-              >
-                {/* 用户信息区域 - 卡片风格设计 */}
+          {/* Splitter 区域 - 为设置按钮预留 52px 空间 */}
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              paddingBottom: "52px", // 为设置按钮区域预留空间
+            }}
+          >
+            <Splitter layout="vertical" style={{ height: "100%" }}>
+              <Splitter.Panel>
+                {/* 上部区域：画布列表 */}
                 <div
                   style={{
-                    padding: "16px",
-                    borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    background: "transparent", // Make panel background transparent to show Sidebar gradient
                   }}
                 >
-                  {/* 用户卡片 */}
+                  {/* 用户信息区域 - 卡片风格设计 */}
                   <div
-                    className="user-card"
                     style={{
-                      background:
-                        "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-                      border: "1px solid rgba(0, 0, 0, 0.04)",
-                      borderRadius: "12px",
-                      padding: "14px 16px",
-                      position: "relative",
-                      overflow: "hidden",
+                      padding: "8px",
+                      borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
                     }}
                   >
-                    {/* 装饰性背景元素 */}
+                    {/* 用户卡片 */}
                     <div
+                      className="user-card"
                       style={{
-                        position: "absolute",
-                        top: "-10px",
-                        right: "-10px",
-                        width: "40px",
-                        height: "40px",
                         background:
-                          "linear-gradient(135deg, rgba(22, 119, 255, 0.1) 0%, rgba(22, 119, 255, 0.05) 100%)",
-                        borderRadius: "50%",
-                        opacity: 0.6,
+                          "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+                        border: "1px solid rgba(0, 0, 0, 0.04)",
+                        borderRadius: "8px",
+                        padding: "14px 16px",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* 装饰性背景元素 */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "-10px",
+                          right: "-10px",
+                          width: "40px",
+                          height: "40px",
+                          background:
+                            "linear-gradient(135deg, rgba(22, 119, 255, 0.1) 0%, rgba(22, 119, 255, 0.05) 100%)",
+                          borderRadius: "50%",
+                          opacity: 0.6,
+                        }}
+                      />
+
+                      {/* 用户头像和信息 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          position: "relative",
+                          zIndex: 1,
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "relative",
+                          }}
+                        >
+                          <Avatar
+                            size={38}
+                            style={{
+                              backgroundColor: "#1677ff",
+                              flexShrink: 0,
+                              fontWeight: 600,
+                              fontSize: "16px",
+                              boxShadow: "0 2px 8px rgba(22, 119, 255, 0.2)",
+                            }}
+                          >
+                            {currentUser?.username?.[0]?.toUpperCase() || "U"}
+                          </Avatar>
+                          {/* 小装饰点 */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: "1px",
+                              right: "1px",
+                              width: "10px",
+                              height: "10px",
+                              backgroundColor: "#52c41a",
+                              border: "2px solid #fff",
+                              borderRadius: "50%",
+                              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <Text
+                            style={{
+                              display: "block",
+                              fontSize: "15px",
+                              fontWeight: 600,
+                              color: "#1a1a1a",
+                              lineHeight: "20px",
+                              marginBottom: "2px",
+                            }}
+                            ellipsis={{ tooltip: true }}
+                          >
+                            {currentUser?.username || "用户名称"}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: "12px",
+                              color: "#64748b",
+                              fontWeight: 500,
+                              lineHeight: "16px",
+                            }}
+                          >
+                            个人工作区
+                          </Text>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 画布操作区域 */}
+                  <div
+                    style={{
+                      padding: "20px 16px 20px", // 增加上下内边距，营造更好的视觉平衡
+                      borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                    }}
+                  >
+                    {/* 低调的新建画布按钮 - 适合低频操作 */}
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={handleCreateCanvas}
+                      className="create-canvas-btn"
+                      style={{
+                        width: "100%",
+                        borderRadius: "6px",
+                        height: "32px", // 降低高度
+                        color: "#8c8c8c", // 使用较淡的颜色
+                        fontSize: "13px",
+                        fontWeight: 400, // 降低字重
+                        border: "1px dashed rgba(140, 140, 140, 0.3)", // 淡虚线边框
+                        background: "transparent",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        // 悬停时稍微突出一点
+                        e.currentTarget.style.color = "#595959";
+                        e.currentTarget.style.borderColor =
+                          "rgba(140, 140, 140, 0.5)";
+                        e.currentTarget.style.background =
+                          "rgba(0, 0, 0, 0.02)";
+                      }}
+                      onMouseLeave={(e) => {
+                        // 恢复低调状态
+                        e.currentTarget.style.color = "#8c8c8c";
+                        e.currentTarget.style.borderColor =
+                          "rgba(140, 140, 140, 0.3)";
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      新建画布
+                    </Button>
+                  </div>
+
+                  <div
+                    style={{
+                      flex: 1,
+                      overflow: "auto",
+                      padding: "12px 8px",
+                    }}
+                  >
+                    <List
+                      itemLayout="horizontal"
+                      dataSource={canvasList}
+                      loading={canvasLoading}
+                      locale={{
+                        emptyText: "暂无画布，点击新建画布开始使用",
+                      }}
+                      renderItem={(canvas: Canvas) => {
+                        const isSelected = selectedCanvas === canvas.id;
+                        const notesCount = canvasNotesCounts[canvas.id] || 0;
+
+                        return (
+                          <List.Item
+                            className={`canvas-list-item ${
+                              isSelected ? "selected" : ""
+                            }`}
+                            style={{
+                              padding: "10px 12px",
+                              cursor: "pointer",
+                              backgroundColor: isSelected
+                                ? "rgba(22, 119, 255, 0.1)" // Lighter blue selection
+                                : "transparent",
+                              borderRadius: "8px", // Slightly more rounded
+                              marginBottom: "4px",
+                              border: "none",
+                              position: "relative",
+                            }}
+                            onClick={() => handleCanvasSelect(canvas.id)}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                width: "100%",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Avatar
+                                icon={<FolderOutlined />}
+                                style={{
+                                  backgroundColor: isSelected
+                                    ? "#1677ff"
+                                    : "rgba(0,0,0,0.04)", // Lighter grey
+                                  color: isSelected ? "#fff" : "#595959",
+                                  marginRight: "12px",
+                                }}
+                                size={28}
+                              />
+
+                              <div style={{ flex: 1, overflow: "hidden" }}>
+                                {/* 画布名称和星标 */}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    width: "100%",
+                                  }}
+                                >
+                                  {editingCanvasId === canvas.id ? (
+                                    <Input
+                                      ref={editInputRef}
+                                      value={editingCanvasName}
+                                      onChange={(e) =>
+                                        setEditingCanvasName(e.target.value)
+                                      }
+                                      onKeyDown={handleEditKeyDown}
+                                      onBlur={finishEditingCanvasName}
+                                      style={{
+                                        fontSize: "14px",
+                                        fontWeight: isSelected ? 600 : 500,
+                                        height: "22px",
+                                        padding: "0 4px",
+                                        border: "1px solid #1677ff",
+                                        borderRadius: "4px",
+                                        flex: 1,
+                                        // 为非默认画布的删除按钮留出空间，避免编辑框与删除按钮重叠
+                                        marginRight:
+                                          !canvas.is_default &&
+                                          canvasList.length > 1
+                                            ? "32px"
+                                            : "0",
+                                      }}
+                                      size="small"
+                                    />
+                                  ) : (
+                                    <Text
+                                      style={{
+                                        fontSize: "14px",
+                                        fontWeight: isSelected ? 600 : 500,
+                                        color: "#262626",
+                                        cursor: "pointer",
+                                        flex: 1,
+                                      }}
+                                      ellipsis={{
+                                        tooltip: `${canvas.name} - 双击编辑名称`,
+                                      }}
+                                      onDoubleClick={(e) => {
+                                        e.stopPropagation();
+                                        startEditingCanvasName(canvas);
+                                      }}
+                                    >
+                                      {canvas.name}
+                                    </Text>
+                                  )}
+                                  {canvas.is_default && (
+                                    <StarFilled
+                                      style={{
+                                        color: "#FAAD14",
+                                        fontSize: "12px",
+                                        marginLeft: "6px",
+                                      }}
+                                    />
+                                  )}
+                                </div>
+
+                                {/* 悬浮删除按钮 - 绝对定位，只在悬浮时显示 */}
+                                {!canvas.is_default &&
+                                  canvasList.length > 1 && (
+                                    <Popconfirm
+                                      title="删除画布"
+                                      description={`确定要删除画布"${canvas.name}"吗？删除后画布中的所有便签也将被删除，此操作不可恢复。`}
+                                      onConfirm={(e) => {
+                                        e?.stopPropagation();
+                                        handleDeleteCanvas(
+                                          canvas.id,
+                                          canvas.name
+                                        );
+                                      }}
+                                      onCancel={(e) => e?.stopPropagation()}
+                                      okText="确定删除"
+                                      cancelText="取消"
+                                      okType="danger"
+                                      placement="topRight"
+                                    >
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<CloseOutlined />}
+                                        className="canvas-delete-btn"
+                                        style={{
+                                          position: "absolute",
+                                          top: "8px",
+                                          right: "8px",
+                                          width: "20px",
+                                          height: "20px",
+                                          padding: "0",
+                                          minWidth: "20px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          color: "#8c8c8c",
+                                          fontSize: "12px",
+                                          opacity: "0",
+                                          transition: "all 0.2s ease",
+                                          borderRadius: "4px",
+                                          zIndex: 10,
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    </Popconfirm>
+                                  )}
+
+                                {/* 便签数量信息 - 去掉时间显示 */}
+                                <Text
+                                  type="secondary"
+                                  style={{
+                                    fontSize: "12px",
+                                    marginTop: "2px",
+                                    color: isSelected ? "#1677ff" : "#8c8c8c", // Consistent color logic
+                                    fontWeight: isSelected ? 500 : 400,
+                                  }}
+                                >
+                                  {notesCount} 便签
+                                </Text>
+                              </div>
+                            </div>
+                          </List.Item>
+                        );
                       }}
                     />
-
-                    {/* 用户头像和信息 */}
+                  </div>
+                </div>
+              </Splitter.Panel>
+              <Splitter.Panel>
+                {/* 下部区域：便签列表 */}
+                <div
+                  style={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    background: "transparent", // Make panel background transparent
+                  }}
+                >
+                  {/* 便签区域头部 - 重新设计 */}
+                  <div
+                    style={{
+                      padding: "20px 16px 16px",
+                      borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
+                      background: "rgba(255, 255, 255, 0.02)",
+                    }}
+                  >
+                    {/* 标题区域 */}
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "12px",
-                        position: "relative",
-                        zIndex: 1,
+                        justifyContent: "space-between",
+                        marginBottom: "16px",
                       }}
                     >
                       <div
                         style={{
-                          position: "relative",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
                         }}
                       >
-                        <Avatar
-                          size={38}
+                        <Title
+                          level={5}
                           style={{
-                            backgroundColor: "#1677ff",
-                            flexShrink: 0,
-                            fontWeight: 600,
+                            margin: 0,
                             fontSize: "16px",
-                            boxShadow: "0 2px 8px rgba(22, 119, 255, 0.2)",
-                          }}
-                        >
-                          {currentUser?.username?.[0]?.toUpperCase() || "U"}
-                        </Avatar>
-                        {/* 小装饰点 */}
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: "1px",
-                            right: "1px",
-                            width: "10px",
-                            height: "10px",
-                            backgroundColor: "#52c41a",
-                            border: "2px solid #fff",
-                            borderRadius: "50%",
-                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
-                          }}
-                        />
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Text
-                          style={{
-                            display: "block",
-                            fontSize: "15px",
                             fontWeight: 600,
                             color: "#1a1a1a",
-                            lineHeight: "20px",
-                            marginBottom: "2px",
+                            letterSpacing: "-0.01em",
                           }}
-                          ellipsis={{ tooltip: true }}
                         >
-                          {currentUser?.username || "用户名称"}
-                        </Text>
+                          便签
+                        </Title>
+                        {/* 便签数量徽章 */}
+                        <div
+                          style={{
+                            background: searchQuery.trim()
+                              ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                              : "rgba(0, 0, 0, 0.06)",
+                            color: searchQuery.trim() ? "#fff" : "#666",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            minWidth: "20px",
+                            textAlign: "center",
+                            lineHeight: "16px",
+                            transition: "all 0.2s ease", // 添加平滑过渡
+                          }}
+                        >
+                          {searchQuery.trim()
+                            ? filteredNotes.length
+                            : currentCanvasId &&
+                              canvasNotesCounts[currentCanvasId] !== undefined
+                            ? canvasNotesCounts[currentCanvasId]
+                            : stickyNotes.length}
+                        </div>
+                      </div>
+
+                      {/* 画布名称标签 */}
+                      {currentCanvas?.name && (
                         <Text
                           style={{
-                            fontSize: "12px",
-                            color: "#64748b",
+                            fontSize: "11px",
+                            color: "#8c8c8c",
+                            background: "rgba(0, 0, 0, 0.04)",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
                             fontWeight: 500,
-                            lineHeight: "16px",
                           }}
                         >
-                          个人工作区
+                          {currentCanvas.name}
                         </Text>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                </div>
 
-                {/* 画布操作区域 */}
-                <div
-                  style={{
-                    padding: "20px 16px 20px", // 增加上下内边距，营造更好的视觉平衡
-                    borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
-                  }}
-                >
-                  {/* 低调的新建画布按钮 - 适合低频操作 */}
-                  <Button
-                    type="text"
-                    icon={<PlusOutlined />}
-                    onClick={handleCreateCanvas}
-                    className="create-canvas-btn"
+                    {/* 搜索输入框 - 重新设计 */}
+                    <Input
+                      ref={searchInputRef}
+                      className="notes-search-input"
+                      placeholder="搜索便签标题或内容..."
+                      prefix={
+                        <SearchOutlined
+                          style={{
+                            color: "#a0a0a0",
+                            fontSize: "14px",
+                          }}
+                        />
+                      }
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                          setSearchQuery("");
+                          searchInputRef.current?.blur();
+                        }
+                      }}
+                      allowClear
+                      style={{
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        height: "36px",
+                      }}
+                      suffix={
+                        <Text
+                          style={{
+                            fontSize: "10px",
+                            color: "#bbb",
+                            fontWeight: 500,
+                          }}
+                        >
+                          ⌘F
+                        </Text>
+                      }
+                    />
+
+                    {/* 搜索结果提示 */}
+                    {searchQuery.trim() && (
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          fontSize: "12px",
+                          color: "#666",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span>找到 {filteredNotes.length} 个匹配的便签</span>
+                        {filteredNotes.length > 0 && (
+                          <span style={{ color: "#52c41a" }}>✓</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {/* 便签列表容器 - 重新设计 */}
+                  <div
                     style={{
-                      width: "100%",
-                      borderRadius: "6px",
-                      height: "32px", // 降低高度
-                      color: "#8c8c8c", // 使用较淡的颜色
-                      fontSize: "13px",
-                      fontWeight: 400, // 降低字重
-                      border: "1px dashed rgba(140, 140, 140, 0.3)", // 淡虚线边框
-                      background: "transparent",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      // 悬停时稍微突出一点
-                      e.currentTarget.style.color = "#595959";
-                      e.currentTarget.style.borderColor =
-                        "rgba(140, 140, 140, 0.5)";
-                      e.currentTarget.style.background = "rgba(0, 0, 0, 0.02)";
-                    }}
-                    onMouseLeave={(e) => {
-                      // 恢复低调状态
-                      e.currentTarget.style.color = "#8c8c8c";
-                      e.currentTarget.style.borderColor =
-                        "rgba(140, 140, 140, 0.3)";
-                      e.currentTarget.style.background = "transparent";
+                      flex: 1,
+                      overflow: "auto",
+                      padding: "8px 12px 16px",
                     }}
                   >
-                    新建画布
-                  </Button>
-                </div>
-
-                <div
-                  style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "12px 8px",
-                  }}
-                >
-                  <List
-                    itemLayout="horizontal"
-                    dataSource={canvasList}
-                    loading={canvasLoading}
-                    locale={{
-                      emptyText: "暂无画布，点击新建画布开始使用",
-                    }}
-                    renderItem={(canvas: Canvas) => {
-                      const isSelected = selectedCanvas === canvas.id;
-                      const notesCount = canvasNotesCounts[canvas.id] || 0;
-
-                      return (
+                    <List
+                      itemLayout="horizontal"
+                      dataSource={displayNotes}
+                      loading={notesLoading}
+                      locale={{
+                        emptyText: (
+                          <div
+                            style={{
+                              padding: "32px 16px",
+                              textAlign: "center",
+                              color: "#8c8c8c",
+                            }}
+                          >
+                            {notesError ? (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: "24px",
+                                    marginBottom: "8px",
+                                  }}
+                                >
+                                  ⚠️
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: 500,
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  加载失败
+                                </div>
+                                <div style={{ fontSize: "12px" }}>
+                                  {notesError}
+                                </div>
+                              </div>
+                            ) : searchQuery.trim() ? (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: "24px",
+                                    marginBottom: "8px",
+                                  }}
+                                >
+                                  🔍
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: 500,
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  未找到匹配的便签
+                                </div>
+                                <div style={{ fontSize: "12px" }}>
+                                  尝试使用不同的关键词搜索
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: "24px",
+                                    marginBottom: "8px",
+                                  }}
+                                >
+                                  📝
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: 500,
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  还没有便签
+                                </div>
+                                <div style={{ fontSize: "12px" }}>
+                                  双击画布或点击工具栏的 + 创建第一个便签
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ),
+                      }}
+                      renderItem={(note: {
+                        id: string;
+                        color: string;
+                        title: string;
+                        x: number;
+                        y: number;
+                        width: number;
+                        height: number;
+                      }) => (
                         <List.Item
-                          className={`canvas-list-item ${
-                            isSelected ? "selected" : ""
-                          }`}
+                          className="note-list-item"
+                          onClick={() => handleNoteClick(note)}
                           style={{
-                            padding: "10px 12px",
+                            padding: "4px 8px",
                             cursor: "pointer",
-                            backgroundColor: isSelected
-                              ? "rgba(22, 119, 255, 0.1)" // Lighter blue selection
-                              : "transparent",
-                            borderRadius: "8px", // Slightly more rounded
-                            marginBottom: "4px",
-                            border: "none",
-                            position: "relative",
+                            marginBottom: "6px",
+                            borderRadius: "6px",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
                           }}
-                          onClick={() => handleCanvasSelect(canvas.id)}
                         >
+                          {/* 保持原有的设计结构 */}
                           <div
                             style={{
                               display: "flex",
+                              alignItems: "flex-start",
                               width: "100%",
-                              alignItems: "center",
                             }}
                           >
-                            <Avatar
-                              icon={<FolderOutlined />}
+                            {/* 原有的颜色条设计 */}
+                            <div
                               style={{
-                                backgroundColor: isSelected
-                                  ? "#1677ff"
-                                  : "rgba(0,0,0,0.04)", // Lighter grey
-                                color: isSelected ? "#fff" : "#595959",
-                                marginRight: "12px",
+                                width: "3px",
+                                alignSelf: "stretch",
+                                backgroundColor: note.color,
+                                borderRadius: "2px 0 0 2px",
+                                marginRight: "8px",
                               }}
-                              size={28}
                             />
-
-                            <div style={{ flex: 1, overflow: "hidden" }}>
-                              {/* 画布名称和星标 */}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  width: "100%",
-                                }}
-                              >
-                                {editingCanvasId === canvas.id ? (
-                                  <Input
-                                    ref={editInputRef}
-                                    value={editingCanvasName}
-                                    onChange={(e) =>
-                                      setEditingCanvasName(e.target.value)
-                                    }
-                                    onKeyDown={handleEditKeyDown}
-                                    onBlur={finishEditingCanvasName}
-                                    style={{
-                                      fontSize: "14px",
-                                      fontWeight: isSelected ? 600 : 500,
-                                      height: "22px",
-                                      padding: "0 4px",
-                                      border: "1px solid #1677ff",
-                                      borderRadius: "4px",
-                                      flex: 1,
-                                      // 为非默认画布的删除按钮留出空间，避免编辑框与删除按钮重叠
-                                      marginRight:
-                                        !canvas.is_default &&
-                                        canvasList.length > 1
-                                          ? "32px"
-                                          : "0",
-                                    }}
-                                    size="small"
-                                  />
-                                ) : (
-                                  <Text
-                                    style={{
-                                      fontSize: "14px",
-                                      fontWeight: isSelected ? 600 : 500,
-                                      color: "#262626",
-                                      cursor: "pointer",
-                                      flex: 1,
-                                    }}
-                                    ellipsis={{
-                                      tooltip: `${canvas.name} - 双击编辑名称`,
-                                    }}
-                                    onDoubleClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditingCanvasName(canvas);
-                                    }}
-                                  >
-                                    {canvas.name}
-                                  </Text>
-                                )}
-                                {canvas.is_default && (
-                                  <StarFilled
-                                    style={{
-                                      color: "#FAAD14",
-                                      fontSize: "12px",
-                                      marginLeft: "6px",
-                                    }}
-                                  />
-                                )}
-                              </div>
-
-                              {/* 悬浮删除按钮 - 绝对定位，只在悬浮时显示 */}
-                              {!canvas.is_default && canvasList.length > 1 && (
-                                <Popconfirm
-                                  title="删除画布"
-                                  description={`确定要删除画布"${canvas.name}"吗？删除后画布中的所有便签也将被删除，此操作不可恢复。`}
-                                  onConfirm={(e) => {
-                                    e?.stopPropagation();
-                                    handleDeleteCanvas(canvas.id, canvas.name);
-                                  }}
-                                  onCancel={(e) => e?.stopPropagation()}
-                                  okText="确定删除"
-                                  cancelText="取消"
-                                  okType="danger"
-                                  placement="topRight"
-                                >
-                                  <Button
-                                    type="text"
-                                    size="small"
-                                    icon={<CloseOutlined />}
-                                    className="canvas-delete-btn"
-                                    style={{
-                                      position: "absolute",
-                                      top: "8px",
-                                      right: "8px",
-                                      width: "20px",
-                                      height: "20px",
-                                      padding: "0",
-                                      minWidth: "20px",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      color: "#8c8c8c",
-                                      fontSize: "12px",
-                                      opacity: "0",
-                                      transition: "all 0.2s ease",
-                                      borderRadius: "4px",
-                                      zIndex: 10,
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </Popconfirm>
-                              )}
-
-                              {/* 便签数量信息 - 去掉时间显示 */}
-                              <Text
-                                type="secondary"
-                                style={{
-                                  fontSize: "12px",
-                                  marginTop: "2px",
-                                  color: isSelected ? "#1677ff" : "#8c8c8c", // Consistent color logic
-                                  fontWeight: isSelected ? 500 : 400,
-                                }}
-                              >
-                                {notesCount} 便签
-                              </Text>
-                            </div>
+                            {/* 便签标题容器 */}
+                            <Text
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                color: "#262626",
+                                flex: 1,
+                              }}
+                              ellipsis={{
+                                tooltip: searchQuery.trim()
+                                  ? `${note.title} - 点击定位到便签`
+                                  : note.title,
+                              }}
+                            >
+                              {searchQuery.trim()
+                                ? highlightSearchText(note.title, searchQuery)
+                                : note.title}
+                            </Text>
                           </div>
                         </List.Item>
-                      );
-                    }}
-                  />
-                </div>
-              </div>
-            </Splitter.Panel>
-            <Splitter.Panel>
-              {/* 下部区域：便签列表 */}
-              <div
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                  background: "transparent", // Make panel background transparent
-                }}
-              >
-                {/* 便签区域头部 - 重新设计 */}
-                <div
-                  style={{
-                    padding: "20px 16px 16px",
-                    borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
-                    background: "rgba(255, 255, 255, 0.02)",
-                  }}
-                >
-                  {/* 标题区域 */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <Title
-                        level={5}
-                        style={{
-                          margin: 0,
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#1a1a1a",
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        便签
-                      </Title>
-                      {/* 便签数量徽章 */}
-                      <div
-                        style={{
-                          background: searchQuery.trim()
-                            ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                            : "rgba(0, 0, 0, 0.06)",
-                          color: searchQuery.trim() ? "#fff" : "#666",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          minWidth: "20px",
-                          textAlign: "center",
-                          lineHeight: "16px",
-                          transition: "all 0.2s ease", // 添加平滑过渡
-                        }}
-                      >
-                        {searchQuery.trim()
-                          ? filteredNotes.length
-                          : currentCanvasId &&
-                            canvasNotesCounts[currentCanvasId] !== undefined
-                          ? canvasNotesCounts[currentCanvasId]
-                          : stickyNotes.length}
-                      </div>
-                    </div>
-
-                    {/* 画布名称标签 */}
-                    {currentCanvas?.name && (
-                      <Text
-                        style={{
-                          fontSize: "11px",
-                          color: "#8c8c8c",
-                          background: "rgba(0, 0, 0, 0.04)",
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {currentCanvas.name}
-                      </Text>
-                    )}
-                  </div>
-
-                  {/* 搜索输入框 - 重新设计 */}
-                  <Input
-                    ref={searchInputRef}
-                    className="notes-search-input"
-                    placeholder="搜索便签标题或内容..."
-                    prefix={
-                      <SearchOutlined
-                        style={{
-                          color: "#a0a0a0",
-                          fontSize: "14px",
-                        }}
-                      />
-                    }
-                    value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        setSearchQuery("");
-                        searchInputRef.current?.blur();
-                      }
-                    }}
-                    allowClear
-                    style={{
-                      borderRadius: "8px",
-                      fontSize: "13px",
-                      height: "36px",
-                    }}
-                    suffix={
-                      <Text
-                        style={{
-                          fontSize: "10px",
-                          color: "#bbb",
-                          fontWeight: 500,
-                        }}
-                      >
-                        ⌘F
-                      </Text>
-                    }
-                  />
-
-                  {/* 搜索结果提示 */}
-                  {searchQuery.trim() && (
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        fontSize: "12px",
-                        color: "#666",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <span>找到 {filteredNotes.length} 个匹配的便签</span>
-                      {filteredNotes.length > 0 && (
-                        <span style={{ color: "#52c41a" }}>✓</span>
                       )}
-                    </div>
-                  )}
+                    />
+                  </div>
                 </div>
-                {/* 便签列表容器 - 重新设计 */}
-                <div
-                  style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "8px 12px 16px",
-                  }}
-                >
-                  <List
-                    itemLayout="horizontal"
-                    dataSource={displayNotes}
-                    loading={notesLoading}
-                    locale={{
-                      emptyText: (
-                        <div
-                          style={{
-                            padding: "32px 16px",
-                            textAlign: "center",
-                            color: "#8c8c8c",
-                          }}
-                        >
-                          {notesError ? (
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: "24px",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                ⚠️
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: 500,
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                加载失败
-                              </div>
-                              <div style={{ fontSize: "12px" }}>
-                                {notesError}
-                              </div>
-                            </div>
-                          ) : searchQuery.trim() ? (
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: "24px",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                🔍
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: 500,
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                未找到匹配的便签
-                              </div>
-                              <div style={{ fontSize: "12px" }}>
-                                尝试使用不同的关键词搜索
-                              </div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: "24px",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                📝
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: 500,
-                                  marginBottom: "4px",
-                                }}
-                              >
-                                还没有便签
-                              </div>
-                              <div style={{ fontSize: "12px" }}>
-                                双击画布或点击工具栏的 + 创建第一个便签
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ),
-                    }}
-                    renderItem={(note: {
-                      id: string;
-                      color: string;
-                      title: string;
-                      x: number;
-                      y: number;
-                      width: number;
-                      height: number;
-                    }) => (
-                      <List.Item
-                        className="note-list-item"
-                        onClick={() => handleNoteClick(note)}
-                        style={{
-                          padding: "4px 8px",
-                          cursor: "pointer",
-                          marginBottom: "6px",
-                          borderRadius: "6px",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                        }}
-                      >
-                        {/* 保持原有的设计结构 */}
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            width: "100%",
-                          }}
-                        >
-                          {/* 原有的颜色条设计 */}
-                          <div
-                            style={{
-                              width: "3px",
-                              alignSelf: "stretch",
-                              backgroundColor: note.color,
-                              borderRadius: "2px 0 0 2px",
-                              marginRight: "8px",
-                            }}
-                          />
-                          {/* 便签标题容器 */}
-                          <Text
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 500,
-                              color: "#262626",
-                              flex: 1,
-                            }}
-                            ellipsis={{
-                              tooltip: searchQuery.trim()
-                                ? `${note.title} - 点击定位到便签`
-                                : note.title,
-                            }}
-                          >
-                            {searchQuery.trim()
-                              ? highlightSearchText(note.title, searchQuery)
-                              : note.title}
-                          </Text>
-                        </div>
-                      </List.Item>
-                    )}
-                  />
-                </div>
-              </div>
-            </Splitter.Panel>
-          </Splitter>
+              </Splitter.Panel>
+            </Splitter>
+          </div>
 
-          {/* 设置按钮区域 - 与 Splitter 同级 */}
+          {/* 设置按钮区域 - 固定在底部 */}
           <div
+            className="sidebar-settings-area"
             style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
               padding: "8px 16px 12px",
               borderTop: "1px solid rgba(0, 0, 0, 0.06)",
               display: "flex",
               justifyContent: "flex-end", // 右对齐
-              background: "transparent",
+              borderTopLeftRadius: "0",
+              borderTopRightRadius: "0",
             }}
           >
             <Button

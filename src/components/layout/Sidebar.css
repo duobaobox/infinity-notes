@@ -382,6 +382,26 @@
   .note-list-item:last-child {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
   }
+
+  /* 设置按钮区域 - 深色模式 */
+  .sidebar-settings-area {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+  }
+}
+
+/* 设置按钮区域样式 */
+.sidebar-settings-area {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* 浏览器降级方案 - 设置按钮区域 */
+@supports not (backdrop-filter: blur(12px)) {
+  .sidebar-settings-area {
+    background: var(--glass-fallback);
+  }
 }
 
 /* 微交互动画 */
