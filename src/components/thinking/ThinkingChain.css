@@ -1,13 +1,13 @@
 /* 思维链容器样式 */
 .thinking-chain-container {
-  margin: 12px 0;
+  margin: 0; /* 去掉上下 margin */
   border-radius: 8px;
   background: #fafafa;
   border: 1px solid #f0f0f0;
 }
 
 .thinking-chain-container.compact {
-  margin: 8px 0;
+  margin-bottom: 12px;
   background: transparent;
   border: none;
 }
@@ -405,50 +405,56 @@
   cursor: default;
 }
 
-/* 便签中的思维链特殊样式 */
+/* 便签中的思维链特殊样式 - 更新以适应新的容器结构 */
 .thinking-chain-in-note {
-  margin: 0; /* 移除外边距以节省空间 */
+  margin: 0; /* 移除所有边距，由外层容器控制 */
+  padding: 0; /* 移除内边距，避免重复 */
 }
 
+/* 基础思维链容器样式 - 使用CSS变量实现动态高度 */
 .thinking-chain-in-note .thinking-process-section {
-  /* 在便签中时，使用更合理的最大高度 */
-  max-height: 250px; /* 固定最大高度，避免过高 */
-  min-height: 80px; /* 确保有最小高度 */
-  margin: 8px 12px; /* 减少边距 */
-  padding: 12px; /* 减少内边距 */
+  /* 使用CSS变量动态设置高度，由JavaScript根据便签尺寸计算 */
+  max-height: var(--thinking-max-height, 120px); /* 默认120px，可通过变量覆盖 */
+  min-height: var(--thinking-min-height, 60px); /* 默认60px，可通过变量覆盖 */
+  margin: 0 8px; /* 减小左右margin，为最小便签宽度留出更多空间 */
+  padding: 8px; /* 减小内边距 */
+  margin-bottom: 8px; /* 与便签底部保持适当间距 */
 }
 
 .thinking-chain-in-note.compact .thinking-process-section {
-  max-height: 180px; /* 紧凑模式下更小的最大高度 */
-  min-height: 60px;
-  margin: 6px 8px;
-  padding: 8px;
+  /* 紧凑模式下的高度也使用变量控制 */
+  max-height: var(--thinking-max-height-compact, 100px); /* 默认100px */
+  min-height: var(--thinking-min-height-compact, 50px); /* 默认50px */
+  margin: 0 6px; /* 更小的左右margin */
+  padding: 6px;
+  margin-bottom: 6px; /* 与便签底部保持适当间距 */
 }
 
 /* 便签中的思维链步骤列表样式优化 */
 .thinking-chain-in-note .thinking-steps-list {
-  margin: 8px 0; /* 减少边距 */
+  margin: 0; /* 去掉上下margin */
 }
 
 .thinking-chain-in-note .thinking-stats {
-  margin: 0 12px 6px 12px; /* 调整边距 */
-  padding: 6px 8px; /* 减少内边距 */
+  margin: 0 8px; /* 减小左右margin以适应最小便签 */
+  padding: 4px 6px; /* 减少内边距 */
+  margin-bottom: 4px; /* 与思维链过程区域保持小间距 */
 }
 
 /* 便签中的思维链步骤项优化 */
 .thinking-chain-in-note .thinking-step-item {
-  margin-bottom: 12px; /* 减少步骤间距 */
+  margin-bottom: 8px; /* 进一步减少步骤间距以节省空间 */
 }
 
 .thinking-chain-in-note .thinking-step-content {
-  margin-left: 20px; /* 便签中使用更紧凑的左边距 */
-  margin-right: 6px; /* 添加右边距保持平衡 */
-  padding: 6px 0; /* 减少内边距 */
+  margin-left: 16px; /* 减少左边距以节省水平空间 */
+  margin-right: 4px; /* 减少右边距 */
+  padding: 4px 0; /* 减少内边距以节省垂直空间 */
 }
 
 .thinking-chain-in-note .thinking-step-text {
-  font-size: 12px; /* 稍微减小字体 */
-  line-height: 1.4; /* 调整行高 */
+  font-size: 11px; /* 进一步减小字体以适应小空间 */
+  line-height: 1.3; /* 减小行高以节省垂直空间 */
 }
 
 .thinking-chain-in-note .thinking-step-tag-with-icon {
@@ -503,4 +509,46 @@
   .thinking-step-text {
     color: #d9d9d9;
   }
+}
+
+/* 针对最小便签尺寸的特殊优化 - 现在主要通过动态计算处理，保留必要的样式优化 */
+.sticky-note[style*="width: 250px"]
+  .thinking-chain-in-note
+  .thinking-process-section,
+.sticky-note[style*="width: 251px"]
+  .thinking-chain-in-note
+  .thinking-process-section,
+.sticky-note[style*="width: 252px"]
+  .thinking-chain-in-note
+  .thinking-process-section {
+  margin: 0 4px !important; /* 最小左右边距 */
+  padding: 4px !important; /* 最小内边距 */
+  margin-bottom: 4px !important;
+}
+
+/* 最小便签尺寸时的字体和间距进一步优化 */
+.sticky-note[style*="width: 250px"] .thinking-chain-in-note .thinking-step-text,
+.sticky-note[style*="height: 230px"]
+  .thinking-chain-in-note
+  .thinking-step-text {
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+}
+
+.sticky-note[style*="width: 250px"] .thinking-chain-in-note .thinking-step-item,
+.sticky-note[style*="height: 230px"]
+  .thinking-chain-in-note
+  .thinking-step-item {
+  margin-bottom: 4px !important;
+}
+
+.sticky-note[style*="width: 250px"]
+  .thinking-chain-in-note
+  .thinking-step-content,
+.sticky-note[style*="height: 230px"]
+  .thinking-chain-in-note
+  .thinking-step-content {
+  margin-left: 12px !important;
+  margin-right: 2px !important;
+  padding: 2px 0 !important;
 }

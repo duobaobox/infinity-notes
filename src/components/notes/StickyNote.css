@@ -859,14 +859,14 @@
   padding-right: 0;
 }
 
-/* 包含思维链的便签内容区域特殊处理 */
-.sticky-note-content:has(.thinking-chain-in-note) {
-  overflow: visible; /* 允许思维链组件内部处理滚动 */
+/* 包含思维链的便签内容区域特殊处理 - 更新以适应新的结构层级 */
+.sticky-note:has(.thinking-chain-in-note) .sticky-note-content {
+  overflow: hidden; /* 保持正常的隐藏溢出，因为思维链现在在外层 */
 }
 
 /* 如果浏览器不支持:has选择器，使用类名方式 */
 .sticky-note-content.has-thinking-chain {
-  overflow: visible; /* 允许思维链组件内部处理滚动 */
+  overflow: hidden; /* 保持正常的隐藏溢出，因为思维链现在在外层 */
 }
 
 /* 编辑状态下的sticky-note-content - 移除下内边距 */

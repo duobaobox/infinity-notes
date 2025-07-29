@@ -4,7 +4,7 @@ import { useUIStore } from "../stores/uiStore";
 import { useStickyNotesStore } from "../stores/stickyNotesStore";
 import type { StickyNote } from "../components/types";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 /**
  * 思维模式功能测试组件

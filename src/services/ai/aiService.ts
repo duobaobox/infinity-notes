@@ -530,25 +530,36 @@ export class AIService {
         );
 
         // 现在统一使用智能解析方式
-        // 先尝试JSON解析，失败则使用自然语言解析
-        // 🔧 修复：如果有流式显示的内容，优先使用displayedContent（包含标识符）
-        const contentToAnalyze =
-          streamingState.displayedContent || fullResponse;
-        console.log("🔍 选择解析内容:", {
-          useDisplayedContent: !!streamingState.displayedContent,
-          displayedLength: streamingState.displayedContent.length,
-          fullResponseLength: fullResponse.length,
-          hasThinkingInDisplayed:
-            streamingState.displayedContent.includes("🤔 **AI正在思考中...**"),
-          hasFinalAnswerInDisplayed:
-            streamingState.displayedContent.includes("## ✨ 最终答案"),
+        // 🔧 优化：使用流式状态来判断思维链，而不是依赖文本标识符
+        console.log("🔍 流式状态分析:", {
+          hasStartedThinking: streamingState.hasStartedThinking,
+          hasFinishedThinking: streamingState.hasFinishedThinking,
+          thinkingContentLength: streamingState.thinkingContent.length,
+          showThinkingMode: streamingState.showThinkingMode,
         });
 
-        const finalNotes = this.parseResponseIntelligently(
-          contentToAnalyze,
-          prompt,
+        let finalNotes;
+        if (
+          streamingState.hasStartedThinking &&
+          streamingState.hasFinishedThinking &&
           streamingState.showThinkingMode
-        );
+        ) {
+          // 有完整的思维链流程，直接构造便签数据
+          console.log("🧠 检测到完整思维链流程，直接构造便签");
+          finalNotes = this.createNoteFromStreamingState(
+            streamingState,
+            fullResponse,
+            prompt
+          );
+        } else {
+          // 没有思维链或流程不完整，使用传统解析
+          console.log("📝 使用传统解析方式");
+          finalNotes = this.parseResponseIntelligently(
+            fullResponse,
+            prompt,
+            streamingState.showThinkingMode
+          );
+        }
 
         if (finalNotes.success && finalNotes.notes) {
           console.log("✅ 内容解析成功，便签数量:", finalNotes.notes.length);
@@ -760,6 +771,99 @@ export class AIService {
     } catch (error) {
       console.error("❌ 智能解析失败:", error);
       return { success: false, error: "解析AI回复失败" };
+    }
+  }
+
+  /**
+   * 从流式状态创建便签数据
+   * @param streamingState 流式生成状态
+   * @param fullResponse 完整的AI响应
+   * @param originalPrompt 用户的原始提示词
+   * @returns 解析结果
+   */
+  private createNoteFromStreamingState(
+    streamingState: any,
+    fullResponse: string,
+    originalPrompt: string
+  ): { success: boolean; notes?: StickyNoteData[]; error?: string } {
+    try {
+      // 从流式状态中提取思维链内容和最终答案
+      const thinkingContent = streamingState.thinkingContent.trim();
+
+      // 从displayedContent中提取最终答案（去掉思维链部分）
+      let finalAnswer = "";
+      if (streamingState.displayedContent) {
+        // 找到最终答案的开始位置（在分隔线之后）
+        const separatorIndex =
+          streamingState.displayedContent.lastIndexOf("---");
+        if (separatorIndex !== -1) {
+          // 提取分隔线后的内容，并清理标题
+          const afterSeparator =
+            streamingState.displayedContent.substring(separatorIndex);
+          finalAnswer = afterSeparator
+            .replace(/^---\s*/, "")
+            .replace(/^##\s*[^\n]*\n*/, "") // 移除标题行
+            .trim();
+        }
+      }
+
+      // 如果没有提取到最终答案，从原始响应中提取
+      if (!finalAnswer) {
+        const { cleanContent } = this.parseThinkingChain(
+          fullResponse,
+          originalPrompt,
+          false
+        );
+        finalAnswer = cleanContent;
+      }
+
+      console.log("🔧 从流式状态构造便签:", {
+        thinkingLength: thinkingContent.length,
+        finalAnswerLength: finalAnswer.length,
+        thinkingPreview: thinkingContent.substring(0, 100) + "...",
+        finalAnswerPreview: finalAnswer.substring(0, 100) + "...",
+      });
+
+      // 解析思维链步骤
+      const steps = this.parseThinkingStepsInternal(thinkingContent);
+
+      if (steps.length === 0) {
+        console.warn("⚠️ 思维链步骤解析失败，回退到传统解析");
+        return this.parseResponseIntelligently(
+          fullResponse,
+          originalPrompt,
+          streamingState.showThinkingMode
+        );
+      }
+
+      // 创建思维链对象
+      const thinkingChain: StickyNoteData["thinkingChain"] = {
+        id: `thinking-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 11)}`,
+        prompt: originalPrompt,
+        steps,
+        finalAnswer,
+        totalThinkingTime: steps.length * 1000,
+        createdAt: new Date(),
+      };
+
+      const note: StickyNoteData = {
+        title: this.generateTitleFromContent(finalAnswer),
+        content: finalAnswer, // 开启思维模式时，content存储最终答案
+        thinkingChain,
+        hasThinking: true,
+      };
+
+      return { success: true, notes: [note] };
+    } catch (error) {
+      console.error("❌ 从流式状态创建便签失败:", error);
+      // 回退到传统解析
+      return this.parseResponseIntelligently(
+        fullResponse,
+        originalPrompt,
+        streamingState.showThinkingMode
+      );
     }
   }
 

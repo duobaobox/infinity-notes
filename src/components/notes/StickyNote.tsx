@@ -955,6 +955,74 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     return Math.max(maxAvailableWidth, 80) + "px"; // 至少80px
   };
 
+  /**
+   * 计算思维链容器的动态高度
+   * 根据便签的实际高度自适应调整思维链显示区域
+   * @param noteHeight 便签的当前高度
+   * @param noteWidth 便签的当前宽度（预留参数，用于将来可能的宽度相关优化）
+   * @returns 包含CSS变量值的对象
+   */
+  const calculateThinkingChainHeight = useCallback((noteHeight: number) => {
+    // 注意：noteWidth参数预留用于将来可能的宽度相关优化
+    // 当前主要基于高度进行计算
+    // 便签中各部分占用的固定高度
+    const headerHeight = 40; // 便签头部高度
+    const contentPadding = 24; // 内容区域上下padding (12px * 2)
+    const thinkingHeaderHeight = 36; // 思维链头部高度（包含padding）
+    const thinkingPadding = 16; // 思维链容器内边距
+    const bottomMargin = 12; // 底部预留空间
+    const minContentHeight = 60; // 便签内容区域最小高度
+
+    // 计算思维链可用的最大高度
+    const availableHeight =
+      noteHeight -
+      headerHeight -
+      contentPadding -
+      thinkingHeaderHeight -
+      thinkingPadding -
+      bottomMargin;
+
+    // 确保便签内容区域有足够空间，思维链不能占用过多高度
+    const maxAllowedHeight = Math.max(availableHeight - minContentHeight, 40);
+
+    // 根据便签尺寸设置不同的高度范围
+    let maxHeight: number;
+    let minHeight: number;
+
+    if (noteHeight <= 250) {
+      // 小便签：更严格的高度限制
+      maxHeight = Math.min(maxAllowedHeight, 60);
+      minHeight = Math.min(maxHeight, 40);
+    } else if (noteHeight <= 350) {
+      // 中等便签：适中的高度限制
+      maxHeight = Math.min(maxAllowedHeight, 100);
+      minHeight = Math.min(maxHeight, 50);
+    } else if (noteHeight <= 500) {
+      // 大便签：较宽松的高度限制
+      maxHeight = Math.min(maxAllowedHeight, 150);
+      minHeight = Math.min(maxHeight, 60);
+    } else {
+      // 超大便签：最大高度限制，但不超过300px
+      maxHeight = Math.min(maxAllowedHeight, 300);
+      minHeight = Math.min(maxHeight, 80);
+    }
+
+    // 确保最小高度不小于40px
+    minHeight = Math.max(minHeight, 40);
+    maxHeight = Math.max(maxHeight, minHeight);
+
+    // 紧凑模式下的高度（稍微小一些）
+    const compactMaxHeight = Math.max(maxHeight * 0.8, 40);
+    const compactMinHeight = Math.max(minHeight * 0.8, 30);
+
+    return {
+      "--thinking-max-height": `${maxHeight}px`,
+      "--thinking-min-height": `${minHeight}px`,
+      "--thinking-max-height-compact": `${compactMaxHeight}px`,
+      "--thinking-min-height-compact": `${compactMinHeight}px`,
+    };
+  }, []);
+
   // 计算实际使用的位置和尺寸，并应用缩放变换
   // 现在便签直接根据缩放级别调整自身大小和位置，避免CSS transform缩放
   // 优化：使用useMemo缓存计算结果，但依赖画布状态确保实时更新
@@ -1399,31 +1467,53 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         </div>
 
+        {/* 思维链组件容器 - 只在非编辑状态、有思维链数据且开启思维模式时显示 */}
+        {(() => {
+          const shouldShowThinking =
+            !note.isEditing &&
+            !isStreaming &&
+            note.thinkingChain &&
+            basicSettings.showThinkingMode;
+
+          if (!shouldShowThinking) return null;
+
+          // 计算当前便签的实际高度（考虑临时调整和缩放）
+          const currentHeight =
+            isResizing || isSyncingSize ? tempSize.height : note.height;
+
+          // 计算思维链容器的动态高度CSS变量
+          const thinkingHeightVars =
+            calculateThinkingChainHeight(currentHeight);
+
+          return (
+            <div
+              style={{
+                paddingLeft: "12px",
+                paddingRight: "12px",
+                // 在小便签中使用更小的 padding
+                ...(pixelAlignedWidth <= 260 && {
+                  paddingLeft: "8px",
+                  paddingRight: "8px",
+                }),
+                // 应用动态计算的CSS变量
+                ...thinkingHeightVars,
+              }}
+            >
+              <ThinkingChain
+                thinkingChain={note.thinkingChain!}
+                defaultExpanded={false}
+                compact={true}
+                inNote={true}
+              />
+            </div>
+          );
+        })()}
+
         <div
           className={`sticky-note-content ${
             note.thinkingChain ? "has-thinking-chain" : ""
           }`}
         >
-          {/* 思维链组件 - 只在非编辑状态、有思维链数据且开启思维模式时显示 */}
-          {(() => {
-            const shouldShowThinking =
-              !note.isEditing &&
-              !isStreaming &&
-              note.thinkingChain &&
-              basicSettings.showThinkingMode;
-
-            return shouldShowThinking ? (
-              <div style={{ marginBottom: "12px" }}>
-                <ThinkingChain
-                  thinkingChain={note.thinkingChain!}
-                  defaultExpanded={false}
-                  compact={true}
-                  inNote={true}
-                />
-              </div>
-            ) : null;
-          })()}
-
           {/* 🎯 无感一体化编辑器 - 彻底消除编辑/预览模式概念 */}
           <WysiwygEditor
             content={
