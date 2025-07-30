@@ -56,10 +56,26 @@ try {
     { size: 1024, name: "icon_512x512@2x.png" },
   ];
 
-  // 使用 sips 生成各种尺寸的图标
+  // 使用 sips 生成各种尺寸的图标，添加适当的内边距
   for (const { size, name } of sizes) {
     const outputPath = path.join(iconsetDir, name);
-    execSync(`sips -z ${size} ${size} "${inputPng}" --out "${outputPath}"`);
+
+    // 计算内容区域大小（留出边距）
+    // macOS 图标通常需要 10-15% 的边距
+    const contentSize = Math.round(size * 0.85);
+    const padding = Math.round((size - contentSize) / 2);
+
+    // 创建临时的缩放图标
+    const tempPath = path.join(iconsetDir, `temp_${name}`);
+    execSync(
+      `sips -z ${contentSize} ${contentSize} "${inputPng}" --out "${tempPath}"`
+    );
+
+    // 创建带边距的最终图标
+    execSync(`sips -c ${size} ${size} "${tempPath}" --out "${outputPath}"`);
+
+    // 删除临时文件
+    fs.unlinkSync(tempPath);
   }
 
   // 使用 iconutil 生成 .icns 文件
