@@ -45,9 +45,10 @@
     "type-check": "tsc --noEmit",
     "electron": "electron .",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && electron-builder",
-    "dist": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --publish=never",
-    "dist:mac": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --mac",
+    "generate-icons": "node scripts/generate-icons.js",
+    "electron:build": "npm run generate-icons && npm run build && electron-builder",
+    "dist": "npm run generate-icons && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --publish=never",
+    "dist:mac": "npm run generate-icons && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --mac",
     "dist:win": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --win",
     "dist:linux": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && electron-builder --linux",
     "deploy:web": "./scripts/deploy-web.sh",
@@ -95,6 +96,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "png2icons": "^2.0.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5",
@@ -109,9 +111,12 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "public/icon.png"
+      "public/icon.png",
+      "public/icon.icns",
+      "public/icon.ico"
     ],
     "mac": {
+      "icon": "public/icon.icns",
       "category": "public.app-category.productivity",
       "target": [
         {
@@ -131,6 +136,7 @@
       ]
     },
     "win": {
+      "icon": "public/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -149,6 +155,7 @@
       ]
     },
     "linux": {
+      "icon": "public/icon.png",
       "category": "Office",
       "target": [
         {

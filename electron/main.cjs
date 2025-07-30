@@ -115,7 +115,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       webSecurity: !isDev, // 开发环境允许跨域
     },
-    icon: path.join(__dirname, "../public/icon.png"),
+    icon: path.join(__dirname, "../public/icon.png"), // 应用窗口图标
   });
 
   // 恢复最大化状态
@@ -202,7 +202,7 @@ function showNotification(title, body, options = {}) {
   const notification = new Notification({
     title,
     body,
-    icon: path.join(__dirname, "../public/icon.png"),
+    icon: path.join(__dirname, "../public/icon.png"), // 系统通知图标
     silent: false,
     ...options,
   });

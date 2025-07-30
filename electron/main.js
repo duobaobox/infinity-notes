@@ -19,7 +19,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       webSecurity: !isDev, // 开发环境允许跨域
     },
-    icon: path.join(__dirname, "../public/icon.png"),
+    icon: path.join(__dirname, "../public/icon.png"), // 应用窗口图标
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     show: false, // 先不显示，等内容加载完再显示
   });
