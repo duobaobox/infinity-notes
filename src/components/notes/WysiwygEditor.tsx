@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import {
+  useEditor,
+  EditorContent,
+  generateHTML,
+  generateJSON,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
@@ -10,44 +15,18 @@ import "./WysiwygEditor.css";
 
 /**
  * 安全地执行编辑器命令，避免在编辑器未挂载时出错
- * 使用严格的检查机制确保编辑器完全可用
+ * 简化版本，减少复杂的检查逻辑
  */
-const safeEditorCommand = (
-  editor: any,
-  command: () => void,
-  _errorMessage: string = "编辑器命令执行失败"
-) => {
-  // 基本检查
-  if (!editor) {
+const safeEditorCommand = (editor: any, command: () => void) => {
+  if (!editor || editor.isDestroyed) {
     return false;
   }
 
   try {
-    // 检查编辑器是否已销毁
-    if (editor.isDestroyed) {
-      return false;
-    }
-
-    // 检查编辑器命令是否可用
-    if (!editor.commands) {
-      return false;
-    }
-
-    // 更严格的视图检查：确保视图完全可用且已挂载到DOM
-    if (
-      !editor.view ||
-      !editor.view.dom ||
-      !editor.view.dom.parentNode ||
-      !editor.view.state
-    ) {
-      return false;
-    }
-
-    // 直接执行命令，让TipTap内部处理错误
     command();
     return true;
   } catch (error) {
-    // 静默处理错误，避免控制台噪音
+    console.warn("编辑器命令执行失败:", error);
     return false;
   }
 };
@@ -560,11 +539,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       if (autoFocus) {
         // 使用更长的延迟确保编辑器完全挂载
         setTimeout(() => {
-          safeEditorCommand(
-            editor,
-            () => editor.commands.focus(),
-            "编辑器创建时聚焦失败"
-          );
+          safeEditorCommand(editor, () => editor.commands.focus());
         }, 200);
       }
 
@@ -679,11 +654,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     // 如果启用编辑且需要自动聚焦
     if (!disabled && autoFocus) {
       setTimeout(() => {
-        safeEditorCommand(
-          editor,
-          () => editor.commands.focus(),
-          "编辑器自动聚焦失败"
-        );
+        safeEditorCommand(editor, () => editor.commands.focus());
       }, 200);
     }
   }, [disabled, autoFocus, editor]);

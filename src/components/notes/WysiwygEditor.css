@@ -468,3 +468,42 @@
 .wysiwyg-editor .tiptap.ProseMirror:hover {
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent; /* 悬浮时显示滚动条 */
 }
+
+/* 编辑器健康状态样式 */
+.wysiwyg-editor.editor-warning {
+  border: 2px solid #f59e0b;
+  background-color: #fffbeb;
+}
+
+.wysiwyg-editor.editor-error {
+  border: 2px solid #ef4444;
+  background-color: #fef2f2;
+}
+
+/* 健康状态指示器 */
+.editor-health-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+}
+
+.health-status {
+  font-size: 14px;
+}
+
+.health-message {
+  color: #6b7280;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
