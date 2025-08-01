@@ -429,6 +429,7 @@
   margin: 0 0px; /* 更小的左右margin */
   padding: 6px;
   margin-bottom: 6px; /* 与便签底部保持适当间距 */
+  margin-top: 6px; /* 增加上 margin 6px */
 }
 
 /* 便签中的思维链步骤列表样式优化 */

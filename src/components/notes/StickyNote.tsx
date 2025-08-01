@@ -1410,8 +1410,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           return shouldShowThinking ? (
             <div
               style={{
-                paddingLeft: "12px",
-                paddingRight: "12px",
+                paddingLeft: "16px",
+                paddingRight: "16px",
                 // 在小便签中使用更小的 padding
                 ...(pixelAlignedWidth <= 260 && {
                   paddingLeft: "8px",
