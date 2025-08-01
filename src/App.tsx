@@ -14,6 +14,7 @@ import RightClickSelectionTest from "./test/RightClickSelectionTest";
 import StickyNoteDragTest from "./test/StickyNoteDragTest";
 import TabsSpacingTest from "./test/TabsSpacingTest";
 import ThinkingChainTest from "./test/ThinkingChainTest";
+import ThinkingChainXMLTest from "./test/ThinkingChainXMLTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
 import ThinkingModeTest from "./test/ThinkingModeTest";
 import { DebugDrawer } from "./components/debug";
@@ -42,6 +43,7 @@ function App() {
   const isTestMode =
     testMode === "prompt-template" ||
     testMode === "thinking-chain" ||
+    testMode === "thinking-chain-xml" ||
     testMode === "thinking-chain-timestamp" ||
     testMode === "thinking-mode" ||
     testMode === "markdown-list" ||
@@ -196,6 +198,8 @@ function App() {
       return <AIPromptTemplateTest />;
     } else if (testMode === "thinking-chain") {
       return <ThinkingChainTest />;
+    } else if (testMode === "thinking-chain-xml") {
+      return <ThinkingChainXMLTest />;
     } else if (testMode === "thinking-chain-timestamp") {
       return <ThinkingChainTimestampTest />;
     } else if (testMode === "thinking-mode") {

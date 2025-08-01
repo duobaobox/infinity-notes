@@ -2,9 +2,9 @@
 //
 // 思维链功能说明：
 // 1. 支持解析AI回复中的思维过程，分离思考内容和最终答案
-// 2. 支持两种思维链格式：
-//    - 标准格式：<thinking>...</thinking> 或 <think>...</think>
-//    - 自然语言格式：包含"首先"、"然后"、"因此"等思维过程关键词
+// 2. 使用科学的XML标签格式进行解析：
+//    - 通用格式：<thinking>...</thinking>（GPT、Claude等模型）
+//    - DeepSeek格式：<think>...</think>（DeepSeek R1等模型）
 // 3. 数据存储策略：
 //    - 开启思维模式：note.content存储最终答案，note.thinkingChain存储思考过程
 //    - 关闭思维模式：note.content存储完整原始内容，note.thinkingChain为undefined
@@ -751,12 +751,12 @@ export class AIService {
       }
 
       // 使用自然语言解析（现在是主要方式）
-      // 解析思维链内容
-      console.log("🔍 开始解析思维链:", {
+      // 解析思维链内容 - 使用科学的XML标签格式
+      console.log("🔍 开始解析思维链 - 使用XML标签格式:", {
         responseLength: cleanResponse.length,
         showThinkingMode,
-        hasThinkingMarker: cleanResponse.includes("🤔 **AI正在思考中...**"),
-        hasFinalAnswerMarker: cleanResponse.includes("## ✨ 最终答案"),
+        hasThinkTag: cleanResponse.includes("<think>"),
+        hasThinkingTag: cleanResponse.includes("<thinking>"),
         responsePreview: cleanResponse.substring(0, 200) + "...",
       });
 
@@ -971,10 +971,10 @@ export class AIService {
             .trim();
         } else {
           // 如果没有分隔线，可能是纯最终答案内容
-          // 检查是否包含思维链标识符，如果包含则需要清理
+          // 🔧 兼容性清理：移除可能存在的UI显示标识符（非主要解析逻辑）
           const content = streamingState.displayedContent;
           if (content.includes("🤔 **AI正在思考中...**")) {
-            // 移除思维链标识符，只保留最终答案
+            // 清理流式显示过程中添加的UI标识符
             finalAnswer = content
               .replace(/🤔 \*\*AI正在思考中\.\.\.\*\*/g, "")
               .replace(/^[\s\n]*---[\s\n]*/g, "") // 移除分隔线
@@ -1001,11 +1001,11 @@ export class AIService {
       // 方法3：最后的兜底处理 - 如果仍然没有内容，使用原始响应但移除思维链标签
       if (!finalAnswer || finalAnswer.trim().length === 0) {
         console.log("⚠️ 所有提取方法失败，使用兜底处理");
-        // 移除所有可能的思维链标签格式
+        // 🔧 兜底清理：移除所有可能的标签格式（包括XML标签和UI标识符）
         finalAnswer = fullResponse
           .replace(/<think>[\s\S]*?<\/think>/gi, "") // 移除 <think> 标签
           .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "") // 移除 <thinking> 标签
-          .replace(/🤔 \*\*AI正在思考中\.\.\.\*\*/g, "") // 移除思维链标识符
+          .replace(/🤔 \*\*AI正在思考中\.\.\.\*\*/g, "") // 清理UI标识符
           .replace(/^[\s\n]*---[\s\n]*/g, "") // 移除分隔线
           .replace(/^##\s*✨\s*最终答案[\s\n]*/g, "") // 移除最终答案标题
           .trim();
@@ -1059,6 +1059,7 @@ export class AIService {
 
   /**
    * 思维链解析器 - 从AI回复中分离思维过程和最终答案
+   * 使用科学的XML标签格式进行解析，支持多种AI模型的标准输出格式
    * @param response AI的原始回复内容
    * @param originalPrompt 用户的原始提示词
    * @param showThinkingMode 是否开启思维模式显示
@@ -1073,52 +1074,37 @@ export class AIService {
     cleanContent: string;
   } {
     try {
-      // 🎯 简化逻辑：根据流式生成过程中的标识符来分离内容
-      // 检查是否包含思维链标识符
-      const hasThinkingMarker = response.includes("🤔 **AI正在思考中...**");
-      const hasFinalAnswerMarker = response.includes("## ✨ 最终答案");
+      console.log("🔍 开始解析思维链 - XML标签格式解析", {
+        responseLength: response.length,
+        showThinkingMode,
+        responsePreview: response.substring(0, 200) + "...",
+      });
 
       let thinkingContent = "";
       let cleanContent = response;
       let foundThinking = false;
 
-      if (hasThinkingMarker && hasFinalAnswerMarker) {
-        console.log("🎯 检测到思维链标识符，开始分离内容");
-        // 根据标识符分离思维链和最终答案
-        const parts = response.split("## ✨ 最终答案");
-        if (parts.length >= 2) {
-          // 提取思维链内容（去掉标题）
-          thinkingContent = parts[0]
-            .replace("🤔 **AI正在思考中...**", "")
-            .replace(/^[\s\n]*---[\s\n]*/, "") // 移除分隔线
-            .trim();
+      // 🎯 科学的XML标签格式解析 - 支持多种AI模型的标准输出格式
+      const thinkingPatterns = [
+        /<thinking>([\s\S]*?)<\/thinking>/gi, // 通用格式（如GPT、Claude等）
+        /<think>([\s\S]*?)<\/think>/gi, // DeepSeek R1格式
+      ];
 
-          // 提取最终答案内容
-          cleanContent = parts[1].trim();
+      for (const pattern of thinkingPatterns) {
+        const match = response.match(pattern);
+        if (match && match[1]) {
+          thinkingContent = match[1].trim();
+          cleanContent = response.replace(pattern, "").trim();
           foundThinking = true;
-
-          console.log("✅ 内容分离成功:", {
+          
+          console.log("✅ XML标签解析成功:", {
+            patternUsed: pattern.source,
             thinkingLength: thinkingContent.length,
             cleanLength: cleanContent.length,
             thinkingPreview: thinkingContent.substring(0, 100) + "...",
             cleanPreview: cleanContent.substring(0, 100) + "...",
           });
-        }
-      } else {
-        // 兼容旧格式：检查XML标签格式
-        const thinkingPatterns = [
-          /<thinking>([\s\S]*?)<\/thinking>/gi, // 通用格式
-          /<think>([\s\S]*?)<\/think>/gi, // DeepSeek格式
-        ];
-
-        for (const pattern of thinkingPatterns) {
-          const match = response.match(pattern);
-          if (match && match[1]) {
-            thinkingContent = match[1].trim();
-            cleanContent = response.replace(pattern, "").trim();
-            foundThinking = true;
-            break;
-          }
+          break;
         }
       }
 
