@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
@@ -9,10 +9,52 @@ import { useCanvasStore } from "../../stores/canvasStore";
 import "./WysiwygEditor.css";
 
 /**
- * 安全地执行编辑器命令，避免在编辑器未挂载时出错
- * 简化版本，减少复杂的检查逻辑
+ * 编辑器配置接口
  */
-const safeEditorCommand = (editor: any, command: () => void) => {
+interface EditorConfig {
+  /** 是否启用健康检查 */
+  healthCheck?: boolean;
+  /** 是否启用性能监控 */
+  performanceMonitor?: boolean;
+  /** 是否启用UX优化 */
+  uxOptimizer?: boolean;
+  /** 防抖延迟时间（毫秒） */
+  debounceDelay?: number;
+  /** 是否启用智能滚动 */
+  smartScroll?: boolean;
+}
+
+/**
+ * 默认编辑器配置
+ */
+const DEFAULT_EDITOR_CONFIG: EditorConfig = {
+  healthCheck: false,
+  performanceMonitor: false,
+  uxOptimizer: false,
+  debounceDelay: 100,
+  smartScroll: true,
+};
+
+/**
+ * 编辑器错误处理 Hook
+ */
+const useEditorErrorHandler = () => {
+  const handleError = useCallback((error: Error, context: string) => {
+    console.error(`[Editor Error - ${context}]:`, error);
+    // 可以在这里添加错误上报逻辑
+  }, []);
+
+  return { handleError };
+};
+
+/**
+ * 安全地执行编辑器命令，避免在编辑器未挂载时出错
+ * 优化版本，增加类型安全
+ */
+const safeEditorCommand = (
+  editor: Editor | null,
+  command: () => void
+): boolean => {
   if (!editor || editor.isDestroyed) {
     return false;
   }
@@ -47,7 +89,7 @@ interface WysiwygEditorProps {
   /** 编辑器类名 */
   className?: string;
   /** 编辑器实例回调 */
-  onEditorReady?: (editor: any) => void;
+  onEditorReady?: (editor: Editor) => void;
   /** 点击事件回调 */
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   /** 鼠标按下事件回调 */
@@ -58,6 +100,8 @@ interface WysiwygEditorProps {
   title?: string;
   /** 是否正在流式输入（用于智能滚动） */
   isStreaming?: boolean;
+  /** 编辑器配置 */
+  config?: EditorConfig;
 }
 
 /**
@@ -391,7 +435,9 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   style,
   title,
   isStreaming = false,
+  config = DEFAULT_EDITOR_CONFIG,
 }) => {
+  const { handleError } = useEditorErrorHandler();
   const editorRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const proseMirrorRef = useRef<HTMLElement | null>(null);
@@ -413,14 +459,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           behavior: smooth ? "smooth" : "auto",
         });
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("📜 自动滚动到底部:", {
-            scrollHeight: element.scrollHeight,
-            clientHeight: element.clientHeight,
-            scrollTop: element.scrollTop,
-            smooth,
-          });
-        }
+        // 自动滚动完成
       }
     }
   }, []);
@@ -438,20 +477,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       }
 
       const hasVerticalScrollbar = element.scrollHeight > element.clientHeight;
-
-      // 开发环境下的调试信息
-      if (process.env.NODE_ENV === "development") {
-        console.log("🔍 滚动条状态检测:", {
-          scrollHeight: element.scrollHeight,
-          clientHeight: element.clientHeight,
-          hasScrollbar: hasVerticalScrollbar,
-          canvasScale,
-          elementSize: {
-            width: element.offsetWidth,
-            height: element.offsetHeight,
-          },
-        });
-      }
 
       // 设置data属性用于CSS选择器
       element.setAttribute("data-scrollable", hasVerticalScrollbar.toString());
@@ -476,9 +501,9 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       }
       updateTimeoutRef.current = setTimeout(() => {
         onChange(markdown);
-      }, 100); // 减少到100ms防抖，提高响应性同时避免过于频繁的更新
+      }, config.debounceDelay || 100);
     },
-    [onChange]
+    [onChange, config.debounceDelay]
   );
 
   // 创建TipTap编辑器实例
@@ -555,8 +580,8 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       const isContentGrowing =
         currentContentLength > lastContentLengthRef.current;
 
-      if (isContentGrowing && isStreaming) {
-        // 流式输入时自动滚动到底部，使用延迟确保DOM更新完成
+      // 🎯 流式输入时自动滚动到底部
+      if (isContentGrowing && isStreaming && config.smartScroll) {
         setTimeout(() => {
           scrollToBottom(true); // 使用平滑滚动
         }, 100);
@@ -585,7 +610,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           // 初始检测滚动条状态
           checkScrollbarState();
         } catch (error) {
-          console.warn("在事务回调中获取编辑器视图失败:", error);
+          console.warn("在备用获取编辑器视图时出错:", error);
         }
       }
     },
@@ -629,6 +654,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
                 }, delay);
               }
             } catch (error) {
+              handleError(error as Error, "获取编辑器视图重试");
               // 如果还没达到最大重试次数，继续重试
               if (attempt < maxAttempts) {
                 const delay = attempt * 200;
@@ -690,7 +716,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       setTimeout(checkScrollbarState, 50);
 
       // 🎯 流式输入时自动滚动到底部
-      if (isContentGrowing && isStreaming) {
+      if (isContentGrowing && isStreaming && config.smartScroll) {
         setTimeout(() => {
           scrollToBottom(true); // 使用平滑滚动
         }, 100);

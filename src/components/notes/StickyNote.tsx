@@ -234,11 +234,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 处理流式完成回调（分离逻辑避免循环依赖）
   useEffect(() => {
     if (!isStreaming && streamingContent && streamingContent !== note.content) {
-      console.log("🔄 流式完成，更新便签内容:", {
-        noteId: note.id,
-        streamingContentLength: streamingContent.length,
-        noteContentLength: note.content.length,
-      });
       // 流式完成，更新便签内容
       onUpdate(note.id, { content: streamingContent });
       onStreamingComplete?.();
@@ -262,7 +257,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       try {
         connectionLineManager.removeConnection(note.id);
         removeConnectionFromStore(note.id);
-        console.log(`📝 便签 ${note.id} 进入编辑状态，已自动断开连接`);
         message.info("便签进入编辑状态，已自动断开连接", 2);
       } catch (error) {
         console.error("自动断开连接失败:", error);
@@ -408,7 +402,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         removeConnectionFromStore(note.id);
         connectionLineManager.removeAllSourceConnectionsToNote(note.id);
         connectionLineManager.removeAllSourceConnectionsFromNote(note.id);
-        console.log(`已清理便签 ${note.id} 的所有连接线和连接状态`);
       } catch (error) {
         console.error("清理连接线失败:", error);
       }
