@@ -1,10 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import {
-  useEditor,
-  EditorContent,
-  generateHTML,
-  generateJSON,
-} from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
@@ -125,6 +120,33 @@ const htmlToMarkdown = (html: string): string => {
           const parent = element.parentElement;
           const indent = "  ".repeat(listDepth);
           const content = children.trim();
+
+          // 🎯 关键修复：TipTap TaskList 使用 data-type="taskItem" 和 data-checked 属性
+          if (element.getAttribute("data-type") === "taskItem") {
+            const isChecked = element.getAttribute("data-checked") === "true";
+            return `${indent}- [${isChecked ? "x" : " "}] ${content}\n`;
+          }
+
+          // 🎯 备用检查：兼容传统的 checkbox 方式（如果存在）
+          const checkbox = element.querySelector(
+            'input[type="checkbox"]'
+          ) as HTMLInputElement;
+          if (checkbox) {
+            const isChecked =
+              checkbox.checked || checkbox.hasAttribute("checked");
+
+            // 排除checkbox元素，只获取文本内容
+            const clonedElement = element.cloneNode(true) as Element;
+            const clonedCheckbox = clonedElement.querySelector(
+              'input[type="checkbox"]'
+            );
+            if (clonedCheckbox) {
+              clonedCheckbox.remove();
+            }
+            const textContent = clonedElement.textContent?.trim() || "";
+
+            return `${indent}- [${isChecked ? "x" : " "}] ${textContent}\n`;
+          }
 
           if (parent?.tagName.toLowerCase() === "ul") {
             return `${indent}- ${content}\n`;
@@ -265,12 +287,36 @@ const markdownToHtml = (markdown: string): string => {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const unorderedMatch = line.match(/^- (.*)$/);
+    // 🎯 关键修复：先匹配任务列表，再匹配普通列表
+    const taskMatch = line.match(/^- \[([ x])\] (.*)$/);
+    // 🎯 修复：普通列表正则排除任务列表格式 - 不匹配 [x] 或 [ ]
+    const unorderedMatch = line.match(/^- (?!\[[ x]\])(.*)$/);
     const orderedMatch = line.match(/^\d+\. (.*)$/);
 
-    if (unorderedMatch) {
+    if (taskMatch) {
+      // 任务列表项处理
+      if (!inList || listType !== "task-list") {
+        if (inList)
+          processedLines.push(
+            `</${listType === "task-list" ? "ul" : listType}>`
+          );
+        // 🎯 关键修复：生成 TipTap TaskList 兼容的 HTML 结构
+        processedLines.push('<ul data-type="taskList">');
+        listType = "task-list";
+        inList = true;
+      }
+      const isChecked = taskMatch[1] === "x";
+      const content = taskMatch[2];
+      // 🎯 使用 TipTap TaskItem 的标准格式：data-type 和 data-checked 属性
+      processedLines.push(
+        `<li data-type="taskItem" data-checked="${isChecked}">${content}</li>`
+      );
+    } else if (unorderedMatch) {
       if (!inList || listType !== "ul") {
-        if (inList) processedLines.push(`</${listType}>`);
+        if (inList)
+          processedLines.push(
+            `</${listType === "task-list" ? "ul" : listType}>`
+          );
         processedLines.push("<ul>");
         listType = "ul";
         inList = true;
@@ -278,7 +324,10 @@ const markdownToHtml = (markdown: string): string => {
       processedLines.push(`<li>${unorderedMatch[1]}</li>`);
     } else if (orderedMatch) {
       if (!inList || listType !== "ol") {
-        if (inList) processedLines.push(`</${listType}>`);
+        if (inList)
+          processedLines.push(
+            `</${listType === "task-list" ? "ul" : listType}>`
+          );
         processedLines.push("<ol>");
         listType = "ol";
         inList = true;
@@ -286,7 +335,7 @@ const markdownToHtml = (markdown: string): string => {
       processedLines.push(`<li>${orderedMatch[1]}</li>`);
     } else {
       if (inList) {
-        processedLines.push(`</${listType}>`);
+        processedLines.push(`</${listType === "task-list" ? "ul" : listType}>`);
         inList = false;
         listType = "";
       }
@@ -295,7 +344,7 @@ const markdownToHtml = (markdown: string): string => {
   }
 
   if (inList) {
-    processedLines.push(`</${listType}>`);
+    processedLines.push(`</${listType === "task-list" ? "ul" : listType}>`);
   }
 
   html = processedLines.join("\n");
@@ -447,6 +496,12 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         orderedList: {
           keepMarks: true,
           keepAttributes: false,
+        },
+        // 启用斜体功能
+        italic: {
+          HTMLAttributes: {
+            class: "italic-text",
+          },
         },
         // 配置内置的 codeBlock 扩展
         codeBlock: {

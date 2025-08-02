@@ -1,6 +1,6 @@
 /**
  * 编辑器内容存储管理器
- * 
+ *
  * 提供统一的编辑器内容序列化、反序列化和验证功能
  * 支持 TipTap JSON 格式和向后兼容的 Markdown/HTML 格式
  */
@@ -18,7 +18,12 @@ import TaskItem from "@tiptap/extension-task-item";
  */
 const EDITOR_EXTENSIONS = [
   StarterKit.configure({
-    history: false, // 禁用默认历史记录
+    // 确保斜体功能启用
+    italic: {
+      HTMLAttributes: {
+        class: "italic-text",
+      },
+    },
   }),
   Placeholder.configure({
     placeholder: "开始输入...",
@@ -28,21 +33,30 @@ const EDITOR_EXTENSIONS = [
     inline: true,
     allowBase64: true,
   }),
-  TaskList,
+  TaskList.configure({
+    HTMLAttributes: {
+      class: "task-list",
+    },
+  }),
   TaskItem.configure({
     nested: true,
+    HTMLAttributes: {
+      class: "task-item",
+    },
   }),
 ];
 
 /**
  * 编辑器内容类型枚举
  */
-export enum ContentType {
-  JSON = "json",
-  HTML = "html",
-  MARKDOWN = "markdown",
-  UNKNOWN = "unknown",
-}
+export const ContentType = {
+  JSON: "json",
+  HTML: "html",
+  MARKDOWN: "markdown",
+  UNKNOWN: "unknown",
+} as const;
+
+export type ContentType = (typeof ContentType)[keyof typeof ContentType];
 
 /**
  * 编辑器内容接口
@@ -59,13 +73,13 @@ export interface EditorContent {
  */
 export class EditorStorageManager {
   private static readonly CURRENT_VERSION = "3.0";
-  
+
   /**
    * 检测内容类型
    */
   static detectContentType(content: any): ContentType {
     if (!content) return ContentType.UNKNOWN;
-    
+
     // 检查是否为 TipTap JSON 格式
     if (
       typeof content === "object" &&
@@ -75,30 +89,35 @@ export class EditorStorageManager {
     ) {
       return ContentType.JSON;
     }
-    
+
     // 检查是否为字符串
     if (typeof content === "string") {
       const trimmed = content.trim();
-      
+
       // 检查是否为 JSON 字符串
       try {
         const parsed = JSON.parse(trimmed);
-        if (parsed && typeof parsed === "object" && parsed.type && parsed.content) {
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          parsed.type &&
+          parsed.content
+        ) {
           return ContentType.JSON;
         }
       } catch {
         // 不是 JSON
       }
-      
+
       // 检查是否为 HTML
       if (trimmed.startsWith("<") && trimmed.includes(">")) {
         return ContentType.HTML;
       }
-      
+
       // 默认为 Markdown
       return ContentType.MARKDOWN;
     }
-    
+
     return ContentType.UNKNOWN;
   }
 
@@ -107,7 +126,7 @@ export class EditorStorageManager {
    */
   static serialize(content: any): EditorContent {
     const type = this.detectContentType(content);
-    
+
     return {
       type,
       data: content,
@@ -121,10 +140,14 @@ export class EditorStorageManager {
    */
   static deserialize(storedContent: EditorContent | any): any {
     // 如果是新格式的 EditorContent
-    if (storedContent && typeof storedContent === "object" && storedContent.type) {
+    if (
+      storedContent &&
+      typeof storedContent === "object" &&
+      storedContent.type
+    ) {
       return this.convertToEditorFormat(storedContent.data, storedContent.type);
     }
-    
+
     // 如果是旧格式，直接检测类型并转换
     const type = this.detectContentType(storedContent);
     return this.convertToEditorFormat(storedContent, type);
@@ -145,8 +168,10 @@ export class EditorStorageManager {
           }
         }
         // 验证 JSON 结构
-        return this.validateJsonContent(content) ? content : this.createEmptyContent();
-        
+        return this.validateJsonContent(content)
+          ? content
+          : this.createEmptyContent();
+
       case ContentType.HTML:
         // 将 HTML 转换为 JSON
         try {
@@ -155,7 +180,7 @@ export class EditorStorageManager {
           console.warn("HTML 转换失败:", error);
           return this.createEmptyContent();
         }
-        
+
       case ContentType.MARKDOWN:
         // 将 Markdown 转换为 HTML，再转换为 JSON
         try {
@@ -165,7 +190,7 @@ export class EditorStorageManager {
           console.warn("Markdown 转换失败:", error);
           return this.createEmptyContent();
         }
-        
+
       default:
         return this.createEmptyContent();
     }
@@ -203,7 +228,7 @@ export class EditorStorageManager {
    */
   private static markdownToHtml(markdown: string): string {
     if (!markdown.trim()) return "<p></p>";
-    
+
     let html = markdown
       // 标题
       .replace(/^(#{1,6}) (.*$)/gm, (_match, hashes, content) => {
@@ -267,29 +292,31 @@ export class EditorStorageManager {
    */
   private static htmlToMarkdown(html: string): string {
     if (!html || html === "<p></p>") return "";
-    
-    return html
-      // 标题
-      .replace(/<h([1-6])>(.*?)<\/h[1-6]>/g, (_match, level, content) => {
-        return "#".repeat(parseInt(level)) + " " + content + "\n\n";
-      })
-      // 粗体
-      .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-      .replace(/<b>(.*?)<\/b>/g, "**$1**")
-      // 斜体
-      .replace(/<em>(.*?)<\/em>/g, "*$1*")
-      .replace(/<i>(.*?)<\/i>/g, "*$1*")
-      // 删除线
-      .replace(/<s>(.*?)<\/s>/g, "~~$1~~")
-      // 链接
-      .replace(/<a href="([^"]*)"[^>]*>(.*?)<\/a>/g, "[$2]($1)")
-      // 图片
-      .replace(/<img src="([^"]*)" alt="([^"]*)"[^>]*>/g, "![$2]($1)")
-      // 段落
-      .replace(/<p>(.*?)<\/p>/g, "$1\n\n")
-      // 清理多余的换行
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+
+    return (
+      html
+        // 标题
+        .replace(/<h([1-6])>(.*?)<\/h[1-6]>/g, (_match, level, content) => {
+          return "#".repeat(parseInt(level)) + " " + content + "\n\n";
+        })
+        // 粗体
+        .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
+        .replace(/<b>(.*?)<\/b>/g, "**$1**")
+        // 斜体
+        .replace(/<em>(.*?)<\/em>/g, "*$1*")
+        .replace(/<i>(.*?)<\/i>/g, "*$1*")
+        // 删除线
+        .replace(/<s>(.*?)<\/s>/g, "~~$1~~")
+        // 链接
+        .replace(/<a href="([^"]*)"[^>]*>(.*?)<\/a>/g, "[$2]($1)")
+        // 图片
+        .replace(/<img src="([^"]*)" alt="([^"]*)"[^>]*>/g, "![$2]($1)")
+        // 段落
+        .replace(/<p>(.*?)<\/p>/g, "$1\n\n")
+        // 清理多余的换行
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    );
   }
 
   /**
@@ -297,20 +324,21 @@ export class EditorStorageManager {
    */
   static isEmpty(content: any): boolean {
     if (!content) return true;
-    
+
     const type = this.detectContentType(content);
-    
+
     switch (type) {
       case ContentType.JSON:
-        const jsonContent = typeof content === "string" ? JSON.parse(content) : content;
+        const jsonContent =
+          typeof content === "string" ? JSON.parse(content) : content;
         return this.isEmptyJsonContent(jsonContent);
-        
+
       case ContentType.HTML:
         return content.trim() === "" || content.trim() === "<p></p>";
-        
+
       case ContentType.MARKDOWN:
         return content.trim() === "";
-        
+
       default:
         return true;
     }
@@ -320,10 +348,14 @@ export class EditorStorageManager {
    * 检查 JSON 内容是否为空
    */
   private static isEmptyJsonContent(jsonContent: any): boolean {
-    if (!jsonContent || !jsonContent.content || !Array.isArray(jsonContent.content)) {
+    if (
+      !jsonContent ||
+      !jsonContent.content ||
+      !Array.isArray(jsonContent.content)
+    ) {
       return true;
     }
-    
+
     // 检查是否只有空段落
     return jsonContent.content.every((node: any) => {
       if (node.type === "paragraph") {
