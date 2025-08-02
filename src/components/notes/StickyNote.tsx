@@ -84,14 +84,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 工具栏交互状态 - 用于临时禁用失焦检测
   const [isToolbarInteracting, setIsToolbarInteracting] = useState(false);
 
-  // 🎯 新增：ResizeObserver状态，用于高效监听DOM尺寸变化
-  const [observedWidth, setObservedWidth] = useState<number>(
-    note.width * canvasScale
-  );
-
-  // 🎯 新增：强制刷新标志，用于确保resize过程中标题宽度实时更新
-  const [titleRefreshKey, setTitleRefreshKey] = useState<number>(0);
-
   // 通用的工具栏按钮点击处理函数
   const handleToolbarButtonClick = useCallback(
     (e: React.MouseEvent, action: () => void) => {
@@ -639,9 +631,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       });
       setTempSize({ width: note.width, height: note.height });
       setIsResizing(true);
-
-      // 🎯 强制触发标题宽度重新计算
-      setTitleRefreshKey((prev) => prev + 1);
     },
     [note.width, note.height, canvasScale]
   );
@@ -742,9 +731,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         });
         setIsResizing(false);
         setIsSyncingSize(true);
-
-        // 🎯 resize结束后强制刷新标题宽度
-        setTitleRefreshKey((prev) => prev + 1);
       }
     };
 
@@ -933,91 +919,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       dragArea: isDragging ? "grabbing" : "grab",
     };
   }, [note.isEditing, note.isTitleEditing, isMoveModeActive, isDragging]);
-
-  // 计算标题的最大可用宽度 - 用于限制显示区域
-  // 🎯 关键优化：直接使用useMemo计算，确保在所有相关状态变化时都能实时更新
-  const titleMaxWidth = useMemo(() => {
-    const controlsWidth = 56; // 按钮区域宽度
-    const headerPadding = 32; // 头部左右padding (16px * 2)
-    const gap = 8; // 标题和按钮之间的间距
-    const margin = 10; // 额外边距
-
-    // 🎯 优化策略：
-    // 1. resize过程中：直接使用tempSize计算，确保实时响应
-    // 2. 正常状态：优先使用ResizeObserver数据，回退到note.width计算
-    let currentWidth;
-
-    if (isResizing || isSyncingSize) {
-      // resize过程中使用tempSize，确保实时更新
-      currentWidth = tempSize.width * canvasScale;
-    } else if (observedWidth && observedWidth > 0) {
-      // 正常状态优先使用ResizeObserver的精确数据
-      currentWidth = observedWidth;
-    } else {
-      // 回退到计算值
-      currentWidth = note.width * canvasScale;
-    }
-
-    const maxAvailableWidth =
-      currentWidth - controlsWidth - headerPadding - gap - margin;
-    return Math.max(maxAvailableWidth, 80) + "px"; // 至少80px
-  }, [
-    isResizing,
-    isSyncingSize,
-    tempSize.width,
-    observedWidth,
-    note.width,
-    canvasScale,
-    titleRefreshKey,
-  ]);
-
-  // 🎯 优化：使用ResizeObserver高效监听DOM尺寸变化，添加防抖优化
-  useEffect(() => {
-    if (!noteRef.current || typeof ResizeObserver === "undefined") return;
-
-    let rafId: number | null = null;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      // 使用requestAnimationFrame防抖，避免过于频繁的状态更新
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
-
-      rafId = requestAnimationFrame(() => {
-        for (const entry of entries) {
-          // 使用contentBoxSize获取更精确的尺寸
-          const width =
-            entry.contentBoxSize?.[0]?.inlineSize || entry.contentRect.width;
-
-          // 只有在宽度发生实际变化时才更新状态
-          setObservedWidth((prevWidth) => {
-            const newWidth = Math.round(width);
-            return Math.abs(newWidth - (prevWidth || 0)) > 1
-              ? newWidth
-              : prevWidth;
-          });
-        }
-        rafId = null;
-      });
-    });
-
-    resizeObserver.observe(noteRef.current);
-
-    return () => {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  // 🎯 监听tempSize变化，确保resize过程中标题宽度实时更新
-  useEffect(() => {
-    if (isResizing) {
-      // 在resize过程中，tempSize变化时强制触发重新计算
-      setTitleRefreshKey((prev) => prev + 1);
-    }
-  }, [tempSize.width, isResizing]);
 
   // 计算实际使用的位置和尺寸，并应用缩放变换
   // 现在便签直接根据缩放级别调整自身大小和位置，避免CSS transform缩放
@@ -1453,7 +1354,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   bordered={false}
                   size="small"
                   style={{
-                    maxWidth: titleMaxWidth,
                     padding: "2px 8px",
                     fontSize: "inherit",
                     fontWeight: "bold",
@@ -1497,7 +1397,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                   }
                   style={{
                     backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
-                    maxWidth: titleMaxWidth, // 使用计算的最大宽度
                     display: "inline-block", // 恢复为inline-block
                     cursor: getCursorStyle.titleText,
                   }}
