@@ -7,7 +7,8 @@ import {
   MessageOutlined,
   TagOutlined,
 } from "@ant-design/icons";
-import { Button, message } from "antd";
+import { Button, message, Input } from "antd";
+import type { InputRef } from "antd";
 import React, {
   memo,
   useCallback,
@@ -70,7 +71,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   // 直接使用全局状态，移除冗余的本地状态
   // const [isEditing, setIsEditing] = useState(note.isEditing);
   // const [isTitleEditing, setIsTitleEditing] = useState(note.isTitleEditing);
-  const [isTitleComposing, setIsTitleComposing] = useState(false);
   const [localContent, setLocalContent] = useState(note.content);
   const [localTitle, setLocalTitle] = useState(note.title);
 
@@ -99,10 +99,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       // 延迟重新聚焦编辑器并清除交互状态
       // 使用更长的延迟确保操作完成
       setTimeout(() => {
-        safeEditorCommand(
-          editorInstance,
-          () => editorInstance.commands.focus(),
-          "工具栏操作后聚焦失败"
+        safeEditorCommand(editorInstance, () =>
+          editorInstance.commands.focus()
         );
         // 再延迟一点清除交互状态，确保失焦检测不会误触发
         setTimeout(() => {
@@ -115,7 +113,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [sourceNotesModalVisible, setSourceNotesModalVisible] = useState(false);
 
   // Refs 和定时器
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<InputRef>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -337,33 +335,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     });
   }, [note.id, onUpdate, localTitle, clearTitleDebounce]);
 
-  // 标题合成事件处理
-  const handleTitleCompositionStart = useCallback(() => {
-    setIsTitleComposing(true);
-  }, []);
-
-  const handleTitleCompositionEnd = useCallback(
-    (e: React.CompositionEvent<HTMLInputElement>) => {
-      setIsTitleComposing(false);
-      const newTitle = e.currentTarget.value;
-      setLocalTitle(newTitle);
-      debouncedUpdateTitle(newTitle);
-    },
-    [debouncedUpdateTitle]
-  );
-
-  // 标题变化处理
+  // 标题变化处理 - 简化版本，使用Ant Design Input组件的内置光标管理
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newTitle = e.target.value;
       setLocalTitle(newTitle);
-
-      // 如果不是合成事件期间，则正常更新
-      if (!isTitleComposing) {
-        debouncedUpdateTitle(newTitle);
-      }
+      debouncedUpdateTitle(newTitle);
     },
-    [isTitleComposing, debouncedUpdateTitle]
+    [debouncedUpdateTitle]
   );
 
   // 处理 WysiwygEditor 内容变化
@@ -407,11 +386,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         if (note.isEditing) {
           // 使用更长的延迟确保编辑器完全准备就绪
           setTimeout(() => {
-            safeEditorCommand(
-              editor,
-              () => editor.commands.focus(),
-              "编辑器聚焦失败"
-            );
+            safeEditorCommand(editor, () => editor.commands.focus());
           }, 250);
         }
       }, 0);
@@ -864,7 +839,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     updateNoteConnectionLines,
   ]);
 
-  // 同步外部状态到本地状态 - 使用全局状态
+  // 同步外部状态到本地状态 - 简化版本
   useEffect(() => {
     if (!note.isEditing) {
       setLocalContent(note.content);
@@ -872,10 +847,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   }, [note.content, note.isEditing]);
 
   useEffect(() => {
-    if (!note.isTitleEditing && !isTitleComposing) {
+    // 只有在非编辑状态时才同步外部标题
+    if (!note.isTitleEditing) {
       setLocalTitle(note.title);
     }
-  }, [note.title, note.isTitleEditing, isTitleComposing]);
+  }, [note.title, note.isTitleEditing]);
 
   // 移除状态同步useEffect，直接使用全局状态
 
@@ -901,44 +877,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   useEffect(() => {
     if (note.isTitleEditing && titleInputRef.current) {
       titleInputRef.current.focus();
-      titleInputRef.current.setSelectionRange(
-        localTitle.length,
-        localTitle.length
-      );
     }
-  }, [note.isTitleEditing, localTitle.length]);
-
-  // 处理标题编辑键盘事件
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        stopTitleEditing();
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        stopTitleEditing();
-      } else if (e.key === "Tab") {
-        // 阻止Tab键的默认行为（移动焦点），在标题输入框中插入制表符
-        e.preventDefault();
-        const input = e.currentTarget as HTMLInputElement;
-        const start = input.selectionStart || 0;
-        const end = input.selectionEnd || 0;
-        const newTitle =
-          localTitle.substring(0, start) + "\t" + localTitle.substring(end);
-        setLocalTitle(newTitle);
-        debouncedUpdateTitle(newTitle);
-
-        // 设置光标位置到插入的制表符之后
-        setTimeout(() => {
-          input.setSelectionRange(start + 1, start + 1);
-        }, 0);
-      }
-    },
-    [stopTitleEditing, localTitle, debouncedUpdateTitle]
-  );
-
-  // 焦点变化检测 - 已禁用，使用统一的失焦检测避免冲突
-  // 原来的焦点检测会与工具栏操作冲突，已移除
-  // 统一使用 handleGlobalClick 处理失焦检测
+  }, [note.isTitleEditing]);
 
   // 计算标题的最大可用宽度 - 用于限制显示区域
   const getTitleMaxWidth = () => {
@@ -1284,12 +1224,19 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         }}
       >
         <div className="sticky-note-header">
-          {/* 专门的拖拽区域 */}
+          {/* 条件拖拽区域 - 根据编辑状态决定拖拽行为 */}
           <div
-            className="drag-handle"
+            className={
+              note.isEditing || note.isTitleEditing
+                ? "header-content-editing"
+                : "drag-handle"
+            }
             onMouseDown={(e) => {
-              e.stopPropagation(); // 阻止冒泡，避免触发容器的置顶事件
-              handleHeaderMouseDown(e); // 使用专门的头部拖拽处理函数
+              // 只有在非编辑状态下才允许从这里拖拽
+              if (!note.isEditing && !note.isTitleEditing) {
+                e.stopPropagation();
+                handleHeaderMouseDown(e);
+              }
             }}
             onClick={(e) => {
               // 阻止冒泡，让全局失焦检测处理编辑模式退出
@@ -1297,41 +1244,101 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }}
             style={{
               flexGrow: 1,
-              cursor: isDragging ? "move" : "move", // 始终显示可拖拽的光标，即使在编辑状态下
+              cursor:
+                note.isEditing || note.isTitleEditing
+                  ? "default"
+                  : isDragging
+                  ? "move"
+                  : "move",
               minHeight: "20px",
               display: "flex",
               alignItems: "center",
             }}
             title={
               note.isEditing || note.isTitleEditing
-                ? "拖拽移动便签（编辑状态下也可拖拽）"
+                ? "编辑状态 - 在标题右侧空白区域拖拽移动便签"
                 : "拖拽移动便签"
             }
           >
+            {/* 标题容器 - 允许在标题右侧空白区域拖拽 */}
             <div
               style={{
                 flex: 1,
                 display: "flex",
                 justifyContent: "flex-start",
+                alignItems: "center",
                 minWidth: 0, // 允许flex子元素收缩
                 overflow: "hidden", // 防止内容溢出
+                cursor: note.isTitleEditing ? "default" : "move", // 标题编辑时右侧空白区域显示拖拽光标
               }}
+              onMouseDown={(e) => {
+                // 标题编辑状态下，点击标题右侧空白区域可以拖拽
+                if (note.isTitleEditing) {
+                  // 检查点击位置是否在输入框外的空白区域
+                  const target = e.target as HTMLElement;
+                  const isInputElement =
+                    target.tagName === "INPUT" || target.closest("input");
+
+                  if (!isInputElement) {
+                    e.stopPropagation();
+                    handleHeaderMouseDown(e);
+                  }
+                }
+              }}
+              title={
+                note.isTitleEditing
+                  ? "在标题右侧空白区域拖拽移动便签"
+                  : undefined
+              }
             >
               {note.isTitleEditing ? (
-                <input
+                <Input
                   ref={titleInputRef}
-                  type="text"
                   value={localTitle}
-                  onChange={handleTitleChange}
-                  onKeyDown={handleTitleKeyDown}
-                  onCompositionStart={handleTitleCompositionStart}
-                  onCompositionEnd={handleTitleCompositionEnd}
-                  className="sticky-note-title-input"
-                  placeholder="便签标题"
-                  style={{
-                    width: "100%", // 占满可用空间
-                    maxWidth: getTitleMaxWidth(), // 与显示模式保持一致
+                  onChange={(e) => handleTitleChange(e)}
+                  onMouseDown={(e) => {
+                    // 阻止拖拽事件传播到父容器
+                    e.stopPropagation();
                   }}
+                  onPressEnter={(e) => {
+                    e.preventDefault();
+                    stopTitleEditing();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      stopTitleEditing();
+                    } else if (e.key === "Tab") {
+                      // 阻止Tab键的默认行为，在标题输入框中插入制表符
+                      e.preventDefault();
+                      const input = e.currentTarget;
+                      const start = input.selectionStart || 0;
+                      const end = input.selectionEnd || 0;
+                      const newTitle =
+                        localTitle.substring(0, start) +
+                        "\t" +
+                        localTitle.substring(end);
+                      setLocalTitle(newTitle);
+                      debouncedUpdateTitle(newTitle);
+
+                      // 设置光标位置到插入的制表符之后
+                      setTimeout(() => {
+                        input.setSelectionRange(start + 1, start + 1);
+                      }, 0);
+                    }
+                  }}
+                  placeholder="便签标题"
+                  bordered={false}
+                  size="small"
+                  style={{
+                    maxWidth: getTitleMaxWidth(),
+                    padding: "2px 8px",
+                    fontSize: "inherit",
+                    fontWeight: "bold",
+                    background: "rgba(0, 0, 0, 0.06)",
+                    borderRadius: "4px",
+                    marginRight: "8px", // 为右侧拖拽区域留出空间
+                  }}
+                  autoFocus
                 />
               ) : (
                 <h3
