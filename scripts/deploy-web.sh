@@ -49,12 +49,8 @@ server {
     root /path/to/dist;
     index index.html;
     
-    # 启用 Gzip 压缩
-    gzip on;
-    gzip_types text/css application/javascript application/json;
-    
-    # 静态资源缓存
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+    # 静态资源
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -66,14 +62,13 @@ server {
 }
 EOF
 
-echo "🎉 部署准备完成！"
-echo ""
-echo "📁 部署文件位置: $(pwd)/dist/"
-echo "🌐 本地预览: npm run preview"
-echo "📋 部署信息: dist/DEPLOY_INFO.txt"
-echo ""
-echo "部署建议："
-echo "1. 上传 dist 目录中的所有文件到您的 Web 服务器"
-echo "2. 配置服务器支持 SPA 路由"
-echo "3. 启用 HTTPS 和 Gzip 压缩"
-echo "4. 设置适当的缓存策略"
+# 5. 压缩打包
+echo "📦 创建压缩包..."
+cd dist
+zip -r ../infinity-notes-web-$(node -p "require('../package.json').version").zip .
+cd ..
+
+echo "✅ 网页版构建完成！"
+echo "📁 构建产物位置: dist/"
+echo "📦 压缩包位置: infinity-notes-web-$(node -p "require('./package.json').version").zip"
+echo "📄 部署信息文件: dist/DEPLOY_INFO.txt"
