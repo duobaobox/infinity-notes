@@ -1278,8 +1278,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 : "drag-handle"
             }
             onMouseDown={(e) => {
-              // 只有在非编辑状态下才允许从这里拖拽
-              if (!note.isEditing && !note.isTitleEditing) {
+              // 内容编辑状态下允许拖拽，标题编辑状态下需要特殊处理
+              if (!note.isTitleEditing) {
                 e.stopPropagation();
                 handleHeaderMouseDown(e);
               }
@@ -1296,8 +1296,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               alignItems: "center",
             }}
             title={
-              note.isEditing || note.isTitleEditing
-                ? "编辑状态 - 在标题右侧空白区域拖拽移动便签"
+              note.isTitleEditing
+                ? "标题编辑状态 - 在标题右侧空白区域拖拽移动便签"
+                : note.isEditing
+                ? "内容编辑状态 - 可拖拽移动便签"
                 : "拖拽移动便签"
             }
           >
