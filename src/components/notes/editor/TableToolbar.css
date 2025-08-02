@@ -1,0 +1,276 @@
+/* 表格工具栏样式 */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  backdrop-filter: blur(4px);
+  flex-wrap: wrap;
+}
+
+.table-toolbar.compact {
+  padding: 4px;
+  gap: 2px;
+}
+
+.table-toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.table-toolbar .toolbar-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  color: #374151;
+  transition: all 0.2s ease;
+  min-width: 28px;
+  min-height: 28px;
+  justify-content: center;
+}
+
+.table-toolbar.compact .toolbar-button {
+  padding: 4px 6px;
+  gap: 2px;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.table-toolbar .toolbar-button:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.table-toolbar .toolbar-button:active {
+  background: #e5e7eb;
+  transform: translateY(1px);
+}
+
+.table-toolbar .toolbar-button.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.table-toolbar .toolbar-button.active:hover {
+  background: #2563eb;
+}
+
+.table-toolbar .toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+  color: #9ca3af;
+}
+
+.table-toolbar .toolbar-button:disabled:hover {
+  background: transparent;
+  transform: none;
+}
+
+.table-toolbar .button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.table-toolbar.compact .button-icon {
+  font-size: 12px;
+}
+
+.table-toolbar .button-text {
+  font-size: 11px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.table-toolbar .toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: #e5e7eb;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.table-toolbar.compact .toolbar-divider {
+  height: 16px;
+  margin: 0 2px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .table-toolbar {
+    padding: 6px;
+    gap: 2px;
+  }
+
+  .table-toolbar .toolbar-button {
+    padding: 4px 6px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  .table-toolbar .button-text {
+    display: none;
+  }
+
+  .table-toolbar .button-icon {
+    font-size: 12px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .table-toolbar {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .table-toolbar .toolbar-button {
+    color: #f9fafb;
+  }
+
+  .table-toolbar .toolbar-button:hover {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+
+  .table-toolbar .toolbar-button:active {
+    background: #6b7280;
+  }
+
+  .table-toolbar .toolbar-button.active {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .table-toolbar .toolbar-button:disabled {
+    color: #6b7280;
+  }
+
+  .table-toolbar .toolbar-divider {
+    background: #6b7280;
+  }
+}
+
+/* 动画效果 */
+.table-toolbar {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 工具提示样式增强 */
+.table-toolbar .toolbar-button[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  animation: tooltipShow 0.2s ease-out 0.5s forwards;
+}
+
+@keyframes tooltipShow {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 表格特定的工具栏样式 */
+.wysiwyg-editor .table-toolbar {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+/* 在表格编辑时的特殊样式 */
+.wysiwyg-editor.editing .table-toolbar {
+  border-color: #3b82f6;
+}
+
+/* 表格按钮分组样式 */
+.table-toolbar-section + .table-toolbar-section {
+  margin-left: 4px;
+}
+
+/* 特定按钮的样式定制 */
+.table-toolbar .toolbar-button[title*="插入表格"] {
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  color: #0369a1;
+}
+
+.table-toolbar .toolbar-button[title*="插入表格"]:hover {
+  background: #0ea5e9;
+  color: white;
+}
+
+.table-toolbar .toolbar-button[title*="删除"] {
+  color: #dc2626;
+}
+
+.table-toolbar .toolbar-button[title*="删除"]:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.table-toolbar .toolbar-button[title*="删除"].active {
+  background: #dc2626;
+  color: white;
+}
+
+/* 高对比度支持 */
+@media (prefers-contrast: high) {
+  .table-toolbar {
+    border-width: 2px;
+  }
+
+  .table-toolbar .toolbar-button {
+    border: 1px solid transparent;
+  }
+
+  .table-toolbar .toolbar-button:hover {
+    border-color: #374151;
+  }
+
+  .table-toolbar .toolbar-button.active {
+    border-color: #1e40af;
+  }
+}

@@ -1505,6 +1505,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             className={`${note.isEditing ? "editing" : "viewing"} ${
               isStreaming ? "streaming" : ""
             }`}
+            config={{
+              enableTable: true,
+              tableToolbar: {
+                enabled: false, // 在便签中不显示表格工具栏，使用内置工具栏按钮
+                compact: true,
+              },
+              smartScroll: true,
+              debounceDelay: 100,
+            }}
             onClick={(e) => {
               // 只有在非编辑状态且不在移动模式下才启动编辑
               if (
@@ -1658,6 +1667,72 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               >
                 ☐
               </button>
+            </div>
+
+            <div className="toolbar-divider"></div>
+
+            {/* 表格按钮 */}
+            <div className="toolbar-button-group">
+              <button
+                className={`toolbar-button ${
+                  editorInstance?.isActive("table") ? "active" : ""
+                }`}
+                onClick={(e) =>
+                  handleToolbarButtonClick(e, () => {
+                    if (editorInstance?.isActive("table")) {
+                      // 如果已经在表格中，删除表格
+                      editorInstance?.chain().focus().deleteTable().run();
+                    } else {
+                      // 插入新表格
+                      editorInstance
+                        ?.chain()
+                        .focus()
+                        .insertTable({
+                          rows: 3,
+                          cols: 3,
+                          withHeaderRow: true,
+                        })
+                        .run();
+                    }
+                  })
+                }
+                title={
+                  editorInstance?.isActive("table")
+                    ? "删除表格"
+                    : "插入表格 (3x3)"
+                }
+                disabled={!editorInstance}
+              >
+                📋
+              </button>
+              {editorInstance?.isActive("table") && (
+                <>
+                  <button
+                    className="toolbar-button"
+                    onClick={(e) =>
+                      handleToolbarButtonClick(e, () => {
+                        editorInstance?.chain().focus().addColumnAfter().run();
+                      })
+                    }
+                    title="添加列"
+                    disabled={!editorInstance?.can().addColumnAfter()}
+                  >
+                    ➕📄
+                  </button>
+                  <button
+                    className="toolbar-button"
+                    onClick={(e) =>
+                      handleToolbarButtonClick(e, () => {
+                        editorInstance?.chain().focus().addRowAfter().run();
+                      })
+                    }
+                    title="添加行"
+                    disabled={!editorInstance?.can().addRowAfter()}
+                  >
+                    ➕📋
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

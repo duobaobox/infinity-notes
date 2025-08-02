@@ -1,6 +1,6 @@
 /**
  * 编辑器性能监控和优化工具
- * 
+ *
  * 提供编辑器性能监控、优化建议和自动优化功能
  */
 
@@ -36,7 +36,7 @@ export class EditorPerformanceMonitor {
   private maxHistorySize = 50;
   private isMonitoring = false;
   private monitoringInterval?: NodeJS.Timeout;
-  
+
   // 性能阈值配置
   private readonly thresholds = {
     renderTime: 100, // ms
@@ -101,7 +101,7 @@ export class EditorPerformanceMonitor {
       return this.metrics;
     }
 
-    const startTime = performance.now();
+    // const startTime = performance.now(); // 暂时未使用
 
     try {
       // 测量渲染时间
@@ -147,7 +147,7 @@ export class EditorPerformanceMonitor {
    * 测量内存使用量
    */
   private measureMemoryUsage(): number {
-    if ('memory' in performance) {
+    if ("memory" in performance) {
       const memory = (performance as any).memory;
       return memory.usedJSHeapSize / (1024 * 1024); // 转换为 MB
     }
@@ -159,9 +159,9 @@ export class EditorPerformanceMonitor {
    */
   private measureDOMNodeCount(): number {
     if (!this.editor?.view?.dom) return 0;
-    
+
     const editorDOM = this.editor.view.dom;
-    return editorDOM.querySelectorAll('*').length;
+    return editorDOM.querySelectorAll("*").length;
   }
 
   /**
@@ -180,7 +180,7 @@ export class EditorPerformanceMonitor {
    */
   private addToHistory(metrics: PerformanceMetrics) {
     this.measurementHistory.push({ ...metrics });
-    
+
     // 保持历史记录大小限制
     if (this.measurementHistory.length > this.maxHistorySize) {
       this.measurementHistory.shift();
@@ -238,7 +238,7 @@ export class EditorPerformanceMonitor {
   analyzePerformance(): PerformanceRecommendation[] {
     const recommendations: PerformanceRecommendation[] = [];
     const current = this.metrics;
-    const average = this.getAverageMetrics();
+    // const average = this.getAverageMetrics(); // 暂时未使用
 
     // 检查渲染时间
     if (current.renderTime > this.thresholds.renderTime) {
@@ -293,8 +293,8 @@ export class EditorPerformanceMonitor {
     // 检查性能趋势
     if (this.measurementHistory.length >= 5) {
       const recent = this.measurementHistory.slice(-5);
-      const trend = this.calculateTrend(recent, 'renderTime');
-      
+      const trend = this.calculateTrend(recent, "renderTime");
+
       if (trend > 0.2) {
         recommendations.push({
           type: "warning",
@@ -312,13 +312,16 @@ export class EditorPerformanceMonitor {
   /**
    * 计算性能趋势
    */
-  private calculateTrend(data: PerformanceMetrics[], metric: keyof PerformanceMetrics): number {
+  private calculateTrend(
+    data: PerformanceMetrics[],
+    metric: keyof PerformanceMetrics
+  ): number {
     if (data.length < 2) return 0;
-    
-    const values = data.map(d => d[metric] as number);
+
+    const values = data.map((d) => d[metric] as number);
     const first = values[0];
     const last = values[values.length - 1];
-    
+
     return first > 0 ? (last - first) / first : 0;
   }
 
@@ -329,9 +332,9 @@ export class EditorPerformanceMonitor {
     if (!this.editor || this.editor.isDestroyed) return;
 
     const recommendations = this.analyzePerformance();
-    
+
     // 自动应用一些优化措施
-    recommendations.forEach(rec => {
+    recommendations.forEach((rec) => {
       if (rec.priority >= 4) {
         this.applyOptimization(rec);
       }
@@ -344,10 +347,10 @@ export class EditorPerformanceMonitor {
   private applyOptimization(recommendation: PerformanceRecommendation) {
     // 这里可以实现具体的优化逻辑
     console.log(`应用优化: ${recommendation.message}`);
-    
+
     // 示例：如果内存使用过高，触发垃圾回收（如果可用）
     if (recommendation.message.includes("内存使用量过高")) {
-      if ('gc' in window && typeof (window as any).gc === 'function') {
+      if ("gc" in window && typeof (window as any).gc === "function") {
         (window as any).gc();
       }
     }

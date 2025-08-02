@@ -1,11 +1,17 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+// 新增表格扩展导入
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
 import { useCanvasStore } from "../../stores/canvasStore";
+import TableToolbar from "./editor/TableToolbar";
 import "./WysiwygEditor.css";
 
 /**
@@ -22,6 +28,13 @@ interface EditorConfig {
   debounceDelay?: number;
   /** 是否启用智能滚动 */
   smartScroll?: boolean;
+  /** 是否启用表格功能 */
+  enableTable?: boolean;
+  /** 表格工具栏配置 */
+  tableToolbar?: {
+    enabled?: boolean;
+    compact?: boolean;
+  };
 }
 
 /**
@@ -33,6 +46,11 @@ const DEFAULT_EDITOR_CONFIG: EditorConfig = {
   uxOptimizer: false,
   debounceDelay: 100,
   smartScroll: true,
+  enableTable: true,
+  tableToolbar: {
+    enabled: true,
+    compact: false,
+  },
 };
 
 /**
@@ -103,6 +121,84 @@ interface WysiwygEditorProps {
   /** 编辑器配置 */
   config?: EditorConfig;
 }
+
+/**
+ * 将HTML表格转换为Markdown表格格式
+ */
+const convertTableToMarkdown = (tableElement: Element): string => {
+  const rows: string[][] = [];
+  let hasHeader = false;
+
+  // 提取表头（thead 或第一行）
+  const thead = tableElement.querySelector("thead");
+  if (thead) {
+    const headerRow = thead.querySelector("tr");
+    if (headerRow) {
+      const headerCells = Array.from(headerRow.querySelectorAll("th, td")).map(
+        (cell) => cell.textContent?.trim() || ""
+      );
+      rows.push(headerCells);
+      hasHeader = true;
+    }
+  }
+
+  // 提取表体数据
+  const tbody = tableElement.querySelector("tbody");
+  const dataRows = tbody
+    ? Array.from(tbody.querySelectorAll("tr"))
+    : Array.from(tableElement.querySelectorAll("tr")).slice(hasHeader ? 0 : 0);
+
+  // 如果没有thead但有数据行，第一行作为表头
+  if (!hasHeader && dataRows.length > 0) {
+    const firstRow = dataRows[0];
+    const headerCells = Array.from(firstRow.querySelectorAll("th, td")).map(
+      (cell) => cell.textContent?.trim() || ""
+    );
+    rows.push(headerCells);
+    hasHeader = true;
+    dataRows.shift(); // 移除已处理的第一行
+  }
+
+  // 处理剩余数据行
+  dataRows.forEach((row) => {
+    const cells = Array.from(row.querySelectorAll("td, th")).map(
+      (cell) => cell.textContent?.trim() || ""
+    );
+    rows.push(cells);
+  });
+
+  if (rows.length === 0) return "";
+
+  // 确定列数
+  const maxCols = Math.max(...rows.map((row) => row.length));
+
+  // 构建Markdown表格
+  let markdown = "";
+
+  // 表头
+  if (rows.length > 0) {
+    const headerRow = rows[0];
+    // 补齐列数
+    while (headerRow.length < maxCols) {
+      headerRow.push("");
+    }
+    markdown += "| " + headerRow.join(" | ") + " |\n";
+
+    // 分隔行
+    markdown += "|" + " --- |".repeat(maxCols) + "\n";
+  }
+
+  // 数据行
+  rows.slice(1).forEach((row) => {
+    // 补齐列数
+    while (row.length < maxCols) {
+      row.push("");
+    }
+    markdown += "| " + row.join(" | ") + " |\n";
+  });
+
+  return markdown + "\n";
+};
 
 /**
  * 将HTML转换为Markdown的改进转换器
@@ -215,6 +311,8 @@ const htmlToMarkdown = (html: string): string => {
           return "\n";
         case "hr":
           return "---\n\n";
+        case "table":
+          return convertTableToMarkdown(element);
         case "div":
           return children;
         default:
@@ -289,6 +387,103 @@ class CodeProcessor {
 }
 
 /**
+ * 转换Markdown表格为HTML表格
+ * 支持标准Markdown表格语法，生成TipTap兼容的表格HTML
+ */
+const convertMarkdownTables = (text: string): string => {
+  const lines = text.split("\n");
+  const result: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+
+    // 检查是否是表格行（包含管道符 |）
+    if (line.includes("|") && line.length > 0) {
+      // 查找表格的开始
+      const tableStart = i;
+      let tableRows: string[] = [];
+      let headerRow: string | null = null;
+      let separatorRow: string | null = null;
+
+      // 收集表格行
+      while (i < lines.length && lines[i].trim().includes("|")) {
+        const currentLine = lines[i].trim();
+        if (currentLine) {
+          if (!headerRow) {
+            headerRow = currentLine;
+          } else if (!separatorRow && currentLine.match(/^[\|\s\-:]+$/)) {
+            separatorRow = currentLine;
+          } else {
+            tableRows.push(currentLine);
+          }
+        }
+        i++;
+      }
+
+      // 验证是否是有效的Markdown表格
+      if (headerRow && (separatorRow || tableRows.length > 0)) {
+        const tableHtml = buildTableHtml(headerRow, tableRows);
+        result.push(tableHtml);
+      } else {
+        // 不是有效表格，原样保留
+        for (let j = tableStart; j < i; j++) {
+          result.push(lines[j]);
+        }
+      }
+    } else {
+      result.push(lines[i]);
+      i++;
+    }
+  }
+
+  return result.join("\n");
+};
+
+/**
+ * 构建HTML表格
+ */
+const buildTableHtml = (headerRow: string, dataRows: string[]): string => {
+  // 解析表头
+  const headerCells = parseTableRow(headerRow);
+
+  // 生成表头HTML
+  const headerHtml = headerCells
+    .map((cell) => `<th class="editor-table-header">${cell}</th>`)
+    .join("");
+
+  // 生成数据行HTML
+  const dataRowsHtml = dataRows
+    .map((row) => {
+      const cells = parseTableRow(row);
+      const cellsHtml = cells
+        .map((cell) => `<td class="editor-table-cell">${cell}</td>`)
+        .join("");
+      return `<tr class="editor-table-row">${cellsHtml}</tr>`;
+    })
+    .join("");
+
+  // 生成完整表格HTML（使用TipTap表格扩展的类名）
+  return `<table class="editor-table">
+  <thead>
+    <tr class="editor-table-row">${headerHtml}</tr>
+  </thead>
+  <tbody>
+    ${dataRowsHtml}
+  </tbody>
+</table>`;
+};
+
+/**
+ * 解析表格行，提取单元格内容
+ */
+const parseTableRow = (row: string): string[] => {
+  // 移除首尾的管道符，然后按管道符分割
+  const cleaned = row.replace(/^\||\|$/g, "");
+  return cleaned.split("|").map((cell) => cell.trim());
+};
+
+/**
  * 将Markdown转换为HTML的改进转换器
  * 用于将存储的Markdown转换为TipTap可以理解的HTML
  */
@@ -322,6 +517,9 @@ const markdownToHtml = (markdown: string): string => {
 
   // 分割线
   html = html.replace(/^---$/gm, "<hr>");
+
+  // 🎯 新增：Markdown表格转换
+  html = convertMarkdownTables(html);
 
   // 列表处理
   const lines = html.split("\n");
@@ -399,7 +597,7 @@ const markdownToHtml = (markdown: string): string => {
     .map((p) => {
       const trimmed = p.trim();
       // 如果已经是块级元素，不要包装在p标签中
-      if (trimmed.match(/^<(h[1-6]|ul|ol|blockquote|pre|hr)/)) {
+      if (trimmed.match(/^<(h[1-6]|ul|ol|blockquote|pre|hr|table)/)) {
         return trimmed;
       }
       // 如果是空行，跳过
@@ -443,9 +641,12 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const proseMirrorRef = useRef<HTMLElement | null>(null);
   const viewReadyRef = useRef<boolean>(false); // 标记视图是否已准备好
   const lastContentLengthRef = useRef<number>(0); // 记录上次内容长度，用于检测内容增长
+  const [showTableToolbar, setShowTableToolbar] = useState(false);
 
   // 监听画布缩放状态
   const canvasScale = useCanvasStore((state) => state.scale);
+
+  // 监听画布缩放状态（保持原有逻辑）
 
   // 智能滚动到底部的函数
   const scrollToBottom = useCallback((smooth: boolean = true) => {
@@ -562,6 +763,34 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           class: "task-item",
         },
       }),
+      // 新增表格扩展
+      ...(config.enableTable
+        ? [
+            Table.configure({
+              resizable: true,
+              handleWidth: 5,
+              cellMinWidth: 25,
+              HTMLAttributes: {
+                class: "editor-table",
+              },
+            }),
+            TableRow.configure({
+              HTMLAttributes: {
+                class: "editor-table-row",
+              },
+            }),
+            TableCell.configure({
+              HTMLAttributes: {
+                class: "editor-table-cell",
+              },
+            }),
+            TableHeader.configure({
+              HTMLAttributes: {
+                class: "editor-table-header",
+              },
+            }),
+          ]
+        : []),
     ],
     content: markdownToHtml(content),
     editable: !disabled,
@@ -598,6 +827,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         !viewReadyRef.current &&
         editor.view &&
         editor.view.dom &&
+        editor.view.dom &&
         editor.view.dom.parentNode
       ) {
         viewReadyRef.current = true;
@@ -621,6 +851,18 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
         setTimeout(() => {
           safeEditorCommand(editor, () => editor.commands.focus());
         }, 200);
+      }
+
+      // 检查是否在表格中以显示表格工具栏
+      if (config.enableTable && config.tableToolbar?.enabled) {
+        const updateTableToolbar = () => {
+          setShowTableToolbar(editor.isActive("table"));
+        };
+        updateTableToolbar();
+
+        // 监听选择变化以更新表格工具栏
+        editor.on("selectionUpdate", updateTableToolbar);
+        editor.on("update", updateTableToolbar);
       }
 
       // 备用方案：如果onTransaction没有成功获取视图，则使用重试机制
@@ -825,6 +1067,19 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       style={style}
       title={title}
     >
+      {/* 表格工具栏 - 仅在启用表格功能且处于编辑状态时显示 */}
+      {config.enableTable &&
+        config.tableToolbar?.enabled &&
+        !disabled &&
+        showTableToolbar && (
+          <TableToolbar
+            editor={editor}
+            visible={true}
+            compact={config.tableToolbar.compact}
+            className="editor-table-toolbar"
+          />
+        )}
+
       <EditorContent editor={editor} />
     </div>
   );

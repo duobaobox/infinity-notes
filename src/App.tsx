@@ -17,6 +17,7 @@ import ThinkingChainTest from "./test/ThinkingChainTest";
 import ThinkingChainXMLTest from "./test/ThinkingChainXMLTest";
 import ThinkingChainTimestampTest from "./test/ThinkingChainTimestampTest";
 import ThinkingModeTest from "./test/ThinkingModeTest";
+import TableMarkdownTest from "./test/TableMarkdownTest";
 
 // 导入全局状态管理
 import {
@@ -48,6 +49,7 @@ function App() {
     testMode === "thinking-mode" ||
     testMode === "markdown-list" ||
     testMode === "card-title" ||
+    testMode === "table-markdown" ||
     testMode === "note-settings" ||
     testMode === "tabs-spacing" ||
     testMode === "right-click-drag" ||
@@ -212,6 +214,8 @@ function App() {
       return <MarkdownListTest />;
     } else if (testMode === "card-title") {
       return <CardTitleUnificationTest />;
+    } else if (testMode === "table-markdown") {
+      return <TableMarkdownTest />;
     } else if (testMode === "note-settings") {
       return <NoteSettingsTest />;
     } else if (testMode === "tabs-spacing") {

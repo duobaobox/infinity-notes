@@ -291,6 +291,130 @@
   width: 100%;
   font-size: var(--note-table-font-size, 12px);
   margin: 8px 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.wysiwyg-editor .ProseMirror table.editor-table {
+  position: relative;
+}
+
+.wysiwyg-editor .ProseMirror table th,
+.wysiwyg-editor .ProseMirror table td {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  min-width: 100px;
+  position: relative;
+}
+
+.wysiwyg-editor .ProseMirror table th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+  color: #374151;
+}
+
+.wysiwyg-editor .ProseMirror table th.editor-table-header {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1e40af;
+}
+
+.wysiwyg-editor .ProseMirror table td.editor-table-cell {
+  background: transparent;
+}
+
+.wysiwyg-editor .ProseMirror table tr.editor-table-row:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.wysiwyg-editor .ProseMirror table tr.editor-table-row:hover td {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* 表格选中状态 */
+.wysiwyg-editor .ProseMirror table .selectedCell {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: #3b82f6 !important;
+}
+
+/* 表格调整大小控制 */
+.wysiwyg-editor .ProseMirror table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.wysiwyg-editor .ProseMirror table .column-resize-handle:hover {
+  background: #3b82f6;
+}
+
+/* 表格在移动设备上的响应式设计 */
+@media (max-width: 768px) {
+  .wysiwyg-editor .ProseMirror table {
+    font-size: 11px;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .wysiwyg-editor .ProseMirror table th,
+  .wysiwyg-editor .ProseMirror table td {
+    min-width: 80px;
+    padding: 4px 6px;
+  }
+}
+
+/* 表格编辑工具栏样式集成 */
+.wysiwyg-editor .editor-table-toolbar {
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e1e5e9;
+}
+
+/* 深色模式下的表格样式 */
+@media (prefers-color-scheme: dark) {
+  .wysiwyg-editor .ProseMirror table {
+    border-color: #4b5563;
+  }
+
+  .wysiwyg-editor .ProseMirror table th,
+  .wysiwyg-editor .ProseMirror table td {
+    border-color: #4b5563;
+  }
+
+  .wysiwyg-editor .ProseMirror table th {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f9fafb;
+  }
+
+  .wysiwyg-editor .ProseMirror table th.editor-table-header {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+  }
+
+  .wysiwyg-editor .ProseMirror table tr.editor-table-row:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .wysiwyg-editor .ProseMirror table tr.editor-table-row:hover td {
+    background: rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* 表格样式 */
+.wysiwyg-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--note-table-font-size, 12px);
+  margin: 8px 0;
 }
 
 .wysiwyg-editor .ProseMirror table th,
