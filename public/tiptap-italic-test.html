@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TipTap斜体测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter",
+                "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimSun",
+                "Arial", sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .editor-test {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #fafafa;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* 应用与WysiwygEditor相同的斜体样式 */
+        .editor-test em,
+        .editor-test .italic-text {
+            font-style: italic;
+            font-synthesis: style;
+            -webkit-font-synthesis: style;
+            -moz-font-synthesis: style;
+        }
+
+        @supports not (font-synthesis: style) {
+
+            .editor-test em,
+            .editor-test .italic-text {
+                display: inline-block;
+                transform: skewX(-8deg);
+                vertical-align: baseline;
+            }
+        }
+
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #2196F3;
+            background: #E3F2FD;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 TipTap编辑器中文斜体测试</h1>
+
+        <div class="instructions">
+            <h3>测试说明：</h3>
+            <p>下面的文本框模拟了编辑器的样式，请检查中文斜体是否正常显示。</p>
+            <button onclick="addItalicText()">添加斜体文本</button>
+            <button onclick="clearTest()">清空测试</button>
+        </div>
+
+        <div class="editor-test" contenteditable="true" id="testEditor">
+            <p>在这里输入文本，然后选中文字按 Ctrl+I (或 Cmd+I) 来测试斜体效果。</p>
+            <p><em>这是斜体中文测试 This is italic English test</em></p>
+            <p>混合测试：<em>中文Chinese英文English数字123符号!@#</em></p>
+        </div>
+
+        <div class="test-result">
+            <h3>📊 测试结果</h3>
+            <p id="testResult">等待测试...</p>
+        </div>
+
+        <div class="test-result">
+            <h3>🔧 技术实现</h3>
+            <ul>
+                <li><strong>font-synthesis: style</strong> - 浏览器自动为不支持斜体的字体合成倾斜效果</li>
+                <li><strong>skewX(-8deg)</strong> - 对于不支持font-synthesis的浏览器使用CSS变换</li>
+                <li><strong>中文字体支持</strong> - 字体堆栈包含了对斜体友好的中文字体</li>
+            </ul>
+        </div>
+
+        <div class="test-result">
+            <h3>⚙️ 浏览器兼容性检测</h3>
+            <div id="compatibilityInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        // 添加斜体文本测试
+        function addItalicText() {
+            const editor = document.getElementById('testEditor');
+            const testTexts = [
+                '这是新的中文斜体测试',
+                'This is new English italic test',
+                '混合文本：中英文123Mixed text',
+                '特殊字符：！@#￥%……&*（）',
+                '长文本测试：这是一段较长的中文文本，用来测试斜体在长段落中的显示效果，应该保持一致的倾斜角度。'
+            ];
+
+            const randomText = testTexts[Math.floor(Math.random() * testTexts.length)];
+            const newP = document.createElement('p');
+            const em = document.createElement('em');
+            em.textContent = randomText;
+            newP.appendChild(em);
+            editor.appendChild(newP);
+
+            updateTestResult();
+        }
+
+        // 清空测试
+        function clearTest() {
+            const editor = document.getElementById('testEditor');
+            editor.innerHTML = '<p>测试区域已清空，请输入新的内容进行测试...</p>';
+            updateTestResult();
+        }
+
+        // 更新测试结果
+        function updateTestResult() {
+            const editor = document.getElementById('testEditor');
+            const italicElements = editor.querySelectorAll('em');
+            const resultEl = document.getElementById('testResult');
+
+            if (italicElements.length > 0) {
+                resultEl.innerHTML = `
+                    <p>✅ 发现 ${italicElements.length} 个斜体元素</p>
+                    <p>🎨 所有斜体文本应该都有可见的倾斜效果</p>
+                    <p>📝 请检查中文和英文字符是否都正确显示为斜体</p>
+                `;
+            } else {
+                resultEl.innerHTML = '<p>⏳ 请添加一些斜体文本来测试效果</p>';
+            }
+        }
+
+        // 检测浏览器兼容性
+        function checkCompatibility() {
+            const info = {
+                fontSynthesis: CSS.supports('font-synthesis', 'style'),
+                webkitFontSynthesis: CSS.supports('-webkit-font-synthesis', 'style'),
+                mozFontSynthesis: CSS.supports('-moz-font-synthesis', 'style'),
+                transform: CSS.supports('transform', 'skewX(-8deg)'),
+                userAgent: navigator.userAgent
+            };
+
+            const compatEl = document.getElementById('compatibilityInfo');
+            let html = '<ul>';
+            html += `<li>font-synthesis: ${info.fontSynthesis ? '✅ 支持' : '❌ 不支持'}</li>`;
+            html += `<li>-webkit-font-synthesis: ${info.webkitFontSynthesis ? '✅ 支持' : '❌ 不支持'}</li>`;
+            html += `<li>-moz-font-synthesis: ${info.mozFontSynthesis ? '✅ 支持' : '❌ 不支持'}</li>`;
+            html += `<li>CSS transform skewX: ${info.transform ? '✅ 支持' : '❌ 不支持'}</li>`;
+            html += '</ul>';
+            html += `<p><small><strong>用户代理:</strong> ${info.userAgent}</small></p>`;
+
+            // 检查应该使用哪种方案
+            if (info.fontSynthesis || info.webkitFontSynthesis || info.mozFontSynthesis) {
+                html += '<p><span style="color: green;">🎯 使用 font-synthesis 方案</span></p>';
+            } else if (info.transform) {
+                html += '<p><span style="color: orange;">🔄 使用 CSS transform 备用方案</span></p>';
+            } else {
+                html += '<p><span style="color: red;">⚠️ 浏览器可能不支持斜体增强</span></p>';
+            }
+
+            compatEl.innerHTML = html;
+        }
+
+        // 页面加载完成后执行检查
+        document.addEventListener('DOMContentLoaded', function () {
+            checkCompatibility();
+            updateTestResult();
+
+            // 监听编辑器内容变化
+            const editor = document.getElementById('testEditor');
+            editor.addEventListener('input', updateTestResult);
+
+            console.log('🎨 TipTap中文斜体测试页面已准备就绪');
+            console.log('💡 可以在编辑器中输入文本，然后选中按 Ctrl+I 或 Cmd+I 来测试斜体效果');
+        });
+
+        // 键盘快捷键支持
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                e.preventDefault();
+
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const selectedText = range.toString();
+
+                    if (selectedText) {
+                        const em = document.createElement('em');
+                        em.textContent = selectedText;
+                        range.deleteContents();
+                        range.insertNode(em);
+
+                        // 清除选择
+                        selection.removeAllRanges();
+
+                        updateTestResult();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

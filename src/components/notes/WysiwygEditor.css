@@ -11,7 +11,8 @@
   overflow: hidden; /* 🎯 裁剪溢出内容，确保布局整洁 */
   padding: 0; /* 移除padding，让内部元素完全控制布局 */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter", "Arial",
+    "SF Pro Text", "Segoe UI", "Helvetica Neue", "Roboto", "Inter",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimSun", "Arial",
     sans-serif;
   font-size: var(--note-content-font-size, 14px);
   line-height: 1.5;
@@ -25,11 +26,6 @@
   flex-direction: column;
   min-height: 0; /* 允许收缩 */
   overflow: hidden; /* 确保不溢出 */
-}
-
-.wysiwyg-editor.disabled {
-  /* 移除 opacity，保持文本清晰 */
-  /* 不设置 pointer-events: none，允许滚动但阻止编辑 */
 }
 
 /* 在便签中的禁用状态不应该有透明度 */
@@ -159,8 +155,24 @@
   font-weight: 600;
 }
 
-.wysiwyg-editor .ProseMirror em {
+/* 斜体样式 - 统一支持中英文 */
+.wysiwyg-editor .ProseMirror em,
+.wysiwyg-editor .ProseMirror .italic-text {
   font-style: italic;
+  /* 关键：启用字体合成，让浏览器为不支持斜体的字体自动生成倾斜效果 */
+  font-synthesis: style;
+  -webkit-font-synthesis: style;
+  -moz-font-synthesis: style;
+}
+
+/* 对于不支持 font-synthesis 的老版本浏览器，提供CSS变换后备方案 */
+@supports not (font-synthesis: style) {
+  .wysiwyg-editor .ProseMirror em,
+  .wysiwyg-editor .ProseMirror .italic-text {
+    display: inline-block;
+    transform: skewX(-8deg);
+    vertical-align: baseline;
+  }
 }
 
 .wysiwyg-editor .ProseMirror code {
