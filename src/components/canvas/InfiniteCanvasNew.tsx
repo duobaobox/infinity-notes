@@ -1102,6 +1102,7 @@ const InfiniteCanvas = forwardRef<InfiniteCanvasRef>((_, ref) => {
             : "dragging"
           : ""
       } ${isMoveModeActive ? "move-mode" : ""}`}
+      style={{ userSelect: dragState.isDragging ? "none" : undefined }}
       onMouseDown={handleMouseDown}
       onClick={handleCanvasClick}
       onContextMenu={handleContextMenu}

@@ -880,6 +880,52 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   }, [note.isTitleEditing]);
 
+  // 统一的光标样式计算逻辑
+  const getCursorStyle = useMemo(() => {
+    return {
+      // 主拖拽区域光标
+      dragHandle: (() => {
+        if (note.isEditing || note.isTitleEditing) {
+          return "default"; // 编辑状态下主区域不可拖拽
+        }
+        return isDragging ? "grabbing" : "grab"; // 非编辑状态下可拖拽
+      })(),
+
+      // 标题容器光标
+      titleContainer: (() => {
+        if (note.isTitleEditing) {
+          return "default"; // 标题编辑时容器默认光标，右侧空白区域可拖拽
+        }
+        if (note.isEditing) {
+          return "default"; // 内容编辑时标题容器不可拖拽
+        }
+        return isDragging ? "grabbing" : "grab"; // 非编辑状态下可拖拽
+      })(),
+
+      // 标题文本光标
+      titleText: (() => {
+        if (note.isEditing || note.isTitleEditing) {
+          return "pointer"; // 编辑状态下点击退出编辑
+        }
+        return "text"; // 非编辑状态下提示可双击编辑
+      })(),
+
+      // 内容编辑器光标
+      contentEditor: (() => {
+        if (note.isEditing) {
+          return "text"; // 编辑状态下文本光标
+        }
+        if (isMoveModeActive || note.isTitleEditing) {
+          return "default"; // 移动模式或标题编辑时禁用
+        }
+        return "text"; // 非编辑状态下提示可点击编辑
+      })(),
+
+      // 拖拽右侧空白区域光标（仅标题编辑时）
+      dragArea: isDragging ? "grabbing" : "grab",
+    };
+  }, [note.isEditing, note.isTitleEditing, isMoveModeActive, isDragging]);
+
   // 计算标题的最大可用宽度 - 用于限制显示区域
   const getTitleMaxWidth = () => {
     const controlsWidth = 56; // 按钮区域宽度
@@ -1244,12 +1290,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }}
             style={{
               flexGrow: 1,
-              cursor:
-                note.isEditing || note.isTitleEditing
-                  ? "default"
-                  : isDragging
-                  ? "move"
-                  : "move",
+              cursor: getCursorStyle.dragHandle,
               minHeight: "20px",
               display: "flex",
               alignItems: "center",
@@ -1269,7 +1310,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 alignItems: "center",
                 minWidth: 0, // 允许flex子元素收缩
                 overflow: "hidden", // 防止内容溢出
-                cursor: note.isTitleEditing ? "default" : "move", // 标题编辑时右侧空白区域显示拖拽光标
+                cursor: note.isTitleEditing
+                  ? getCursorStyle.dragArea
+                  : getCursorStyle.titleContainer,
               }}
               onMouseDown={(e) => {
                 // 标题编辑状态下，点击标题右侧空白区域可以拖拽
@@ -1376,10 +1419,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                     backgroundColor: "rgba(0, 0, 0, 0.06)", // 深灰色背景
                     maxWidth: getTitleMaxWidth(), // 使用计算的最大宽度
                     display: "inline-block", // 恢复为inline-block
-                    cursor:
-                      note.isEditing || note.isTitleEditing
-                        ? "pointer"
-                        : "text",
+                    cursor: getCursorStyle.titleText,
                   }}
                 >
                   {localTitle || "便签"}
@@ -1484,10 +1524,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
             }}
             onMouseDown={handleNoteClickToFront}
             style={{
-              cursor:
-                !note.isEditing && !isMoveModeActive && !note.isTitleEditing
-                  ? "text"
-                  : "default",
+              cursor: getCursorStyle.contentEditor,
               position: "relative",
             }}
             title={
