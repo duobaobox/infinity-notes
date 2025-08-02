@@ -41,7 +41,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
     const resetClickCountRef = useRef(0);
     const resetClickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 处理重置按钮点击，实现连续点击5次切换滚轮缩放功能
+    // 处理重置按钮点击，实现连续点击3次切换滚轮缩放功能
     const handleResetClick = useCallback(() => {
       // 执行正常的重置功能
       onReset();
@@ -54,19 +54,19 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
         clearTimeout(resetClickTimerRef.current);
       }
 
-      // 检查是否达到5次点击
-      if (resetClickCountRef.current >= 5) {
+      // 检查是否达到3次点击
+      if (resetClickCountRef.current >= 3) {
         // 切换滚轮缩放功能
         onToggleWheelZoom();
 
         // 重置计数器
         resetClickCountRef.current = 0;
 
-        console.log("🖱️ 重置按钮连续点击5次，切换滚轮缩放功能", {
+        console.log("🖱️ 重置按钮连续点击3次，切换滚轮缩放功能", {
           newState: !isWheelZoomDisabled ? "禁用" : "启用",
         });
       } else {
-        console.log(`🖱️ 重置按钮点击计数: ${resetClickCountRef.current}/5`);
+        console.log(`🖱️ 重置按钮点击计数: ${resetClickCountRef.current}/3`);
 
         // 设置2秒后重置计数器
         resetClickTimerRef.current = setTimeout(() => {
@@ -102,8 +102,8 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = memo(
           <Tooltip
             title={
               isWheelZoomDisabled
-                ? "重置画布位置和缩放 (Ctrl/⌘ 0)\n💡 鼠标滚轮缩放已禁用，连续点击5次可恢复"
-                : "重置画布位置和缩放 (Ctrl/⌘ 0)\n💡 连续点击5次可禁用鼠标滚轮缩放"
+                ? "重置画布位置和缩放 (Ctrl/⌘ 0)\n💡 鼠标滚轮缩放已禁用，连续点击3次可恢复"
+                : "重置画布位置和缩放 (Ctrl/⌘ 0)\n💡 连续点击3次可禁用鼠标滚轮缩放"
             }
             placement="left"
           >

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { CANVAS_CONSTANTS } from "../components/canvas/CanvasConstants";
 import { getNearestScaleLevel } from "../utils/fontScaleUtils";
+import { IndexedDBUISettingsStorage } from "../database/IndexedDBUISettingsStorage";
 
 // 拖拽状态接口
 export interface DragState {
@@ -105,6 +106,9 @@ export interface CanvasActions {
 
   // 鼠标滚轮控制
   toggleWheelZoom: () => void;
+
+  // 持久化设置
+  loadCanvasSettings: () => Promise<void>;
 }
 
 // 创建画布Store
@@ -589,12 +593,36 @@ export const useCanvasStore = create<CanvasState & CanvasActions>()(
       // 切换鼠标滚轮缩放功能
       toggleWheelZoom: () => {
         const { isWheelZoomDisabled } = get();
-        set({ isWheelZoomDisabled: !isWheelZoomDisabled });
+        const newState = !isWheelZoomDisabled;
+        set({ isWheelZoomDisabled: newState });
+
+        // 保存到数据库
+        IndexedDBUISettingsStorage.saveCanvasControlSettings({
+          isWheelZoomDisabled: newState,
+        }).catch((error) => {
+          console.error("保存画布控制设置失败:", error);
+        });
 
         if (process.env.NODE_ENV === "development") {
           console.log("🖱️ 鼠标滚轮缩放状态切换:", {
-            disabled: !isWheelZoomDisabled,
+            disabled: newState,
           });
+        }
+      },
+
+      // 加载画布设置
+      loadCanvasSettings: async () => {
+        try {
+          const settings =
+            await IndexedDBUISettingsStorage.loadCanvasControlSettings();
+          if (settings) {
+            set({ isWheelZoomDisabled: settings.isWheelZoomDisabled });
+            if (process.env.NODE_ENV === "development") {
+              console.log("🖱️ 画布控制设置加载成功:", settings);
+            }
+          }
+        } catch (error) {
+          console.error("加载画布控制设置失败:", error);
         }
       },
     })),

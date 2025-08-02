@@ -41,6 +41,11 @@ export interface ZoomSensitivitySettings {
   largeScrollSteps: number; // 大幅滚动跳跃级数
 }
 
+// 画布控制设置接口
+export interface CanvasControlSettings {
+  isWheelZoomDisabled: boolean; // 是否禁用滚轮缩放
+}
+
 // 定义存储在 IndexedDB 中的 UI 设置结构
 interface StoredUISettings {
   id: string;
@@ -50,13 +55,15 @@ interface StoredUISettings {
     | "appearance"
     | "layout"
     | "basic"
-    | "zoom-sensitivity";
+    | "zoom-sensitivity"
+    | "canvas-control";
   settings:
     | ThemeSettings
     | AppearanceSettings
     | UILayoutSettings
     | BasicSettings
-    | ZoomSensitivitySettings;
+    | ZoomSensitivitySettings
+    | CanvasControlSettings;
   updated_at: string;
 }
 
@@ -371,6 +378,59 @@ export class IndexedDBUISettingsStorage {
       console.log("💾 UI设置迁移完成");
     } catch (error) {
       console.error("UI设置迁移失败:", error);
+    }
+  }
+
+  // 保存画布控制设置
+  static async saveCanvasControlSettings(
+    settings: CanvasControlSettings
+  ): Promise<void> {
+    console.log("💾 IndexedDBUISettingsStorage: 保存画布控制设置", settings);
+
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const settingsToSave: StoredUISettings = {
+        id: "ui-canvas-control",
+        user_id: this.DEFAULT_USER_ID,
+        setting_type: "canvas-control",
+        settings,
+        updated_at: new Date().toISOString(),
+      };
+
+      await db.putItem("ui_settings", settingsToSave);
+      console.log("💾 IndexedDBUISettingsStorage: 画布控制设置保存成功");
+    } catch (error) {
+      console.error("保存画布控制设置失败:", error);
+      throw new Error("保存画布控制设置失败");
+    }
+  }
+
+  // 加载画布控制设置
+  static async loadCanvasControlSettings(): Promise<CanvasControlSettings | null> {
+    try {
+      const db = IndexedDBService.getInstance();
+      await db.initialize();
+
+      const result = await db.getItem<StoredUISettings>(
+        "ui_settings",
+        "ui-canvas-control"
+      );
+
+      if (result && result.setting_type === "canvas-control") {
+        console.log(
+          "💾 IndexedDBUISettingsStorage: 画布控制设置加载成功",
+          result.settings
+        );
+        return result.settings as CanvasControlSettings;
+      }
+
+      console.log("💾 IndexedDBUISettingsStorage: 未找到画布控制设置");
+      return null;
+    } catch (error) {
+      console.error("加载画布控制设置失败:", error);
+      return null;
     }
   }
 }

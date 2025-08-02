@@ -26,6 +26,7 @@ import {
   useStickyNotesStore,
   useUIStore,
 } from "./stores";
+import { useCanvasStore } from "./stores/canvasStore";
 
 // 导入内存管理器
 
@@ -80,6 +81,7 @@ function App() {
     openSettingsModal,
     initialize: initializeUI,
   } = useUIStore();
+  const { loadCanvasSettings } = useCanvasStore();
 
   // 应用初始化状态
   const [appInitialized, setAppInitialized] = useState(false);
@@ -107,6 +109,9 @@ function App() {
         // 最后初始化UI Store（同步操作）
         initializeUI();
 
+        // 加载画布设置
+        await loadCanvasSettings();
+
         // 初始化内存管理器
         const { memoryManager } = await import("./utils/memoryManager");
         memoryManager.initialize();
@@ -119,7 +124,7 @@ function App() {
       }
     };
     initializeStores();
-  }, [initializeStickyNotes, initializeAI, initializeUI]);
+  }, [initializeStickyNotes, initializeAI, initializeUI, loadCanvasSettings]);
 
   // 设置键盘快捷键
   useKeyboardShortcuts({
