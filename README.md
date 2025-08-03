@@ -11,6 +11,9 @@
 - **多级缩放** - 支持精确缩放控制，适应不同工作场景
 - **高性能渲染** - 优化的渲染机制，流畅的交互体验
 
+<img width="2560" height="1440" alt="iShot_2025-08-03_10 04 58" src="https://github.com/user-attachments/assets/dba23cd0-2d40-4f4c-85f0-9ed47f876e7d" />
+
+
 ### 📝 智能便签系统
 
 - **丰富编辑器** - 支持 Markdown 格式，实时预览
