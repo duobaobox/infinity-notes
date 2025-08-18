@@ -583,7 +583,7 @@
 /* 鼠标悬浮在编辑器上时显示滚动条 */
 .wysiwyg-editor .ProseMirror:hover::-webkit-scrollbar-thumb,
 .wysiwyg-editor .tiptap.ProseMirror:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.15); /* 悬浮时显示滚动条 */
+  background-color: rgba(0, 0, 0, 0.08); /* 悬浮时显示滚动条，更淡 */
 }
 
 /* 鼠标悬浮在滚动条本身时加深颜色 */
@@ -595,7 +595,7 @@
 /* Firefox 浏览器的便签编辑器滚动条样式 */
 .wysiwyg-editor .ProseMirror,
 .wysiwyg-editor .tiptap.ProseMirror {
-  scrollbar-width: thin; /* 使用细滚动条 */
+  scrollbar-width: auto; /* 使用细滚动条 */
   scrollbar-color: transparent transparent; /* 默认隐藏滚动条 */
   transition: scrollbar-color 0.2s ease; /* 添加过渡动画 */
 }

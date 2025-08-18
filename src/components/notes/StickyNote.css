@@ -886,17 +886,17 @@
 /* 当便签内容需要滚动时，调整右侧padding为滚动条让出空间 */
 /* 使用:has()选择器的现代方案 */
 .sticky-note-content:has(.ProseMirror[data-scrollable="true"]) {
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
 /* 备用方案：兼容不支持:has()的浏览器 */
 .sticky-note-content.has-scrollbar {
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
 /* 进一步的兼容性备用方案：通过data属性直接控制 */
 .sticky-note-content[data-has-scrollbar="true"] {
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
 /* 🎯 针对不同缩放级别的动态padding优化 */
@@ -927,7 +927,7 @@
 .sticky-note[data-scale="1.25"] .sticky-note-content.has-scrollbar,
 .sticky-note[data-scale="1.25"]
   .sticky-note-content[data-has-scrollbar="true"] {
-  padding-right: 4px; /* 标准padding */
+  padding-right: 2px; /* 标准padding */
 }
 
 /* 大缩放级别（150%、175%、200%）- 更宽敞的滚动条空间 */
@@ -1218,13 +1218,13 @@
   .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
 .sticky-note:not([data-scale]) .sticky-note-content.has-scrollbar,
 .sticky-note:not([data-scale]) .sticky-note-content[data-has-scrollbar="true"] {
-  padding-right: 4px; /* 默认标准padding */
+  padding-right: 2px; /* 默认标准padding */
 }
 
 /* 处理编辑器加载失败或元素缺失的情况 */
 .sticky-note-content.has-scrollbar:not(:has(.ProseMirror)),
 .sticky-note-content[data-has-scrollbar="true"]:not(:has(.ProseMirror)) {
-  padding-right: 4px; /* 即使没有编辑器元素也应用padding */
+  padding-right: 2px; /* 即使没有编辑器元素也应用padding */
 }
 
 /* 处理CSS :has() 选择器不支持的浏览器 */
