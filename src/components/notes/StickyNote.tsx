@@ -1292,6 +1292,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 justifyContent: "flex-start",
                 alignItems: "center",
                 minWidth: 0, // 允许flex子元素收缩
+                maxWidth: "calc(100% - 40px)", // 限制最大宽度，为右侧按钮留出空间
                 overflow: "hidden", // 防止内容溢出
                 cursor: note.isTitleEditing
                   ? getCursorStyle.dragArea
@@ -1362,6 +1363,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                     background: "rgba(0, 0, 0, 0.06)",
                     borderRadius: "4px",
                     marginRight: "8px", // 为右侧拖拽区域留出空间
+                    maxWidth: "calc(100% - 40px)", // 限制最大宽度，为右侧按钮留出空间
                   }}
                   autoFocus
                 />
