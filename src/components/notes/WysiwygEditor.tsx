@@ -12,6 +12,10 @@ import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { useCanvasStore } from "../../stores/canvasStore";
 import TableToolbar from "./editor/TableToolbar";
+import {
+  createDebouncedScrollbarDetector,
+  createScrollbarStateWatchdog,
+} from "../../utils/scrollbarUtils";
 import "./WysiwygEditor.css";
 
 /**
@@ -665,34 +669,20 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
     }
   }, []);
 
-  // 检测滚动条状态的函数
+  // 创建防抖的滚动条检测函数
+  const debouncedScrollbarDetector = useRef(
+    createDebouncedScrollbarDetector(16, {
+      debug: process.env.NODE_ENV === "development",
+    })
+  );
+
+  // 健壮的滚动条检测函数
   const checkScrollbarState = useCallback(() => {
-    if (proseMirrorRef.current) {
-      const element = proseMirrorRef.current;
+    if (!proseMirrorRef.current) return;
 
-      // 确保元素已经完全渲染
-      if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-        // 如果元素尺寸为0，延迟重试
-        setTimeout(() => checkScrollbarState(), 10);
-        return;
-      }
-
-      const hasVerticalScrollbar = element.scrollHeight > element.clientHeight;
-
-      // 设置data属性用于CSS选择器
-      element.setAttribute("data-scrollable", hasVerticalScrollbar.toString());
-
-      // 为父容器添加/移除类名（兼容不支持:has()的浏览器）
-      const contentContainer = element.closest(".sticky-note-content");
-      if (contentContainer) {
-        if (hasVerticalScrollbar) {
-          contentContainer.classList.add("has-scrollbar");
-        } else {
-          contentContainer.classList.remove("has-scrollbar");
-        }
-      }
-    }
-  }, [canvasScale]);
+    // 使用工具函数进行检测
+    debouncedScrollbarDetector.current(proseMirrorRef.current);
+  }, []);
 
   // 防抖更新函数 - 优化防抖时间以减少快速输入时的乱输入问题
   const debouncedOnChange = useCallback(
@@ -1038,6 +1028,73 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       }, 150);
     }
   }, [canvasScale, checkScrollbarState]);
+
+  // 统一的滚动条检测监听器
+  useEffect(() => {
+    if (!editor || !proseMirrorRef.current) return;
+
+    const element = proseMirrorRef.current;
+
+    // 初始检测
+    checkScrollbarState();
+
+    // 创建观察器
+    const resizeObserver = new ResizeObserver(checkScrollbarState);
+    const mutationObserver = new MutationObserver(checkScrollbarState);
+
+    // 启动兜底监控
+    const watchdogCleanup = createScrollbarStateWatchdog(
+      element.closest(".sticky-note-content") || element,
+      5000,
+      { debug: false }
+    );
+
+    // 事件处理函数
+    const handleResize = checkScrollbarState;
+    const handleVisibilityChange = () => {
+      if (!document.hidden) checkScrollbarState();
+    };
+    const handleEditorUpdate = () => setTimeout(checkScrollbarState, 0);
+
+    try {
+      // 启动观察器
+      resizeObserver.observe(element);
+      mutationObserver.observe(element, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+
+      // 绑定事件监听
+      window.addEventListener("resize", handleResize);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      // 编辑器事件
+      editor.on("update", handleEditorUpdate);
+      editor.on("focus", handleEditorUpdate);
+    } catch (error) {
+      console.warn("Failed to setup scrollbar observers:", error);
+    }
+
+    return () => {
+      try {
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+        watchdogCleanup();
+
+        window.removeEventListener("resize", handleResize);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+
+        editor.off("update", handleEditorUpdate);
+        editor.off("focus", handleEditorUpdate);
+      } catch (error) {
+        console.warn("Error during observer cleanup:", error);
+      }
+    };
+  }, [editor, checkScrollbarState]);
 
   // 组件卸载时销毁编辑器和清理定时器
   useEffect(() => {

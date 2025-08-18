@@ -50,6 +50,7 @@
   box-sizing: border-box;
   margin: 2px 0;
   gap: 6px;
+  flex-wrap: wrap; /* 新增：允许内容换行 */
 }
 
 /* 工具栏按钮组 */
@@ -882,7 +883,8 @@
   min-height: 0; /* 关键：允许flex子元素收缩 */
 }
 
-/* 当便签内容需要滚动时，增加右侧4px内边距为滚动条让出空间 */
+/* 当便签内容需要滚动时，调整右侧padding为滚动条让出空间 */
+/* 使用:has()选择器的现代方案 */
 .sticky-note-content:has(.ProseMirror[data-scrollable="true"]) {
   padding-right: 4px;
 }
@@ -890,6 +892,58 @@
 /* 备用方案：兼容不支持:has()的浏览器 */
 .sticky-note-content.has-scrollbar {
   padding-right: 4px;
+}
+
+/* 进一步的兼容性备用方案：通过data属性直接控制 */
+.sticky-note-content[data-has-scrollbar="true"] {
+  padding-right: 4px;
+}
+
+/* 🎯 针对不同缩放级别的动态padding优化 */
+
+/* 小缩放级别（25%、50%）- 更紧凑的滚动条空间 */
+.sticky-note[data-scale="0.25"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="0.25"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="0.25"] .sticky-note-content[data-has-scrollbar="true"],
+.sticky-note[data-scale="0.5"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="0.5"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="0.5"] .sticky-note-content[data-has-scrollbar="true"] {
+  padding-right: 2px; /* 小缩放时使用更小的padding */
+}
+
+/* 中等缩放级别（75%、100%、125%）- 标准滚动条空间 */
+.sticky-note[data-scale="0.75"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="0.75"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="0.75"] .sticky-note-content[data-has-scrollbar="true"],
+.sticky-note[data-scale="1"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="1"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="1"] .sticky-note-content[data-has-scrollbar="true"],
+.sticky-note[data-scale="1.25"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="1.25"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="1.25"]
+  .sticky-note-content[data-has-scrollbar="true"] {
+  padding-right: 4px; /* 标准padding */
+}
+
+/* 大缩放级别（150%、175%、200%）- 更宽敞的滚动条空间 */
+.sticky-note[data-scale="1.5"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="1.5"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="1.5"] .sticky-note-content[data-has-scrollbar="true"],
+.sticky-note[data-scale="1.75"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="1.75"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="1.75"] .sticky-note-content[data-has-scrollbar="true"],
+.sticky-note[data-scale="2"]
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note[data-scale="2"] .sticky-note-content.has-scrollbar,
+.sticky-note[data-scale="2"] .sticky-note-content[data-has-scrollbar="true"] {
+  padding-right: 6px; /* 大缩放时使用更大的padding */
 }
 
 /* 包含思维链的便签内容区域特殊处理 - 更新以适应新的结构层级 */
@@ -1155,4 +1209,65 @@
   height: 1px;
   background: rgba(0, 0, 0, 0.15);
   margin: 16px 0;
+}
+
+/* 🛡️ 兜底和异常处理样式 */
+
+/* 处理未知或异常缩放级别 */
+.sticky-note:not([data-scale])
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+.sticky-note:not([data-scale]) .sticky-note-content.has-scrollbar,
+.sticky-note:not([data-scale]) .sticky-note-content[data-has-scrollbar="true"] {
+  padding-right: 4px; /* 默认标准padding */
+}
+
+/* 处理编辑器加载失败或元素缺失的情况 */
+.sticky-note-content.has-scrollbar:not(:has(.ProseMirror)),
+.sticky-note-content[data-has-scrollbar="true"]:not(:has(.ProseMirror)) {
+  padding-right: 4px; /* 即使没有编辑器元素也应用padding */
+}
+
+/* 处理CSS :has() 选择器不支持的浏览器 */
+@supports not (selector(:has(*))) {
+  .sticky-note-content.has-scrollbar,
+  .sticky-note-content[data-has-scrollbar="true"] {
+    padding-right: 4px !important; /* 强制应用padding */
+  }
+
+  /* 按缩放级别调整 */
+  .sticky-note[data-scale="0.25"] .sticky-note-content.has-scrollbar,
+  .sticky-note[data-scale="0.25"]
+    .sticky-note-content[data-has-scrollbar="true"],
+  .sticky-note[data-scale="0.5"] .sticky-note-content.has-scrollbar,
+  .sticky-note[data-scale="0.5"]
+    .sticky-note-content[data-has-scrollbar="true"] {
+    padding-right: 2px !important;
+  }
+
+  .sticky-note[data-scale="1.5"] .sticky-note-content.has-scrollbar,
+  .sticky-note[data-scale="1.5"]
+    .sticky-note-content[data-has-scrollbar="true"],
+  .sticky-note[data-scale="1.75"] .sticky-note-content.has-scrollbar,
+  .sticky-note[data-scale="1.75"]
+    .sticky-note-content[data-has-scrollbar="true"],
+  .sticky-note[data-scale="2"] .sticky-note-content.has-scrollbar,
+  .sticky-note[data-scale="2"] .sticky-note-content[data-has-scrollbar="true"] {
+    padding-right: 6px !important;
+  }
+}
+
+/* 处理高对比度模式 */
+@media (prefers-contrast: high) {
+  .sticky-note-content:has(.ProseMirror[data-scrollable="true"]),
+  .sticky-note-content.has-scrollbar,
+  .sticky-note-content[data-has-scrollbar="true"] {
+    padding-right: 6px; /* 高对比度模式下使用更大的padding，确保滚动条可见 */
+  }
+}
+
+/* 处理减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .sticky-note-content {
+    transition: none; /* 禁用padding过渡动画 */
+  }
 }

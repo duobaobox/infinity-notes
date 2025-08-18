@@ -768,6 +768,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     optimizedConnectionUpdate,
   ]);
 
+  // 下面是渲染逻辑
+
   // 新增：监听画布拖拽状态，确保工具栏位置实时更新
   useEffect(() => {
     // 当画布偏移发生变化时，强制重新计算工具栏位置
