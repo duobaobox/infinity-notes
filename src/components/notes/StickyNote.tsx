@@ -1250,7 +1250,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           // 其他情况允许画布缩放
         }}
       >
-        <div className="sticky-note-header">
+        <div className="sticky-note-header" style={{ minWidth: 0 }}>
           {/* 条件拖拽区域 - 根据编辑状态决定拖拽行为 */}
           <div
             className={
@@ -1270,11 +1270,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               e.stopPropagation();
             }}
             style={{
-              flexGrow: 1,
+              flex: 1,
               cursor: getCursorStyle.dragHandle,
               minHeight: "20px",
               display: "flex",
               alignItems: "center",
+              minWidth: 0, // 允许flex子元素收缩
             }}
             title={
               note.isTitleEditing
@@ -1292,7 +1293,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 justifyContent: "flex-start",
                 alignItems: "center",
                 minWidth: "40px", // 设置最小宽度
-                maxWidth: "calc(100% - 40px)", // 限制最大宽度，为右侧按钮留出空间
+                maxWidth: "calc(100% - 60px)", // 限制最大宽度，为右侧按钮留出空间
                 overflow: "hidden", // 防止内容溢出
                 cursor: note.isTitleEditing
                   ? getCursorStyle.dragArea
@@ -1364,7 +1365,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                     borderRadius: "4px",
                     marginRight: "8px", // 为右侧拖拽区域留出空间
                     minWidth: "40px", // 设置最小宽度
-                    maxWidth: "calc(100% - 40px)", // 限制最大宽度，为右侧按钮留出空间
+                    maxWidth: "calc(100% - 60px)", // 限制最大宽度，为右侧按钮留出空间
                   }}
                   autoFocus
                 />
